@@ -1,27 +1,21 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
-  columns,
-  conditional,
-  createSearchableMatches,
   join,
-  limit,
   objectValues,
-  offset,
   table,
-  tsquery,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
-import EntityPlaceModel from "../EntityPlace/model"
 
-import {
-  PlaceAttributes,
-} from "./types"
+import EntityPlaceModel from "../EntityPlace/model"
+import { PlaceAttributes } from "./types"
 
 export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
 
-  static async findByEntityIds(entityIds: string[]): Promise<(PlaceAttributes & { entity_id: string })[]> {
+  static async findByEntityIds(
+    entityIds: string[]
+  ): Promise<(PlaceAttributes & { entity_id: string })[]> {
     const sql = SQL`
       SELECT * FROM ${table(this)} p
       LEFT JOIN ${table(EntityPlaceModel)} ep ON "p"."id" = "ep"."place_id"
@@ -31,7 +25,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.query(sql)
   }
 
-  static async findEnabledByPositions(positions: string[]): Promise<PlaceAttributes[]> {
+  static async findEnabledByPositions(
+    positions: string[]
+  ): Promise<PlaceAttributes[]> {
     if (positions.length === 0) {
       return []
     }
@@ -39,7 +35,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "disabled" = false
-        AND "positions" && ${'{' + JSON.stringify(positions).slice(1, -1) + '}'}
+        AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
     return this.query(sql)
@@ -53,7 +49,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const keys = Object.keys(places[0])
     const sql = SQL`
       INSERT INTO ${table(this)}
-        (${join(keys.map(key => SQL.raw(`"${key}"`)))})
+        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
       VALUES
         ${objectValues(keys, places)}
     `

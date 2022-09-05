@@ -1,1 +1,1 @@
-export * from 'decentraland-gatsby/dist/entities/Task/migration'
+export * from "decentraland-gatsby/dist/entities/Task/migration"

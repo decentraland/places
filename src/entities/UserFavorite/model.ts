@@ -1,7 +1,6 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
-import {
-  UserFavoriteAttributes,
-} from "./types"
+
+import { UserFavoriteAttributes } from "./types"
 
 export default class UserFavoriteModel extends Model<UserFavoriteAttributes> {
   static tableName = "user_favorites"
