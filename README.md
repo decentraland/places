@@ -28,6 +28,19 @@ once you have a `CONNECTION_STRING` you can setup you database tables using the 
 npm run migrate up
 ```
 
+### clear database
+
+to clear database to restart the project as is where new run the following SQL
+
+```SQL
+truncate places;
+truncate place_activities;
+truncate place_activity_daily;
+truncate entities_places;
+truncate tasks;
+update deployment_tracks set "from" = 0;
+```
+
 ## Run
 
 once you setup this project you can start it using the following command

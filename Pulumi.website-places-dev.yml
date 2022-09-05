@@ -1,0 +1,12 @@
+encryptionsalt: v1:5g6OY0hHq10=:v1:2v1dmNBoUC4Ls4eB:jG0ttHuD/beq4tREu887OY++Kvz2iw==
+config:
+  aws:region: us-east-1
+  events:AWS_BUCKET_URL: https://places.decentraland.zone
+  events:GATSBY_CHAIN_ID: 1,137
+  events:GATSBY_DECENTRALAND_URL: https://play.decentraland.org
+  events:GATSBY_EVENTS_URL: https://places.decentraland.zone/api
+  events:GATSBY_LAND_URL: https://api.decentraland.org
+  events:GATSBY_PROFILE_URL: https://peer.decentraland.org
+  events:GATSBY_ROLLBAR_TOKEN: xxx
+  events:GATSBY_SEGMENT_KEY: xxx
+  events:USE_PUBLIC_TLD: "true"
