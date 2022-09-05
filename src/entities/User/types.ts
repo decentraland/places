@@ -1,5 +1,5 @@
 export type UserAttributes = {
-  user: string,
+  user: string
   permissions: string[]
   created_at: Date
   updated_at: Date

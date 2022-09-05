@@ -1,26 +1,30 @@
-import express from 'express'
-import { databaseInitializer } from 'decentraland-gatsby/dist/entities/Database/utils'
+import { databaseInitializer } from "decentraland-gatsby/dist/entities/Database/utils"
 // import manager from 'decentraland-gatsby/dist/entities/Job/index'
 // import { jobInitializer } from 'decentraland-gatsby/dist/entities/Job/utils'
-import { default as tasksManager, taskInitializer } from 'decentraland-gatsby/dist/entities/Task'
+import metrics from "decentraland-gatsby/dist/entities/Prometheus/routes"
+import RequestError from "decentraland-gatsby/dist/entities/Route/error"
+import handle from "decentraland-gatsby/dist/entities/Route/handle"
 import {
-  status,
-  filesystem,
-} from 'decentraland-gatsby/dist/entities/Route/routes'
-import {
+  withBody,
+  withCors,
   withDDosProtection,
   withLogs,
-  withCors,
-  withBody,
-} from 'decentraland-gatsby/dist/entities/Route/middleware'
-import metrics from 'decentraland-gatsby/dist/entities/Prometheus/routes'
-import handle from 'decentraland-gatsby/dist/entities/Route/handle'
-import RequestError from 'decentraland-gatsby/dist/entities/Route/error'
-import { serverInitializer } from 'decentraland-gatsby/dist/entities/Server/utils'
-import { initializeServices } from 'decentraland-gatsby/dist/entities/Server/handler'
-import { checkDeployments } from './entities/DeploymentTrack/task/chekDeployments'
-import { checkActivity } from './entities/PlaceActivity/task/checkActivity'
-import { summaryActivity } from './entities/PlaceActivityDaily/task/summaryActivity'
+} from "decentraland-gatsby/dist/entities/Route/middleware"
+import {
+  filesystem,
+  status,
+} from "decentraland-gatsby/dist/entities/Route/routes"
+import { initializeServices } from "decentraland-gatsby/dist/entities/Server/handler"
+import { serverInitializer } from "decentraland-gatsby/dist/entities/Server/utils"
+import {
+  taskInitializer,
+  default as tasksManager,
+} from "decentraland-gatsby/dist/entities/Task"
+import express from "express"
+
+import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
+import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
+import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
 
 // const jobs = manager()
 // jobs.cron('@eachMinute', () => console.log('Runnign Job...'))
@@ -31,20 +35,20 @@ tasks.use(checkActivity)
 tasks.use(summaryActivity)
 
 const app = express()
-app.set('x-powered-by', false)
+app.set("x-powered-by", false)
 app.use(withLogs())
-app.use('/api', [
+app.use("/api", [
   status(),
   withDDosProtection(),
   withCors(),
   withBody(),
   handle(async () => {
-    throw new RequestError('NotFound', RequestError.NotFound)
+    throw new RequestError("NotFound", RequestError.NotFound)
   }),
 ])
 
 app.use(metrics)
-app.use(filesystem('public', '404.html'))
+app.use(filesystem("public", "404.html"))
 
 initializeServices([
   databaseInitializer(),

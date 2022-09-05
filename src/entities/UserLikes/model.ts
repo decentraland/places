@@ -1,7 +1,6 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
-import {
-  UserLikeAttributes,
-} from "./types"
+
+import { UserLikeAttributes } from "./types"
 
 export default class UserLikesModel extends Model<UserLikeAttributes> {
   static tableName = "user_likes"
@@ -9,8 +8,8 @@ export default class UserLikesModel extends Model<UserLikeAttributes> {
 
   /** create or update a new like record */
   static async like(
-    data: Pick<UserLikeAttributes, 'user' | 'place_id'>,
-    expected: Partial<Pick<UserLikeAttributes, 'like' | 'user_activity'>> = {}
+    data: Pick<UserLikeAttributes, "user" | "place_id">,
+    expected: Partial<Pick<UserLikeAttributes, "like" | "user_activity">> = {}
   ): Promise<UserLikeAttributes> {
     const now = new Date()
     const result = await this.findOne<UserLikeAttributes>(data)
@@ -31,7 +30,10 @@ export default class UserLikesModel extends Model<UserLikeAttributes> {
     }
 
     if (result.like !== like) {
-      const update: Pick<UserLikeAttributes, 'like' | 'user_activity' | 'updated_at'> = {
+      const update: Pick<
+        UserLikeAttributes,
+        "like" | "user_activity" | "updated_at"
+      > = {
         like,
         user_activity,
         updated_at: now,
@@ -41,7 +43,7 @@ export default class UserLikesModel extends Model<UserLikeAttributes> {
 
       return {
         ...result,
-        ...update
+        ...update,
       }
     }
 

@@ -1,29 +1,22 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
-  columns,
-  conditional,
-  createSearchableMatches,
   join,
-  limit,
   objectValues,
-  offset,
   table,
-  tsquery,
-  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
-import EntityPlaceModel from "../EntityPlace/model"
-import { PlaceActivityDailyAttributes } from "../PlaceActivityDaily/types"
 
-import {
-  PlaceActivityAttributes,
-} from "./types"
+import { PlaceActivityDailyAttributes } from "../PlaceActivityDaily/types"
+import { PlaceActivityAttributes } from "./types"
 
 export default class PlaceActivityModel extends Model<PlaceActivityAttributes> {
   static tableName = "place_activities"
   static withTimestamps = false
 
-  static async getSummary(from: Date, to: Date): Promise<PlaceActivityDailyAttributes[]> {
+  static async getSummary(
+    from: Date,
+    to: Date
+  ): Promise<PlaceActivityDailyAttributes[]> {
     const sql = SQL`
       SELECT
         "place_id",
@@ -55,7 +48,7 @@ export default class PlaceActivityModel extends Model<PlaceActivityAttributes> {
     const keys = Object.keys(places[0])
     const sql = SQL`
       INSERT INTO ${table(this)}
-        (${join(keys.map(key => SQL.raw(`"${key}"`)))})
+        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
       VALUES
         ${objectValues(keys, places)}
     `

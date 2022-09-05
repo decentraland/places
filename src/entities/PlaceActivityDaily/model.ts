@@ -1,21 +1,12 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
-  columns,
-  conditional,
-  createSearchableMatches,
   join,
-  limit,
   objectValues,
-  offset,
   table,
-  tsquery,
-  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import {
-  PlaceActivityDailyAttributes,
-} from "./types"
+import { PlaceActivityDailyAttributes } from "./types"
 
 export default class PlaceActivityModel extends Model<PlaceActivityDailyAttributes> {
   static tableName = "place_activity_daily"
@@ -39,12 +30,11 @@ export default class PlaceActivityModel extends Model<PlaceActivityDailyAttribut
     const keys = Object.keys(activity[0])
     const sql = SQL`
       INSERT INTO ${table(this)}
-        (${join(keys.map(key => SQL.raw(`"${key}"`)))})
+        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
       VALUES
         ${objectValues(keys, activity)}
     `
 
     return this.rowCount(sql)
   }
-
 }

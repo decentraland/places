@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/naming-convention */
+import { Type } from "decentraland-gatsby/dist/entities/Database/types"
+import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
-import { Type } from 'decentraland-gatsby/dist/entities/Database/types';
-import { MigrationBuilder, ColumnDefinitions } from 'node-pg-migrate';
-import UserModel from '../entities/User/model';
 
-export const shorthands: ColumnDefinitions | undefined = undefined;
+import UserModel from "../entities/User/model"
+
+export const shorthands: ColumnDefinitions | undefined = undefined
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable(UserModel.tableName, {
@@ -14,24 +15,26 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
     permissions: {
       type: Type.Array(Type.Varchar(25)),
-      default: '{}',
-      notNull: true
+      default: "{}",
+      notNull: true,
     },
     created_at: {
       type: Type.TimeStampTZ,
-      default: 'now()',
+      default: "now()",
       notNull: true,
     },
     updated_at: {
       type: Type.TimeStampTZ,
-      default: 'now()',
+      default: "now()",
       notNull: true,
     },
   })
 
-  if (isEthereumAddress(process.env.BOOSTRAP_USER || '')) {
+  if (isEthereumAddress(process.env.BOOSTRAP_USER || "")) {
     pgm.sql(`
-      INSERT INTO ${UserModel.tableName} ("user", "permissions", "created_at", "updated_at")
+      INSERT INTO ${
+        UserModel.tableName
+      } ("user", "permissions", "created_at", "updated_at")
       VALUES ('${process.env.BOOSTRAP_USER!}', '{}', NOW(), NOW())
     `)
   }
