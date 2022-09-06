@@ -4,6 +4,11 @@ import { v4 as uuid } from "uuid"
 
 import { PlaceAttributes } from "./types"
 
+const DECENTRALAND_URL =
+  process.env.GATSBY_DECENTRALAND_URL ||
+  process.env.DECENTRALAND_URL ||
+  "https://play.decentraland.org"
+
 export function createPlaceFromDeployment(
   deployment: ContentDepoymentScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
@@ -65,4 +70,13 @@ export function createPlaceFromDeployment(
     updated_at: now,
     ...data,
   }
+}
+
+export function placeTargetUrl(
+  place: Pick<PlaceAttributes, "base_position">
+): string {
+  const target = new URL("/", DECENTRALAND_URL)
+  target.searchParams.set("position", place.base_position)
+
+  return target.toString()
 }

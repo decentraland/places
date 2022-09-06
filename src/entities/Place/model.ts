@@ -16,6 +16,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findByEntityIds(
     entityIds: string[]
   ): Promise<(PlaceAttributes & { entity_id: string })[]> {
+    if (entityIds.length === 0) {
+      return []
+    }
     const sql = SQL`
       SELECT * FROM ${table(this)} p
       LEFT JOIN ${table(EntityPlaceModel)} ep ON "p"."id" = "ep"."place_id"

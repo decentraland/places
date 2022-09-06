@@ -10,3 +10,15 @@ body {
 .dcl.navbar.LayoutNavbarContainer.initial {
   background-color: var(--background);
 }
+
+.ui.button:not(.icon) > img.left.icon:not(.button):not(.dropdown) {
+  margin: 0 0 0 0.5rem;
+  opacity: 1;
+  height: 1em;
+}
+
+@keyframes loading {
+  to {
+    background-position-x: -200%;
+  }
+}

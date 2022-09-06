@@ -1,1 +1,7 @@
-{}
+{
+  "components": {
+    "button": {
+      "jump_in": "jump in"
+    }
+  }
+}
