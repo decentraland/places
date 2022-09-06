@@ -36,7 +36,10 @@
   transition: opacity ease 0.3s;
 }
 
-.ui.card.place-card.loading .content,
+.ui.card.place-card.loading .content {
+  border: none;
+}
+
 .ui.card.place-card.loading .place-card__cover .dg.ImgFixed {
   opacity: 0;
 }
