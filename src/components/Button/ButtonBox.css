@@ -6,13 +6,16 @@
   height: 60px;
   min-width: 60px;
   border: 1px solid var(--secondary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .ui.button.button-box.icon:hover {
   border-color: var(--primary);
 }
 
-.ui.button.button-box.icon .heart {
+.ui.button.button-box.icon .icon {
   font-size: 18px;
   color: var(--primary);
 }
@@ -24,6 +27,7 @@
 .ui.button.button-box.icon:hover .button-box__icon {
   display: none;
 }
+
 .ui.button.button-box.icon:hover .button-box__icon-hovered {
   display: inline-block;
 }
