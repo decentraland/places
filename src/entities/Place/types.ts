@@ -19,3 +19,5 @@ export type PlaceAttributes = {
   created_at: Date
   updated_at: Date
 }
+
+export type AggregatePlaceAttributes = PlaceAttributes

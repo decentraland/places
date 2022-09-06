@@ -10,3 +10,9 @@ body {
 .dcl.navbar.LayoutNavbarContainer.initial {
   background-color: var(--background);
 }
+
+@keyframes loading {
+  to {
+    background-position-x: -200%;
+  }
+}

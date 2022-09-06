@@ -1,0 +1,32 @@
+.ui.button.heart-button {
+  padding: 9px 12px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  width: 40px;
+  height: 36px;
+  min-width: 40px;
+  background-color: transparent;
+  border: 1px solid hsla(260, 6%, 46%, 0.32);
+  margin-left: 10px;
+}
+
+.ui.button.heart-button:hover {
+  background-color: transparent;
+  border-color: var(--primary);
+}
+
+.ui.button.heart-button .heart {
+  font-size: 18px;
+  color: var(--primary);
+}
+
+.ui.button.heart-button .heart-button__icon-hovered {
+  display: none;
+}
+
+.ui.button.heart-button:hover .heart-button__icon {
+  display: none;
+}
+.ui.button.heart-button:hover .heart-button__icon-hovered {
+  display: inherit;
+}
