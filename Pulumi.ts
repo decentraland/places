@@ -9,9 +9,7 @@ export = async function main() {
     serviceImage: process.env["CI_REGISTRY_IMAGE"],
     serviceMemory: 1024,
     serviceEnvironment: [variable("NODE_ENV", "production")],
-    servicePaths: [
-      "/api/*",
-    ],
+    servicePaths: ["/api/*"],
     useSecurityHeaders: true,
   })
 }
