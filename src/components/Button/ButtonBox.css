@@ -11,6 +11,11 @@
   align-items: center;
 }
 
+.ui.button.button-box.icon.hide,
+.ui.button.button-box.icon.hide.disabled {
+  opacity: 0 !important;
+}
+
 .ui.button.button-box.icon:hover {
   border-color: var(--primary);
 }
