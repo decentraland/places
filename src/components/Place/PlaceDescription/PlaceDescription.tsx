@@ -47,7 +47,13 @@ export default React.memo(function PlaceDescription(
       <div className="place-description__top-container">
         <div
           className="place-description__cover"
-          style={{ backgroundImage: `url(${place?.image || ""})` }}
+          style={
+            !loading && place?.image
+              ? {
+                  backgroundImage: `url(${place.image})`,
+                }
+              : {}
+          }
         ></div>
         <div className="place-description__right-side-container">
           <div className="place-description__text-container">
