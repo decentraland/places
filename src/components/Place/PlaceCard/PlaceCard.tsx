@@ -49,7 +49,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       </div>
       <Card.Content>
         <Card.Header>{place?.title || " "}</Card.Header>
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
+        <div className="place-card__button-container">
           <JumpInPositionButton href={placerUrl} loading={props.loading} />
           <FavoriteButton
             onClick={handleClickFavorite}

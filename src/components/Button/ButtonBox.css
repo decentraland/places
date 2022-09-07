@@ -27,6 +27,7 @@
 .ui.button.button-box.icon:hover .button-box__icon {
   display: none;
 }
+
 .ui.button.button-box.icon:hover .button-box__icon-hovered {
   display: inline-block;
 }
