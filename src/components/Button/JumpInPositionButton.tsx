@@ -31,14 +31,12 @@ export default React.memo(function JumpInPositionButton(
       disabled={props.loading}
     >
       <span>{l("components.button.jump_in")}</span>
-      {!props.loading && (
-        <img
-          src={primaryJumpInIcon}
-          width={14}
-          height={14}
-          className="icon left"
-        />
-      )}
+      <img
+        src={primaryJumpInIcon}
+        width={14}
+        height={14}
+        className="icon left"
+      />
     </Button>
   )
 })

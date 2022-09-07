@@ -1,6 +1,10 @@
-.ui.button.jump-in-position.jump-in-position {
+.ui.button.jump-in-position {
   display: flex;
   justify-content: center;
   align-items: center;
   width: 100%;
+}
+
+.ui.button.jump-in-position.loading img {
+  display: none;
 }
