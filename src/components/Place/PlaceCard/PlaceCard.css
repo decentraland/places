@@ -20,6 +20,10 @@
   border-top-color: #000000;
 }
 
+.ui.card.place-card.loading .content .header {
+  opacity: 0;
+}
+
 .ui.card.place-card .content .header {
   font-weight: 600;
   height: 75px;

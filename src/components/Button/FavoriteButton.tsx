@@ -11,21 +11,18 @@ export type FavoriteButtonProps = {
 }
 
 export default React.memo(function FavoriteButton(props: FavoriteButtonProps) {
+  const { onClick, loading } = props
   return (
     <Button
       primary
-      onClick={props.onClick}
+      onClick={onClick}
       className="heart-button icon"
       target="_blank"
-      loading={props.loading}
-      disabled={props.loading}
+      loading={loading}
+      disabled={loading}
     >
-      {!props.loading && (
-        <Icon name="heart outline" className="heart-button__icon" />
-      )}
-      {!props.loading && (
-        <Icon name="heart" className="heart-button__icon-hovered" />
-      )}
+      {!loading && <Icon name="heart outline" className="heart-button__icon" />}
+      {!loading && <Icon name="heart" className="heart-button__icon-hovered" />}
     </Button>
   )
 })
