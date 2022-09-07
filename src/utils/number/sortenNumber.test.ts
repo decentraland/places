@@ -1,4 +1,4 @@
-import shorterNumber from "../../utils/number/sortenNumber"
+import shorterNumber from "./sortenNumber"
 
 describe("Sorten Number", () => {
   test(`With 100`, () => {
