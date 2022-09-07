@@ -42,6 +42,13 @@
   flex-direction: column;
 }
 
+.place-description
+  .place-description__buttons-container
+  .jump-in-position.button {
+  height: 60px;
+  font-size: 16px;
+}
+
 .place-description .place-description__box-wrapper {
   display: flex;
   justify-content: space-between;
