@@ -20,13 +20,12 @@
   color: var(--primary);
 }
 
+.ui.button.heart-button.loading .heart-button__icon,
+.ui.button.heart-button:hover .heart-button__icon,
 .ui.button.heart-button .heart-button__icon-hovered {
   display: none;
 }
 
-.ui.button.heart-button:hover .heart-button__icon {
-  display: none;
-}
 .ui.button.heart-button:hover .heart-button__icon-hovered {
   display: inherit;
 }
