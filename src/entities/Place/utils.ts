@@ -73,10 +73,14 @@ export function createPlaceFromDeployment(
 }
 
 export function placeTargetUrl(
-  place: Pick<PlaceAttributes, "base_position">
+  place: Pick<PlaceAttributes, "base_position">,
+  realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
   target.searchParams.set("position", place.base_position)
+  if (realm) {
+    target.searchParams.set("realm", realm)
+  }
 
   return target.toString()
 }

@@ -2,7 +2,8 @@
   "components": {
     "button": {
       "jump_in": "jump in",
-      "favorite": "favorite"
+      "favorite": "favorite",
+      "join": "join"
     },
     "place_starts": {
       "active": "active",
@@ -18,6 +19,11 @@
       "created_by": "created by",
       "description": "description",
       "location": "location"
+    },
+    "place_realm_activity": {
+      "title": "realms",
+      "realm": "realm",
+      "players": "players"
     }
   }
 }
