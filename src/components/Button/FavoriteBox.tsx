@@ -14,28 +14,25 @@ export type FavoriteBoxProps = {
 }
 
 export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
+  const { onClick, loading, active } = props
   const l = useFormatMessage()
   return (
     <Button
       secondary
-      onClick={props.onClick}
+      onClick={onClick}
       className="button-box icon"
       target="_blank"
-      loading={props.loading}
-      disabled={props.loading}
+      loading={loading}
+      disabled={loading}
     >
       <Icon
         name="heart outline"
-        className={
-          props.active ? "button-box__icon" : "button-box__icon-hovered"
-        }
+        className={active ? "button-box__icon" : "button-box__icon-hovered"}
       />
 
       <Icon
         name="heart"
-        className={
-          !props.active ? "button-box__icon" : "button-box__icon-hovered"
-        }
+        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
       />
       <Label>{l("components.button.favorite")}</Label>
     </Button>

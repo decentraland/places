@@ -20,4 +20,8 @@ export type PlaceAttributes = {
   updated_at: Date
 }
 
-export type AggregatePlaceAttributes = PlaceAttributes
+export type AggregatePlaceAttributes = PlaceAttributes & {
+  user_like: boolean
+  user_dislike: boolean
+  user_favorite: boolean
+}
