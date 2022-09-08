@@ -10,7 +10,7 @@
       "visits": "visits",
       "created": "created",
       "updated": "updated",
-      "point_of_interest": "point of interest"
+      "point_of_interest": "point of interest",
       "favorite": "favorite",
       "share": "share"
     },
