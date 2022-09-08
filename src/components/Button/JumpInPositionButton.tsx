@@ -16,6 +16,7 @@ export type JumpInPositionButtonProps = {
 export default React.memo(function JumpInPositionButton(
   props: JumpInPositionButtonProps
 ) {
+  const { href, loading, onClick } = props
   const l = useFormatMessage()
 
   return (
@@ -23,12 +24,12 @@ export default React.memo(function JumpInPositionButton(
       primary
       as="a"
       size="small"
-      onClick={props.onClick}
+      onClick={onClick}
       className="jump-in-position"
-      href={props.href}
+      href={href}
       target="_blank"
-      loading={props.loading}
-      disabled={props.loading}
+      loading={loading}
+      disabled={loading}
     >
       <span>{l("components.button.jump_in")}</span>
       <img

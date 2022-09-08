@@ -22,7 +22,7 @@ export type PlaceCardProps = {
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
-  const place = props.place
+  const { place, loading } = props
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -41,7 +41,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   return (
     <Card
       link
-      className={TokenList.join(["place-card", props.loading && "loading"])}
+      className={TokenList.join(["place-card", loading && "loading"])}
       href={href}
     >
       <div className="place-card__cover">
@@ -50,10 +50,10 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       <Card.Content>
         <Card.Header>{place?.title || " "}</Card.Header>
         <div className="place-card__button-container">
-          <JumpInPositionButton href={placerUrl} loading={props.loading} />
+          <JumpInPositionButton href={placerUrl} loading={loading} />
           <FavoriteButton
             onClick={handleClickFavorite}
-            loading={props.loading}
+            loading={loading}
           ></FavoriteButton>
         </div>
       </Card.Content>
