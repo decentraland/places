@@ -3,6 +3,14 @@
     "button": {
       "jump_in": "jump in",
       "favorite": "favorite"
+    },
+    "place_starts": {
+      "active": "active",
+      "favorites": "favorites",
+      "visits": "visits",
+      "created": "created",
+      "updated": "updated",
+      "point_of_interest": "point of interest"
     }
   }
 }
