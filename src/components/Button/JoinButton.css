@@ -1,0 +1,11 @@
+.ui.button.join {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 95px;
+  margin-left: auto;
+}
+
+.ui.button.join.loading img {
+  display: none;
+}

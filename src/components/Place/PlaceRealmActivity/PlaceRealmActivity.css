@@ -1,0 +1,15 @@
+.place-realm-activity {
+  width: 100%;
+}
+.place-realm-activity.hide {
+  display: none;
+}
+
+.place-realm-activity .ui.sub.header {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.place-realm-activity .table tr th {
+  text-transform: uppercase;
+}
