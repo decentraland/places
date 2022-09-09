@@ -12,7 +12,6 @@ export const validateGetPlaceParams = Router.validator(getPlaceParamsSchema)
 
 export const getPlace = Router.memo(
   async (ctx: Pick<Context<{ place_id: string }>, "params">) => {
-    // async (ctx: Context<{ place_id: string }, "params">) => {
     const params = await validateGetPlaceParams(ctx.params)
     const place = await PlaceModel.findOne<PlaceAttributes>({
       id: params.place_id,
