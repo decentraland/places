@@ -23,6 +23,7 @@ import {
 import express from "express"
 
 import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
+import placeRoute from "./entities/Place/routes"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
 
@@ -42,6 +43,7 @@ app.use("/api", [
   withDDosProtection(),
   withCors(),
   withBody(),
+  placeRoute,
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)
   }),
