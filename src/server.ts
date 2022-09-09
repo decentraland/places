@@ -22,6 +22,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Task"
 import express from "express"
 
+import categoryRoute from "./entities/Category/routes"
 import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
@@ -42,6 +43,7 @@ app.use("/api", [
   withDDosProtection(),
   withCors(),
   withBody(),
+  categoryRoute,
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)
   }),
