@@ -24,6 +24,7 @@ import express from "express"
 
 import categoryRoute from "./entities/Category/routes"
 import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
+import placeRoute from "./entities/Place/routes"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
 
@@ -44,6 +45,7 @@ app.use("/api", [
   withCors(),
   withBody(),
   categoryRoute,
+  placeRoute,
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)
   }),
