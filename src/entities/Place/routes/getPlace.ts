@@ -8,7 +8,8 @@ import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { GetPlaceParams, PlaceAttributes } from "../types"
 
-export const validateGetPlaceParams = Router.validator<GetPlaceParams>(getPlaceParamsSchema)
+export const validateGetPlaceParams =
+  Router.validator<GetPlaceParams>(getPlaceParamsSchema)
 
 export const getPlace = Router.memo(
   async (ctx: Pick<Context<{ place_id: string }>, "params">) => {

@@ -1,8 +1,6 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
-  join,
-  objectValues,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
@@ -41,11 +39,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
-    return this.namedQuery(this.tableName + '_find_enabled_by_positions', sql)
+    return this.namedQuery(this.tableName + "_find_enabled_by_positions", sql)
   }
 
   static async disablePlaces(placesIds: string[]) {
     const now = new Date()
-    return this.updateTo({ disabled: true, disabled_at: now }, { id: placesIds })
+    return this.updateTo(
+      { disabled: true, disabled_at: now },
+      { id: placesIds }
+    )
   }
 }

@@ -1,10 +1,5 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
-import {
-  SQL,
-  join,
-  objectValues,
-  table,
-} from "decentraland-gatsby/dist/entities/Database/utils"
+import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { PlaceActivityDailyAttributes } from "../PlaceActivityDaily/types"
 import { PlaceActivityAttributes } from "./types"
@@ -32,5 +27,4 @@ export default class PlaceActivityModel extends Model<PlaceActivityAttributes> {
 
     return this.query(sql)
   }
-
 }

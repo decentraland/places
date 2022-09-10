@@ -1,8 +1,5 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
-import {
-  SQL,
-  table,
-} from "decentraland-gatsby/dist/entities/Database/utils"
+import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { PlaceActivityDailyAttributes } from "./types"
 

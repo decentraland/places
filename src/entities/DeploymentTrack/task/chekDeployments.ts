@@ -140,7 +140,7 @@ export const checkDeployments = new Task({
                 currentOverlapedPlace.positions.sort()
               const areEquals =
                 missingDeploymentPositions.length ===
-                currentOverlapedPlacePositions.length &&
+                  currentOverlapedPlacePositions.length &&
                 missingDeploymentPositions.every(
                   (position, i) =>
                     position === currentOverlapedPlacePositions[i]
@@ -149,7 +149,7 @@ export const checkDeployments = new Task({
               if (areEquals) {
                 const updatedPlace = {
                   ...createPlaceFromDeployment(missingDeployment),
-                  id: currentOverlapedPlace.id
+                  id: currentOverlapedPlace.id,
                 }
 
                 updatedPlaces.push(updatedPlace)
@@ -181,18 +181,19 @@ export const checkDeployments = new Task({
 
         const totalUpdatedPlaces = await PlaceModel.updateMany(
           updatedPlaces,
-          ['id'],
+          ["id"],
           [
-            'title',
-            'description',
-            'image',
-            'owner',
-            'tags',
-            'base_position',
-            'contact_name',
-            'contact_email',
-            'content_rating',
-          ])
+            "title",
+            "description",
+            "image",
+            "owner",
+            "tags",
+            "base_position",
+            "contact_name",
+            "contact_email",
+            "content_rating",
+          ]
+        )
         logger.log(`${totalUpdatedPlaces} updated places`)
 
         const totalNewPlaces = await PlaceModel.createMany(newPlaces)
