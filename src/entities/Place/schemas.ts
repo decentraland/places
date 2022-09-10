@@ -1,28 +1,16 @@
-import {
-  AjvArraySchema,
-  AjvObjectSchema,
-  apiResultSchema,
-} from "decentraland-gatsby/dist/entities/Schema/types"
+import schema from "decentraland-gatsby/dist/entities/Schema/schema"
 
-import { GetPlaceParams } from "./types"
-
-import type { JSONSchemaType } from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
-
-export const getPlaceParamsSchema: JSONSchemaType<GetPlaceParams> = {
-  type: "object",
-  additionalProperties: false,
-  required: ["place_id"],
-  properties: {
-    place_id: {
-      type: "string",
-      format: "uuid",
-      description: "Place ID",
-    },
+export const getPlaceParamsSchema = schema.params({
+  place_id: {
+    type: "string",
+    format: "uuid",
+    description: "Place ID",
   },
-}
+})
 
-export const placeSchema = {
+export const placeSchema = schema({
   type: "object",
+  required: [],
   properties: {
     id: {
       type: "string",
@@ -130,13 +118,7 @@ export const placeSchema = {
       format: "date-time",
     },
   },
-}
+})
 
-export const placeResponseSchema = apiResultSchema(
-  placeSchema as AjvObjectSchema
-)
-export const placeListResponseSchema = apiResultSchema({
-  type: "array",
-  description: "Place list",
-  items: placeSchema,
-} as AjvArraySchema)
+export const placeResponseSchema = schema.api(placeSchema)
+export const placeListResponseSchema = schema.api(schema.array(placeSchema))
