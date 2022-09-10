@@ -6,6 +6,7 @@ import {
   ContentDeploymentSortingOrder,
   ContentDepoymentScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import Time from "decentraland-gatsby/dist/utils/date/Time"
 import uniq from "lodash/uniq"
 
 import EntityPlaceModel from "../../EntityPlace/model"
@@ -108,6 +109,7 @@ export const checkDeployments = new Task({
         )
 
         const newPlaces: PlaceAttributes[] = []
+        const updatedPlaces: PlaceAttributes[] = []
         const disabledPlaces: PlaceAttributes[] = []
         const newEntityPlaces: EntityPlaceAttributes[] = []
 
@@ -138,21 +140,26 @@ export const checkDeployments = new Task({
                 currentOverlapedPlace.positions.sort()
               const areEquals =
                 missingDeploymentPositions.length ===
-                  currentOverlapedPlacePositions.length &&
+                currentOverlapedPlacePositions.length &&
                 missingDeploymentPositions.every(
                   (position, i) =>
                     position === currentOverlapedPlacePositions[i]
                 )
 
               if (areEquals) {
-                // TODO update
+                const updatedPlace = {
+                  ...createPlaceFromDeployment(missingDeployment),
+                  id: currentOverlapedPlace.id
+                }
+
+                updatedPlaces.push(updatedPlace)
                 newEntityPlaces.push({
                   place_id: currentOverlapedPlace.id,
                   entity_id: missingDeployment.entityId,
                 })
               } else if (
                 missingDeployment.entityTimestamp >
-                currentOverlapedPlace.deployed_at.getTime()
+                Time.utc(currentOverlapedPlace.deployed_at).getTime()
               ) {
                 const newPlace = createPlaceFromDeployment(missingDeployment)
                 newPlaces.push(newPlace)
@@ -171,6 +178,22 @@ export const checkDeployments = new Task({
           disabledPlaces.map((place) => place.id)
         )
         logger.log(`${totalDisablePlaces} places disabled`)
+
+        const totalUpdatedPlaces = await PlaceModel.updateMany(
+          updatedPlaces,
+          ['id'],
+          [
+            'title',
+            'description',
+            'image',
+            'owner',
+            'tags',
+            'base_position',
+            'contact_name',
+            'contact_email',
+            'content_rating',
+          ])
+        logger.log(`${totalUpdatedPlaces} updated places`)
 
         const totalNewPlaces = await PlaceModel.createMany(newPlaces)
         logger.log(`${totalNewPlaces} new places created`)

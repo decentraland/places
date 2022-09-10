@@ -41,40 +41,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
-    return this.query(sql)
-  }
-
-  static async createMany(places: PlaceAttributes[]) {
-    if (places.length === 0) {
-      return 0
-    }
-
-    const keys = Object.keys(places[0])
-    const sql = SQL`
-      INSERT INTO ${table(this)}
-        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
-      VALUES
-        ${objectValues(keys, places)}
-    `
-
-    return this.rowCount(sql)
+    return this.namedQuery(this.tableName + '_find_enabled_by_positions', sql)
   }
 
   static async disablePlaces(placesIds: string[]) {
-    if (placesIds.length === 0) {
-      return 0
-    }
-
     const now = new Date()
-    const sql = SQL`
-      UPDATE ${table(this)}
-      SET
-        "disabled" = true,
-        "disabled_at" = ${now}
-      WHERE
-        "id" IN ${values(placesIds)}
-    `
-
-    return this.rowCount(sql)
+    return this.updateTo({ disabled: true, disabled_at: now }, { id: placesIds })
   }
 }

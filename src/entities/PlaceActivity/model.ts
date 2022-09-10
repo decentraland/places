@@ -33,26 +33,4 @@ export default class PlaceActivityModel extends Model<PlaceActivityAttributes> {
     return this.query(sql)
   }
 
-  //
-  // static async clearFrom(from: Date) {
-  //   const sql = SQL`DELETE FROM ${table(this)} WHERE "created_at" < ${from}`
-  //   return this.rowCount(sql)
-  // }
-  //
-
-  static async createMany(places: PlaceActivityAttributes[]) {
-    if (places.length === 0) {
-      return 0
-    }
-
-    const keys = Object.keys(places[0])
-    const sql = SQL`
-      INSERT INTO ${table(this)}
-        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
-      VALUES
-        ${objectValues(keys, places)}
-    `
-
-    return this.rowCount(sql)
-  }
 }

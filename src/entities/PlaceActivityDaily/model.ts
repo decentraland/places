@@ -1,8 +1,6 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
-  join,
-  objectValues,
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
@@ -20,21 +18,5 @@ export default class PlaceActivityModel extends Model<PlaceActivityDailyAttribut
     }
 
     return null
-  }
-
-  static async createMany(activity: PlaceActivityDailyAttributes[]) {
-    if (activity.length === 0) {
-      return 0
-    }
-
-    const keys = Object.keys(activity[0])
-    const sql = SQL`
-      INSERT INTO ${table(this)}
-        (${join(keys.map((key) => SQL.raw(`"${key}"`)))})
-      VALUES
-        ${objectValues(keys, activity)}
-    `
-
-    return this.rowCount(sql)
   }
 }
