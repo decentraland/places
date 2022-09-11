@@ -14,9 +14,9 @@ import { EntityPlaceAttributes } from "../../EntityPlace/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { createPlaceFromDeployment } from "../../Place/utils"
-import roads from "../data/roads.json"
 import DeploymentTrackModel from "../model"
 import { DeploymentTrackAttributes } from "../types"
+import { fetchDeployments, isMetadataEmpty, isRoad } from "../utils"
 
 export const checkDeployments = new Task({
   name: "check_deployments",
@@ -35,26 +35,14 @@ export const checkDeployments = new Task({
       // Download new deployments
       let deployments: ContentDepoymentScene[]
       try {
-        const contentDeploymentsResponse = await Catalyst.from(
-          catalyst.base_url
-        ).getContentDeployments({
-          from: catalyst.from,
-          limit: catalyst.limit,
-          entityTypes: [EntityType.SCENE],
-          onlyCurrentlyPointed: true,
-          sortingField: ContentDeploymentSortingField.LocalTimestamp,
-          sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
-        })
+        deployments = await fetchDeployments(catalyst)
 
-        if (contentDeploymentsResponse.deployments.length === 0) {
+        if (deployments.length === 0) {
           logger.log(`No pending deployments in ${catalyst.base_url}`)
-          continue
         } else {
           logger.log(
-            `${contentDeploymentsResponse.deployments.length} pending deployments in ${catalyst.base_url}`
+            `${deployments.length} pending deployments in ${catalyst.base_url}`
           )
-          deployments =
-            contentDeploymentsResponse.deployments as ContentDepoymentScene[]
         }
       } catch (err) {
         logger.error(`Error getting deploys`, err as Record<string, any>)
@@ -62,29 +50,13 @@ export const checkDeployments = new Task({
       }
 
       // Filter roads and empty deployments
-      const filteredDeployments = deployments.filter((deployments) => {
-        const isMetadataEmpty =
-          deployments.metadata?.display?.title === "interactive-text" &&
-          !deployments.metadata?.display?.description &&
-          !deployments.metadata?.display?.navmapThumbnail
-
-        if (isMetadataEmpty) {
-          return null
-        }
-
-        const isRoad = deployments.pointers.every((position) => {
-          const roadsMap = roads as Record<string, Record<string, true>>
-          const [x, y] = position.split(",")
-
-          return (roadsMap[x] && roadsMap[x][y]) || false
-        })
-
-        if (isRoad) {
-          return false
-        }
-
-        return true
+      const filteredDeployments = deployments.filter((deployment) => {
+        return !isMetadataEmpty(deployment) && !isRoad(deployment)
       })
+
+      logger.log(
+        `${filteredDeployments.length} valid deployments in ${catalyst.base_url}`
+      )
 
       // Filter missing entityIds
       const entityIds = filteredDeployments.map((deploy) => deploy.entityId)
@@ -112,7 +84,6 @@ export const checkDeployments = new Task({
         const updatedPlaces: PlaceAttributes[] = []
         const disabledPlaces: PlaceAttributes[] = []
         const newEntityPlaces: EntityPlaceAttributes[] = []
-
         const overlapedPlacesByPosition = new Map(
           overlapedPlaces.flatMap((place) =>
             place.positions.map((position) => [position, place])
