@@ -6,3 +6,11 @@ export type UserLikeAttributes = {
   created_at: Date
   updated_at: Date
 }
+
+export type UpdateUserLikeParams = {
+  place_id: string
+}
+
+export type UpdateUserLikeBody = {
+  like: boolean
+}
