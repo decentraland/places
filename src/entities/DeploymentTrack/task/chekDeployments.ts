@@ -6,6 +6,7 @@ import {
   ContentDeploymentSortingOrder,
   ContentDepoymentScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import Time from "decentraland-gatsby/dist/utils/date/Time"
 import uniq from "lodash/uniq"
 
 import EntityPlaceModel from "../../EntityPlace/model"
@@ -13,9 +14,9 @@ import { EntityPlaceAttributes } from "../../EntityPlace/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { createPlaceFromDeployment } from "../../Place/utils"
-import roads from "../data/roads.json"
 import DeploymentTrackModel from "../model"
 import { DeploymentTrackAttributes } from "../types"
+import { fetchDeployments, isMetadataEmpty, isRoad } from "../utils"
 
 export const checkDeployments = new Task({
   name: "check_deployments",
@@ -34,26 +35,14 @@ export const checkDeployments = new Task({
       // Download new deployments
       let deployments: ContentDepoymentScene[]
       try {
-        const contentDeploymentsResponse = await Catalyst.from(
-          catalyst.base_url
-        ).getContentDeployments({
-          from: catalyst.from,
-          limit: catalyst.limit,
-          entityTypes: [EntityType.SCENE],
-          onlyCurrentlyPointed: true,
-          sortingField: ContentDeploymentSortingField.LocalTimestamp,
-          sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
-        })
+        deployments = await fetchDeployments(catalyst)
 
-        if (contentDeploymentsResponse.deployments.length === 0) {
+        if (deployments.length === 0) {
           logger.log(`No pending deployments in ${catalyst.base_url}`)
-          continue
         } else {
           logger.log(
-            `${contentDeploymentsResponse.deployments.length} pending deployments in ${catalyst.base_url}`
+            `${deployments.length} pending deployments in ${catalyst.base_url}`
           )
-          deployments =
-            contentDeploymentsResponse.deployments as ContentDepoymentScene[]
         }
       } catch (err) {
         logger.error(`Error getting deploys`, err as Record<string, any>)
@@ -61,29 +50,13 @@ export const checkDeployments = new Task({
       }
 
       // Filter roads and empty deployments
-      const filteredDeployments = deployments.filter((deployments) => {
-        const isMetadataEmpty =
-          deployments.metadata?.display?.title === "interactive-text" &&
-          !deployments.metadata?.display?.description &&
-          !deployments.metadata?.display?.navmapThumbnail
-
-        if (isMetadataEmpty) {
-          return null
-        }
-
-        const isRoad = deployments.pointers.every((position) => {
-          const roadsMap = roads as Record<string, Record<string, true>>
-          const [x, y] = position.split(",")
-
-          return (roadsMap[x] && roadsMap[x][y]) || false
-        })
-
-        if (isRoad) {
-          return false
-        }
-
-        return true
+      const filteredDeployments = deployments.filter((deployment) => {
+        return !isMetadataEmpty(deployment) && !isRoad(deployment)
       })
+
+      logger.log(
+        `${filteredDeployments.length} valid deployments in ${catalyst.base_url}`
+      )
 
       // Filter missing entityIds
       const entityIds = filteredDeployments.map((deploy) => deploy.entityId)
@@ -108,9 +81,9 @@ export const checkDeployments = new Task({
         )
 
         const newPlaces: PlaceAttributes[] = []
+        const updatedPlaces: PlaceAttributes[] = []
         const disabledPlaces: PlaceAttributes[] = []
         const newEntityPlaces: EntityPlaceAttributes[] = []
-
         const overlapedPlacesByPosition = new Map(
           overlapedPlaces.flatMap((place) =>
             place.positions.map((position) => [position, place])
@@ -145,14 +118,19 @@ export const checkDeployments = new Task({
                 )
 
               if (areEquals) {
-                // TODO update
+                const updatedPlace = {
+                  ...createPlaceFromDeployment(missingDeployment),
+                  id: currentOverlapedPlace.id,
+                }
+
+                updatedPlaces.push(updatedPlace)
                 newEntityPlaces.push({
                   place_id: currentOverlapedPlace.id,
                   entity_id: missingDeployment.entityId,
                 })
               } else if (
                 missingDeployment.entityTimestamp >
-                currentOverlapedPlace.deployed_at.getTime()
+                Time.utc(currentOverlapedPlace.deployed_at).getTime()
               ) {
                 const newPlace = createPlaceFromDeployment(missingDeployment)
                 newPlaces.push(newPlace)
@@ -171,6 +149,23 @@ export const checkDeployments = new Task({
           disabledPlaces.map((place) => place.id)
         )
         logger.log(`${totalDisablePlaces} places disabled`)
+
+        const totalUpdatedPlaces = await PlaceModel.updateMany(
+          updatedPlaces,
+          ["id"],
+          [
+            "title",
+            "description",
+            "image",
+            "owner",
+            "tags",
+            "base_position",
+            "contact_name",
+            "contact_email",
+            "content_rating",
+          ]
+        )
+        logger.log(`${totalUpdatedPlaces} updated places`)
 
         const totalNewPlaces = await PlaceModel.createMany(newPlaces)
         logger.log(`${totalNewPlaces} new places created`)

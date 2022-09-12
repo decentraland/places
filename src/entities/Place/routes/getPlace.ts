@@ -6,9 +6,10 @@ import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
-import { PlaceAttributes } from "../types"
+import { GetPlaceParams, PlaceAttributes } from "../types"
 
-export const validateGetPlaceParams = Router.validator(getPlaceParamsSchema)
+export const validateGetPlaceParams =
+  Router.validator<GetPlaceParams>(getPlaceParamsSchema)
 
 export const getPlace = Router.memo(
   async (ctx: Pick<Context<{ place_id: string }>, "params">) => {
