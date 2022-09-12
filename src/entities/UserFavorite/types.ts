@@ -4,3 +4,11 @@ export type UserFavoriteAttributes = {
   place_id: string
   created_at: Date
 }
+
+export type UpdateUserFavoriteParams = {
+  place_id: string
+}
+
+export type UpdateUserFavoriteBody = {
+  favorites: boolean
+}

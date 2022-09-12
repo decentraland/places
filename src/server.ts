@@ -27,6 +27,7 @@ import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployment
 import placeRoute from "./entities/Place/routes"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
+import userFavoriteRoute from "./entities/UserFavorite/routes"
 
 // const jobs = manager()
 // jobs.cron('@eachMinute', () => console.log('Runnign Job...'))
@@ -45,6 +46,7 @@ app.use("/api", [
   withCors(),
   withBody(),
   categoryRoute,
+  userFavoriteRoute,
   placeRoute,
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)

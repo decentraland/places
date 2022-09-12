@@ -6,6 +6,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import EntityPlaceModel from "../EntityPlace/model"
+import UserFavoriteModel from "../UserFavorite/model"
 import { PlaceAttributes } from "./types"
 
 export default class PlaceModel extends Model<PlaceAttributes> {
@@ -48,5 +49,20 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       { disabled: true, disabled_at: now },
       { id: placesIds }
     )
+  }
+
+  static async updateFavorites(placeId: string) {
+    const sql = SQL`
+    WITH counted AS (
+      SELECT count(*) AS count
+      FROM ${table(UserFavoriteModel)}
+      WHERE "place_id" = ${placeId}
+    ) 
+    UPDATE ${table(this)}
+      SET "favorites" = c.count
+      FROM counted c
+      WHERE "id" = ${placeId}
+    `
+    return this.namedQuery(this.tableName + "_update_favorites", sql)
   }
 }
