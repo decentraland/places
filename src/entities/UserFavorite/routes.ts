@@ -78,5 +78,5 @@ async function updateFavorites(ctx: Context<{ place_id: string }>) {
     id: params.place_id,
   })
 
-  return new ApiResponse({ total: placeUpdated!.favorites })
+  return new ApiResponse({ favorites: placeUpdated!.favorites })
 }
