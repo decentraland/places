@@ -58,10 +58,7 @@ async function deleteLike(ctx: Context<{ place_id: string }>) {
   const deleteResponse = await UserLikesModel.delete(placeUserData)
 
   if (deleteResponse.rowCount < 1) {
-    throw new ErrorResponse(
-      Response.NotFound,
-      `No like or dislike were deleted`
-    )
+    return new ApiResponse(false)
   }
   return new ApiResponse(true)
 }
