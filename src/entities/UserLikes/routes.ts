@@ -17,12 +17,63 @@ import {
 } from "./types"
 
 export default routes((router) => {
+  router.patch("/places/:place_id/likes", updateLike)
   router.delete("/places/:place_id/likes", deleteLike)
 })
 
 export const validateGetPlaceParams = Router.validator<UpdateUserLikeParams>(
   updateUserLikeParamsSchema
 )
+
+export const validateGetPlaceBody = Router.validator<UpdateUserLikeBody>(
+  updateUserLikeBodySchema
+)
+
+async function updateLike(ctx: Context<{ place_id: string }>) {
+  const params = await validateGetPlaceParams(ctx.params)
+  const body = await validateGetPlaceBody(ctx.body)
+  const userAuth = await withAuth(ctx)
+
+  const place = await PlaceModel.findOne<PlaceAttributes>({
+    id: params.place_id,
+  })
+
+  if (!place) {
+    throw new ErrorResponse(
+      Response.NotFound,
+      `Not found place "${params.place_id}"`
+    )
+  }
+
+  const placeUserData = {
+    place_id: params.place_id,
+    user: userAuth.auth,
+  }
+
+  const userLike = await UserLikesModel.findOne<UserLikeAttributes>(
+    placeUserData
+  )
+
+  if (userLike && userLike.like === body.like) {
+    return new ApiResponse({
+      likes: place!.likes,
+      dislikes: place!.dislikes,
+    })
+  }
+
+  await UserLikesModel.like(placeUserData, { like: body.like })
+
+  await PlaceModel.updateLikes(params.place_id)
+
+  const placeUpdated = await PlaceModel.findOne<PlaceAttributes>({
+    id: params.place_id,
+  })
+
+  return new ApiResponse({
+    likes: placeUpdated!.likes,
+    dislikes: placeUpdated!.dislikes,
+  })
+}
 
 async function deleteLike(ctx: Context<{ place_id: string }>) {
   const params = await validateGetPlaceParams(ctx.params)

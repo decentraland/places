@@ -6,6 +6,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import EntityPlaceModel from "../EntityPlace/model"
+import UserLikesModel from "../UserLikes/model"
 import { PlaceAttributes } from "./types"
 
 export default class PlaceModel extends Model<PlaceAttributes> {
@@ -48,5 +49,21 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       { disabled: true, disabled_at: now },
       { id: placesIds }
     )
+  }
+
+  static async updateLikes(placeId: string) {
+    const sql = SQL`
+    WITH counted AS (
+      SELECT count(*) filter (where "like") as count_likes,
+       count(*) filter (where not "like") as count_dislikes
+      FROM ${table(UserLikesModel)}
+      WHERE "place_id" = ${placeId}
+    ) 
+    UPDATE ${table(this)}
+      SET "likes" = c.count_likes, "dislikes" = c.count_dislikes
+      FROM counted c
+      WHERE "id" = ${placeId}
+    `
+    return this.namedQuery(this.tableName + "_update_likes", sql)
   }
 }
