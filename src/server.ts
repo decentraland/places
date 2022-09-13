@@ -27,6 +27,7 @@ import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployment
 import placeRoute from "./entities/Place/routes"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
+import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
 // const jobs = manager()
@@ -46,6 +47,7 @@ app.use("/api", [
   withCors(),
   withBody(),
   categoryRoute,
+  userFavoriteRoute,
   userLikesRoute,
   placeRoute,
   handle(async () => {
