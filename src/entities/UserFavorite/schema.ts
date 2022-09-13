@@ -25,7 +25,7 @@ export const userFavoriteSchema = schema({
   type: "object",
   required: [],
   properties: {
-    total: {
+    favorites: {
       type: "number",
       minimum: 0,
       description: "The number of favorites on the place",

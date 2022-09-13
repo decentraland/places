@@ -52,7 +52,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
   }
 
-
   static async updateFavorites(placeId: string) {
     const sql = SQL`
     WITH counted AS (
@@ -67,7 +66,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     `
     return this.namedQuery(this.tableName + "_update_favorites", sql)
   }
-  
+
   static async updateLikes(placeId: string) {
     const sql = SQL`
     WITH counted AS (
