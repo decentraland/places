@@ -23,7 +23,7 @@ export type PlaceStatsProps = {
 export default React.memo(function PlaceStats(props: PlaceStatsProps) {
   const { users, place, loading, poi } = props
   const l = useFormatMessage()
-  console.log({ place })
+
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
       <Stats title={l("components.place_starts.active")}>

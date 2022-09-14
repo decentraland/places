@@ -10,7 +10,7 @@ import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 import { Loader } from "decentraland-ui/dist/components/Loader/Loader"
-import { intersects } from "radash/dist/array"
+import { intersects, sum } from "radash/dist/array"
 
 import Places from "../api/Places"
 import ItemLayout from "../components/Layout/ItemLayout"
@@ -115,10 +115,7 @@ export default function PlacePage() {
 
           return {
             name: server.status!.name,
-            activity: peersCount.reduce(
-              (partialSum: number, current: number) => partialSum + current,
-              0
-            ),
+            activity: sum(peersCount, (number) => number),
           }
         })
     } else {
@@ -126,11 +123,10 @@ export default function PlacePage() {
     }
   }, [place, servers])
 
-  const activitySum = useMemo(() => {
-    let activitySum = 0
-    placeRealmActivities.forEach((realm) => (activitySum += realm.activity))
-    return activitySum
-  }, [placeRealmActivities])
+  const activitySum = useMemo(
+    () => sum(placeRealmActivities, (f) => f.activity),
+    [placeRealmActivities]
+  )
 
   const loading = accountState.loading || placeState.loading
 

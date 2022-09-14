@@ -20,7 +20,7 @@ export const getPlace = Router.memo(
     const userAuth = await withAuthOptional(ctx)
 
     const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
-      user: userAuth?.auth,
+      user: userAuth?.address,
     })
 
     if (!place) {
