@@ -28,12 +28,12 @@ export default React.memo(function DislikeBox(props: DislikeBoxProps) {
     >
       <Icon
         name="thumbs down outline"
-        className={active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
       />
 
       <Icon
         name="thumbs down"
-        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={active ? "button-box__icon" : "button-box__icon-hovered"}
       />
       <Label>{shorterNumber(total)}</Label>
     </Button>

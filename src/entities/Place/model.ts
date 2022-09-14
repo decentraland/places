@@ -1,6 +1,7 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  conditional,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
@@ -8,7 +9,7 @@ import {
 import EntityPlaceModel from "../EntityPlace/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
-import { PlaceAttributes } from "./types"
+import { AggregatePlaceAttributes, PlaceAttributes } from "./types"
 
 export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
@@ -25,7 +26,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "ep"."entity_id" IN ${values(entityIds)}
     `
 
-    return this.query(sql)
+    return this.namedQuery(this.tableName + "_find_by_entity_ids", sql)
   }
 
   static async findEnabledByPositions(
@@ -42,6 +43,52 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     `
 
     return this.namedQuery(this.tableName + "_find_enabled_by_positions", sql)
+  }
+
+  static async findByIdWithAggregates(
+    placeId: string,
+    options: {
+      user: string | undefined
+    }
+  ): Promise<AggregatePlaceAttributes> {
+    const sql = SQL`
+      SELECT p.* 
+      ${conditional(
+        !!options.user,
+        SQL`, uf."user" is not null as user_favorite`
+      )}
+      ${conditional(!options.user, SQL`, false as user_favorite`)}
+      ${conditional(
+        !!options.user,
+        SQL`, coalesce(ul."like",false) as "user_like"`
+      )}
+      ${conditional(!options.user, SQL`, false as "user_like"`)}
+      ${conditional(
+        !!options.user,
+        SQL`, not coalesce(ul."like",true) as "user_dislike"`
+      )}
+      ${conditional(!options.user, SQL`, false as "user_dislike"`)}
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserLikesModel
+        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+      )}
+      WHERE "p"."id" = ${placeId}
+    `
+
+    const queryResult = await this.namedQuery(
+      this.tableName + "_find_by_id_with_agregates",
+      sql
+    )
+    return queryResult[0]
   }
 
   static async disablePlaces(placesIds: string[]) {

@@ -7,6 +7,7 @@ import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../Place/model"
+import { getPlace } from "../Place/routes/getPlace"
 import { PlaceAttributes } from "../Place/types"
 import UserFavoriteModel from "./model"
 import {
@@ -30,35 +31,30 @@ export const validateGetPlaceBody = Router.validator<UpdateUserFavoriteBody>(
   updateUserFavoriteBodySchema
 )
 
-async function updateFavorites(ctx: Context<{ place_id: string }>) {
+async function updateFavorites(
+  ctx: Context<{ place_id: string }, "request" | "params" | "body">
+) {
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
   const now = new Date()
 
-  const place = await PlaceModel.findOne<PlaceAttributes>({
-    id: params.place_id,
-  })
+  const place = (await getPlace(ctx)).body.data
 
-  if (!place) {
-    throw new ErrorResponse(
-      Response.NotFound,
-      `Not found place "${params.place_id}"`
-    )
+  if (
+    (body.favorites && place.user_favorite) ||
+    (!body.favorites && !place.user_favorite)
+  ) {
+    return new ApiResponse({
+      favorites: place.favorites,
+      user_favorite: place.user_favorite,
+    })
   }
 
   const placeUserData = {
     place_id: params.place_id,
-    user: userAuth.auth,
-  }
-
-  const userFavorite = await UserFavoriteModel.findOne<UserFavoriteAttributes>(
-    placeUserData
-  )
-
-  if ((body.favorites && userFavorite) || (!body.favorites && !userFavorite)) {
-    return new ApiResponse({ total: place.favorites })
+    user: userAuth.address,
   }
 
   if (body.favorites) {
@@ -74,9 +70,8 @@ async function updateFavorites(ctx: Context<{ place_id: string }>) {
 
   await PlaceModel.updateFavorites(params.place_id)
 
-  const placeUpdated = await PlaceModel.findOne<PlaceAttributes>({
-    id: params.place_id,
+  return new ApiResponse({
+    favorites: body.favorites ? place.favorites + 1 : place.favorites - 1,
+    user_favorite: body.favorites,
   })
-
-  return new ApiResponse({ favorites: placeUpdated!.favorites })
 }

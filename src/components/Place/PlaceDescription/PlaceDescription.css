@@ -14,6 +14,7 @@
 
 .place-description .place-description__cover {
   background-size: cover;
+  background-position: center;
 }
 
 .place-description.loading .place-description__cover {

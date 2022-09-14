@@ -12,11 +12,12 @@ export const updateUserLikeBodySchema = schema({
   type: "object",
   description: "user like body needed",
   additionalProperties: false,
-  required: ["like"] as const,
+  required: [],
   properties: {
     like: {
       type: "boolean",
       description: "True if the place is selected as like",
+      nullable: true,
     },
   },
 })
@@ -25,10 +26,23 @@ export const userLikeSchema = schema({
   type: "object",
   required: [],
   properties: {
-    total: {
+    like: {
       type: "number",
       minimum: 0,
       description: "The number of likes on the place",
+    },
+    dislike: {
+      type: "number",
+      minimum: 0,
+      description: "The number of dislikes on the place",
+    },
+    user_like: {
+      type: "boolean",
+      description: "True if user likes the place",
+    },
+    user_dislike: {
+      type: "boolean",
+      description: "True if user dislikes the place",
     },
   },
 })

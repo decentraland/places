@@ -12,3 +12,7 @@ export type UpdateUserFavoriteParams = {
 export type UpdateUserFavoriteBody = {
   favorites: boolean
 }
+
+export type UpdateUserFavoriteResponse = {
+  favorites: number
+}

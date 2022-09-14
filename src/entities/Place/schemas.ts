@@ -117,6 +117,18 @@ export const placeSchema = schema({
       type: "string",
       format: "date-time",
     },
+    user_like: {
+      type: "boolean",
+      description: "True if user likes the place",
+    },
+    user_dislike: {
+      type: "boolean",
+      description: "True if user dislikes the place",
+    },
+    user_favorite: {
+      type: "boolean",
+      description: "True if user seletect as favorite the place",
+    },
   },
 })
 

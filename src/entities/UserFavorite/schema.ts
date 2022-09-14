@@ -30,6 +30,10 @@ export const userFavoriteSchema = schema({
       minimum: 0,
       description: "The number of favorites on the place",
     },
+    user_favorite: {
+      type: "boolean",
+      description: "True if the user selected as favorite",
+    },
   },
 })
 

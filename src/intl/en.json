@@ -3,6 +3,7 @@
     "button": {
       "jump_in": "jump in",
       "favorite": "favorite",
+      "share": "share",
       "join": "join"
     },
     "place_starts": {
@@ -12,8 +13,7 @@
       "created": "created",
       "updated": "updated",
       "point_of_interest": "point of interest",
-      "favorite": "favorite",
-      "share": "share"
+      "favorite": "favorite"
     },
     "place_description": {
       "created_by": "created by",
@@ -24,6 +24,16 @@
       "title": "realms",
       "realm": "realm",
       "players": "players"
+    }
+  },
+  "social": {
+    "home": {
+      "title": "title",
+      "description": "description",
+      "image": "image",
+      "site": "site",
+      "card": "card",
+      "creator": "creator"
     }
   }
 }
