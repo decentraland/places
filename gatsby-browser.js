@@ -20,6 +20,7 @@ import "decentraland-ui/dist/themes/alternative/light-theme.css"
 import "./src/theme.css"
 
 import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
+import UserMenu from "decentraland-gatsby/dist/components/User/UserMenu"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 // import FeatureFlagProvider from 'decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider'
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
@@ -38,7 +39,9 @@ export const wrapRootElement = ({ element }) => (
 export const wrapPageElement = ({ element, props }) => {
   return (
     <IntlProvider {...props.pageContext.intl}>
-      <Layout {...props}>{element}</Layout>
+      <Layout {...props} rightMenu={<UserMenu />}>
+        {element}
+      </Layout>
     </IntlProvider>
   )
 }

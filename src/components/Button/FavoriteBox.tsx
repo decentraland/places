@@ -27,12 +27,12 @@ export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
     >
       <Icon
         name="heart outline"
-        className={active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
       />
 
       <Icon
         name="heart"
-        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={active ? "button-box__icon" : "button-box__icon-hovered"}
       />
       <Label>{l("components.button.favorite")}</Label>
     </Button>

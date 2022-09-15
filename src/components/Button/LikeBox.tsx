@@ -28,12 +28,12 @@ export default React.memo(function LikeBox(props: LikeBoxProps) {
     >
       <Icon
         name="thumbs up outline"
-        className={active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
       />
 
       <Icon
         name="thumbs up"
-        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={active ? "button-box__icon" : "button-box__icon-hovered"}
       />
       <Label>{shorterNumber(total)}</Label>
     </Button>

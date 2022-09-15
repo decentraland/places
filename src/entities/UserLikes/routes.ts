@@ -17,8 +17,8 @@ import {
 } from "./types"
 
 export default routes((router) => {
+  router.get("/places/:place_id/likes", getLike)
   router.patch("/places/:place_id/likes", updateLike)
-  router.delete("/places/:place_id/likes", deleteLike)
 })
 
 export const validateGetPlaceParams = Router.validator<UpdateUserLikeParams>(
@@ -29,9 +29,10 @@ export const validateGetPlaceBody = Router.validator<UpdateUserLikeBody>(
   updateUserLikeBodySchema
 )
 
-async function updateLike(ctx: Context<{ place_id: string }>) {
+async function getLike(
+  ctx: Context<{ place_id: string }, "params" | "request">
+) {
   const params = await validateGetPlaceParams(ctx.params)
-  const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
   const place = await PlaceModel.findOne<PlaceAttributes>({
@@ -44,24 +45,6 @@ async function updateLike(ctx: Context<{ place_id: string }>) {
       `Not found place "${params.place_id}"`
     )
   }
-
-  const placeUserData = {
-    place_id: params.place_id,
-    user: userAuth.auth,
-  }
-
-  const userLike = await UserLikesModel.findOne<UserLikeAttributes>(
-    placeUserData
-  )
-
-  if (userLike && userLike.like === body.like) {
-    return new ApiResponse({
-      likes: place!.likes,
-      dislikes: place!.dislikes,
-    })
-  }
-
-  await UserLikesModel.like(placeUserData, { like: body.like })
 
   await PlaceModel.updateLikes(params.place_id)
 
@@ -75,12 +58,15 @@ async function updateLike(ctx: Context<{ place_id: string }>) {
   })
 }
 
-async function deleteLike(ctx: Context<{ place_id: string }>) {
+async function updateLike(
+  ctx: Context<{ place_id: string }, "request" | "body" | "params">
+) {
   const params = await validateGetPlaceParams(ctx.params)
+  const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
-  const place = await PlaceModel.findOne<PlaceAttributes>({
-    id: params.place_id,
+  const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
+    user: userAuth.address,
   })
 
   if (!place) {
@@ -92,24 +78,41 @@ async function deleteLike(ctx: Context<{ place_id: string }>) {
 
   const placeUserData = {
     place_id: params.place_id,
-    user: userAuth.auth,
+    user: userAuth.address,
   }
 
   const userLike = await UserLikesModel.findOne<UserLikeAttributes>(
     placeUserData
   )
 
-  if (!userLike) {
-    throw new ErrorResponse(
-      Response.NotFound,
-      `Not found like or dislike for user`
-    )
+  if (userLike && userLike.like === body.like) {
+    return new ApiResponse({
+      likes: place!.likes,
+      dislikes: place!.dislikes,
+      user_like: place.user_like,
+      user_dislike: place.user_dislike,
+    })
   }
 
-  const deleteResponse = await UserLikesModel.delete(placeUserData)
-
-  if (deleteResponse.rowCount < 1) {
-    return new ApiResponse(false)
+  if (body.like === null) {
+    await UserLikesModel.delete(placeUserData)
+  } else {
+    await UserLikesModel.like(placeUserData, { like: body.like })
   }
-  return new ApiResponse(true)
+
+  await PlaceModel.updateLikes(params.place_id)
+
+  const placeUpdated = await PlaceModel.findByIdWithAggregates(
+    params.place_id,
+    {
+      user: userAuth.address,
+    }
+  )
+
+  return new ApiResponse({
+    likes: placeUpdated!.likes,
+    dislikes: placeUpdated!.dislikes,
+    user_like: placeUpdated!.user_like,
+    user_dislike: placeUpdated!.user_dislike,
+  })
 }

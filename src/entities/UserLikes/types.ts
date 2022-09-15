@@ -14,3 +14,8 @@ export type UpdateUserLikeParams = {
 export type UpdateUserLikeBody = {
   like: boolean
 }
+
+export type UpdateUserLikeResponse = {
+  like: number
+  dislike: number
+}

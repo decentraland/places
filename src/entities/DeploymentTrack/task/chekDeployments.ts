@@ -1,11 +1,5 @@
-import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import { Task } from "decentraland-gatsby/dist/entities/Task"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
-import {
-  ContentDeploymentSortingField,
-  ContentDeploymentSortingOrder,
-  ContentDepoymentScene,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import uniq from "lodash/uniq"
 
