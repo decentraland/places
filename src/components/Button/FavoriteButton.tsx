@@ -17,7 +17,6 @@ export default React.memo(function FavoriteButton(props: FavoriteButtonProps) {
       primary
       onClick={onClick}
       className="heart-button icon"
-      target="_blank"
       loading={loading}
       disabled={loading}
     >
