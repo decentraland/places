@@ -1,4 +1,9 @@
 {
+  "navigation": {
+    "overview": "Overview",
+    "places": "Places",
+    "my_places": "My Places"
+  },
   "components": {
     "button": {
       "jump_in": "jump in",
