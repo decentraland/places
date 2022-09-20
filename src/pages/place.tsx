@@ -24,7 +24,7 @@ import locations from "../modules/locations"
 import { getPois } from "../modules/pois"
 import { getServers } from "../modules/servers"
 
-import "./index.css"
+import "./place.css"
 
 export type EventPageState = {
   updating: Record<string, boolean>
