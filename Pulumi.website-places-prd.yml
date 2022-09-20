@@ -4,6 +4,7 @@ config:
   places:CONNECTION_STRING:
     secure: v1:gwkwRQO5Dz8/2fAu:S6phfOg4t82Z5XfNh4jb0wtXU2xYN9tfdeUIsd6vT1hu9AfNgbPzlGTd6KRcrQT1pS9PUSWMzNSHDLlieXNsU78n6KG3yClRrHTm5DuzehvW/dK4H1SCEsmMwgr/1pVfM3z2ZEzX2q3HUEeW1nmBbnmOhpEHtIf9GT0w9zK8
   places:GATSBY_CHAIN_ID: 1,137
+  places:BOOSTRAP_CATALYST: https://peer.decentraland.org
   places:GATSBY_DECENTRALAND_URL: https://play.decentraland.org
   places:GATSBY_EVENTS_URL: https://places.decentraland.org/api
   places:GATSBY_LAND_URL: https://api.decentraland.org
