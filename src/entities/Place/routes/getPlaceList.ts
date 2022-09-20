@@ -30,7 +30,6 @@ export const getPlaceList = Router.memo(
     if (query.onlyFavorites && !userAuth?.address) {
       return new ApiResponse({ total: 0, data: [] })
     }
-    console.log(query.positions)
     const options: PlaceListOptions = {
       user: userAuth?.address,
       offset: query.offset ? Math.max(Number(query.offset), 0) : 0,
