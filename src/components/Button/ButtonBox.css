@@ -20,16 +20,15 @@
   color: var(--primary);
 }
 
-.ui.button.button-box.icon .button-box__icon-hovered {
-  display: none;
-}
-
-.ui.button.button-box.icon:hover .button-box__icon {
-  display: none;
-}
-
-.ui.button.button-box.icon:hover .button-box__icon-hovered {
+.ui.button.button-box.icon .button-box__icon.button-box__icon--active,
+.ui.button.button-box.icon:hover
+  .button-box__icon:not(.button-box__icon--active) {
   display: inline-block;
+}
+
+.ui.button.button-box.icon:hover .button-box__icon.button-box__icon--active,
+.ui.button.button-box.icon .button-box__icon:not(.button-box__icon--active) {
+  display: none;
 }
 
 .ui.button.button-box.icon .ui.label {

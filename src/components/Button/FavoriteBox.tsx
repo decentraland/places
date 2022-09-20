@@ -30,7 +30,7 @@ export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
         name="heart outline"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          !active && "button-box__icon--active",
         ])}
       />
 
@@ -38,7 +38,7 @@ export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
         name="heart"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          active && "button-box__icon--active",
         ])}
       />
       <Label>{l("components.button.favorite")}</Label>

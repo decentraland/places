@@ -31,7 +31,7 @@ export default React.memo(function LikeBox(props: LikeBoxProps) {
         name="thumbs up outline"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          !active && "button-box__icon--active",
         ])}
       />
 
@@ -39,7 +39,7 @@ export default React.memo(function LikeBox(props: LikeBoxProps) {
         name="thumbs up"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          active && "button-box__icon--active",
         ])}
       />
       <Label>{shorterNumber(total)}</Label>
