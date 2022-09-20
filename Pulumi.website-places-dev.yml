@@ -10,4 +10,4 @@ config:
   places:GATSBY_PROFILE_URL: https://peer.decentraland.org
   places:GATSBY_ROLLBAR_TOKEN: 026f8cdbada742a9aad5eabbb932aca1
   places:GATSBY_SEGMENT_KEY: e7wld8fcDnqyiQjjDFJ6DCnV1S89G3tS
-  places:USE_PUBLIC_TLD: "true"
+  places:USE_PUBLIC_TLD: "false"
