@@ -32,12 +32,15 @@ export default React.memo(function ShareBox(props: ShareBoxProps) {
     >
       <Icon
         name="share alternate"
-        className={active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={TokenList.join([
+          "button-box__icon",
+          !active && "button-box__icon--active",
+        ])}
       />
 
       <Icon
         name="share alternate"
-        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={!active ? "button-box__icon" : "button-box__icon--active"}
       />
       <Label>{l("components.button.share")}</Label>
     </Button>

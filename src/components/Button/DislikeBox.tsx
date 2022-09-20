@@ -31,7 +31,7 @@ export default React.memo(function DislikeBox(props: DislikeBoxProps) {
         name="thumbs down outline"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          !active && "button-box__icon--active",
         ])}
       />
 
@@ -39,7 +39,7 @@ export default React.memo(function DislikeBox(props: DislikeBoxProps) {
         name="thumbs down"
         className={TokenList.join([
           "button-box__icon",
-          !!active && "button-box__icon--active",
+          active && "button-box__icon--active",
         ])}
       />
       <Label>{shorterNumber(total)}</Label>
