@@ -29,3 +29,27 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
 export type GetPlaceParams = {
   place_id: string
 }
+
+export enum PlaceListOrderBy {
+  POPULARITY = "popularity",
+  UPDATE_AT = "update_at",
+}
+
+export type GetPlaceListQuery = {
+  limit: string
+  offset: string
+  positions: string[]
+  onlyFavorites: string
+  orderBy: string
+  order: string
+}
+
+export type PlaceListOptions = {
+  user?: string
+  offset: number
+  limit: number
+  onlyFavorites: boolean
+  positions: string[]
+  orderBy: string
+  order: string
+}

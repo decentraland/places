@@ -8,6 +8,41 @@ export const getPlaceParamsSchema = schema.params({
   },
 })
 
+export const getPlaceListQuerySchema = schema({
+  type: "object",
+  required: [],
+  properties: {
+    limit: {
+      type: "string",
+      format: "uint",
+    },
+    offset: {
+      type: "string",
+      format: "uint",
+    },
+    positions: {
+      type: "array",
+      items: { type: "string", pattern: "^-?\\d{1,3},-?\\d{1,3}$" },
+      description: "Filter places in specific positions",
+    },
+    onlyFavorites: {
+      type: "string",
+      description: "True if shows only favorite places",
+    },
+    orderBy: {
+      type: "string",
+      description: "Order places by",
+      enum: ["popularity", "updated_at"],
+    },
+    order: {
+      type: "string",
+      description: "List order",
+      default: "desc",
+      enum: ["asc", "desc"],
+    },
+  },
+})
+
 export const placeSchema = schema({
   type: "object",
   required: [],

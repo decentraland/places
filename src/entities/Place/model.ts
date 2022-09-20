@@ -2,14 +2,22 @@ import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   conditional,
+  limit,
+  offset,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
+import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import EntityPlaceModel from "../EntityPlace/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
-import { AggregatePlaceAttributes, PlaceAttributes } from "./types"
+import {
+  AggregatePlaceAttributes,
+  PlaceAttributes,
+  PlaceListOptions,
+  PlaceListOrderBy,
+} from "./types"
 
 export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
@@ -89,6 +97,111 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       sql
     )
     return queryResult[0]
+  }
+
+  static async findWithAggregates(
+    options: PlaceListOptions
+  ): Promise<AggregatePlaceAttributes[]> {
+    const orderBy = "p.updated_at"
+    const orderDirection = options.order === "asc" ? "ASC" : "DESC"
+
+    let order = SQL`${SQL.raw(orderBy)} ${SQL.raw(orderDirection)}`
+
+    if (options.orderBy === PlaceListOrderBy.POPULARITY) {
+      order = SQL`p.likes ${SQL.raw(orderDirection)}`
+    }
+
+    const sql = SQL`
+      SELECT p.* 
+      ${conditional(
+        !!options.user,
+        SQL`, uf."user" is not null as user_favorite`
+      )}
+      ${conditional(!options.user, SQL`, false as user_favorite`)}
+      ${conditional(
+        !!options.user,
+        SQL`, coalesce(ul."like",false) as "user_like"`
+      )}
+      ${conditional(!options.user, SQL`, false as "user_like"`)}
+      ${conditional(
+        !!options.user,
+        SQL`, not coalesce(ul."like",true) as "user_dislike"`
+      )}
+      ${conditional(!options.user, SQL`, false as "user_dislike"`)}
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && !options.onlyFavorites,
+        SQL`LEFT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user && options.onlyFavorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserLikesModel
+        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+      )}
+      WHERE
+        p.disabled is false  
+        ${conditional(
+          options.positions?.length > 0,
+          SQL.raw(
+            `AND p.positions && ${
+              "'{" + JSON.stringify(options.positions).slice(1, -1) + "}'"
+            }`
+          )
+        )}
+      ORDER BY ${order}
+      ${limit(options.limit, { max: 100 })}
+      ${offset(options.offset)}
+    `
+    const queryResult = await this.namedQuery(
+      this.tableName + "_find_with_agregates",
+      sql
+    )
+    return queryResult
+  }
+
+  static async countPlaces(
+    options: Pick<PlaceListOptions, "user" | "onlyFavorites" | "positions">
+  ) {
+    if (options.user && !isEthereumAddress(options.user)) {
+      return 0
+    }
+
+    const query = SQL`
+      SELECT
+        count(*) as "total"
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && options.onlyFavorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      WHERE
+        p.disabled is false
+        ${conditional(
+          options.positions?.length > 0,
+          SQL.raw(
+            `AND p.positions && ${
+              "'{" + JSON.stringify(options.positions).slice(1, -1) + "}'"
+            }`
+          )
+        )}
+    `
+    const results: { total: number }[] = await this.namedQuery(
+      this.tableName + "_count_places",
+      query
+    )
+
+    return results[0].total
   }
 
   static async disablePlaces(placesIds: string[]) {
