@@ -54,7 +54,7 @@ export default class Places extends API {
 
   async getPlaceById(placeId: string) {
     return this.fetchOne(
-      `/place/${placeId}`,
+      `/places/${placeId}`,
       this.options().authorization({ sign: true, optional: true })
     )
   }

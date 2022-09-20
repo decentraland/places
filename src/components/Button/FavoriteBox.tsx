@@ -1,6 +1,7 @@
 import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
@@ -27,12 +28,18 @@ export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
     >
       <Icon
         name="heart outline"
-        className={!active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={TokenList.join([
+          "button-box__icon",
+          !!active && "button-box__icon--active",
+        ])}
       />
 
       <Icon
         name="heart"
-        className={active ? "button-box__icon" : "button-box__icon-hovered"}
+        className={TokenList.join([
+          "button-box__icon",
+          !!active && "button-box__icon--active",
+        ])}
       />
       <Label>{l("components.button.favorite")}</Label>
     </Button>

@@ -7,6 +7,6 @@ import { getPlaceList } from "./getPlaceList"
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
 export default routes((router) => {
-  router.get("/place/:place_id", getPlace)
+  router.get("/places/:place_id", getPlace)
   router.get("/places", getPlaceList)
 })

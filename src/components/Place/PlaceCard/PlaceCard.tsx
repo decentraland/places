@@ -15,7 +15,7 @@ import "./PlaceCard.css"
 export type PlaceCardProps = {
   place: AggregatePlaceAttributes
   onClickFavorite?: (
-    e: React.MouseEvent<MouseEvent>,
+    e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
   ) => void
   loading?: boolean
@@ -27,6 +27,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
       e.stopPropagation()
+      e.preventDefault()
       if (props.onClickFavorite) {
         props.onClickFavorite(e, place)
       }
