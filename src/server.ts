@@ -42,7 +42,6 @@ const app = express()
 app.set("x-powered-by", false)
 app.use(withLogs())
 app.use("/api", [
-  status(),
   withDDosProtection(),
   withCors(),
   withBody(),
@@ -50,6 +49,7 @@ app.use("/api", [
   userFavoriteRoute,
   userLikesRoute,
   placeRoute,
+  status(),
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)
   }),
