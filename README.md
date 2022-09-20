@@ -1,4 +1,6 @@
-# Project name
+# Places
+
+[![Coverage Status](https://coveralls.io/repos/github/decentraland/places/badge.svg?branch=master)](https://coveralls.io/github/decentraland/places?branch=master)
 
 Brief description of this project.
 
