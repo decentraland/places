@@ -153,7 +153,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.positions?.length > 0,
           SQL.raw(
             `AND p.positions && ${
-              "'{" + JSON.stringify(options.positions).slice(1, -1) + "}'"
+              "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
             }`
           )
         )}
@@ -161,6 +161,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
+
     const queryResult = await this.namedQuery(
       this.tableName + "_find_with_agregates",
       sql
@@ -191,7 +192,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.positions?.length > 0,
           SQL.raw(
             `AND p.positions && ${
-              "'{" + JSON.stringify(options.positions).slice(1, -1) + "}'"
+              "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
             }`
           )
         )}
