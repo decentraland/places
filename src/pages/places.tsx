@@ -5,9 +5,10 @@ import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
+import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
 import Places from "../api/Places"
-import Navigation from "../components/Layout/Navigation"
+import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
 
 export default function IndexPage() {
@@ -20,9 +21,12 @@ export default function IndexPage() {
   })
 
   return (
-    <div>
-      <Navigation />
-    </div>
+    <>
+      <Navigation activeTab={NavigationTab.Places} />
+      <Grid stackable>
+        <Grid.Row></Grid.Row>
+      </Grid>
+    </>
   )
 
   return (
