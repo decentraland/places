@@ -1,51 +1,35 @@
 import React from "react"
 
-import { Helmet } from "react-helmet"
-
-import Title from "decentraland-gatsby/dist/components/Text/Title"
+import { useLocation } from "@gatsbyjs/reach-router"
+import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
-import Navigation, { NavigationTab } from "../components/Layout/Navigation"
+import Places from "../api/Places"
+import Navigation from "../components/Layout/Navigation"
+import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
 
-import "./index.css"
-
-export default function PlacesPage() {
+export default function IndexPage() {
   const l = useFormatMessage()
+  const [account, accountState] = useAuthContext()
+  const location = useLocation()
+  const params = new URLSearchParams(location.search)
+  const [places] = useAsyncState(async () => Places.get().getPlaces(), [], {
+    callWithTruthyDeps: true,
+  })
+
   return (
-    <>
-      <Helmet>
-        <title>{l("social.places.title") || ""}</title>
-        <meta
-          name="description"
-          content={l("social.places.description") || ""}
-        />
+    <div>
+      <Navigation />
+    </div>
+  )
 
-        <meta property="og:title" content={l("social.places.title") || ""} />
-        <meta
-          property="og:description"
-          content={l("social.places.description") || ""}
-        />
-        <meta property="og:image" content={l("social.places.image") || ""} />
-        <meta property="og:site" content={l("social.places.site") || ""} />
-
-        <meta name="twitter:title" content={l("social.places.title") || ""} />
-        <meta
-          name="twitter:description"
-          content={l("social.places.description") || ""}
-        />
-        <meta name="twitter:image" content={l("social.places.image") || ""} />
-        <meta name="twitter:card" content={l("social.places.card") || ""} />
-        <meta
-          name="twitter:creator"
-          content={l("social.places.creator") || ""}
-        />
-        <meta name="twitter:site" content={l("social.places.site") || ""} />
-      </Helmet>
-      <Container style={{ paddingTop: "75px" }}>
-        <Navigation activeTab={NavigationTab.Places} />
-        <Title>{l("pages.places.title")}</Title>
-      </Container>
-    </>
+  return (
+    <Container>
+      {(places || []).map((place) => (
+        <PlaceCard place={place} />
+      ))}
+    </Container>
   )
 }
