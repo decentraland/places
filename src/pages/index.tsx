@@ -19,6 +19,7 @@ import {
   usePlaceListPopular,
   usePlaceListRecentlyUpdates,
 } from "../hooks/Place"
+import { updatePlaceInPlaceList } from "../modules/arrays"
 import locations from "../modules/locations"
 
 import "./index.css"
@@ -47,42 +48,35 @@ export default function OverviewPage() {
           !place.user_favorite
         )
         if (favoritesResponse) {
-          if (placeListLastUpdates && placeListLastUpdates.length > 0) {
-            const placeListLastUpdatesUpdated = placeListLastUpdates?.map(
-              (placeItem) =>
-                placeItem.id === place.id
-                  ? { ...placeItem, ...favoritesResponse }
-                  : placeItem
-            )
-            placeListLastUpdatesState.set(placeListLastUpdatesUpdated)
-          }
-          if (placeListPopular && placeListPopular.length > 0) {
-            const placeListPopularUpdated = placeListPopular?.map((placeItem) =>
-              placeItem.id === place.id
-                ? { ...placeItem, ...favoritesResponse }
-                : placeItem
-            )
-            placeListPopularState.set(placeListPopularUpdated)
-          }
-          if (placeListPois && placeListPois.length > 0) {
-            const placeListPoisUpdated = placeListPois?.map((placeItem) =>
-              placeItem.id === place.id
-                ? { ...placeItem, ...favoritesResponse }
-                : placeItem
-            )
-            placeListPoisState.set(placeListPoisUpdated)
-          }
-          if (placeListMyFavorites && placeListMyFavorites.length > 0) {
-            if (place.user_favorite) {
-              const placeListMyFavoritesToUpdate = [...placeListMyFavorites]
-              const placeIndex = placeListMyFavorites.findIndex(
-                (placeItem) => placeItem.id === place.id
+          placeListLastUpdates &&
+            placeListLastUpdatesState.set(
+              updatePlaceInPlaceList(
+                placeListLastUpdates,
+                place.id,
+                favoritesResponse
               )
-
-              placeListMyFavoritesToUpdate.splice(placeIndex, 1)
-              placeListMyFavoritesState.set(placeListMyFavoritesToUpdate)
-            } else {
-              placeListMyFavoritesState.set([...placeListMyFavorites, place])
+            )
+          placeListPopular &&
+            placeListPopularState.set(
+              updatePlaceInPlaceList(
+                placeListPopular,
+                place.id,
+                favoritesResponse
+              )
+            )
+          placeListPois &&
+            placeListPoisState.set(
+              updatePlaceInPlaceList(placeListPois, place.id, favoritesResponse)
+            )
+          if (placeListMyFavorites && placeListMyFavorites.length > 0) {
+            if (place.user_favorite && placeListMyFavorites) {
+              placeListMyFavoritesState.set(
+                updatePlaceInPlaceList(
+                  placeListMyFavorites,
+                  place.id,
+                  favoritesResponse
+                )
+              )
             }
           }
         }
