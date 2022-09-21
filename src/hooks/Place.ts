@@ -48,9 +48,8 @@ export function usePlaceListMyFavorites(options?: {
 }
 
 export function usePlaceListPois(options?: { limit: number; offset: number }) {
-  const [pois] = useAsyncMemo(getPois)
   return useAsyncMemo(async () => {
-    console.log({ pois })
+    const pois = await getPois()
     return pois && pois.length > 0 && Places.get().getPlacesPois(pois, options)
-  }, [options?.limit, options?.offset, pois])
+  }, [options?.limit, options?.offset])
 }
