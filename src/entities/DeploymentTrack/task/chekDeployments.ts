@@ -1,3 +1,4 @@
+import { SQL } from "decentraland-gatsby/dist/entities/Database/utils/sql"
 import { Task } from "decentraland-gatsby/dist/entities/Task"
 import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
@@ -145,7 +146,10 @@ export const checkDeployments = new Task({
         logger.log(`${totalDisablePlaces} places disabled`)
 
         const totalUpdatedPlaces = await PlaceModel.updateMany(
-          updatedPlaces,
+          updatedPlaces.map((place) => ({
+            ...place,
+            tags: SQL`${place.tags}::varchar[]`,
+          })),
           ["id"],
           [
             "title",
