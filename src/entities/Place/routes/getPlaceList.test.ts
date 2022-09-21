@@ -47,8 +47,6 @@ test("should return a list of places with query", async () => {
 })
 
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
-  find.mockResolvedValueOnce(Promise.resolve([{}]))
-  find.mockResolvedValueOnce(Promise.resolve([{ total: 0 }]))
   const request = new Request("/")
   const url = new URL("https://localhost/?onlyFavorites=true")
   const placeResponse = await getPlaceList({
@@ -59,7 +57,7 @@ test("should return 0 as total list when query onlyFavorites with no auth", asyn
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 0,
-    data: [{}],
+    data: [],
   })
   expect(find.mock.calls.length).toBe(0)
 })

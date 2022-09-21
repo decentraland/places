@@ -45,11 +45,14 @@ export type GetPlaceListQuery = {
 }
 
 export type PlaceListOptions = {
-  user?: string
   offset: number
   limit: number
   onlyFavorites: boolean
   positions: string[]
   orderBy: string
   order: string
+}
+
+export type FindWithAggregatesOptions = PlaceListOptions & {
+  user?: string
 }

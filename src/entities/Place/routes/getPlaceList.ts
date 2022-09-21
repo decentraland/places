@@ -6,7 +6,11 @@ import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import PlaceModel from "../model"
 import { getPlaceListQuerySchema } from "../schemas"
-import { GetPlaceListQuery, PlaceListOptions, PlaceListOrderBy } from "../types"
+import {
+  FindWithAggregatesOptions,
+  GetPlaceListQuery,
+  PlaceListOrderBy,
+} from "../types"
 
 export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
   getPlaceListQuerySchema
@@ -27,9 +31,9 @@ export const getPlaceList = Router.memo(
     const userAuth = await withAuthOptional(ctx)
 
     if (bool(query.onlyFavorites) && !userAuth?.address) {
-      return new ApiResponse([{}], { total: 0 })
+      return new ApiResponse([], { total: 0 })
     }
-    const options: PlaceListOptions = {
+    const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }),
       limit: numeric(query.limit, { min: 0, max: 100 }),

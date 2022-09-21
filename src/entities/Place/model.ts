@@ -14,8 +14,8 @@ import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
   AggregatePlaceAttributes,
+  FindWithAggregatesOptions,
   PlaceAttributes,
-  PlaceListOptions,
   PlaceListOrderBy,
 } from "./types"
 
@@ -100,7 +100,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   static async findWithAggregates(
-    options: PlaceListOptions
+    options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
     const orderBy = "p.updated_at"
     const orderDirection = options.order === "asc" ? "ASC" : "DESC"
@@ -170,7 +170,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   static async countPlaces(
-    options: Pick<PlaceListOptions, "user" | "onlyFavorites" | "positions">
+    options: Pick<
+      FindWithAggregatesOptions,
+      "user" | "onlyFavorites" | "positions"
+    >
   ) {
     if (options.user && !isEthereumAddress(options.user)) {
       return 0
