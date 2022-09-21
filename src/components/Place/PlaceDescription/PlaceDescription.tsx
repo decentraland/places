@@ -93,8 +93,12 @@ export default React.memo(function PlaceDescription(
         </div>
       </div>
       <div className="place-description__bottom-container">
-        <h3>{l("components.place_description.description")}</h3>
-        <p>{place.description}</p>
+        {place.description && (
+          <>
+            <h3>{l("components.place_description.description")}</h3>
+            <p>{place.description}</p>
+          </>
+        )}
         <h3>{l("components.place_description.location")}</h3>
         <Label>
           <Icon name="map marker alternate" /> {place.base_position}
