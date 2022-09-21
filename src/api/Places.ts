@@ -52,6 +52,15 @@ export default class Places extends API {
     return Places.parsePlace(result)
   }
 
+  async getPlaces() {
+    const result = await this.fetch<{
+      ok: true
+      data: AggregatePlaceAttributes[]
+    }>(`/places`, this.options().authorization({ sign: true, optional: true }))
+
+    return result.data
+  }
+
   async getPlaceById(placeId: string) {
     return this.fetchOne(
       `/places/${placeId}`,
