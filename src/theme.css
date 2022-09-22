@@ -11,6 +11,10 @@ body {
   background-color: var(--background);
 }
 
+.LayoutMainContainer > .dcl.tabs {
+  margin-bottom: 0;
+}
+
 .LayoutMainContainer > .dcl.tabs .dcl.tab {
   color: var(--text);
 }
