@@ -1,5 +1,7 @@
 import React from "react"
 
+import Helmet from "react-helmet"
+
 import { useLocation } from "@gatsbyjs/reach-router"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
@@ -25,6 +27,34 @@ export default function IndexPage() {
 
   return (
     <>
+      <Helmet>
+        <title>{l("social.places.title") || ""}</title>
+        <meta
+          name="description"
+          content={l("social.places.description") || ""}
+        />
+
+        <meta property="og:title" content={l("social.places.title") || ""} />
+        <meta
+          property="og:description"
+          content={l("social.places.description") || ""}
+        />
+        <meta property="og:image" content={l("social.places.image") || ""} />
+        <meta property="og:site" content={l("social.places.site") || ""} />
+
+        <meta name="twitter:title" content={l("social.places.title") || ""} />
+        <meta
+          name="twitter:description"
+          content={l("social.places.description") || ""}
+        />
+        <meta name="twitter:image" content={l("social.places.image") || ""} />
+        <meta name="twitter:card" content={l("social.places.card") || ""} />
+        <meta
+          name="twitter:creator"
+          content={l("social.places.creator") || ""}
+        />
+        <meta name="twitter:site" content={l("social.places.site") || ""} />
+      </Helmet>
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>

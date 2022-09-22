@@ -43,13 +43,21 @@ export function usePlaceListMyFavorites(options?: {
 }) {
   const [account] = useAuthContext()
   return useAsyncMemo(async () => {
-    return account && Places.get().getPlacesMyFavorites(options)
+    if (!account) {
+      return []
+    }
+
+    return Places.get().getPlacesMyFavorites(options)
   }, [options?.limit, options?.offset, account])
 }
 
 export function usePlaceListPois(options?: { limit: number; offset: number }) {
   return useAsyncMemo(async () => {
     const pois = await getPois()
-    return pois && pois.length > 0 && Places.get().getPlacesPois(pois, options)
+    if (!pois || pois.length === 0) {
+      return []
+    }
+
+    return Places.get().getPlacesPois(pois, options)
   }, [options?.limit, options?.offset])
 }

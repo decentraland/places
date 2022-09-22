@@ -19,6 +19,12 @@ body {
   color: var(--text);
 }
 
+.LayoutMainContainer > .dcl.hero {
+  padding: 64px 16px;
+}
+
+.ui.container.full,
+.dcl.hero .ui.container,
 .ui.container.footer.LayoutFooterContainer,
 .LayoutNavbarContainer > .ui.container,
 .LayoutMainContainer > .dcl.tabs .ui.container {

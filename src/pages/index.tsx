@@ -7,9 +7,9 @@ import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
+import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 
 import Places from "../api/Places"
-import ContainerWrapper from "../components/Layout/ContainerWrapper"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
@@ -20,7 +20,7 @@ import {
   usePlaceListRecentlyUpdates,
 } from "../hooks/Place"
 import { updatePlaceInPlaceList } from "../modules/arrays"
-import locations from "../modules/locations"
+import locations, { PlacesOrderBy } from "../modules/locations"
 
 import "./index.css"
 
@@ -47,42 +47,45 @@ export default function OverviewPage() {
           place.id,
           !place.user_favorite
         )
+
         if (favoritesResponse) {
-          placeListLastUpdates &&
-            placeListLastUpdatesState.set(
-              updatePlaceInPlaceList(
-                placeListLastUpdates,
-                place.id,
-                favoritesResponse
-              )
+          placeListLastUpdatesState.set(
+            updatePlaceInPlaceList(
+              placeListLastUpdates,
+              place.id,
+              favoritesResponse
             )
-          placeListPopular &&
-            placeListPopularState.set(
-              updatePlaceInPlaceList(
-                placeListPopular,
-                place.id,
-                favoritesResponse
-              )
+          )
+
+          placeListPopularState.set(
+            updatePlaceInPlaceList(
+              placeListPopular,
+              place.id,
+              favoritesResponse
             )
-          placeListPois &&
-            placeListPoisState.set(
-              updatePlaceInPlaceList(placeListPois, place.id, favoritesResponse)
+          )
+
+          placeListPoisState.set(
+            updatePlaceInPlaceList(placeListPois, place.id, favoritesResponse)
+          )
+
+          placeListMyFavoritesState.set(
+            updatePlaceInPlaceList(
+              placeListMyFavorites,
+              place.id,
+              favoritesResponse
             )
-          if (placeListMyFavorites && placeListMyFavorites.length > 0) {
-            if (place.user_favorite && placeListMyFavorites) {
-              placeListMyFavoritesState.set(
-                updatePlaceInPlaceList(
-                  placeListMyFavorites,
-                  place.id,
-                  favoritesResponse
-                )
-              )
-            }
-          }
+          )
         }
       }
     },
-    [account]
+    [
+      account,
+      placeListLastUpdatesState,
+      placeListPopularState,
+      placeListPoisState,
+      placeListMyFavorites,
+    ]
   )
 
   return (
@@ -109,50 +112,48 @@ export default function OverviewPage() {
         <meta name="twitter:creator" content={l("social.home.creator") || ""} />
         <meta name="twitter:site" content={l("social.home.site") || ""} />
       </Helmet>
-      <Container style={{ paddingTop: "75px" }}>
-        <Navigation activeTab={NavigationTab.Overview} />
-        <Title>{l("pages.overview.title")}</Title>
-        <p>{l("pages.overview.search_the_metaverse")}</p>
-        <ContainerWrapper>
+      <Navigation activeTab={NavigationTab.Overview} />
+      <Hero>
+        <Hero.Header>{l("pages.overview.title")}</Hero.Header>
+        <Hero.Description>
+          {l("pages.overview.search_the_metaverse")}
+        </Hero.Description>
+      </Hero>
+      <Container className="full">
+        <OverviewList
+          places={placeListPopular || []}
+          title={l("pages.overview.popular")}
+          href={locations.places({
+            orderBy: PlacesOrderBy.Popularity,
+          })}
+          onClickFavorite={handleFavorite}
+          loading={placeListPopularState.loading}
+        />
+        {account && placeListMyFavorites && placeListMyFavorites.length > 0 && (
           <OverviewList
-            places={placeListPopular || []}
-            title={l("pages.overview.popular")}
-            href={locations.places({
-              orderBy: "popularity",
-              order: "desc",
-            })}
+            places={placeListMyFavorites || []}
+            title={l("pages.overview.my_favorites")}
+            href={locations.my_places()}
             onClickFavorite={handleFavorite}
-            loading={placeListPopularState.loading}
+            loading={placeListMyFavoritesState.loading}
           />
-          {account &&
-            placeListMyFavorites &&
-            placeListMyFavorites.length > 0 && (
-              <OverviewList
-                places={placeListMyFavorites || []}
-                title={l("pages.overview.my_favorites")}
-                href={locations.my_places()}
-                onClickFavorite={handleFavorite}
-                loading={placeListMyFavoritesState.loading}
-              />
-            )}
-          <OverviewList
-            places={placeListLastUpdates || []}
-            title={l("pages.overview.recently_updated")}
-            href={locations.places({
-              orderBy: "updated_at",
-              order: "desc",
-            })}
-            onClickFavorite={handleFavorite}
-            loading={placeListLastUpdatesState.loading}
-          />
-          <OverviewList
-            places={placeListPois || []}
-            title={l("pages.overview.points_of_interest")}
-            href={locations.places({})}
-            onClickFavorite={handleFavorite}
-            loading={placeListPoisState.loading}
-          />
-        </ContainerWrapper>
+        )}
+        <OverviewList
+          places={placeListLastUpdates || []}
+          title={l("pages.overview.recently_updated")}
+          href={locations.places({
+            orderBy: PlacesOrderBy.UpdatedAt,
+          })}
+          onClickFavorite={handleFavorite}
+          loading={placeListLastUpdatesState.loading}
+        />
+        <OverviewList
+          places={placeListPois || []}
+          title={l("pages.overview.points_of_interest")}
+          href={locations.places({})}
+          onClickFavorite={handleFavorite}
+          loading={placeListPoisState.loading}
+        />
       </Container>
     </>
   )
