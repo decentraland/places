@@ -11,6 +11,26 @@ body {
   background-color: var(--background);
 }
 
+.LayoutMainContainer > .dcl.tabs {
+  margin-bottom: 0;
+}
+
+.LayoutMainContainer > .dcl.tabs .dcl.tab {
+  color: var(--text);
+}
+
+.LayoutMainContainer > .dcl.hero {
+  padding: 64px 16px;
+}
+
+.ui.container.full,
+.dcl.hero .ui.container,
+.ui.container.footer.LayoutFooterContainer,
+.LayoutNavbarContainer > .ui.container,
+.LayoutMainContainer > .dcl.tabs .ui.container {
+  width: calc(100% -48px);
+}
+
 .ui.button:not(.icon) > img.left.icon:not(.button):not(.dropdown) {
   margin: 0 0 0 0.5rem;
   opacity: 1;

@@ -1,7 +1,5 @@
 .ui.card.place-card {
   border-radius: 10px;
-  width: 255px;
-  height: 327px;
 }
 
 .ui.card.place-card.loading {

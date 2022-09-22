@@ -53,6 +53,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         <div className="place-card__button-container">
           <JumpInPositionButton href={placerUrl} loading={loading} />
           <FavoriteButton
+            active={!!place.user_favorite}
             onClick={handleClickFavorite}
             loading={loading}
           ></FavoriteButton>
