@@ -3,15 +3,53 @@ import React from "react"
 import { Helmet } from "react-helmet"
 
 import Title from "decentraland-gatsby/dist/components/Text/Title"
+import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
+import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
+import PlaceList from "../components/Place/PlaceList/PlaceList"
+import { AggregatePlaceAttributes } from "../entities/Place/types"
+import { usePlaceListMyFavorites } from "../hooks/Place"
+import { updatePlaceInPlaceList } from "../modules/arrays"
 
-import "./index.css"
+import "./my_places.css"
 
 export default function PlacesPage() {
   const l = useFormatMessage()
+
+  const [account, accountState] = useAuthContext()
+  const [placeListMyFavorites, placeListMyFavoritesState] =
+    usePlaceListMyFavorites()
+
+  const [handlingFavorite, handleFavorite] = useAsyncTask(
+    async (event, place: AggregatePlaceAttributes) => {
+      if (account === null) {
+        accountState.select()
+      } else if (place) {
+        const favoritesResponse = await Places.get().updateFavorite(
+          place.id,
+          !place.user_favorite
+        )
+        if (favoritesResponse) {
+          if (placeListMyFavorites && placeListMyFavorites.length > 0) {
+            if (place.user_favorite && placeListMyFavorites) {
+              placeListMyFavoritesState.set(
+                updatePlaceInPlaceList(
+                  placeListMyFavorites,
+                  place.id,
+                  favoritesResponse
+                )
+              )
+            }
+          }
+        }
+      }
+    },
+    [account]
+  )
   return (
     <>
       <Helmet>
@@ -48,9 +86,16 @@ export default function PlacesPage() {
         />
         <meta name="twitter:site" content={l("social.my_places.site") || ""} />
       </Helmet>
-      <Container style={{ paddingTop: "75px" }}>
+      <Container className="full">
         <Navigation activeTab={NavigationTab.MyPlaces} />
         <Title>{l("pages.my_places.title")}</Title>
+        <Title small>{l("pages.my_places.favorites")}</Title>
+        <PlaceList
+          places={placeListMyFavorites || []}
+          onClickFavorite={handleFavorite}
+          loading={placeListMyFavoritesState.loading}
+          className="my-places-list__place-list"
+        />
       </Container>
     </>
   )
