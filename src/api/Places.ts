@@ -3,7 +3,10 @@ import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { AggregatePlaceAttributes } from "../entities/Place/types"
+import {
+  AggregatePlaceAttributes,
+  PlaceListOptions,
+} from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
 
@@ -42,6 +45,14 @@ export default class Places extends API {
   ) {
     const result = await super.fetch<{ ok: boolean; data: T }>(url, options)
     return result.data
+  }
+
+  async fetchMany(
+    url: string,
+    options: Options = new Options({})
+  ): Promise<AggregatePlaceAttributes[]> {
+    const result = (await this.fetch(url, options)) as any
+    return (result || []).map(Places.parsePlace)
   }
 
   async fetchOne(
@@ -93,5 +104,32 @@ export default class Places extends API {
         sign: true,
       })
     )
+  }
+
+  async getPlaces(options?: Partial<PlaceListOptions>) {
+    const query = options ? API.searchParams(options).toString() : ""
+    return this.fetchMany(
+      `/places/?${query}`,
+      this.options().authorization({ sign: true, optional: true })
+    )
+  }
+
+  async getPlacesRecentlyUpdates(options?: { limit: number; offset: number }) {
+    return this.getPlaces({ orderBy: "updated_at", order: "desc", ...options })
+  }
+
+  async getPlacesPopular(options?: { limit: number; offset: number }) {
+    return this.getPlaces({ orderBy: "popularity", order: "desc", ...options })
+  }
+
+  async getPlacesMyFavorites(options?: { limit: number; offset: number }) {
+    return this.getPlaces({ onlyFavorites: true, ...options })
+  }
+
+  async getPlacesPois(
+    pois: string[],
+    options?: { limit: number; offset: number }
+  ) {
+    return this.getPlaces({ ...options, positions: pois })
   }
 }

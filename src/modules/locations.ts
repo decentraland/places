@@ -5,4 +5,7 @@ const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 export default {
   home: () => API.url(GATSBY_BASE_URL, "/"),
   place: (id: string) => API.url(GATSBY_BASE_URL, "/place/", { id }),
+  places: (options: Record<string, string>) =>
+    API.url(GATSBY_BASE_URL, "/places/", options),
+  my_places: () => API.url(GATSBY_BASE_URL, "/my_places/"),
 }
