@@ -115,15 +115,15 @@ export default class Places extends API {
   }
 
   async getPlacesRecentlyUpdates(options?: { limit: number; offset: number }) {
-    return this.getPlaces({ orderBy: "updated_at", order: "desc", ...options })
+    return this.getPlaces({ order_by: "updated_at", order: "desc", ...options })
   }
 
   async getPlacesPopular(options?: { limit: number; offset: number }) {
-    return this.getPlaces({ orderBy: "popularity", order: "desc", ...options })
+    return this.getPlaces({ order_by: "popularity", order: "desc", ...options })
   }
 
   async getPlacesMyFavorites(options?: { limit: number; offset: number }) {
-    return this.getPlaces({ onlyFavorites: true, ...options })
+    return this.getPlaces({ only_favorites: true, ...options })
   }
 
   async getPlacesPois(

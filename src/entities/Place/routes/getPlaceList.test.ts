@@ -31,7 +31,7 @@ test("should return a list of places with query", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 0 }]))
   const request = new Request("/")
   const url = new URL(
-    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&orderBy=popularity&order=asc"
+    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&order_by=popularity&order=asc"
   )
   const placeResponse = await getPlaceList({
     request,
@@ -48,7 +48,7 @@ test("should return a list of places with query", async () => {
 
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
   const request = new Request("/")
-  const url = new URL("https://localhost/?onlyFavorites=true")
+  const url = new URL("https://localhost/?only_favorites=true")
   const placeResponse = await getPlaceList({
     request,
     url,
@@ -64,7 +64,7 @@ test("should return 0 as total list when query onlyFavorites with no auth", asyn
 
 test("should return an error when a wrong value has been sent in the query", async () => {
   const request = new Request("/")
-  const url = new URL("https://localhost/?orderBy=fake")
+  const url = new URL("https://localhost/?order_by=fake")
 
   expect(async () =>
     getPlaceList({
