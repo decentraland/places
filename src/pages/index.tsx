@@ -2,7 +2,6 @@ import React from "react"
 
 import { Helmet } from "react-helmet"
 
-import Title from "decentraland-gatsby/dist/components/Text/Title"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"

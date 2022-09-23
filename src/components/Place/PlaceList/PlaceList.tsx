@@ -13,12 +13,13 @@ export type PlaceListProps = {
     e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
   ) => void
+  cantCard?: number
   className?: string
   loading?: boolean
 }
 
 export default React.memo(function PlaceList(props: PlaceListProps) {
-  const { places, onClickFavorite, className, loading } = props
+  const { places, onClickFavorite, className, loading, cantCard } = props
 
   return (
     <div
@@ -34,6 +35,16 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
             place={place}
             loading={loading}
             onClickFavorite={onClickFavorite}
+          />
+        ))}
+      {places &&
+        cantCard &&
+        places.length < cantCard &&
+        [...Array(cantCard - places.length)].map((_, key) => (
+          <PlaceCard
+            key={key}
+            loading={loading}
+            isHidden={loading ? false : true}
           />
         ))}
     </div>

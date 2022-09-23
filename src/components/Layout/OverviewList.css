@@ -11,6 +11,10 @@
   margin-right: 0;
 }
 
+.place-list__container.overview-list__place-list .ui.link.card.place-card {
+  width: 400px;
+}
+
 @media only screen and (min-width: 1200px) {
 }
 @media only screen and (min-width: 992px) and (max-width: 1199px) {
