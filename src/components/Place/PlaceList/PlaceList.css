@@ -12,4 +12,5 @@
 .place-list__container .ui.card.place-card {
   margin-left: 14px;
   margin-right: 14px;
+  width: 255px;
 }
