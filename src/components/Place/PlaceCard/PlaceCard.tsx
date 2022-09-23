@@ -19,11 +19,10 @@ export type PlaceCardProps = {
     place: AggregatePlaceAttributes
   ) => void
   loading?: boolean
-  isHidden?: boolean
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
-  const { place, loading, isHidden } = props
+  const { place, loading } = props
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -38,7 +37,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const href = useMemo(() => place && locations.place(place.id), [place])
 
-  const placerUrl = place ? placeTargetUrl(place) : ""
+  const placerUrl = place && placeTargetUrl(place)
 
   return (
     <Card
@@ -46,7 +45,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       className={TokenList.join([
         "place-card",
         loading && "loading",
-        isHidden && "hidden",
+        !loading && !place && "hidden",
       ])}
       href={href}
     >

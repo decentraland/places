@@ -9,7 +9,7 @@ import "./JumpInPositionButton.css"
 
 export type JumpInPositionButtonProps = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
-  href: string
+  href?: string
   loading?: boolean
 }
 
