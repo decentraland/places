@@ -58,6 +58,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           onClickFavorite={onClickFavorite}
           loading={loading}
           className="overview-list__place-list"
+          maxLength={5}
         />
       </Container>
     </div>

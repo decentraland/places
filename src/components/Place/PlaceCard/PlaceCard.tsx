@@ -13,7 +13,7 @@ import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import "./PlaceCard.css"
 
 export type PlaceCardProps = {
-  place: AggregatePlaceAttributes
+  place?: AggregatePlaceAttributes
   onClickFavorite?: (
     e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
@@ -28,7 +28,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     (e: React.MouseEvent<any>) => {
       e.stopPropagation()
       e.preventDefault()
-      if (props.onClickFavorite) {
+      if (props.onClickFavorite && place) {
         props.onClickFavorite(e, place)
       }
     },
@@ -37,12 +37,16 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const href = useMemo(() => place && locations.place(place.id), [place])
 
-  const placerUrl = placeTargetUrl(place)
+  const placerUrl = place && placeTargetUrl(place)
 
   return (
     <Card
       link
-      className={TokenList.join(["place-card", loading && "loading"])}
+      className={TokenList.join([
+        "place-card",
+        loading && "loading",
+        !loading && !place && "hidden",
+      ])}
       href={href}
     >
       <div className="place-card__cover">
@@ -53,7 +57,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         <div className="place-card__button-container">
           <JumpInPositionButton href={placerUrl} loading={loading} />
           <FavoriteButton
-            active={!!place.user_favorite}
+            active={!!place?.user_favorite}
             onClick={handleClickFavorite}
             loading={loading}
           ></FavoriteButton>

@@ -2,6 +2,10 @@
   border-radius: 10px;
 }
 
+.ui.card.place-card.hidden {
+  opacity: 0;
+}
+
 .ui.card.place-card.loading {
   pointer-events: none;
 }
