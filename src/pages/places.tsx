@@ -21,9 +21,16 @@ export default function IndexPage() {
   const [account, accountState] = useAuthContext()
   const location = useLocation()
   const params = new URLSearchParams(location.search)
-  const [places] = useAsyncState(async () => Places.get().getPlaces(), [], {
-    callWithTruthyDeps: true,
-  })
+  const [places] = useAsyncState(
+    async () =>
+      Places.get().getPlaces({
+        limit: 24,
+      }),
+    [],
+    {
+      callWithTruthyDeps: true,
+    }
+  )
 
   return (
     <>
