@@ -20,17 +20,27 @@ export type PlacesPageOptions = {
   page: number
 }
 
+const pageOptionsDefault: PlacesPageOptions = {
+  only_favorites: false,
+  only_pois: false,
+  order_by: PlacesOrderBy.UpdatedAt,
+  order: "desc",
+  page: 1,
+}
+
 export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
   return {
-    only_pois: bool(params.get("only_pois")) ?? false,
-    only_favorites: bool(params.get("only_favorites")) ?? false,
+    only_pois: bool(params.get("only_pois")) ?? pageOptionsDefault.only_pois,
+    only_favorites:
+      bool(params.get("only_favorites")) ?? pageOptionsDefault.only_favorites,
     order_by:
       oneOf(params.get("order_by"), [
         PlacesOrderBy.Popularity,
         PlacesOrderBy.UpdatedAt,
-      ]) ?? PlacesOrderBy.UpdatedAt,
-    order: oneOf(params.get("order"), ["asc", "desc"]) ?? "desc",
-    page: numeric(params.get("page"), { min: 1 }) ?? 1,
+      ]) ?? pageOptionsDefault.order_by,
+    order:
+      oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
+    page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
   }
 }
 
@@ -38,12 +48,12 @@ export function fromPlacesOptions(
   options: Partial<PlacesPageOptions>
 ): URLSearchParams {
   const params = API.searchParams(options)
-  if (options.only_pois !== true) {
-    params.delete("only_pois")
-  }
-
-  if (!Number.isFinite(options.page) || options.page! <= 1) {
-    params.delete("page")
+  for (const param of Object.keys(
+    pageOptionsDefault
+  ) as (keyof PlacesPageOptions)[]) {
+    if (options[param] === pageOptionsDefault[param]) {
+      params.delete(param)
+    }
   }
 
   return params

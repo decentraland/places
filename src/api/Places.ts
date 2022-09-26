@@ -108,10 +108,20 @@ export default class Places extends API {
 
   async getPlaces(options?: Partial<PlaceListOptions>) {
     const query = options ? API.searchParams(options).toString() : ""
-    return this.fetchMany(
+    const result = await super.fetch<{
+      ok: true
+      data: AggregatePlaceAttributes[]
+      total: number
+    }>(
       `/places/?${query}`,
       this.options().authorization({ sign: true, optional: true })
     )
+
+    return {
+      ...result,
+      data: result.data.map(Places.parsePlace),
+      total: Number(result.total),
+    }
   }
 
   async getPlacesRecentlyUpdates(options?: { limit: number; offset: number }) {

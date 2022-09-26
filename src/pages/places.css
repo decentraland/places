@@ -1,5 +1,6 @@
 .places-page {
 }
+
 .places-page .places-page__filters {
   border-right: 1px solid var(--divider);
 }
@@ -7,5 +8,13 @@
 .ui.grid.places-page > .row > .column.places-page__list {
   padding-top: 48px;
   padding-right: 38px;
-  padding-bottom: 48px;
+  padding-bottom: 0;
+}
+
+.ui.grid.places-page > .row > .column.places-page__list > div {
+  display: flex;
+}
+
+.places-page .ui.pagination.menu {
+  margin: 64px auto 0;
 }
