@@ -37,7 +37,7 @@
   color: var(--background);
   width: 24px;
   height: 24px;
-  padding: 5.5px;
+  padding: 6px 5.5px;
   margin-right: auto !important;
   margin-left: auto;
 }

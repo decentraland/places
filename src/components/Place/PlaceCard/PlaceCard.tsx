@@ -19,10 +19,11 @@ export type PlaceCardProps = {
     place: AggregatePlaceAttributes
   ) => void
   loading?: boolean
+  loadingFavorites?: boolean
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
-  const { place, loading } = props
+  const { place, loading, loadingFavorites } = props
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -59,7 +60,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           <FavoriteButton
             active={!!place?.user_favorite}
             onClick={handleClickFavorite}
-            loading={loading}
+            loading={loading || loadingFavorites}
           ></FavoriteButton>
         </div>
       </Card.Content>

@@ -24,10 +24,12 @@ export type OverviewListProps = {
     place: AggregatePlaceAttributes
   ) => void
   className?: string
+  loadingFavorites: Set<string>
 }
 
 export default React.memo(function OverviewList(props: OverviewListProps) {
-  const { places, title, loading, href, onClickFavorite } = props
+  const { places, title, loading, href, onClickFavorite, loadingFavorites } =
+    props
   const l = useFormatMessage()
   return (
     <div className={TokenList.join(["ui overview-list", props.className])}>
@@ -59,6 +61,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           loading={loading}
           className="overview-list__place-list"
           maxLength={5}
+          loadingFavorites={loadingFavorites}
         />
       </Container>
     </div>

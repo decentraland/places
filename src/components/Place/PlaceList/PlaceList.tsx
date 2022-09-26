@@ -13,13 +13,21 @@ export type PlaceListProps = {
     e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
   ) => void
+  loadingFavorites?: Set<string>
   maxLength?: number
   className?: string
   loading?: boolean
 }
 
 export default React.memo(function PlaceList(props: PlaceListProps) {
-  const { places, onClickFavorite, className, loading, maxLength } = props
+  const {
+    places,
+    onClickFavorite,
+    className,
+    loading,
+    maxLength,
+    loadingFavorites,
+  } = props
 
   return (
     <div
@@ -28,7 +36,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         className && className,
       ])}
     >
-      {Array.from(Array(maxLength), (_, key) => {
+      {Array.from(Array(maxLength || places.length), (_, key) => {
         const place = places && places[key]
         return (
           <PlaceCard
@@ -36,6 +44,9 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
             place={place}
             loading={loading}
             onClickFavorite={onClickFavorite}
+            loadingFavorites={
+              place?.id ? loadingFavorites?.has(place.id) : false
+            }
           />
         )
       })}

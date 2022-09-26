@@ -23,6 +23,9 @@ export type PlaceDescriptionProps = {
   onClickDislike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickShare: (e: React.MouseEvent<HTMLButtonElement>) => {}
   loading?: boolean
+  loadingLike?: boolean
+  loadingDislike?: boolean
+  loadingFavorite?: boolean
 }
 
 export default React.memo(function PlaceDescription(
@@ -35,6 +38,9 @@ export default React.memo(function PlaceDescription(
     onClickShare,
     onClickFavorite,
     loading,
+    loadingLike,
+    loadingDislike,
+    loadingFavorite,
   } = props
   const l = useFormatMessage()
   const placerUrl = placeTargetUrl(place)
@@ -72,20 +78,20 @@ export default React.memo(function PlaceDescription(
             <div className="place-description__box-wrapper">
               <LikeBox
                 onClick={onClickLike}
-                loading={loading}
+                loading={loading || loadingLike}
                 total={place.likes}
                 active={place.user_like}
               />
               <DislikeBox
                 onClick={onClickDislike}
-                loading={loading}
+                loading={loading || loadingDislike}
                 total={place.dislikes}
                 active={place.user_dislike}
               />
               <ShareBox onClick={onClickShare} loading={loading} />
               <FavoriteBox
                 onClick={onClickFavorite}
-                loading={loading}
+                loading={loading || loadingFavorite}
                 active={place.user_favorite}
               />
             </div>

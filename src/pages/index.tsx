@@ -1,24 +1,19 @@
-import React from "react"
+import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
-import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 
-import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
-import { AggregatePlaceAttributes } from "../entities/Place/types"
-import {
-  usePlaceListMyFavorites,
-  usePlaceListPois,
-  usePlaceListPopular,
-  usePlaceListRecentlyUpdates,
-} from "../hooks/Place"
-import { updatePlaceInPlaceList } from "../modules/arrays"
+import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
+import { usePlaceListPois } from "../hooks/usePlaceListPois"
+import { usePlaceListPopular } from "../hooks/usePlaceListPopular"
+import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
+import usePlacesManager from "../hooks/usePlacesManager"
 import locations, { PlacesOrderBy } from "../modules/locations"
 
 import "./index.css"
@@ -28,7 +23,7 @@ const overviewOptions = { limit: 5, offset: 0 }
 export default function OverviewPage() {
   const l = useFormatMessage()
 
-  const [account, accountState] = useAuthContext()
+  const [account] = useAuthContext()
   const [placeListLastUpdates, placeListLastUpdatesState] =
     usePlaceListRecentlyUpdates(overviewOptions)
   const [placeListPopular, placeListPopularState] =
@@ -37,55 +32,25 @@ export default function OverviewPage() {
     usePlaceListMyFavorites(overviewOptions)
   const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
 
-  const [handlingFavorite, handleFavorite] = useAsyncTask(
-    async (event, place: AggregatePlaceAttributes) => {
-      if (account === null) {
-        accountState.select()
-      } else if (place) {
-        const favoritesResponse = await Places.get().updateFavorite(
-          place.id,
-          !place.user_favorite
-        )
-
-        if (favoritesResponse) {
-          placeListLastUpdatesState.set(
-            updatePlaceInPlaceList(
-              placeListLastUpdates,
-              place.id,
-              favoritesResponse
-            )
-          )
-
-          placeListPopularState.set(
-            updatePlaceInPlaceList(
-              placeListPopular,
-              place.id,
-              favoritesResponse
-            )
-          )
-
-          placeListPoisState.set(
-            updatePlaceInPlaceList(placeListPois, place.id, favoritesResponse)
-          )
-
-          placeListMyFavoritesState.set(
-            updatePlaceInPlaceList(
-              placeListMyFavorites,
-              place.id,
-              favoritesResponse
-            )
-          )
-        }
-      }
-    },
-    [
-      account,
-      placeListLastUpdatesState,
-      placeListPopularState,
-      placeListPoisState,
+  const placesMemo = useMemo(
+    () => [
+      placeListLastUpdates,
+      placeListPopular,
       placeListMyFavorites,
+      placeListPois,
+    ],
+    [
+      placeListLastUpdates,
+      placeListPopular,
+      placeListMyFavorites,
+      placeListPois,
     ]
   )
+
+  const [
+    [lastUpdatesList, popularList, myFavoritesList, poisList],
+    { handleFavorite, handlingFavorite },
+  ] = usePlacesManager(placesMemo)
 
   return (
     <>
@@ -120,38 +85,42 @@ export default function OverviewPage() {
       </Hero>
       <Container className="full">
         <OverviewList
-          places={placeListPopular || []}
+          places={popularList}
           title={l("pages.overview.popular")}
           href={locations.places({
             orderBy: PlacesOrderBy.Popularity,
           })}
-          onClickFavorite={handleFavorite}
+          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListPopularState.loading}
+          loadingFavorites={handlingFavorite}
         />
         {account && placeListMyFavorites && placeListMyFavorites.length > 0 && (
           <OverviewList
-            places={placeListMyFavorites || []}
+            places={myFavoritesList}
             title={l("pages.overview.my_favorites")}
             href={locations.my_places()}
-            onClickFavorite={handleFavorite}
+            onClickFavorite={(_, place) => handleFavorite(place.id, place)}
             loading={placeListMyFavoritesState.loading}
+            loadingFavorites={handlingFavorite}
           />
         )}
         <OverviewList
-          places={placeListLastUpdates || []}
+          places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}
           href={locations.places({
             orderBy: PlacesOrderBy.UpdatedAt,
           })}
-          onClickFavorite={handleFavorite}
+          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListLastUpdatesState.loading}
+          loadingFavorites={handlingFavorite}
         />
         <OverviewList
-          places={placeListPois || []}
+          places={poisList}
           title={l("pages.overview.points_of_interest")}
           href={locations.places({})}
-          onClickFavorite={handleFavorite}
+          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListPoisState.loading}
+          loadingFavorites={handlingFavorite}
         />
       </Container>
     </>

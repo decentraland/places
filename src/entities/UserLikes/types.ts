@@ -16,6 +16,6 @@ export type UpdateUserLikeBody = {
 }
 
 export type UpdateUserLikeResponse = {
-  like: number
-  dislike: number
+  likes: number
+  dislikes: number
 }
