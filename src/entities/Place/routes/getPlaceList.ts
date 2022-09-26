@@ -22,24 +22,24 @@ export const getPlaceList = Router.memo(
       positions: ctx.url.searchParams.getAll("positions"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
-      onlyFavorites: ctx.url.searchParams.get("onlyFavorites"),
-      orderBy:
-        ctx.url.searchParams.get("orderBy") || PlaceListOrderBy.UPDATED_AT,
+      only_favorites: ctx.url.searchParams.get("only_favorites"),
+      order_by:
+        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.UPDATED_AT,
       order: ctx.url.searchParams.get("order") || "desc",
     })
 
     const userAuth = await withAuthOptional(ctx)
 
-    if (bool(query.onlyFavorites) && !userAuth?.address) {
+    if (bool(query.only_favorites) && !userAuth?.address) {
       return new ApiResponse([], { total: 0 })
     }
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }),
       limit: numeric(query.limit, { min: 0, max: 100 }),
-      onlyFavorites: !!bool(query.onlyFavorites),
+      only_favorites: !!bool(query.only_favorites),
       positions: query.positions,
-      orderBy: query.orderBy,
+      order_by: query.order_by,
       order: query.order,
     }
 

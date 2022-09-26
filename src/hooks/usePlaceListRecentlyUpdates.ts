@@ -9,7 +9,8 @@ export function usePlaceListRecentlyUpdates(options?: {
 }) {
   return useAsyncMemo(
     async () => {
-      return Places.get().getPlacesRecentlyUpdates(options)
+      const result = await Places.get().getPlacesRecentlyUpdates(options)
+      return result.data
     },
     [options?.limit, options?.offset],
     { initialValue: [] as AggregatePlaceAttributes[] }

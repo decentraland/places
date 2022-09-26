@@ -60,7 +60,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     }
   ): Promise<AggregatePlaceAttributes> {
     const sql = SQL`
-      SELECT p.* 
+      SELECT p.*
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
@@ -107,12 +107,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     let order = SQL`${SQL.raw(orderBy)} ${SQL.raw(orderDirection)}`
 
-    if (options.orderBy === PlaceListOrderBy.POPULARITY) {
+    if (options.order_by === PlaceListOrderBy.POPULARITY) {
       order = SQL`p.likes ${SQL.raw(orderDirection)}`
     }
 
     const sql = SQL`
-      SELECT p.* 
+      SELECT p.*
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
@@ -130,13 +130,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
       FROM ${table(this)} p
       ${conditional(
-        !!options.user && !options.onlyFavorites,
+        !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
-        !!options.user && options.onlyFavorites,
+        !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
@@ -148,7 +148,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       WHERE
-        p.disabled is false  
+        p.disabled is false
         ${conditional(
           options.positions?.length > 0,
           SQL.raw(
@@ -172,7 +172,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countPlaces(
     options: Pick<
       FindWithAggregatesOptions,
-      "user" | "onlyFavorites" | "positions"
+      "user" | "only_favorites" | "positions"
     >
   ) {
     if (options.user && !isEthereumAddress(options.user)) {
@@ -184,7 +184,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) as "total"
       FROM ${table(this)} p
       ${conditional(
-        !!options.user && options.onlyFavorites,
+        !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
@@ -222,7 +222,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT count(*) AS count
       FROM ${table(UserFavoriteModel)}
       WHERE "place_id" = ${placeId}
-    ) 
+    )
     UPDATE ${table(this)}
       SET "favorites" = c.count
       FROM counted c
@@ -238,7 +238,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
        count(*) filter (where not "like") as count_dislikes
       FROM ${table(UserLikesModel)}
       WHERE "place_id" = ${placeId}
-    ) 
+    )
     UPDATE ${table(this)}
       SET "likes" = c.count_likes, "dislikes" = c.count_dislikes
       FROM counted c

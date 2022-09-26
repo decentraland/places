@@ -12,7 +12,8 @@ export function usePlaceListPois(options?: { limit: number; offset: number }) {
         return []
       }
 
-      return Places.get().getPlacesPois(pois, options)
+      const result = await Places.get().getPlacesPois(pois, options)
+      return result.data
     },
     [options?.limit, options?.offset],
     { initialValue: [] as AggregatePlaceAttributes[] }

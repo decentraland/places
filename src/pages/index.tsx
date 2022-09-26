@@ -88,7 +88,7 @@ export default function OverviewPage() {
           places={popularList}
           title={l("pages.overview.popular")}
           href={locations.places({
-            orderBy: PlacesOrderBy.Popularity,
+            order_by: PlacesOrderBy.Popularity,
           })}
           onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListPopularState.loading}
@@ -108,7 +108,7 @@ export default function OverviewPage() {
           places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}
           href={locations.places({
-            orderBy: PlacesOrderBy.UpdatedAt,
+            order_by: PlacesOrderBy.UpdatedAt,
           })}
           onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListLastUpdatesState.loading}
@@ -117,7 +117,7 @@ export default function OverviewPage() {
         <OverviewList
           places={poisList}
           title={l("pages.overview.points_of_interest")}
-          href={locations.places({})}
+          href={locations.places({ only_pois: true })}
           onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListPoisState.loading}
           loadingFavorites={handlingFavorite}

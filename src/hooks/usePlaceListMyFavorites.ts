@@ -15,7 +15,8 @@ export function usePlaceListMyFavorites(options?: {
         return []
       }
 
-      return Places.get().getPlacesMyFavorites(options)
+      const result = await Places.get().getPlacesMyFavorites(options)
+      return result.data
     },
     [options?.limit, options?.offset, account],
     { initialValue: [] as AggregatePlaceAttributes[] }

@@ -9,7 +9,8 @@ export function usePlaceListPopular(options?: {
 }) {
   return useAsyncMemo(
     async () => {
-      return Places.get().getPlacesPopular(options)
+      const result = await Places.get().getPlacesPopular(options)
+      return result.data
     },
     [options?.limit, options?.offset],
     { initialValue: [] as AggregatePlaceAttributes[] }

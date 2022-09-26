@@ -1,4 +1,7 @@
 {
+  "general": {
+    "count_places": "{count} {count, plural, one {place} other {places}}"
+  },
   "navigation": {
     "overview": "Overview",
     "places": "Places",
