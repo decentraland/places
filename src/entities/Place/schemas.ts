@@ -28,13 +28,13 @@ export const getPlaceListQuerySchema = schema({
       description: "Filter places in specific positions",
       nullable: true,
     },
-    onlyFavorites: {
+    only_favorites: {
       type: "string",
       format: "boolean",
       description: "True if shows only favorite places",
       nullable: true,
     },
-    orderBy: {
+    order_by: {
       type: "string",
       description: "Order places by",
       enum: ["popularity", "updated_at"],

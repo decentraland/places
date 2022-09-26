@@ -123,7 +123,7 @@ export default function OverviewPage() {
           places={placeListPopular || []}
           title={l("pages.overview.popular")}
           href={locations.places({
-            orderBy: PlacesOrderBy.Popularity,
+            order_by: PlacesOrderBy.Popularity,
           })}
           onClickFavorite={handleFavorite}
           loading={placeListPopularState.loading}
@@ -141,7 +141,7 @@ export default function OverviewPage() {
           places={placeListLastUpdates || []}
           title={l("pages.overview.recently_updated")}
           href={locations.places({
-            orderBy: PlacesOrderBy.UpdatedAt,
+            order_by: PlacesOrderBy.UpdatedAt,
           })}
           onClickFavorite={handleFavorite}
           loading={placeListLastUpdatesState.loading}

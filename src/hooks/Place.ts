@@ -24,7 +24,8 @@ export function usePlaceListRecentlyUpdates(options?: {
   offset: number
 }) {
   return useAsyncMemo(async () => {
-    return Places.get().getPlacesRecentlyUpdates(options)
+    const result = await Places.get().getPlacesRecentlyUpdates(options)
+    return result.data
   }, [options?.limit, options?.offset])
 }
 
@@ -33,7 +34,8 @@ export function usePlaceListPopular(options?: {
   offset: number
 }) {
   return useAsyncMemo(async () => {
-    return Places.get().getPlacesPopular(options)
+    const result = await Places.get().getPlacesPopular(options)
+    return result.data
   }, [options?.limit, options?.offset])
 }
 
@@ -47,7 +49,8 @@ export function usePlaceListMyFavorites(options?: {
       return []
     }
 
-    return Places.get().getPlacesMyFavorites(options)
+    const result = await Places.get().getPlacesMyFavorites(options)
+    return result.data
   }, [options?.limit, options?.offset, account])
 }
 
@@ -58,6 +61,7 @@ export function usePlaceListPois(options?: { limit: number; offset: number }) {
       return []
     }
 
-    return Places.get().getPlacesPois(pois, options)
+    const result = await Places.get().getPlacesPois(pois, options)
+    return result.data
   }, [options?.limit, options?.offset])
 }

@@ -39,17 +39,17 @@ export type GetPlaceListQuery = {
   limit: string
   offset: string
   positions: string[]
-  onlyFavorites: string
-  orderBy: string
+  only_favorites: string
+  order_by: string
   order: string
 }
 
 export type PlaceListOptions = {
   offset: number
   limit: number
-  onlyFavorites: boolean
+  only_favorites: boolean
   positions: string[]
-  orderBy: string
+  order_by: string
   order: string
 }
 
