@@ -29,11 +29,49 @@
       "title": "realms",
       "realm": "realm",
       "players": "players"
+    },
+    "overview_list": {
+      "view_all": "view all"
+    }
+  },
+  "pages": {
+    "overview": {
+      "title": "Places",
+      "search_the_metaverse": "Search the Metaverse",
+      "popular": "Popular",
+      "Featured": "Featured",
+      "my_favorites": "My Favorites",
+      "recently_updated": "Recently Updated",
+      "points_of_interest": "Points of Interest",
+      "view_all": "view all"
+    },
+    "places": {
+      "title": "Places"
+    },
+    "my_places": {
+      "title": "My Places",
+      "favorites": "Favorites"
     }
   },
   "social": {
     "home": {
-      "title": "title",
+      "title": "Places Overview",
+      "description": "description",
+      "image": "image",
+      "site": "site",
+      "card": "card",
+      "creator": "creator"
+    },
+    "places": {
+      "title": "Places",
+      "description": "description",
+      "image": "image",
+      "site": "site",
+      "card": "card",
+      "creator": "creator"
+    },
+    "my_places": {
+      "title": "My Places",
       "description": "description",
       "image": "image",
       "site": "site",

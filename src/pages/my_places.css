@@ -1,0 +1,7 @@
+.my-places-list__place-list {
+  margin-top: 40px;
+}
+
+.my-places-list__place-list .ui.card.place-card {
+  margin: 0 0 20px;
+}

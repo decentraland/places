@@ -15,30 +15,37 @@ export const getPlaceListQuerySchema = schema({
     limit: {
       type: "string",
       format: "uint",
+      nullable: true,
     },
     offset: {
       type: "string",
       format: "uint",
+      nullable: true,
     },
     positions: {
       type: "array",
       items: { type: "string", pattern: "^-?\\d{1,3},-?\\d{1,3}$" },
       description: "Filter places in specific positions",
+      nullable: true,
     },
     onlyFavorites: {
       type: "string",
+      format: "boolean",
       description: "True if shows only favorite places",
+      nullable: true,
     },
     orderBy: {
       type: "string",
       description: "Order places by",
       enum: ["popularity", "updated_at"],
+      nullable: true,
     },
     order: {
       type: "string",
       description: "List order",
       default: "desc",
       enum: ["asc", "desc"],
+      nullable: true,
     },
   },
 })

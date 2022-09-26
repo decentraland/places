@@ -32,7 +32,7 @@ export type GetPlaceParams = {
 
 export enum PlaceListOrderBy {
   POPULARITY = "popularity",
-  UPDATE_AT = "update_at",
+  UPDATED_AT = "updated_at",
 }
 
 export type GetPlaceListQuery = {
@@ -45,11 +45,14 @@ export type GetPlaceListQuery = {
 }
 
 export type PlaceListOptions = {
-  user?: string
   offset: number
   limit: number
   onlyFavorites: boolean
   positions: string[]
   orderBy: string
   order: string
+}
+
+export type FindWithAggregatesOptions = PlaceListOptions & {
+  user?: string
 }

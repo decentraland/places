@@ -4,7 +4,7 @@ const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 
 export enum PlacesOrderBy {
   Popularity = "popularity",
-  UpdatedAt = "update_at",
+  UpdatedAt = "updated_at",
 }
 
 export type PlacesPageOptions = {
@@ -27,4 +27,5 @@ export default {
   place: (id: string) => API.url(GATSBY_BASE_URL, "/place/", { id }),
   places: (options: PlacesPageOptions) =>
     API.url(GATSBY_BASE_URL, "/places/", fromPlacesOptions(options)),
+  my_places: () => API.url(GATSBY_BASE_URL, "/my_places/"),
 }
