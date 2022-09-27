@@ -27,7 +27,8 @@ body {
 .dcl.hero .ui.container,
 .ui.container.footer.LayoutFooterContainer,
 .LayoutNavbarContainer > .ui.container,
-.LayoutMainContainer > .dcl.tabs .ui.container {
+.LayoutMainContainer > .dcl.tabs .ui.container,
+.navigation-menu.fullscreen .dcl.tabs .ui.container {
   width: calc(100% -48px);
 }
 
