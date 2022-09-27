@@ -1,17 +1,19 @@
 import React, { useEffect, useMemo, useState } from "react"
 
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useAsyncTasks from "decentraland-gatsby/dist/hooks/useAsyncTasks"
 
 import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { updatePlaceInPlaceList as updateInList } from "../modules/arrays"
+import { SegmentPlace } from "../modules/segment"
 
 export default function usePlacesManager(
   placesDefault: AggregatePlaceAttributes[][]
 ) {
   const [account, accountState] = useAuthContext()
-
+  const track = useTrackContext()
   const [places, setPlaces] = useState(placesDefault)
 
   useEffect(() => {
@@ -28,6 +30,10 @@ export default function usePlacesManager(
           !place.user_favorite
         )
         if (favoritesResponse) {
+          track(SegmentPlace.Favorite, {
+            placeId: place.id,
+            placeUserFavorite: !place.user_favorite,
+          })
           const placesUpdated = places.map(
             (placeToUpdate) =>
               updateInList(placeToUpdate, place.id, favoritesResponse),
@@ -38,7 +44,7 @@ export default function usePlacesManager(
         }
       }
     },
-    [account, places]
+    [account, places, track]
   )
 
   const likeDislikeHandler = async (id: string, like: boolean | null) => {
@@ -47,6 +53,11 @@ export default function usePlacesManager(
     } else if (id) {
       const LikesResponse = await Places.get().updateLike(id, like)
       if (LikesResponse) {
+        track(SegmentPlace.Like, {
+          placeId: id,
+          placeUserLike: like,
+        })
+
         const placesUpdated = places.map(
           (placeToUpdate) => updateInList(placeToUpdate, id, LikesResponse),
           [places]
@@ -60,11 +71,13 @@ export default function usePlacesManager(
   const [handlingLike, handleLike] = useAsyncTasks(likeDislikeHandler, [
     account,
     places,
+    track,
   ])
 
   const [handlingDislike, handleDislike] = useAsyncTasks(likeDislikeHandler, [
     account,
     places,
+    track,
   ])
 
   const modifyingFavorite = useMemo(

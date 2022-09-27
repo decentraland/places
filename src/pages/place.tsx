@@ -5,6 +5,7 @@ import { Helmet } from "react-helmet"
 import { useLocation } from "@gatsbyjs/reach-router"
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -22,6 +23,7 @@ import { usePlaceId } from "../hooks/usePlaceId"
 import usePlacesManager from "../hooks/usePlacesManager"
 import locations from "../modules/locations"
 import { getPois } from "../modules/pois"
+import { SegmentPlace } from "../modules/segment"
 import { getServers } from "../modules/servers"
 
 import "./place.css"
@@ -32,6 +34,7 @@ export type EventPageState = {
 
 export default function PlacePage() {
   const l = useFormatMessage()
+  const track = useTrackContext()
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [account, accountState] = useAuthContext()
   const location = useLocation()
@@ -62,11 +65,14 @@ export default function PlacePage() {
           text: place.description,
           url: location.origin + locations.place(place.id),
         })
+        track(SegmentPlace.Share, {
+          placeId: place.id,
+        })
       } catch (err) {
         console.error(err)
       }
     }
-  }, [place])
+  }, [place, track])
 
   const handleShare = useCallback((e: React.MouseEvent<any>) => {
     e.preventDefault()

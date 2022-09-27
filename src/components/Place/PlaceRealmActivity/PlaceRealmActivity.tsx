@@ -1,5 +1,6 @@
 import React from "react"
 
+import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Header } from "decentraland-ui/dist/components/Header/Header"
@@ -8,6 +9,7 @@ import { Table } from "decentraland-ui/dist/components/Table/Table"
 
 import { PlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
+import { SegmentPlace } from "../../../modules/segment"
 import JoinButton from "../../Button/JoinButton"
 
 import "./PlaceRealmActivity.css"
@@ -26,6 +28,8 @@ export default React.memo(function PlaceRealmActivity(
   const { place, activities, loading } = props
   const l = useFormatMessage()
   const isMobile = useMobileMediaQuery()
+
+  const handleJumpInTrack = useTrackLinkContext()
 
   return (
     <div
@@ -67,6 +71,9 @@ export default React.memo(function PlaceRealmActivity(
                     <JoinButton
                       href={placeTargetUrl(place, name)}
                       loading={loading}
+                      onClick={handleJumpInTrack}
+                      data-event={SegmentPlace}
+                      data-realm={name}
                     />
                   </Table.Cell>
                 </Table.Row>

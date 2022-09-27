@@ -16,8 +16,6 @@ import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdate
 import usePlacesManager from "../hooks/usePlacesManager"
 import locations, { PlacesOrderBy } from "../modules/locations"
 
-import "./index.css"
-
 const overviewOptions = { limit: 5, offset: 0 }
 
 export default function OverviewPage() {
