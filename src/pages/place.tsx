@@ -12,14 +12,14 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import { Loader } from "decentraland-ui/dist/components/Loader/Loader"
 import { intersects, sum } from "radash/dist/array"
 
-import Places from "../api/Places"
 import ItemLayout from "../components/Layout/ItemLayout"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceRealmActivity, {
   ReamlActivity,
 } from "../components/Place/PlaceRealmActivity/PlaceRealmActivity"
 import PlaceStats from "../components/Place/PlaceStats/PlaceStats"
-import { usePlaceId } from "../hooks/Place"
+import { usePlaceId } from "../hooks/usePlaceId"
+import usePlacesManager from "../hooks/usePlacesManager"
 import locations from "../modules/locations"
 import { getPois } from "../modules/pois"
 import { getServers } from "../modules/servers"
@@ -32,38 +32,27 @@ export type EventPageState = {
 
 export default function PlacePage() {
   const l = useFormatMessage()
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [account, accountState] = useAuthContext()
   const location = useLocation()
   const params = new URLSearchParams(location.search)
 
-  const [place, placeState] = usePlaceId(params.get("id"))
+  const [placeRetrived] = usePlaceId(params.get("id"))
   const [pois] = useAsyncMemo(getPois)
   const [servers] = useAsyncMemo(getServers)
-  const [handlingFavorite, handleFavorite] = useAsyncTask(async () => {
-    if (account === null) {
-      accountState.select()
-    } else if (place) {
-      const favoritesResponse = await Places.get().updateFavorite(
-        place.id,
-        !place.user_favorite
-      )
-      if (favoritesResponse) {
-        placeState.set({ ...place, ...favoritesResponse })
-      }
-    }
-  }, [place])
 
-  const [handlingLike, handleLike] = useAsyncTask(
-    async (like: boolean | null) => {
-      if (account === null) {
-        accountState.select()
-      } else if (place) {
-        const LikesResponse = await Places.get().updateLike(place.id, like)
-        placeState.set({ ...place, ...LikesResponse })
-      }
+  const a = useMemo(() => [[placeRetrived]], [placeRetrived])
+  const [
+    [[place]],
+    {
+      handleFavorite,
+      handlingFavorite,
+      handleLike,
+      handlingLike,
+      handleDislike,
+      handlingDislike,
     },
-    [account, place]
-  )
+  ] = usePlacesManager(a)
 
   const [handlingShare, share] = useAsyncTask(async () => {
     if (place) {
@@ -128,7 +117,7 @@ export default function PlacePage() {
     [placeRealmActivities]
   )
 
-  const loading = accountState.loading || placeState.loading
+  const loading = accountState.loading
 
   if (!loading && !place) {
     return (
@@ -192,16 +181,17 @@ export default function PlacePage() {
               <PlaceDescription
                 place={place}
                 onClickLike={async () =>
-                  handleLike(place.user_like ? null : true)
+                  handleLike(place.id, place.user_like ? null : true)
                 }
                 onClickDislike={async () =>
-                  handleLike(place.user_dislike ? null : false)
+                  handleDislike(place.id, place.user_dislike ? null : false)
                 }
                 onClickShare={async (e) => handleShare(e)}
-                onClickFavorite={handleFavorite}
-                loading={
-                  loading || handlingFavorite || handlingLike || handlingShare
-                }
+                onClickFavorite={async () => handleFavorite(place.id, place)}
+                loading={loading || handlingShare}
+                loadingFavorite={handlingFavorite.has(place.id)}
+                loadingLike={handlingLike.has(place.id)}
+                loadingDislike={handlingDislike.has(place.id)}
               />
               <PlaceStats
                 place={place}

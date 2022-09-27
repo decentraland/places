@@ -1,24 +1,17 @@
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
-import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
-import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../Place/model"
 import { getPlace } from "../Place/routes/getPlace"
-import { PlaceAttributes } from "../Place/types"
 import UserFavoriteModel from "./model"
 import {
   updateUserFavoriteBodySchema,
   updateUserFavoriteParamsSchema,
 } from "./schema"
-import {
-  UpdateUserFavoriteBody,
-  UpdateUserFavoriteParams,
-  UserFavoriteAttributes,
-} from "./types"
+import { UpdateUserFavoriteBody, UpdateUserFavoriteParams } from "./types"
 
 export default routes((router) => {
   router.patch("/places/:place_id/favorites", updateFavorites)

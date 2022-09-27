@@ -12,7 +12,7 @@ import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
-import { usePlaceListMyFavorites } from "../hooks/Place"
+import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { updatePlaceInPlaceList } from "../modules/arrays"
 
 import "./my_places.css"

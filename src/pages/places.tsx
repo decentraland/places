@@ -29,7 +29,6 @@ const PAGE_SIZE = 24
 
 export default function IndexPage() {
   const l = useFormatMessage()
-  const [account, accountState] = useAuthContext()
   const location = useLocation()
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
