@@ -33,7 +33,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
   const l = useFormatMessage()
   return (
     <div className={TokenList.join(["ui overview-list", props.className])}>
-      <Container className="full">
+      <Container>
         <HeaderMenu>
           <HeaderMenu.Left>
             <Title small>{title}</Title>
@@ -54,7 +54,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           </HeaderMenu.Right>
         </HeaderMenu>
       </Container>
-      <Container className="full">
+      <Container>
         <PlaceList
           places={places}
           onClickFavorite={onClickFavorite}
