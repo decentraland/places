@@ -18,29 +18,26 @@ export const summaryActivity = new Task({
     }
 
     const from = Time.utc(latest || 0)
+      .startOf("day")
       .add(1, "day")
       .toDate()
     const to = Time.utc().startOf("day").subtract(1, "second").toDate()
     const logger = ctx.logger.extend({ from, to })
-    if (from.getDate() >= to.getDate()) {
+    if (from.getTime() >= to.getTime()) {
       logger.log(`skipping summary: latest summary already exists`)
       return
     }
 
-    try {
-      const summaries = await PlaceActivityModel.getSummary(from, to)
-      if (summaries.length === 0) {
-        logger.log(`skipping summary: no summary generated`)
-        return
-      }
-
-      const created = await PlaceActivityDailyModel.createMany(summaries)
-      logger.log(`created ${created} new summaries`)
-
-      const updates = await PlaceModel.summaryActivities()
-      logger.log(`updated ${updates} actity ranges`)
-    } catch (err) {
-      logger.error(`error generating summary`, err as Record<string, any>)
+    const summaries = await PlaceActivityModel.getSummary(from, to)
+    if (summaries.length === 0) {
+      logger.log(`skipping summary: no summary generated`)
+      return
     }
+
+    const created = await PlaceActivityDailyModel.createMany(summaries)
+    logger.log(`created ${created} new summaries`)
+
+    const updates = await PlaceModel.summaryActivities()
+    logger.log(`updated ${updates} activity scores`)
   },
 })

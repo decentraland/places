@@ -36,7 +36,8 @@ export type GetPlaceParams = {
 }
 
 export enum PlaceListOrderBy {
-  POPULARITY = "popularity",
+  ACTIVITY = "activity_score",
+  POPULARITY = "popularity_score",
   UPDATED_AT = "updated_at",
 }
 

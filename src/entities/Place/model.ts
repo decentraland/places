@@ -7,6 +7,7 @@ import {
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
+import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import EntityPlaceModel from "../EntityPlace/model"
@@ -104,14 +105,15 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWithAggregates(
     options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
-    const orderBy = "p.updated_at"
-    const orderDirection = options.order === "asc" ? "ASC" : "DESC"
+    const orderBy =
+      oneOf(options.order_by, [
+        PlaceListOrderBy.POPULARITY,
+        PlaceListOrderBy.ACTIVITY,
+        PlaceListOrderBy.UPDATED_AT,
+      ]) ?? PlaceListOrderBy.UPDATED_AT
+    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
-    let order = SQL`${SQL.raw(orderBy)} ${SQL.raw(orderDirection)}`
-
-    if (options.order_by === PlaceListOrderBy.POPULARITY) {
-      order = SQL`p.likes ${SQL.raw(orderDirection)}`
-    }
+    const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)
 
     const sql = SQL`
       SELECT p.*
@@ -236,7 +238,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT
         count(*) filter (where "like") as count_likes,
         count(*) filter (where not "like") as count_dislikes,
-        count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total
+        count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total,
         count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes
       FROM ${table(UserLikesModel)}
       WHERE "place_id" = ${placeId}
@@ -245,7 +247,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SET
         "likes" = c.count_likes,
         "dislikes" = c.count_dislikes,
-        "popularity" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
+        "popularity_score" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
       FROM counted c
       WHERE "id" = ${placeId}
     `
@@ -262,7 +264,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           SELECT
             "place_id",
             "date",
-            (sum("users"::float) / sum("chucks"::float) * ${
+            (sum("users"::float) / sum("checks"::float) * ${
               10 ** SIGNIFICANT_DECIMALS
             })::bigint as activity
           FROM
@@ -275,11 +277,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )
 
       UPDATE ${table(this)}
-      SET "activity" = range_activity.activity
+      SET "activity_score" = range_activity.activity
       FROM range_activity
       WHERE "id" = range_activity.place_id
     `
 
-    return this.namedQuery("summary_activity", sql)
+    return this.namedRowCount("summary_activity", sql)
   }
 }

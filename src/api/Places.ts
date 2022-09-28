@@ -2,6 +2,7 @@ import API from "decentraland-gatsby/dist/utils/api/API"
 import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
+import shuffle from "lodash/shuffle"
 
 import {
   AggregatePlaceAttributes,
@@ -79,15 +80,6 @@ export default class Places extends API {
     )
   }
 
-  async getLike(placeId: string) {
-    return this.fetch<UpdateUserLikeResponse>(
-      `/places/${placeId}/likes`,
-      this.options({ method: "GET" }).authorization({
-        sign: true,
-      })
-    )
-  }
-
   async updateLike(placeId: string, like: boolean | null) {
     return this.fetch<UpdateUserLikeResponse>(
       `/places/${placeId}/likes`,
@@ -113,7 +105,7 @@ export default class Places extends API {
       data: AggregatePlaceAttributes[]
       total: number
     }>(
-      `/places/?${query}`,
+      `/places?${query}`,
       this.options().authorization({ sign: true, optional: true })
     )
 
@@ -129,17 +121,14 @@ export default class Places extends API {
   }
 
   async getPlacesPopular(options?: { limit: number; offset: number }) {
-    return this.getPlaces({ order_by: "popularity", order: "desc", ...options })
+    return this.getPlaces({
+      order_by: "popularity_score",
+      order: "desc",
+      ...options,
+    })
   }
 
   async getPlacesMyFavorites(options?: { limit: number; offset: number }) {
     return this.getPlaces({ only_favorites: true, ...options })
-  }
-
-  async getPlacesPois(
-    pois: string[],
-    options?: { limit: number; offset: number }
-  ) {
-    return this.getPlaces({ ...options, positions: pois })
   }
 }

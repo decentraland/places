@@ -9,12 +9,13 @@ import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
+import { PlaceListOrderBy } from "../entities/Place/types"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
 import { usePlaceListPopular } from "../hooks/usePlaceListPopular"
 import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
 import usePlacesManager from "../hooks/usePlacesManager"
-import locations, { PlacesOrderBy } from "../modules/locations"
+import locations from "../modules/locations"
 
 const overviewOptions = { limit: 5, offset: 0 }
 
@@ -86,7 +87,7 @@ export default function OverviewPage() {
           places={popularList}
           title={l("pages.overview.popular")}
           href={locations.places({
-            order_by: PlacesOrderBy.Popularity,
+            order_by: PlaceListOrderBy.POPULARITY,
           })}
           onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListPopularState.loading}
@@ -106,7 +107,7 @@ export default function OverviewPage() {
           places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}
           href={locations.places({
-            order_by: PlacesOrderBy.UpdatedAt,
+            order_by: PlaceListOrderBy.UPDATED_AT,
           })}
           onClickFavorite={(_, place) => handleFavorite(place.id, place)}
           loading={placeListLastUpdatesState.loading}

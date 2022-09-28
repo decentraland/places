@@ -97,7 +97,7 @@ export async function fetchScore(address: string) {
     })
 
     const body: ScoreResponse = await res.json()
-    return body?.result?.vp || 0
+    return (body?.result?.vp || 0) | 0
   } catch (err) {
     logger.error(`Error loading user score: ${(err as Error).message}`, data)
     return 0

@@ -1,4 +1,5 @@
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
+import shuffle from "lodash/shuffle"
 
 import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
@@ -12,7 +13,8 @@ export function usePlaceListPois(options?: { limit: number; offset: number }) {
         return []
       }
 
-      const result = await Places.get().getPlacesPois(pois, options)
+      const positions = shuffle(pois).slice(0, 5)
+      const result = await Places.get().getPlaces({ positions })
       return result.data
     },
     [options?.limit, options?.offset],
