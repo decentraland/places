@@ -10,6 +10,7 @@ import {
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import EntityPlaceModel from "../EntityPlace/model"
+import PlaceActivityDailyModel from "../PlaceActivityDaily/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
@@ -18,6 +19,10 @@ import {
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
+
+export const MIN_USER_ACTIVITY = 100
+export const SUMMARY_ACTIVITY_RANGE = "7 days"
+export const SIGNIFICANT_DECIMALS = 4
 
 export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
@@ -34,7 +39,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "ep"."entity_id" IN ${values(entityIds)}
     `
 
-    return this.namedQuery(this.tableName + "_find_by_entity_ids", sql)
+    return this.namedQuery("find_by_entity_ids", sql)
   }
 
   static async findEnabledByPositions(
@@ -50,7 +55,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
-    return this.namedQuery(this.tableName + "_find_enabled_by_positions", sql)
+    return this.namedQuery("find_enabled_by_positions", sql)
   }
 
   static async findByIdWithAggregates(
@@ -92,10 +97,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "p"."id" = ${placeId}
     `
 
-    const queryResult = await this.namedQuery(
-      this.tableName + "_find_by_id_with_agregates",
-      sql
-    )
+    const queryResult = await this.namedQuery("find_by_id_with_agregates", sql)
     return queryResult[0]
   }
 
@@ -162,10 +164,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${offset(options.offset)}
     `
 
-    const queryResult = await this.namedQuery(
-      this.tableName + "_find_with_agregates",
-      sql
-    )
+    const queryResult = await this.namedQuery("find_with_agregates", sql)
     return queryResult
   }
 
@@ -201,7 +200,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
     `
     const results: { total: number }[] = await this.namedQuery(
-      this.tableName + "_count_places",
+      "count_places",
       query
     )
 
@@ -228,22 +227,59 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       FROM counted c
       WHERE "id" = ${placeId}
     `
-    return this.namedQuery(this.tableName + "_update_favorites", sql)
+    return this.namedQuery("update_favorites", sql)
   }
 
   static async updateLikes(placeId: string) {
     const sql = SQL`
     WITH counted AS (
-      SELECT count(*) filter (where "like") as count_likes,
-       count(*) filter (where not "like") as count_dislikes
+      SELECT
+        count(*) filter (where "like") as count_likes,
+        count(*) filter (where not "like") as count_dislikes,
+        count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total
+        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes
       FROM ${table(UserLikesModel)}
       WHERE "place_id" = ${placeId}
     )
     UPDATE ${table(this)}
-      SET "likes" = c.count_likes, "dislikes" = c.count_dislikes
+      SET
+        "likes" = c.count_likes,
+        "dislikes" = c.count_dislikes,
+        "popularity" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
       FROM counted c
       WHERE "id" = ${placeId}
     `
-    return this.namedQuery(this.tableName + "_update_likes", sql)
+    return this.namedQuery("update_likes", sql)
+  }
+
+  static async summaryActivities() {
+    const sql = SQL`
+      WITH range_activity AS (
+        SELECT
+          daily_activity."place_id",
+          sum(daily_activity."activity") as "activity"
+        FROM (
+          SELECT
+            "place_id",
+            "date",
+            (sum("users"::float) / sum("chucks"::float) * ${
+              10 ** SIGNIFICANT_DECIMALS
+            })::bigint as activity
+          FROM
+            ${table(PlaceActivityDailyModel)}
+          WHERE
+            "date" >= (now() - ${SUMMARY_ACTIVITY_RANGE}::interval)
+          GROUP BY "place_id", "date"
+        ) daily_activity
+        GROUP BY "place_id"
+      )
+
+      UPDATE ${table(this)}
+      SET "activity" = range_activity.activity
+      FROM range_activity
+      WHERE "id" = range_activity.place_id
+    `
+
+    return this.namedQuery("summary_activity", sql)
   }
 }

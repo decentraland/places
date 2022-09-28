@@ -6,6 +6,7 @@ import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../Place/model"
 import { getPlace } from "../Place/routes/getPlace"
+import { fetchScore } from "../Snapshot/utils"
 import UserFavoriteModel from "./model"
 import {
   updateUserFavoriteBodySchema,
@@ -32,8 +33,8 @@ async function updateFavorites(
   const userAuth = await withAuth(ctx)
 
   const now = new Date()
-
   const place = (await getPlace(ctx)).body.data
+  const user_activity = await fetchScore(userAuth.address)
 
   if (
     (body.favorites && place.user_favorite) ||
@@ -53,7 +54,7 @@ async function updateFavorites(
   if (body.favorites) {
     const data = {
       ...placeUserData,
-      user_activity: 0,
+      user_activity,
       created_at: now,
     }
     await UserFavoriteModel.create(data)

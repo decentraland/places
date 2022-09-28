@@ -10,9 +10,14 @@ export type PlaceAttributes = {
   contact_name: string | null
   contact_email: string | null
   content_rating: string | null
+
   likes: number
   dislikes: number
   favorites: number
+
+  activity_score: BigInt
+  popularity_score: number
+
   deployed_at: Date
   disabled: boolean
   disabled_at: Date | null

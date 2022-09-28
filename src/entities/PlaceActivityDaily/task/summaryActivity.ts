@@ -1,6 +1,7 @@
 import { Task } from "decentraland-gatsby/dist/entities/Task"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 
+import PlaceModel from "../../Place/model"
 import PlaceActivityModel from "../../PlaceActivity/model"
 import PlaceActivityDailyModel from "../model"
 
@@ -35,6 +36,9 @@ export const summaryActivity = new Task({
 
       const created = await PlaceActivityDailyModel.createMany(summaries)
       logger.log(`created ${created} new summaries`)
+
+      const updates = await PlaceModel.summaryActivities()
+      logger.log(`updated ${updates} actity ranges`)
     } catch (err) {
       logger.error(`error generating summary`, err as Record<string, any>)
     }
