@@ -2,6 +2,7 @@ import React, { useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
@@ -52,6 +53,10 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         loading && "loading",
         !loading && !place && "hidden",
       ])}
+      onClick={(e) => {
+        e.preventDefault()
+        href && navigate(href)
+      }}
       href={href}
     >
       <div className="place-card__cover">

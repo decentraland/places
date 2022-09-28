@@ -3,7 +3,7 @@ import React from "react"
 import NavigationMenu from "decentraland-gatsby/dist/components/Layout/NavigationMenu"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media"
+import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media"
 
 import locations from "../../modules/locations"
 
@@ -20,7 +20,7 @@ export type NavigationProps = {
 export default function Navigation(props: NavigationProps) {
   const l = useFormatMessage()
   const [account] = useAuthContext()
-  const isMobile = useTabletAndBelowMediaQuery()
+  const isMobile = useMobileMediaQuery()
 
   return (
     <NavigationMenu

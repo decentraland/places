@@ -33,11 +33,37 @@
 }
 
 .place-stats__point-of-interest .label {
-  background-color: var(--toast);
+  background-color: #ff9f2b;
   color: var(--background);
   width: 24px;
   height: 24px;
   padding: 6px 5.5px;
   margin-right: auto !important;
   margin-left: auto;
+}
+
+@media only screen and (max-width: 425px) {
+  .place-stats {
+    display: flex;
+    flex-direction: column;
+  }
+  .place-stats span.dcl.stats {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    width: 100%;
+  }
+  .place-stats span.dcl.stats .ui.header.sub {
+    margin-bottom: 0;
+    width: 50%;
+    text-align: left;
+  }
+  .place-stats span.dcl.stats .ui.header:not(.sub) {
+    margin-top: 0;
+    font-weight: 400;
+  }
+
+  .place-stats__point-of-interest .label {
+    margin-left: 0;
+  }
 }

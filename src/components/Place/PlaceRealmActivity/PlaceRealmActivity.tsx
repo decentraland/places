@@ -33,14 +33,10 @@ export default React.memo(function PlaceRealmActivity(
 
   return (
     <div
-      className={TokenList.join([
-        "place-realm-activity",
-        loading && "loading",
-        isMobile && "hide",
-      ])}
+      className={TokenList.join(["place-realm-activity", loading && "loading"])}
     >
       <Header sub>{l("components.place_realm_activity.title")}</Header>
-      <Table basic="very">
+      <Table basic="very" unstackable>
         <Table.Header>
           <Table.Row>
             <Table.HeaderCell>
@@ -49,7 +45,7 @@ export default React.memo(function PlaceRealmActivity(
             <Table.HeaderCell>
               {l("components.place_realm_activity.players")}
             </Table.HeaderCell>
-            <Table.HeaderCell></Table.HeaderCell>
+            {!isMobile && <Table.HeaderCell></Table.HeaderCell>}
           </Table.Row>
         </Table.Header>
 
@@ -67,15 +63,17 @@ export default React.memo(function PlaceRealmActivity(
                 <Table.Row key={index}>
                   <Table.Cell>{name.toLocaleUpperCase()}</Table.Cell>
                   <Table.Cell>{activity}</Table.Cell>
-                  <Table.Cell textAlign="right">
-                    <JoinButton
-                      href={placeTargetUrl(place, name)}
-                      loading={loading}
-                      onClick={handleJumpInTrack}
-                      data-event={SegmentPlace}
-                      data-realm={name}
-                    />
-                  </Table.Cell>
+                  {!isMobile && (
+                    <Table.Cell textAlign="right">
+                      <JoinButton
+                        href={placeTargetUrl(place, name)}
+                        loading={loading}
+                        onClick={handleJumpInTrack}
+                        data-event={SegmentPlace}
+                        data-realm={name}
+                      />
+                    </Table.Cell>
+                  )}
                 </Table.Row>
               )
             })}
