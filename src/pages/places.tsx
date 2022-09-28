@@ -4,6 +4,7 @@ import Helmet from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
@@ -19,7 +20,8 @@ import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
-import { PlaceListOptions } from "../entities/Place/types"
+import { getPlaceListQuerySchema } from "../entities/Place/schemas"
+import { PlaceListOptions, PlaceListOrderBy } from "../entities/Place/types"
 import locations, { toPlacesOptions } from "../modules/locations"
 import { getPois } from "../modules/pois"
 
@@ -73,6 +75,16 @@ export default function IndexPage() {
       e.preventDefault()
       e.stopPropagation()
       navigate(locations.places({ ...params, only_pois: !!props.value }))
+    },
+    [params]
+  )
+
+  const handleChangeOrder = useCallback(
+    (_: React.SyntheticEvent<any>, props: { value?: any }) => {
+      const value =
+        oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
+        PlaceListOrderBy.UPDATED_AT
+      navigate(locations.places({ ...params, order_by: value }))
     },
     [params]
   )
@@ -131,9 +143,23 @@ export default function IndexPage() {
                   </Header>
                 </HeaderMenu.Left>
                 <HeaderMenu.Right>
-                  <Dropdown text="Newest" direction="left">
+                  <Dropdown
+                    text={l(`general.order_by.${params.order_by}`)}
+                    onChange={console.log}
+                    direction="left"
+                  >
                     <Dropdown.Menu>
-                      <Dropdown.Item text="Newest" />
+                      {getPlaceListQuerySchema.properties.order_by.enum.map(
+                        (orderBy) => {
+                          return (
+                            <Dropdown.Item
+                              value={orderBy}
+                              text={l(`general.order_by.${orderBy}`)}
+                              onClick={handleChangeOrder}
+                            />
+                          )
+                        }
+                      )}
                     </Dropdown.Menu>
                   </Dropdown>
                 </HeaderMenu.Right>

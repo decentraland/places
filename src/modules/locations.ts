@@ -5,17 +5,15 @@ import {
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import API from "decentraland-gatsby/dist/utils/api/API"
 
-const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
+import { getPlaceListQuerySchema } from "../entities/Place/schemas"
+import { PlaceListOrderBy } from "../entities/Place/types"
 
-export enum PlacesOrderBy {
-  Popularity = "popularity",
-  UpdatedAt = "updated_at",
-}
+const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 
 export type PlacesPageOptions = {
   only_pois: boolean
   only_favorites: boolean
-  order_by: PlacesOrderBy
+  order_by: PlaceListOrderBy
   order: "asc" | "desc"
   page: number
 }
@@ -23,7 +21,7 @@ export type PlacesPageOptions = {
 const pageOptionsDefault: PlacesPageOptions = {
   only_favorites: false,
   only_pois: false,
-  order_by: PlacesOrderBy.UpdatedAt,
+  order_by: PlaceListOrderBy.UPDATED_AT,
   order: "desc",
   page: 1,
 }
@@ -34,10 +32,10 @@ export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
     only_favorites:
       bool(params.get("only_favorites")) ?? pageOptionsDefault.only_favorites,
     order_by:
-      oneOf(params.get("order_by"), [
-        PlacesOrderBy.Popularity,
-        PlacesOrderBy.UpdatedAt,
-      ]) ?? pageOptionsDefault.order_by,
+      oneOf(
+        params.get("order_by"),
+        getPlaceListQuerySchema.properties.order_by.enum
+      ) ?? pageOptionsDefault.order_by,
     order:
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,

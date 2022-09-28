@@ -1,6 +1,11 @@
 {
   "general": {
-    "count_places": "{count} {count, plural, one {place} other {places}}"
+    "count_places": "{count} {count, plural, one {place} other {places}}",
+    "order_by": {
+      "updated_at": "Newest",
+      "popularity_score": "Most popular",
+      "activity_score": "Most active"
+    }
   },
   "navigation": {
     "overview": "Overview",

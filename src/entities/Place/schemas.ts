@@ -1,5 +1,7 @@
 import schema from "decentraland-gatsby/dist/entities/Schema/schema"
 
+import { PlaceListOrderBy } from "./types"
+
 export const getPlaceParamsSchema = schema.params({
   place_id: {
     type: "string",
@@ -37,7 +39,11 @@ export const getPlaceListQuerySchema = schema({
     order_by: {
       type: "string",
       description: "Order places by",
-      enum: ["popularity", "updated_at"],
+      enum: [
+        PlaceListOrderBy.POPULARITY,
+        PlaceListOrderBy.ACTIVITY,
+        PlaceListOrderBy.UPDATED_AT,
+      ],
       nullable: true,
     },
     order: {

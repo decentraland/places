@@ -8,6 +8,7 @@ import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../Place/model"
 import { PlaceAttributes } from "../Place/types"
+import { fetchScore } from "../Snapshot/utils"
 import UserLikesModel from "../UserLikes/model"
 import { updateUserLikeBodySchema, updateUserLikeParamsSchema } from "./schema"
 import {
@@ -17,7 +18,6 @@ import {
 } from "./types"
 
 export default routes((router) => {
-  router.get("/places/:place_id/likes", getLike)
   router.patch("/places/:place_id/likes", updateLike)
 })
 
@@ -28,35 +28,6 @@ export const validateGetPlaceParams = Router.validator<UpdateUserLikeParams>(
 export const validateGetPlaceBody = Router.validator<UpdateUserLikeBody>(
   updateUserLikeBodySchema
 )
-
-async function getLike(
-  ctx: Context<{ place_id: string }, "params" | "request">
-) {
-  const params = await validateGetPlaceParams(ctx.params)
-  const userAuth = await withAuth(ctx)
-
-  const place = await PlaceModel.findOne<PlaceAttributes>({
-    id: params.place_id,
-  })
-
-  if (!place) {
-    throw new ErrorResponse(
-      Response.NotFound,
-      `Not found place "${params.place_id}"`
-    )
-  }
-
-  await PlaceModel.updateLikes(params.place_id)
-
-  const placeUpdated = await PlaceModel.findOne<PlaceAttributes>({
-    id: params.place_id,
-  })
-
-  return new ApiResponse({
-    likes: placeUpdated!.likes,
-    dislikes: placeUpdated!.dislikes,
-  })
-}
 
 async function updateLike(
   ctx: Context<{ place_id: string }, "request" | "body" | "params">
@@ -97,7 +68,8 @@ async function updateLike(
   if (body.like === null) {
     await UserLikesModel.delete(placeUserData)
   } else {
-    await UserLikesModel.like(placeUserData, { like: body.like })
+    const user_activity = await fetchScore(userAuth.address)
+    await UserLikesModel.like(placeUserData, { like: body.like, user_activity })
   }
 
   await PlaceModel.updateLikes(params.place_id)
