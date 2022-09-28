@@ -58,6 +58,8 @@ export function createPlaceFromDeployment(
     likes: 0,
     dislikes: 0,
     favorites: 0,
+    popularity_score: 0.5,
+    activity_score: BigInt(0),
     base_position: deployment?.metadata?.scene?.base || positions[0],
     contact_name,
     contact_email: deployment?.metadata?.contact?.email || null,

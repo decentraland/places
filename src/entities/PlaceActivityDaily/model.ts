@@ -3,7 +3,7 @@ import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { PlaceActivityDailyAttributes } from "./types"
 
-export default class PlaceActivityModel extends Model<PlaceActivityDailyAttributes> {
+export default class PlaceActivityDailyModel extends Model<PlaceActivityDailyAttributes> {
   static tableName = "place_activity_daily"
   static withTimestamps = false
 
