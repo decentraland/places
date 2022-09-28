@@ -264,7 +264,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           SELECT
             "place_id",
             "date",
-            (sum("users"::float) / sum("chucks"::float) * ${
+            (sum("users"::float) / sum("checks"::float) * ${
               10 ** SIGNIFICANT_DECIMALS
             })::bigint as activity
           FROM
@@ -277,11 +277,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )
 
       UPDATE ${table(this)}
-      SET "activity" = range_activity.activity
+      SET "activity_score" = range_activity.activity
       FROM range_activity
       WHERE "id" = range_activity.place_id
     `
 
-    return this.namedQuery("summary_activity", sql)
+    return this.namedRowCount("summary_activity", sql)
   }
 }
