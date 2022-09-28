@@ -57,7 +57,7 @@ export default function IndexPage() {
 
   const loading = placesState.version === 0 || placesState.loading
   const length = places?.data.length || 0
-  const total = places?.total || 1
+  const total = places?.total || 0
 
   const handleChangePage = useCallback(
     (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
@@ -186,7 +186,7 @@ export default function IndexPage() {
             <div>
               <Pagination
                 activePage={params.page}
-                totalPages={Math.ceil(total / PAGE_SIZE)}
+                totalPages={Math.ceil(total / PAGE_SIZE) || 1}
                 onPageChange={handleChangePage}
               />
             </div>
