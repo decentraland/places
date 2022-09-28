@@ -1,5 +1,6 @@
 import React from "react"
 
+import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
@@ -8,6 +9,7 @@ import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
+import { SegmentPlace } from "../../../modules/segment"
 import DislikeBox from "../../Button/DislikeBox"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
@@ -46,6 +48,8 @@ export default React.memo(function PlaceDescription(
   const placerUrl = placeTargetUrl(place)
   const isMobile = useMobileMediaQuery()
 
+  const handleJumpInTrack = useTrackLinkContext()
+
   return (
     <div
       className={TokenList.join(["place-description", loading && "loading"])}
@@ -73,7 +77,13 @@ export default React.memo(function PlaceDescription(
           </div>
           <div className="place-description__buttons-container">
             {!isMobile && (
-              <JumpInPositionButton href={placerUrl} loading={loading} />
+              <JumpInPositionButton
+                href={placerUrl}
+                loading={loading}
+                onClick={handleJumpInTrack}
+                data-event={SegmentPlace.JumpIn}
+                data-place-id={place.id}
+              />
             )}
             <div className="place-description__box-wrapper">
               <LikeBox

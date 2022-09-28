@@ -22,7 +22,7 @@ import "./src/theme.css"
 import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
 import UserMenu from "decentraland-gatsby/dist/components/User/UserMenu"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
-// import FeatureFlagProvider from 'decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider'
+import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 
@@ -30,9 +30,9 @@ export const registerServiceWorker = () => true
 
 export const wrapRootElement = ({ element }) => (
   <AuthProvider>
-    {/* <FeatureFlagProvider endpoint="https://feature-flags.decentraland.org/[PROYECT].json"> */}
-    {element}
-    {/* </FeatureFlagProvider> */}
+    <FeatureFlagProvider endpoint="https://feature-flags.decentraland.org/places.json">
+      {element}
+    </FeatureFlagProvider>
   </AuthProvider>
 )
 

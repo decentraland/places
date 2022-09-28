@@ -1,12 +1,14 @@
 import React, { useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
+import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
+import { SegmentPlace } from "../../../modules/segment"
 import FavoriteButton from "../../Button/FavoriteButton"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 
@@ -40,6 +42,8 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const placerUrl = place && placeTargetUrl(place)
 
+  const handleJumpInTrack = useTrackLinkContext()
+
   return (
     <Card
       link
@@ -56,7 +60,13 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       <Card.Content>
         <Card.Header>{place?.title || " "}</Card.Header>
         <div className="place-card__button-container">
-          <JumpInPositionButton href={placerUrl} loading={loading} />
+          <JumpInPositionButton
+            href={placerUrl}
+            loading={loading}
+            onClick={handleJumpInTrack}
+            data-event={SegmentPlace.JumpIn}
+            data-place-id={place?.id}
+          />
           <FavoriteButton
             active={!!place?.user_favorite}
             onClick={handleClickFavorite}
