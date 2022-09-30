@@ -5,7 +5,8 @@
       "updated_at": "Newest",
       "popularity_score": "Most popular",
       "activity_score": "Most active"
-    }
+    },
+    "place_share": "Look at this place I found in Decentraland: "
   },
   "navigation": {
     "overview": "Overview",
@@ -81,6 +82,14 @@
     "my_places": {
       "title": "My Places",
       "description": "description",
+      "image": "image",
+      "site": "site",
+      "card": "card",
+      "creator": "creator"
+    },
+    "place": {
+      "title": "Decentraland Place",
+      "description": "This place is awesome",
       "image": "image",
       "site": "site",
       "card": "card",
