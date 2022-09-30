@@ -34,7 +34,7 @@
     margin-right: 0;
   }
 }
-@media only screen and (max-width: 767px) {
+@media only screen and (min-width: 426px) and (max-width: 767px) {
   .overview-list__place-list .ui.card.place-card:nth-child(3),
   .overview-list__place-list .ui.card.place-card:nth-child(4),
   .overview-list__place-list .ui.card.place-card:nth-child(5) {
@@ -45,4 +45,13 @@
   }
 }
 @media only screen and (max-width: 425px) {
+  .place-list__container.overview-list__place-list .ui.link.card.place-card {
+    width: 82vw;
+  }
+  .ui.overview-list
+    .dcl.header-menu
+    .dcl.header-menu-left
+    h2.dg.Title.Title--small {
+    font-size: 24px;
+  }
 }

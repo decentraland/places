@@ -14,3 +14,14 @@
   margin-right: 14px;
   width: 255px;
 }
+
+.place-list__carousel {
+  margin-left: auto;
+  margin-right: auto;
+}
+
+@media only screen and (max-width: 425px) {
+  .ui.card.place-card .place-card__cover .dg.ImgFixed {
+    height: 230px;
+  }
+}
