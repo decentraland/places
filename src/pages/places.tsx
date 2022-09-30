@@ -172,7 +172,7 @@ export default function IndexPage() {
                 </Box>
               )}
               <ToggleBox
-                header={l("pages.places.filters_type")}
+                header={l("pages.places.filters_places")}
                 onClick={handleChangePois}
                 borderless
                 value={Number(params.only_pois)}
