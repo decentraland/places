@@ -38,6 +38,24 @@ body {
   height: 1em;
 }
 
+.ui.page.modals.visible.active {
+  padding: 0;
+}
+
+.dcl.box .ui.selection.dropdown {
+  width: calc(100% + 24px);
+  margin-left: -12px;
+}
+
+.dcl.box .ui.dropdown > .text {
+  color: var(--text);
+  text-transform: none;
+  font-style: normal;
+  font-weight: 600;
+  font-size: 15px;
+  line-height: 24px;
+}
+
 @keyframes loading {
   to {
     background-position-x: -200%;
