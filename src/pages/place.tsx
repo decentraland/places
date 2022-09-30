@@ -61,9 +61,12 @@ export default function PlacePage() {
   const [handlingShare, share] = useAsyncTask(async () => {
     if (place) {
       try {
+        const shareableText = place.description
+          ? `${place.title} - ${place.description}`
+          : place.title
         await (navigator as any).share({
           title: place.title,
-          text: place.description,
+          text: `${l("general.place_share")}${shareableText}`,
           url: location.origin + locations.place(place.id),
         })
         track(SegmentPlace.Share, {
@@ -139,44 +142,47 @@ export default function PlacePage() {
   return (
     <>
       <Helmet>
-        <title>{place?.title || l("social.home.title") || ""}</title>
+        <title>{place?.title || l("social.place.title") || ""}</title>
         <meta
           name="description"
-          content={place?.description || l("social.home.description") || ""}
+          content={place?.description || l("social.place.description") || ""}
         />
 
         <meta
           property="og:title"
-          content={place?.title || l("social.home.title") || ""}
+          content={place?.title || l("social.place.title") || ""}
         />
         <meta
           property="og:description"
-          content={place?.description || l("social.home.description") || ""}
+          content={place?.description || l("social.place.description") || ""}
         />
         <meta
           property="og:image"
-          content={place?.image || l("social.home.image") || ""}
+          content={place?.image || l("social.place.image") || ""}
         />
-        <meta property="og:site" content={l("social.home.site") || ""} />
+        <meta property="og:site" content={l("social.place.site") || ""} />
 
         <meta
           name="twitter:title"
-          content={place?.description || l("social.home.title") || ""}
+          content={place?.description || l("social.place.title") || ""}
         />
         <meta
           name="twitter:description"
-          content={place?.description || l("social.home.description") || ""}
+          content={place?.description || l("social.place.description") || ""}
         />
         <meta
           name="twitter:image"
-          content={place?.image || l("social.home.image") || ""}
+          content={place?.image || l("social.place.image") || ""}
         />
         <meta
           name="twitter:card"
-          content={place ? "summary_large_image" : l("social.home.card") || ""}
+          content={place ? "summary_large_image" : l("social.place.card") || ""}
         />
-        <meta name="twitter:creator" content={l("social.home.creator") || ""} />
-        <meta name="twitter:site" content={l("social.home.site") || ""} />
+        <meta
+          name="twitter:creator"
+          content={l("social.place.creator") || ""}
+        />
+        <meta name="twitter:site" content={l("social.place.site") || ""} />
       </Helmet>
       <Navigation />
       <Container style={{ paddingTop: "75px" }}>
