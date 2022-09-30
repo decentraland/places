@@ -3,24 +3,34 @@ import React, { useCallback, useMemo } from "react"
 import Helmet from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
+import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
+import { Box } from "decentraland-ui/dist/components/Box/Box"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { Header } from "decentraland-ui/dist/components/Header/Header"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
+import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
 import { ToggleBox } from "decentraland-ui/dist/components/ToggleBox/ToggleBox"
+import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
+import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
-import { PlaceListOptions, PlaceListOrderBy } from "../entities/Place/types"
+import {
+  AggregatePlaceAttributes,
+  PlaceListOptions,
+  PlaceListOrderBy,
+} from "../entities/Place/types"
+import usePlacesManager from "../hooks/usePlacesManager"
 import locations, { toPlacesOptions } from "../modules/locations"
 import { getPois } from "../modules/pois"
 
@@ -28,14 +38,21 @@ import "./places.css"
 
 const PAGE_SIZE = 24
 
+const defaultResult = {
+  data: [] as AggregatePlaceAttributes[],
+  ok: true,
+  total: 0,
+}
+
 export default function IndexPage() {
   const l = useFormatMessage()
+  const mobile = useMobileMediaQuery()
   const location = useLocation()
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
   )
-  const [places, placesState] = useAsyncState(
+  const [result, placesState] = useAsyncState(
     async () => {
       const { only_pois, ...extra } = API.fromPagination(params, {
         pageSize: PAGE_SIZE,
@@ -51,12 +68,17 @@ export default function IndexPage() {
     [params],
     {
       callWithTruthyDeps: true,
+      initialValue: defaultResult,
     }
   )
 
+  const placesMemo = useMemo(() => [result.data], [result.data])
+  const [[places], { handleFavorite, handlingFavorite }] =
+    usePlacesManager(placesMemo)
+
   const loading = placesState.version === 0 || placesState.loading
-  const length = places?.data.length || 0
-  const total = places?.total || 0
+  const length = places.length || 0
+  const total = result.total || 0
 
   const handleChangePage = useCallback(
     (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
@@ -122,51 +144,80 @@ export default function IndexPage() {
       <Grid stackable className="places-page">
         <Grid.Row>
           <Grid.Column tablet={4} className="places-page__filters">
-            <ToggleBox
-              header="filters"
-              onClick={handleChangePois}
-              borderless
-              value={Number(params.only_pois)}
-              items={[
-                { title: "All", value: 0, description: "" },
-                { title: "Pois", value: 1, description: "" },
-              ]}
-            />
+            <Header>{l("pages.places.title")}</Header>
+            <FilterContainerModal
+              title="Filters"
+              action={
+                <>
+                  <Icon name="filter" /> {l("pages.places.filters_title")}
+                </>
+              }
+            >
+              {mobile && (
+                <Box header={l("pages.places.sort_by")} borderless>
+                  <Select
+                    value={params.order_by}
+                    text={l(`general.order_by.${params.order_by}`)}
+                    onChange={handleChangeOrder}
+                    options={getPlaceListQuerySchema.properties.order_by.enum.map(
+                      (orderBy) => {
+                        return {
+                          key: orderBy,
+                          value: orderBy,
+                          text: l(`general.order_by.${orderBy}`),
+                        }
+                      }
+                    )}
+                  />
+                </Box>
+              )}
+              <ToggleBox
+                header={l("pages.places.filters_type")}
+                onClick={handleChangePois}
+                borderless
+                value={Number(params.only_pois)}
+                items={[
+                  { title: "All", value: 0, description: "" },
+                  { title: "Pois", value: 1, description: "" },
+                ]}
+              />
+            </FilterContainerModal>
           </Grid.Column>
           <Grid.Column tablet={12} className="places-page__list">
-            <div>
-              <HeaderMenu stackable>
-                <HeaderMenu.Left>
-                  <Header sub>
-                    {l("general.count_places", { count: total })}
-                  </Header>
-                </HeaderMenu.Left>
-                <HeaderMenu.Right>
-                  <Dropdown
-                    text={l(`general.order_by.${params.order_by}`)}
-                    onChange={console.log}
-                    direction="left"
-                  >
-                    <Dropdown.Menu>
-                      {getPlaceListQuerySchema.properties.order_by.enum.map(
-                        (orderBy) => {
-                          return (
-                            <Dropdown.Item
-                              value={orderBy}
-                              text={l(`general.order_by.${orderBy}`)}
-                              onClick={handleChangeOrder}
-                            />
-                          )
-                        }
-                      )}
-                    </Dropdown.Menu>
-                  </Dropdown>
-                </HeaderMenu.Right>
-              </HeaderMenu>
-            </div>
+            {!mobile && (
+              <div>
+                <HeaderMenu stackable>
+                  <HeaderMenu.Left>
+                    <Header sub>
+                      {l("general.count_places", { count: total })}
+                    </Header>
+                  </HeaderMenu.Left>
+                  <HeaderMenu.Right>
+                    <Dropdown
+                      text={l(`general.order_by.${params.order_by}`)}
+                      direction="left"
+                    >
+                      <Dropdown.Menu>
+                        {getPlaceListQuerySchema.properties.order_by.enum.map(
+                          (orderBy) => {
+                            return (
+                              <Dropdown.Item
+                                value={orderBy}
+                                text={l(`general.order_by.${orderBy}`)}
+                                onClick={handleChangeOrder}
+                              />
+                            )
+                          }
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                  </HeaderMenu.Right>
+                </HeaderMenu>
+              </div>
+            )}
             {loading && (
               <div>
-                <Card.Group>
+                <Card.Group itemsPerRow={4}>
                   {Array.from(Array(PAGE_SIZE), (_, i) => {
                     return <PlaceCard key={i} loading />
                   })}
@@ -176,17 +227,28 @@ export default function IndexPage() {
             {!loading && length > 0 && (
               <div>
                 <Card.Group>
-                  {(places?.data || []).map((place) => (
-                    <PlaceCard key={place.id} place={place} />
+                  {places.map((place) => (
+                    <PlaceCard
+                      key={place.id}
+                      place={place}
+                      onClickFavorite={(_, place) =>
+                        handleFavorite(place.id, place)
+                      }
+                      loadingFavorites={handlingFavorite.has(place.id)}
+                    />
                   ))}
                 </Card.Group>
               </div>
             )}
-            <div>
+            <div className="places-page__pagination">
               <Pagination
                 activePage={params.page}
                 totalPages={Math.ceil(total / PAGE_SIZE) || 1}
                 onPageChange={handleChangePage}
+                firstItem={mobile ? null : undefined}
+                lastItem={mobile ? null : undefined}
+                boundaryRange={mobile ? 1 : undefined}
+                siblingRange={mobile ? 0 : undefined}
               />
             </div>
           </Grid.Column>
