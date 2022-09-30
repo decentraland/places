@@ -38,6 +38,24 @@ body {
   height: 1em;
 }
 
+.navigation-menu.fullscreen .dcl.tabs .dcl.tabs-left {
+  display: flex;
+}
+
+@media (max-width: 768px) {
+  .navigation-menu .dcl.tabs .dcl.tabs-left .dcl.tab.active {
+    border-left: none;
+  }
+  .navigation-menu .dcl.tabs .dcl.tabs-left .dg.Link .dcl.tab {
+    color: var(--text);
+  }
+  .navigation-menu .dcl.tabs .dcl.tabs-left .dcl.tab .active-bar {
+    bottom: -10px;
+    display: block;
+    left: 16px;
+  }
+}
+
 @keyframes loading {
   to {
     background-position-x: -200%;
