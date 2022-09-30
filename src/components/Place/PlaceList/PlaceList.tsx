@@ -1,6 +1,10 @@
 import React from "react"
 
+import Carousel, {
+  IndicatorsType,
+} from "decentraland-gatsby/dist/components/Carousel/Carousel"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
+import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import PlaceCard from "../PlaceCard/PlaceCard"
@@ -29,6 +33,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     loadingFavorites,
   } = props
 
+  const isMobile = useMobileMediaQuery()
   return (
     <div
       className={TokenList.join([
@@ -36,20 +41,41 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         className && className,
       ])}
     >
-      {Array.from(Array(maxLength || places.length), (_, key) => {
-        const place = places && places[key]
-        return (
-          <PlaceCard
-            key={place?.id || key}
-            place={place}
-            loading={loading}
-            onClickFavorite={onClickFavorite}
-            loadingFavorites={
-              place?.id ? loadingFavorites?.has(place.id) : false
-            }
-          />
-        )
-      })}
+      {isMobile && maxLength && maxLength < 10 && (
+        <Carousel
+          autoResize={true}
+          className="place-list__carousel"
+          indicatorsType={IndicatorsType.Dash}
+        >
+          {places.map((place, key) => (
+            <PlaceCard
+              key={place?.id || key}
+              place={place}
+              loading={loading}
+              onClickFavorite={onClickFavorite}
+              loadingFavorites={
+                place?.id ? loadingFavorites?.has(place.id) : false
+              }
+            />
+          ))}
+        </Carousel>
+      )}
+
+      {(!isMobile || (isMobile && (!maxLength || maxLength >= 10))) &&
+        Array.from(Array(maxLength || places.length), (_, key) => {
+          const place = places && places[key]
+          return (
+            <PlaceCard
+              key={place?.id || key}
+              place={place}
+              loading={loading}
+              onClickFavorite={onClickFavorite}
+              loadingFavorites={
+                place?.id ? loadingFavorites?.has(place.id) : false
+              }
+            />
+          )
+        })}
     </div>
   )
 })

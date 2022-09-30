@@ -3,7 +3,6 @@ import React, { useCallback, useMemo } from "react"
 import Helmet from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
-import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"

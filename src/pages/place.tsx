@@ -14,6 +14,7 @@ import { Loader } from "decentraland-ui/dist/components/Loader/Loader"
 import { intersects, sum } from "radash/dist/array"
 
 import ItemLayout from "../components/Layout/ItemLayout"
+import Navigation from "../components/Layout/Navigation"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceRealmActivity, {
   ReamlActivity,
@@ -177,6 +178,7 @@ export default function PlacePage() {
         <meta name="twitter:creator" content={l("social.home.creator") || ""} />
         <meta name="twitter:site" content={l("social.home.site") || ""} />
       </Helmet>
+      <Navigation />
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout full>
           {loading && (

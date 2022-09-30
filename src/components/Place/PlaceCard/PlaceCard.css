@@ -23,7 +23,7 @@
 
 .ui.card.place-card .content {
   padding: 10px;
-  border-top-color: #000000;
+  border-top-color: var(--divider);
 }
 
 .ui.card.place-card.loading .content .header {
