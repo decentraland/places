@@ -43,7 +43,6 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     >
       {isMobile && maxLength && maxLength < 10 && (
         <Carousel
-          autoResize={true}
           className="place-list__carousel"
           indicatorsType={IndicatorsType.Dash}
         >

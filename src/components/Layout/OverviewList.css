@@ -47,6 +47,7 @@
 @media only screen and (max-width: 425px) {
   .place-list__container.overview-list__place-list .ui.link.card.place-card {
     width: 82vw;
+    margin: 5px;
   }
   .ui.overview-list
     .dcl.header-menu
