@@ -54,7 +54,10 @@
       "view_all": "view all"
     },
     "places": {
-      "title": "Places"
+      "title": "Places",
+      "filters_title": "Sort and filter",
+      "filters_places": "Filters",
+      "sort_by": "Sort by"
     },
     "my_places": {
       "title": "My Places",

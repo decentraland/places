@@ -144,17 +144,17 @@ export default function IndexPage() {
       <Grid stackable className="places-page">
         <Grid.Row>
           <Grid.Column tablet={4} className="places-page__filters">
-            <Header>Places</Header>
+            <Header>{l("pages.places.title")}</Header>
             <FilterContainerModal
               title="Filters"
               action={
                 <>
-                  <Icon name="filter" /> Sort and filter
+                  <Icon name="filter" /> {l("pages.places.filters_title")}
                 </>
               }
             >
               {mobile && (
-                <Box header="sort by" borderless>
+                <Box header={l("pages.places.sort_by")} borderless>
                   <Select
                     value={params.order_by}
                     text={l(`general.order_by.${params.order_by}`)}
@@ -172,7 +172,7 @@ export default function IndexPage() {
                 </Box>
               )}
               <ToggleBox
-                header="filters"
+                header={l("pages.places.filters_type")}
                 onClick={handleChangePois}
                 borderless
                 value={Number(params.only_pois)}
@@ -195,7 +195,6 @@ export default function IndexPage() {
                   <HeaderMenu.Right>
                     <Dropdown
                       text={l(`general.order_by.${params.order_by}`)}
-                      onChange={console.log}
                       direction="left"
                     >
                       <Dropdown.Menu>
