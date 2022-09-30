@@ -49,6 +49,10 @@
     width: 82vw;
     margin: 5px;
   }
+  .place-list__container.overview-list__place-list
+    .ui.link.card.place-card:hover {
+    box-shadow: var(--shadow-1);
+  }
   .ui.overview-list
     .dcl.header-menu
     .dcl.header-menu-left
