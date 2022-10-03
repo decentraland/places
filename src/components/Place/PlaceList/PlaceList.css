@@ -29,3 +29,9 @@
     margin-top: 0;
   }
 }
+
+@media only screen and (min-width: 1600px) {
+  .place-list__container .ui.card.place-card {
+    width: 100%;
+  }
+}
