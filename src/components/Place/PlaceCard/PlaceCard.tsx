@@ -53,10 +53,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         loading && "loading",
         !loading && !place && "hidden",
       ])}
-      onClick={(e) => {
-        e.preventDefault()
-        href && navigate(href)
-      }}
     >
       <a className="place-card__cover" href={href}>
         <ImgFixed src={place?.image || ""} dimension="wide" />
