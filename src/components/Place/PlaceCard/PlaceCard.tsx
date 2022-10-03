@@ -47,7 +47,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   return (
     <Card
-      link
+      as="div"
       className={TokenList.join([
         "place-card",
         loading && "loading",
@@ -57,13 +57,14 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         e.preventDefault()
         href && navigate(href)
       }}
-      href={href}
     >
-      <div className="place-card__cover">
+      <a className="place-card__cover" href={href}>
         <ImgFixed src={place?.image || ""} dimension="wide" />
-      </div>
+      </a>
       <Card.Content>
-        <Card.Header>{place?.title || " "}</Card.Header>
+        <Card.Header as="a" href={href}>
+          {place?.title || " "}
+        </Card.Header>
         <div className="place-card__button-container">
           <JumpInPositionButton
             href={placerUrl}
@@ -76,7 +77,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             active={!!place?.user_favorite}
             onClick={handleClickFavorite}
             loading={loading || loadingFavorites}
-          ></FavoriteButton>
+          />
         </div>
       </Card.Content>
     </Card>
