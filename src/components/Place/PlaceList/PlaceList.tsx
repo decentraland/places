@@ -41,7 +41,10 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         className && className,
       ])}
     >
-      {isMobile && maxLength && maxLength < 10 && (
+      {loading && isMobile && maxLength && maxLength < 10 && (
+        <PlaceCard loading={loading} />
+      )}
+      {!loading && isMobile && maxLength && maxLength < 10 && (
         <Carousel
           className="place-list__carousel"
           indicatorsType={IndicatorsType.Dash}
