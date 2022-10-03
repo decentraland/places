@@ -22,3 +22,9 @@
 .places-page .ui.button.filter-container__button {
   width: 100%;
 }
+
+@media only screen and (min-width: 768px) {
+  .places-page .places-page__filters .ui.header {
+    margin-left: 22px;
+  }
+}
