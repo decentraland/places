@@ -37,7 +37,7 @@ export default function OverviewPage() {
     () => [
       placeListLastUpdates,
       placeListPopular,
-      placeListMyFavorites,
+      placeListMyFavorites.data,
       placeListPois,
     ],
     [
@@ -89,16 +89,18 @@ export default function OverviewPage() {
           loading={placeListPopularState.loading}
           loadingFavorites={handlingFavorite}
         />
-        {account && placeListMyFavorites && placeListMyFavorites.length > 0 && (
-          <OverviewList
-            places={myFavoritesList}
-            title={l("pages.overview.my_favorites")}
-            href={locations.my_places()}
-            onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-            loading={placeListMyFavoritesState.loading}
-            loadingFavorites={handlingFavorite}
-          />
-        )}
+        {account &&
+          placeListMyFavorites &&
+          placeListMyFavorites.data.length > 0 && (
+            <OverviewList
+              places={myFavoritesList}
+              title={l("pages.overview.my_favorites")}
+              href={locations.my_places({})}
+              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+              loading={placeListMyFavoritesState.loading}
+              loadingFavorites={handlingFavorite}
+            />
+          )}
         <OverviewList
           places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}

@@ -60,6 +60,14 @@ body {
   display: flex;
 }
 
+.places__pagination {
+  display: flex;
+}
+
+.places__pagination .ui.pagination {
+  margin: 64px auto 0;
+}
+
 @media (max-width: 768px) {
   .navigation-menu .dcl.tabs .dcl.tabs-left .dcl.tab.active {
     border-left: none;

@@ -230,7 +230,7 @@ export default function IndexPage() {
                 loadingFavorites={handlingFavorite}
               />
             )}
-            <div className="places-page__pagination">
+            <div className="places__pagination">
               <Pagination
                 activePage={params.page}
                 totalPages={Math.ceil(total / PAGE_SIZE) || 1}

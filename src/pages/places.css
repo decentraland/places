@@ -26,10 +26,6 @@
   display: flex;
 }
 
-.places-page .places-page__pagination .ui.pagination {
-  margin: 64px auto 0;
-}
-
 .places-page .ui.button.filter-container__button {
   width: 100%;
 }
