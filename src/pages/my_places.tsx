@@ -9,7 +9,6 @@ import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
-import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
 
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
@@ -132,9 +131,6 @@ export default function PlacesPage() {
         <meta name="twitter:site" content={l("social.my_places.site") || ""} />
       </Helmet>
       <Navigation activeTab={NavigationTab.MyPlaces} />
-      <Hero className="my-places-list__title">
-        <Hero.Header>{l("pages.my_places.title")}</Hero.Header>
-      </Hero>
       <Container className="my-places-list__container">
         <Title small>{l("pages.my_places.favorites")}</Title>
         {!accountState.loading && myFavoritesList.length === 0 && (

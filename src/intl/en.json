@@ -47,8 +47,8 @@
     "overview": {
       "title": "Places",
       "search_the_metaverse": "Search the Metaverse",
-      "popular": "Popular",
-      "Featured": "Featured",
+      "popular": "Popular Places",
+      "Featured": "Featured Places",
       "my_favorites": "My Favorites",
       "recently_updated": "Recently Updated",
       "points_of_interest": "Points of Interest",
@@ -58,11 +58,13 @@
       "title": "Places",
       "filters_title": "Sort and filter",
       "filters_places": "Filters",
-      "sort_by": "Sort by"
+      "sort_by": "Sort by",
+      "pois": "Point of interest",
+      "featured": "Featured"
     },
     "my_places": {
       "title": "My Places",
-      "favorites": "Favorites",
+      "favorites": "My Favorites",
       "no_favorite_selected": "You didn't select a Place as a favorite, find ",
       "go_to_overview": "the places you like the most"
     }

@@ -7,47 +7,24 @@
 }
 
 .ui.container.my-places-list__container {
-  width: calc(100% - 40px);
-  margin-left: 40px !important;
+  width: calc(100% - 96px);
+  padding-top: 18px;
 }
 
 .my-places-list__place-list {
   margin-top: 40px;
   justify-content: flex-start;
-}
-
-.my-places-list__place-list .ui.card.place-card {
-  margin: 0 25px 20px 0;
-  max-width: 100%;
-  min-width: 200px;
-  width: 17vw;
-}
-
-@media only screen and (min-width: 992px) and (max-width: 1199px) {
-  .my-places-list__place-list .ui.card.place-card {
-    width: 21vw;
-  }
-}
-
-@media only screen and (min-width: 768px) and (max-width: 991px) {
-  .my-places-list__place-list .ui.card.place-card {
-    width: 28vw;
-  }
+  margin-left: -14px;
+  margin-right: -28px;
 }
 
 @media only screen and (max-width: 767px) {
-  .my-places-list__place-list .ui.card.place-card {
-    width: 40vw;
-  }
   .ui.container.my-places-list__container {
-    margin-left: 32px !important;
-    margin-right: 0 !important;
-    width: calc(100% - 32px) !important;
+    margin-left: 1rem;
+    margin-right: 1rem;
   }
-}
 
-@media only screen and (max-width: 425px) {
-  .my-places-list__place-list .ui.card.place-card {
-    width: 100vw;
+  .my-places-list__place-list {
+    margin-right: -14px;
   }
 }

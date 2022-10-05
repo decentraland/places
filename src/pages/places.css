@@ -5,10 +5,21 @@
   border-right: 1px solid var(--divider);
 }
 
+.ui.grid.places-page {
+  margin: 0 !important;
+}
+
+.ui.grid.places-page > .row {
+  padding: 18px 0 0 !important;
+}
+
 .ui.grid.places-page > .row > .column.places-page__list {
-  padding-top: 48px;
-  padding-right: 38px;
-  padding-bottom: 0;
+  padding: 0 48px 24px;
+}
+
+.ui.grid.places-page > .row > .column.places-page__list .place-list__container {
+  margin-left: -14px;
+  margin-right: -28px;
 }
 
 .ui.grid.places-page > .row > .column.places-page__list > div {
@@ -21,6 +32,33 @@
 
 .places-page .ui.button.filter-container__button {
   width: 100%;
+}
+
+.places-page .places-page__filter-container .filter {
+  height: 41px;
+  margin-right: 10px;
+}
+
+.places-page .places-page__filter-container .filter .filter-background {
+  opacity: 1;
+  border-radius: 100px;
+}
+
+.places-page
+  .places-page__filter-container
+  .filter:not(.active)
+  .filter-background {
+  background-color: var(--secondary-hover);
+}
+
+.places-page .places-page__filter-container .filter span {
+  color: var(--innocence);
+  line-height: 31px;
+  font-weight: 500;
+}
+
+.places-page .places-page__filter-container .filter:not(.active) span {
+  color: var(--text);
 }
 
 @media only screen and (min-width: 768px) {

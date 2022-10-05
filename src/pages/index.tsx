@@ -17,6 +17,8 @@ import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdate
 import usePlacesManager from "../hooks/usePlacesManager"
 import locations from "../modules/locations"
 
+import "./index.css"
+
 const overviewOptions = { limit: 5, offset: 0 }
 
 export default function OverviewPage() {
@@ -76,13 +78,7 @@ export default function OverviewPage() {
         <meta name="twitter:site" content={l("social.home.site") || ""} />
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
-      <Hero>
-        <Hero.Header>{l("pages.overview.title")}</Hero.Header>
-        <Hero.Description>
-          {l("pages.overview.search_the_metaverse")}
-        </Hero.Description>
-      </Hero>
-      <Container className="full">
+      <Container className="full overview-container">
         <OverviewList
           places={popularList}
           title={l("pages.overview.popular")}

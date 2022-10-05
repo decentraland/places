@@ -12,11 +12,10 @@ import API from "decentraland-gatsby/dist/utils/api/API"
 import { Box } from "decentraland-ui/dist/components/Box/Box"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
-import { Header } from "decentraland-ui/dist/components/Header/Header"
+import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
-import { ToggleBox } from "decentraland-ui/dist/components/ToggleBox/ToggleBox"
 import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
@@ -24,6 +23,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
+import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
@@ -143,17 +143,16 @@ export default function IndexPage() {
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>
-          <Grid.Column tablet={4} className="places-page__filters">
-            <Header>{l("pages.places.title")}</Header>
-            <FilterContainerModal
-              title="Filters"
-              action={
-                <>
-                  <Icon name="filter" /> {l("pages.places.filters_title")}
-                </>
-              }
-            >
-              {mobile && (
+          {mobile && (
+            <Grid.Column tablet={4} className="places-page__filters">
+              <FilterContainerModal
+                title="Filters"
+                action={
+                  <>
+                    <Icon name="filter" /> {l("pages.places.filters_title")}
+                  </>
+                }
+              >
                 <Box header={l("pages.places.sort_by")} borderless>
                   <Select
                     value={params.order_by}
@@ -170,27 +169,27 @@ export default function IndexPage() {
                     )}
                   />
                 </Box>
-              )}
-              <ToggleBox
-                header={l("pages.places.filters_places")}
-                onClick={handleChangePois}
-                borderless
-                value={Number(params.only_pois)}
-                items={[
-                  { title: "All", value: 0, description: "" },
-                  { title: "Pois", value: 1, description: "" },
-                ]}
-              />
-            </FilterContainerModal>
-          </Grid.Column>
-          <Grid.Column tablet={12} className="places-page__list">
+              </FilterContainerModal>
+            </Grid.Column>
+          )}
+          <Grid.Column tablet={16} className="places-page__list">
             {!mobile && (
               <div>
                 <HeaderMenu stackable>
                   <HeaderMenu.Left>
-                    <Header sub>
+                    {/* <Header sub>
                       {l("general.count_places", { count: total })}
-                    </Header>
+                    </Header> */}
+                    <div
+                      onClick={(e) =>
+                        handleChangePois(e, { value: !params.only_pois })
+                      }
+                      className="places-page__filter-container"
+                    >
+                      <Filter active={params.only_pois}>
+                        {l("pages.places.pois")}
+                      </Filter>
+                    </div>
                   </HeaderMenu.Left>
                   <HeaderMenu.Right>
                     <Dropdown
@@ -225,20 +224,11 @@ export default function IndexPage() {
               </div>
             )}
             {!loading && length > 0 && (
-              <div>
-                <Card.Group>
-                  {places.map((place) => (
-                    <PlaceCard
-                      key={place.id}
-                      place={place}
-                      onClickFavorite={(_, place) =>
-                        handleFavorite(place.id, place)
-                      }
-                      loadingFavorites={handlingFavorite.has(place.id)}
-                    />
-                  ))}
-                </Card.Group>
-              </div>
+              <PlaceList
+                places={places}
+                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+                loadingFavorites={handlingFavorite}
+              />
             )}
             <div className="places-page__pagination">
               <Pagination
