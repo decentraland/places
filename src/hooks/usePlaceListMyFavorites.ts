@@ -4,7 +4,13 @@ import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 
-export function usePlaceListMyFavorites(options?: {
+const defaultResult = {
+  data: [] as AggregatePlaceAttributes[],
+  ok: true,
+  total: 0,
+}
+
+export function usePlaceListMyFavorites(options: {
   limit: number
   offset: number
 }) {
@@ -12,13 +18,15 @@ export function usePlaceListMyFavorites(options?: {
   return useAsyncMemo(
     async () => {
       if (!account) {
-        return []
+        return defaultResult
       }
 
-      const result = await Places.get().getPlacesMyFavorites(options)
-      return result.data
+      return Places.get().getPlacesMyFavorites(options)
     },
-    [options?.limit, options?.offset, account],
-    { initialValue: [] as AggregatePlaceAttributes[] }
+    [options, account],
+    {
+      callWithTruthyDeps: true,
+      initialValue: defaultResult,
+    }
   )
 }

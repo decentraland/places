@@ -40,7 +40,7 @@ export default function Navigation(props: NavigationProps) {
           {account && (
             <NavigationMenu.Item
               active={props.activeTab === NavigationTab.MyPlaces}
-              href={locations.my_places()}
+              href={locations.my_places({})}
             >
               {l("navigation.my_places")}
             </NavigationMenu.Item>

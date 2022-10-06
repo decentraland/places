@@ -11,7 +11,7 @@
   margin-right: 0;
 }
 
-.place-list__container.overview-list__place-list .ui.link.card.place-card {
+.place-list__container.overview-list__place-list .ui.card.place-card {
   width: 400px;
 }
 
@@ -45,7 +45,7 @@
   }
 }
 @media only screen and (max-width: 425px) {
-  .place-list__container.overview-list__place-list .ui.link.card.place-card {
+  .place-list__container.overview-list__place-list .ui.card.place-card {
     width: 82vw;
     margin: 5px;
   }
