@@ -22,13 +22,10 @@ export default React.memo(function ShareBox(props: ShareBoxProps) {
     <Button
       secondary
       onClick={onClick}
-      className={TokenList.join([
-        "button-box icon",
-        !navigator.share && "hide",
-      ])}
+      className={TokenList.join(["button-box icon"])}
       target="_blank"
       loading={loading}
-      disabled={loading || !navigator.share}
+      disabled={loading}
     >
       <Icon
         name="share alternate"
