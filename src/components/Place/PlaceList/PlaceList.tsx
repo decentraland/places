@@ -64,20 +64,23 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
       )}
 
       {(!isMobile || (isMobile && (!maxLength || maxLength >= 10))) &&
-        Array.from(Array(maxLength || places.length), (_, key) => {
-          const place = places && places[key]
-          return (
-            <PlaceCard
-              key={place?.id || key}
-              place={place}
-              loading={loading}
-              onClickFavorite={onClickFavorite}
-              loadingFavorites={
-                place?.id ? loadingFavorites?.has(place.id) : false
-              }
-            />
-          )
-        })}
+        Array.from(
+          Array(maxLength || (loading ? 10 : places.length)),
+          (_, key) => {
+            const place = places && places[key]
+            return (
+              <PlaceCard
+                key={place?.id || key}
+                place={place}
+                loading={loading}
+                onClickFavorite={onClickFavorite}
+                loadingFavorites={
+                  place?.id ? loadingFavorites?.has(place.id) : false
+                }
+              />
+            )
+          }
+        )}
     </div>
   )
 })

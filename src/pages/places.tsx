@@ -22,7 +22,6 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
-import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
@@ -77,7 +76,6 @@ export default function IndexPage() {
     usePlacesManager(placesMemo)
 
   const loading = placesState.version === 0 || placesState.loading
-  const length = places.length || 0
   const total = result.total || 0
 
   const handleChangePage = useCallback(
@@ -214,22 +212,12 @@ export default function IndexPage() {
                 </HeaderMenu>
               </div>
             )}
-            {loading && (
-              <div>
-                <Card.Group itemsPerRow={4}>
-                  {Array.from(Array(PAGE_SIZE), (_, i) => {
-                    return <PlaceCard key={i} loading />
-                  })}
-                </Card.Group>
-              </div>
-            )}
-            {!loading && length > 0 && (
-              <PlaceList
-                places={places}
-                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-                loadingFavorites={handlingFavorite}
-              />
-            )}
+            <PlaceList
+              places={places}
+              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+              loadingFavorites={handlingFavorite}
+              loading={loading}
+            />
             <div className="places__pagination">
               <Pagination
                 activePage={params.page}

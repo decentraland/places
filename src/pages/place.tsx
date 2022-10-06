@@ -180,41 +180,36 @@ export default function PlacePage() {
       <Navigation />
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout full>
-          {loading && (
-            <Loader active size="massive" style={{ position: "relative" }} />
-          )}
-          {!loading && place && (
-            <>
-              <PlaceDescription
+          <>
+            <PlaceDescription
+              place={place}
+              onClickLike={async () =>
+                handleLike(place.id, place.user_like ? null : true)
+              }
+              onClickDislike={async () =>
+                handleDislike(place.id, place.user_dislike ? null : false)
+              }
+              onClickShare={async (e) => handleShare(e)}
+              onClickFavorite={async () => handleFavorite(place.id, place)}
+              loading={loading}
+              loadingFavorite={handlingFavorite.has(place.id)}
+              loadingLike={handlingLike.has(place.id)}
+              loadingDislike={handlingDislike.has(place.id)}
+            />
+            <PlaceStats
+              place={place}
+              users={activitySum}
+              loading={loading}
+              poi={isPoi}
+            />
+            {!loading && placeRealmActivities.length > 0 && (
+              <PlaceRealmActivity
                 place={place}
-                onClickLike={async () =>
-                  handleLike(place.id, place.user_like ? null : true)
-                }
-                onClickDislike={async () =>
-                  handleDislike(place.id, place.user_dislike ? null : false)
-                }
-                onClickShare={async (e) => handleShare(e)}
-                onClickFavorite={async () => handleFavorite(place.id, place)}
-                loading={loading || handlingShare}
-                loadingFavorite={handlingFavorite.has(place.id)}
-                loadingLike={handlingLike.has(place.id)}
-                loadingDislike={handlingDislike.has(place.id)}
-              />
-              <PlaceStats
-                place={place}
-                users={activitySum}
                 loading={loading}
-                poi={isPoi}
+                activities={placeRealmActivities}
               />
-              {!loading && placeRealmActivities.length > 0 && (
-                <PlaceRealmActivity
-                  place={place}
-                  loading={loading}
-                  activities={placeRealmActivities}
-                />
-              )}
-            </>
-          )}
+            )}
+          </>
         </ItemLayout>
       </Container>
     </>
