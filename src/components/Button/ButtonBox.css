@@ -1,4 +1,4 @@
-.ui.button.button-box.icon {
+.ui.button.button-box {
   padding: 9px 0;
   box-sizing: border-box;
   border-radius: 5px;
@@ -12,33 +12,20 @@
   background-color: transparent;
 }
 
-.ui.button.button-box.icon:hover {
-  border-color: var(--primary);
+.ui.button.button-box:not(.button-box__active):hover {
+  border-color: #d9d9d9;
+}
+.ui.button.button-box.button-box__active:hover {
+  border-color: #c82443;
 }
 
-.ui.button.button-box.icon .icon {
-  font-size: 18px;
-  color: var(--primary);
-}
-
-.ui.button.button-box.icon .button-box__icon.button-box__icon--active,
-.ui.button.button-box.icon:hover
-  .button-box__icon:not(.button-box__icon--active) {
-  display: inline-block;
-}
-
-.ui.button.button-box.icon:hover .button-box__icon.button-box__icon--active,
-.ui.button.button-box.icon .button-box__icon:not(.button-box__icon--active) {
-  display: none;
-}
-
-.ui.button.button-box.icon .ui.label {
+.ui.button.button-box .ui.label {
   margin: 0;
   background-color: transparent;
   text-transform: capitalize;
 }
 
-.ui.button.button-box.icon.loading .ui.label,
-.ui.button.button-box.icon.loading .button-box__icon {
+.ui.button.button-box.loading .ui.label,
+.ui.button.button-box.loading svg {
   display: none;
 }

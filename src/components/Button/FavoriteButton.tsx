@@ -2,7 +2,8 @@ import React from "react"
 
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
+
+import { Heart } from "../Icon/Heart"
 
 import "./FavoriteButton.css"
 
@@ -18,12 +19,14 @@ export default React.memo(function FavoriteButton(props: FavoriteButtonProps) {
     <Button
       primary
       onClick={onClick}
-      className={TokenList.join(["heart-button", "icon", active && "active"])}
+      className={TokenList.join([
+        "heart-button",
+        active && "heart-button__active",
+      ])}
       loading={loading}
       disabled={loading}
     >
-      {!loading && <Icon name="heart outline" className="heart-button__icon" />}
-      {!loading && <Icon name="heart" className="heart-button__icon--active" />}
+      <Heart active={!!active} />
     </Button>
   )
 })

@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from "react"
 
-import Helmet from "react-helmet"
+import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
