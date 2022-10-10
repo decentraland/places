@@ -2,7 +2,9 @@ import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
+import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
@@ -14,6 +16,7 @@ import { usePlaceListPois } from "../hooks/usePlaceListPois"
 import { usePlaceListPopular } from "../hooks/usePlaceListPopular"
 import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
 import usePlacesManager from "../hooks/usePlacesManager"
+import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 
 import "./index.css"
@@ -51,6 +54,12 @@ export default function OverviewPage() {
     [lastUpdatesList, popularList, myFavoritesList, poisList],
     { handleFavorite, handlingFavorite },
   ] = usePlacesManager(placesMemo)
+
+  const [ff] = useFeatureFlagContext()
+
+  if (ff.flags[FeatureFlags.Maintenance]) {
+    return <MaintenancePage />
+  }
 
   return (
     <>
