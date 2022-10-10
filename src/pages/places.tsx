@@ -10,7 +10,6 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Box } from "decentraland-ui/dist/components/Box/Box"
-import { Card } from "decentraland-ui/dist/components/Card/Card"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
@@ -175,9 +174,6 @@ export default function IndexPage() {
               <div>
                 <HeaderMenu stackable>
                   <HeaderMenu.Left>
-                    {/* <Header sub>
-                      {l("general.count_places", { count: total })}
-                    </Header> */}
                     <div
                       onClick={(e) =>
                         handleChangePois(e, { value: !params.only_pois })
@@ -217,6 +213,7 @@ export default function IndexPage() {
               onClickFavorite={(_, place) => handleFavorite(place.id, place)}
               loadingFavorites={handlingFavorite}
               loading={loading}
+              size={loading ? PAGE_SIZE : undefined}
             />
             <div className="places__pagination">
               <Pagination
