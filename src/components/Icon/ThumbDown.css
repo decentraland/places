@@ -1,0 +1,31 @@
+.icon-thumb-down {
+  width: 24px;
+  height: 24px;
+  overflow: visible !important;
+}
+
+.icon-thumb-down path,
+.icon-thumb-down rect {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+:hover > .icon-thumb-down path,
+:hover > .icon-thumb-down rect {
+  fill: #d9d9d9;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+.icon-thumb-down.active path,
+.icon-thumb-down.active rect {
+  fill: #ff2d55;
+  stroke: none;
+}
+
+:hover > .icon-thumb-down.active path,
+:hover > .icon-thumb-down.active rect {
+  fill: #c82443;
+  stroke: none;
+}

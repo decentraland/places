@@ -1,0 +1,19 @@
+.icon-share {
+  width: 24px;
+  height: 24px;
+  overflow: visible !important;
+}
+
+.icon-share path {
+  fill: #161518;
+}
+
+.icon-share circle {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 1px;
+}
+
+:hover > .icon-share circle {
+  fill: #d9d9d9;
+}

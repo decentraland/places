@@ -7,7 +7,6 @@ import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import PlaceModel from "../Place/model"
-import { PlaceAttributes } from "../Place/types"
 import { fetchScore } from "../Snapshot/utils"
 import UserLikesModel from "../UserLikes/model"
 import { updateUserLikeBodySchema, updateUserLikeParamsSchema } from "./schema"

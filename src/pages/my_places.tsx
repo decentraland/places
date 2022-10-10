@@ -5,12 +5,12 @@ import { Helmet } from "react-helmet"
 import { useLocation } from "@gatsbyjs/reach-router"
 import Link from "decentraland-gatsby/dist/components/Text/Link"
 import Paragraph from "decentraland-gatsby/dist/components/Text/Paragraph"
-import Title from "decentraland-gatsby/dist/components/Text/Title"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
+import { Header } from "decentraland-ui/dist/components/Header/Header"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
 import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
@@ -159,7 +159,7 @@ export default function PlacesPage() {
       </Helmet>
       <Navigation activeTab={NavigationTab.MyPlaces} />
       <Container className="my-places-list__container">
-        <Title small>{l("pages.my_places.favorites")}</Title>
+        <Header>{l("pages.my_places.favorites")}</Header>
         {!accountState.loading && myFavoritesList.length === 0 && (
           <Paragraph secondary>
             {l("pages.my_places.no_favorite_selected")}{" "}

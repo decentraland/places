@@ -1,35 +1,39 @@
 .ui.button.heart-button {
-  padding: 9px 9px;
+  padding: 5px 0px;
   box-sizing: border-box;
   border-radius: 5px;
   width: 40px;
-  height: 36px;
   min-width: 40px;
+  height: 36px;
+  border: 1px solid #cfcdd4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   background-color: transparent;
-  border: 1px solid hsla(260, 6%, 46%, 0.32);
   margin-left: 10px;
-}
-
-.ui.button.heart-button.active,
-.ui.button.heart-button:focus,
-.ui.button.heart-button:hover {
   background-color: transparent;
-  border-color: var(--primary);
 }
 
-.ui.button.heart-button .heart {
-  font-size: 18px;
-  color: var(--primary);
+.ui.button.heart-button.primary:hover,
+.ui.button.heart-button.primary:active,
+.ui.button.heart-button.primary:focus {
+  background-color: transparent;
 }
 
-.ui.button.heart-button.active .heart-button__icon,
-.ui.button.heart-button.loading .heart-button__icon,
-.ui.button.heart-button:hover .heart-button__icon,
-.ui.button.heart-button .heart-button__icon--active {
+.ui.button.heart-button:not(.heart-button__active):hover {
+  border-color: #d9d9d9;
+}
+.ui.button.heart-button.heart-button__active:hover {
+  border-color: #c82443;
+}
+
+.ui.button.heart-button .ui.label {
+  margin: 0;
+  background-color: transparent;
+  text-transform: capitalize;
+}
+
+.ui.button.heart-button.loading .ui.label,
+.ui.button.heart-button.loading svg {
   display: none;
-}
-
-.ui.button.heart-button.active .heart-button__icon--active,
-.ui.button.heart-button:hover .heart-button__icon--active {
-  display: inherit;
 }
