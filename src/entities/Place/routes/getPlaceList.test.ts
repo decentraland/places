@@ -1,5 +1,4 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
-import { ParsedQs } from "qs"
 
 import PlaceModel from "../model"
 import { getPlaceList } from "./getPlaceList"

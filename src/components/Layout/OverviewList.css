@@ -1,3 +1,14 @@
+.ui.overview-list:not(:first-child) {
+  padding-top: 30px;
+}
+
+.ui.overview-list .dcl.header-menu .ui.header {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
 .overview-list__place-list {
   flex-wrap: nowrap;
   margin-bottom: 30px;
@@ -13,6 +24,7 @@
 
 .place-list__container.overview-list__place-list .ui.card.place-card {
   width: 400px;
+  margin-top: 2px;
 }
 
 @media only screen and (min-width: 1200px) {

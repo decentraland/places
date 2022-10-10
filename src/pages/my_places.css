@@ -2,6 +2,13 @@
   border-bottom: none;
 }
 
+.my-places-list__container .ui.header {
+  font-size: 28px;
+  line-height: 34px;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
 .my-places-list__sign-in .SignIn {
   position: relative;
 }
@@ -12,10 +19,14 @@
 }
 
 .my-places-list__place-list {
-  margin-top: 40px;
+  margin-top: 30px;
   justify-content: flex-start;
   margin-left: -14px;
   margin-right: -28px;
+}
+
+.my-places-list__place-list .ui.card.place-card {
+  margin-top: 0;
 }
 
 @media only screen and (max-width: 767px) {

@@ -3,8 +3,9 @@ import React from "react"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
+
+import { Share } from "../Icon/Share"
 
 import "./ButtonBox.css"
 
@@ -22,23 +23,11 @@ export default React.memo(function ShareBox(props: ShareBoxProps) {
     <Button
       secondary
       onClick={onClick}
-      className={TokenList.join(["button-box icon"])}
+      className={TokenList.join(["button-box", active && "button-box__active"])}
       target="_blank"
       loading={loading}
-      disabled={loading}
     >
-      <Icon
-        name="share alternate"
-        className={TokenList.join([
-          "button-box__icon",
-          !active && "button-box__icon--active",
-        ])}
-      />
-
-      <Icon
-        name="share alternate"
-        className={!active ? "button-box__icon" : "button-box__icon--active"}
-      />
+      <Share />
       <Label>{l("components.button.share")}</Label>
     </Button>
   )

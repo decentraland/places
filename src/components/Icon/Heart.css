@@ -1,0 +1,27 @@
+.icon-heart {
+  width: 24px;
+  height: 24px;
+  overflow: visible !important;
+}
+
+.icon-heart path {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+:hover > .icon-heart path {
+  fill: #d9d9d9;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+.icon-heart.active path {
+  fill: #ff2d55;
+  stroke: none;
+}
+
+:hover > .icon-heart.active path {
+  fill: #c82443;
+  stroke: none;
+}
