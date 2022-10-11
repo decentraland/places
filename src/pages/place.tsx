@@ -3,9 +3,11 @@ import React, { useCallback, useMemo } from "react"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
+import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -21,6 +23,7 @@ import PlaceRealmActivity, {
 import PlaceStats from "../components/Place/PlaceStats/PlaceStats"
 import { usePlaceId } from "../hooks/usePlaceId"
 import usePlacesManager from "../hooks/usePlacesManager"
+import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { getPois } from "../modules/pois"
 import { SegmentPlace } from "../modules/segment"
@@ -121,6 +124,12 @@ export default function PlacePage() {
   )
 
   const loading = accountState.loading
+
+  const [ff] = useFeatureFlagContext()
+
+  if (ff.flags[FeatureFlags.Maintenance]) {
+    return <MaintenancePage />
+  }
 
   if (!loading && !place) {
     return (
