@@ -3,9 +3,11 @@ import React, { useCallback, useMemo } from "react"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
+import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import Link from "decentraland-gatsby/dist/components/Text/Link"
 import Paragraph from "decentraland-gatsby/dist/components/Text/Paragraph"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
@@ -19,6 +21,7 @@ import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import usePlacesManager from "../hooks/usePlacesManager"
+import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
 
 import "./my_places.css"
@@ -60,6 +63,12 @@ export default function PlacesPage() {
     },
     [params]
   )
+
+  const [ff] = useFeatureFlagContext()
+
+  if (ff.flags[FeatureFlags.Maintenance]) {
+    return <MaintenancePage />
+  }
 
   if (!account || accountState.loading) {
     return (

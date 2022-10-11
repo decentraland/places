@@ -3,7 +3,9 @@ import React, { useCallback, useMemo } from "react"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
+import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -31,6 +33,7 @@ import {
   PlaceListOrderBy,
 } from "../entities/Place/types"
 import usePlacesManager from "../hooks/usePlacesManager"
+import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
 import { getPois } from "../modules/pois"
 
@@ -109,6 +112,12 @@ export default function IndexPage() {
     },
     [params]
   )
+
+  const [ff] = useFeatureFlagContext()
+
+  if (ff.flags[FeatureFlags.Maintenance]) {
+    return <MaintenancePage />
+  }
 
   return (
     <>
