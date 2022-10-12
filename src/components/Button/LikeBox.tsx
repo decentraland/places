@@ -20,7 +20,6 @@ export default React.memo(function LikeBox(props: LikeBoxProps) {
   const { onClick, loading, active, total } = props
   return (
     <Button
-      secondary
       onClick={onClick}
       className={TokenList.join(["button-box", active && "button-box__active"])}
       target="_blank"

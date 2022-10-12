@@ -1,5 +1,10 @@
 .ui.card.place-card {
   border-radius: 10px;
+  transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+
+.ui.card.place-card:hover {
+  transform: translateY(-4px);
 }
 
 .ui.card.place-card.hidden {
@@ -28,6 +33,10 @@
 
 .ui.card.place-card.loading .content .header {
   opacity: 0;
+}
+
+.ui.card.place-card .content .header:hover {
+  color: var(--text);
 }
 
 .ui.card.place-card .content .header {

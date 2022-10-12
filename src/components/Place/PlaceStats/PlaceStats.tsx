@@ -32,9 +32,6 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
       <Stats title={l("components.place_starts.favorites")}>
         <Header>{shorterNumber(place.favorites)}</Header>
       </Stats>
-      <Stats title={l("components.place_starts.created")}>
-        {Time.from(place.created_at).format("D/MM/YYYY")}
-      </Stats>
       <Stats title={l("components.place_starts.updated")}>
         {Time.from(place.updated_at).format("D/MM/YYYY")}
       </Stats>

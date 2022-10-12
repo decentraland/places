@@ -42,6 +42,11 @@
   margin-left: auto;
 }
 
+.place-stats > span.dcl.stats > .ui.header {
+  font-size: 15px;
+  font-weight: 400;
+}
+
 @media only screen and (max-width: 425px) {
   .place-stats {
     display: flex;
@@ -53,6 +58,7 @@
     align-items: center;
     width: 100%;
   }
+
   .place-stats span.dcl.stats .ui.header.sub {
     margin-bottom: 0;
     width: 50%;
@@ -60,7 +66,6 @@
   }
   .place-stats span.dcl.stats .ui.header:not(.sub) {
     margin-top: 0;
-    font-weight: 400;
   }
 
   .place-stats__point-of-interest .label {

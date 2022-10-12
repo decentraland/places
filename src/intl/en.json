@@ -2,15 +2,15 @@
   "general": {
     "count_places": "{count} {count, plural, one {place} other {places}}",
     "order_by": {
-      "updated_at": "Newest",
-      "popularity_score": "Most popular",
+      "updated_at": "Recently Updated",
+      "popularity_score": "Highest rated",
       "activity_score": "Most active"
     },
     "place_share": "Look at this place I found in Decentraland: "
   },
   "navigation": {
     "overview": "Overview",
-    "places": "Places",
+    "places": "All Places",
     "my_places": "My Places"
   },
   "components": {
@@ -37,7 +37,7 @@
     "place_realm_activity": {
       "title": "realms",
       "realm": "realm",
-      "players": "players"
+      "players": "active"
     },
     "overview_list": {
       "view_all": "view all"
@@ -47,7 +47,7 @@
     "overview": {
       "title": "Places",
       "search_the_metaverse": "Search the Metaverse",
-      "popular": "Popular Places",
+      "popular": "Highest Rated",
       "Featured": "Featured Places",
       "my_favorites": "My Favorites",
       "recently_updated": "Recently Updated",
