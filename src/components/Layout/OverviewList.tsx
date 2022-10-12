@@ -10,6 +10,7 @@ import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMen
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import { SegmentPlace } from "../../modules/segment"
 import PlaceList from "../Place/PlaceList/PlaceList"
 
 import "./OverviewList.css"
@@ -25,11 +26,19 @@ export type OverviewListProps = {
   ) => void
   className?: string
   loadingFavorites: Set<string>
+  dataPlace: SegmentPlace
 }
 
 export default React.memo(function OverviewList(props: OverviewListProps) {
-  const { places, title, loading, href, onClickFavorite, loadingFavorites } =
-    props
+  const {
+    places,
+    title,
+    loading,
+    href,
+    onClickFavorite,
+    loadingFavorites,
+    dataPlace,
+  } = props
   const l = useFormatMessage()
   return (
     <div className={TokenList.join(["ui overview-list", props.className])}>
@@ -62,6 +71,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           className="overview-list__place-list"
           maxLength={5}
           loadingFavorites={loadingFavorites}
+          dataPlace={dataPlace}
         />
       </Container>
     </div>

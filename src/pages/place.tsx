@@ -48,7 +48,7 @@ export default function PlacePage() {
   const [pois] = useAsyncMemo(getPois)
   const [servers] = useAsyncMemo(getServers)
 
-  const a = useMemo(() => [[placeRetrived]], [placeRetrived])
+  const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
   const [
     [[place]],
     {
@@ -59,7 +59,7 @@ export default function PlacePage() {
       handleDislike,
       handlingDislike,
     },
-  ] = usePlacesManager(a)
+  ] = usePlacesManager(placeMemo)
 
   const [handlingShare, share] = useAsyncTask(async () => {
     if (place) {
@@ -210,11 +210,16 @@ export default function PlacePage() {
                   handleDislike(place.id, place.user_dislike ? null : false)
                 }
                 onClickShare={async (e) => handleShare(e)}
-                onClickFavorite={async () => handleFavorite(place.id, place)}
+                onClickFavorite={async (e) =>
+                  handleFavorite(place.id, place, {
+                    place: e.currentTarget.dataset.place!,
+                  })
+                }
                 loading={loading || handlingShare}
                 loadingFavorite={handlingFavorite.has(place.id)}
                 loadingLike={handlingLike.has(place.id)}
                 loadingDislike={handlingDislike.has(place.id)}
+                dataPlace={SegmentPlace.Place}
               />
               <PlaceStats
                 place={place}

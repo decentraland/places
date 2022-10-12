@@ -18,6 +18,7 @@ import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdate
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
+import { SegmentPlace } from "../modules/segment"
 
 import "./index.css"
 
@@ -93,9 +94,14 @@ export default function OverviewPage() {
           href={locations.places({
             order_by: PlaceListOrderBy.POPULARITY,
           })}
-          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+          onClickFavorite={(e, place) =>
+            handleFavorite(place.id, place, {
+              place: e.currentTarget.dataset.place!,
+            })
+          }
           loading={placeListPopularState.loading}
           loadingFavorites={handlingFavorite}
+          dataPlace={SegmentPlace.OverviewPopular}
         />
         {account &&
           placeListMyFavorites &&
@@ -104,9 +110,14 @@ export default function OverviewPage() {
               places={myFavoritesList}
               title={l("pages.overview.my_favorites")}
               href={locations.my_places({})}
-              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+              onClickFavorite={(e, place) =>
+                handleFavorite(place.id, place, {
+                  place: e.currentTarget.dataset.place!,
+                })
+              }
               loading={placeListMyFavoritesState.loading}
               loadingFavorites={handlingFavorite}
+              dataPlace={SegmentPlace.OverviewMyFavorites}
             />
           )}
         <OverviewList
@@ -115,17 +126,27 @@ export default function OverviewPage() {
           href={locations.places({
             order_by: PlaceListOrderBy.UPDATED_AT,
           })}
-          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+          onClickFavorite={(e, place) =>
+            handleFavorite(place.id, place, {
+              place: e.currentTarget.dataset.place!,
+            })
+          }
           loading={placeListLastUpdatesState.loading}
           loadingFavorites={handlingFavorite}
+          dataPlace={SegmentPlace.OverviewRecentlyUpdated}
         />
         <OverviewList
           places={poisList}
           title={l("pages.overview.points_of_interest")}
           href={locations.places({ only_pois: true })}
-          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+          onClickFavorite={(e, place) =>
+            handleFavorite(place.id, place, {
+              place: e.currentTarget.dataset.place!,
+            })
+          }
           loading={placeListPoisState.loading}
           loadingFavorites={handlingFavorite}
+          dataPlace={SegmentPlace.OverviewPointsOfInterest}
         />
       </Container>
     </>

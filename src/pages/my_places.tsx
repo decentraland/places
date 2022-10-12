@@ -8,6 +8,7 @@ import Link from "decentraland-gatsby/dist/components/Text/Link"
 import Paragraph from "decentraland-gatsby/dist/components/Text/Paragraph"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
@@ -23,6 +24,7 @@ import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
+import { SegmentPlace } from "../modules/segment"
 
 import "./my_places.css"
 
@@ -33,16 +35,22 @@ export default function PlacesPage() {
   const mobile = useMobileMediaQuery()
   const [account, accountState] = useAuthContext()
   const location = useLocation()
+  const track = useTrackContext()
   const [options, params] = useMemo(() => {
     const params = toPlacesOptions(new URLSearchParams(location.search))
     const paginationResult = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
     })
+    track(SegmentPlace.FilterChange, {
+      filter: paginationResult,
+      place: SegmentPlace.MyPlace,
+    })
+
     return [
       { limit: paginationResult.limit, offset: paginationResult.offset },
       params,
     ] as const
-  }, [location.search])
+  }, [location.search, track])
 
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(options)
@@ -59,9 +67,14 @@ export default function PlacesPage() {
     (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
       e.preventDefault()
       e.stopPropagation()
-      navigate(locations.my_places({ page: Number(props.activePage ?? 1) }))
+      const newParams = { page: Number(props.activePage ?? 1) }
+      track(SegmentPlace.FilterChange, {
+        filter: newParams,
+        place: SegmentPlace.MyPlaceChangePagination,
+      })
+      navigate(locations.my_places(newParams))
     },
-    [params]
+    [params, track]
   )
 
   const [ff] = useFeatureFlagContext()
@@ -186,10 +199,15 @@ export default function PlacesPage() {
         )}
         <PlaceList
           places={myFavoritesList || []}
-          onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+          onClickFavorite={(e, place) =>
+            handleFavorite(place.id, place, {
+              place: e.currentTarget.dataset.place!,
+            })
+          }
           loading={placeListMyFavoritesState.loading}
           className="my-places-list__place-list"
           loadingFavorites={handlingFavorite}
+          dataPlace={SegmentPlace.MyPlace}
         />
         <div className="places__pagination">
           <Pagination
