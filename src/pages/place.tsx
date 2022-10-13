@@ -6,8 +6,8 @@ import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
-import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
+import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -48,7 +48,7 @@ export default function PlacePage() {
   const [pois] = useAsyncMemo(getPois)
   const [servers] = useAsyncMemo(getServers)
 
-  const a = useMemo(() => [[placeRetrived]], [placeRetrived])
+  const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
   const [
     [[place]],
     {
@@ -59,7 +59,7 @@ export default function PlacePage() {
       handleDislike,
       handlingDislike,
     },
-  ] = usePlacesManager(a)
+  ] = usePlacesManager(placeMemo)
 
   const handleShare = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -204,6 +204,7 @@ export default function PlacePage() {
               loadingFavorite={handlingFavorite.has(place.id)}
               loadingLike={handlingLike.has(place.id)}
               loadingDislike={handlingDislike.has(place.id)}
+              dataPlace={SegmentPlace.Place}
             />
             <PlaceStats
               place={place}
