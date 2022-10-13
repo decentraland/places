@@ -7,8 +7,8 @@ import MaintenancePage from "decentraland-gatsby/dist/components/Layout/Maintena
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
+import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
-import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
@@ -31,6 +31,7 @@ export default function PlacePage() {
   const track = useTrackContext()
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [account, accountState] = useAuthContext()
+  const [share] = useShareContext()
   const location = useLocation()
   const params = new URLSearchParams(location.search)
 
@@ -49,34 +50,27 @@ export default function PlacePage() {
     },
   ] = usePlacesManager(a)
 
-  const [handlingShare, share] = useAsyncTask(async () => {
-    if (place) {
-      try {
+  const handleShare = useCallback(
+    (e: React.MouseEvent<any>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      if (place) {
         const shareableText = place.description
           ? `${place.title} - ${place.description}`
           : place.title
-        await (navigator as any).share({
-          title: place.title,
+        share({
+          title: place.title || undefined,
           text: `${l("general.place_share")}${shareableText}`,
           url: location.origin + locations.place(place.id),
+          thumbnail: place.image || undefined,
         })
         track(SegmentPlace.Share, {
           placeId: place.id,
         })
-      } catch (err) {
-        console.error(err)
       }
-    }
-  }, [place, track])
-
-  const handleShare = useCallback((e: React.MouseEvent<any>) => {
-    e.preventDefault()
-    e.stopPropagation()
-
-    if (typeof navigator !== "undefined" && (navigator as any).share) {
-      share()
-    }
-  }, [])
+    },
+    [place, track]
+  )
 
   const loading = accountState.loading
 
@@ -154,7 +148,7 @@ export default function PlacePage() {
             }
             onClickShare={async (e) => handleShare(e)}
             onClickFavorite={async () => handleFavorite(place.id, place)}
-            loading={loading || handlingShare}
+            loading={loading}
             loadingFavorite={handlingFavorite.has(place.id)}
             loadingLike={handlingLike.has(place.id)}
             loadingDislike={handlingDislike.has(place.id)}
