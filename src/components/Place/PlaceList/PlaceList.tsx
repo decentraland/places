@@ -20,7 +20,7 @@ export type PlaceListProps = {
   ) => void
   dataPlace: SegmentPlace
   loadingFavorites?: Set<string>
-  maxLength?: number
+  size?: number
   className?: string
   loading?: boolean
 }
@@ -32,7 +32,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     dataPlace,
     className,
     loading,
-    maxLength,
+    size,
     loadingFavorites,
   } = props
 
@@ -44,10 +44,10 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         className && className,
       ])}
     >
-      {loading && isMobile && maxLength && maxLength < 10 && (
+      {loading && isMobile && size && size < 10 && (
         <PlaceCard loading={loading} />
       )}
-      {!loading && isMobile && maxLength && maxLength < 10 && (
+      {!loading && isMobile && size && size < 10 && (
         <Carousel
           className="place-list__carousel"
           indicatorsType={IndicatorsType.Dash}
@@ -67,8 +67,8 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         </Carousel>
       )}
 
-      {(!isMobile || (isMobile && (!maxLength || maxLength >= 10))) &&
-        Array.from(Array(maxLength || places.length), (_, key) => {
+      {(!isMobile || (isMobile && (!size || size >= 10))) &&
+        Array.from(Array(size || places.length), (_, key) => {
           const place = places && places[key]
           return (
             <PlaceCard
