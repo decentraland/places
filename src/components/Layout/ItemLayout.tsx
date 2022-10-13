@@ -22,7 +22,7 @@ export default function ItemLayout(props: ItemLayoutState) {
         </Grid.Column>
         <Grid.Column
           mobile="15"
-          style={props.full ? {} : { maxWidth: "670px" }}
+          style={props.full ? {} : { maxWidth: "796px" }}
         >
           {props.children}
         </Grid.Column>

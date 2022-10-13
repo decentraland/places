@@ -25,6 +25,7 @@ export default React.memo(function ShareBox(props: ShareBoxProps) {
       className={TokenList.join(["button-box", active && "button-box__active"])}
       target="_blank"
       loading={loading}
+      disabled={loading}
     >
       <Share />
       <Label>{l("components.button.share")}</Label>

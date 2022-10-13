@@ -35,7 +35,6 @@ export default React.memo(function PlaceRealmActivity(
     <div
       className={TokenList.join(["place-realm-activity", loading && "loading"])}
     >
-      <Header sub>{l("components.place_realm_activity.title")}</Header>
       <Table basic="very" unstackable>
         <Table.Header>
           <Table.Row>

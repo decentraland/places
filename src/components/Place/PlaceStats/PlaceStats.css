@@ -1,11 +1,10 @@
 .place-stats {
   border-top: solid 1px rgba(115, 110, 125, 0.24);
-  border-bottom: solid 1px rgba(115, 110, 125, 0.24);
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   flex-wrap: wrap;
-  padding: 10px 0;
+  padding: 10px 20px;
 }
 
 .place-stats span.dcl.stats,
@@ -70,5 +69,10 @@
 
   .place-stats__point-of-interest .label {
     margin-left: 0;
+  }
+
+  .place-stats.loading .dcl.stats .ui.header:after {
+    width: 40%;
+    left: 50%;
   }
 }

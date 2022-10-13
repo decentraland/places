@@ -30,9 +30,7 @@
       "favorite": "favorite"
     },
     "place_description": {
-      "created_by": "created by",
-      "description": "description",
-      "location": "location"
+      "created_by": "created by"
     },
     "place_realm_activity": {
       "title": "realms",
@@ -41,6 +39,12 @@
     },
     "overview_list": {
       "view_all": "view all"
+    },
+    "place_detail": {
+      "about": "About",
+      "realms": "Realms",
+      "description": "description",
+      "location": "location"
     }
   },
   "pages": {

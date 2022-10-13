@@ -8,5 +8,5 @@
 }
 
 .place-realm-activity .table tr th {
-  text-transform: uppercase;
+  text-transform: capitalize;
 }
