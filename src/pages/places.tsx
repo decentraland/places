@@ -243,6 +243,7 @@ export default function IndexPage() {
               loadingFavorites={handlingFavorite}
               loading={loading}
               size={loading ? PAGE_SIZE : undefined}
+              dataPlace={SegmentPlace.Places}
             />
             <div className="places__pagination">
               <Pagination
