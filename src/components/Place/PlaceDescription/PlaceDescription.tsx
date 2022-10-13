@@ -22,6 +22,7 @@ export type PlaceDescriptionProps = {
   onClickLike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickDislike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickShare: (e: React.MouseEvent<HTMLButtonElement>) => {}
+  dataPlace: SegmentPlace
   loading?: boolean
   loadingLike?: boolean
   loadingDislike?: boolean
@@ -37,6 +38,7 @@ export default React.memo(function PlaceDescription(
     onClickDislike,
     onClickShare,
     onClickFavorite,
+    dataPlace,
     loading,
     loadingLike,
     loadingDislike,
@@ -81,6 +83,7 @@ export default React.memo(function PlaceDescription(
                 onClick={handleJumpInTrack}
                 data-event={SegmentPlace.JumpIn}
                 data-place-id={place.id}
+                data-place={dataPlace}
               />
             )}
             <div className="place-description__box-wrapper">
@@ -101,6 +104,7 @@ export default React.memo(function PlaceDescription(
                 onClick={onClickFavorite}
                 loading={loading || loadingFavorite}
                 active={place.user_favorite}
+                dataPlace={dataPlace}
               />
             </div>
           </div>

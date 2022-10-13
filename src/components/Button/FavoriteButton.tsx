@@ -11,10 +11,11 @@ export type FavoriteButtonProps = {
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   active?: boolean
   loading?: boolean
+  dataPlace?: string
 }
 
 export default React.memo(function FavoriteButton(props: FavoriteButtonProps) {
-  const { onClick, loading, active } = props
+  const { onClick, loading, active, dataPlace } = props
   return (
     <Button
       primary
@@ -25,6 +26,7 @@ export default React.memo(function FavoriteButton(props: FavoriteButtonProps) {
       ])}
       loading={loading}
       disabled={loading}
+      data-place={dataPlace}
     >
       <Heart active={!!active} />
     </Button>

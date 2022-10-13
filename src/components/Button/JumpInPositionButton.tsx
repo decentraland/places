@@ -11,7 +11,7 @@ import primaryJumpInIcon from "../../images/primary-jump-in.svg"
 import "./JumpInPositionButton.css"
 
 export default React.memo(function JumpInPositionButton(props: ButtonProps) {
-  const { loading } = props
+  const { loading, dataPlace } = props
   const l = useFormatMessage()
 
   return (
@@ -23,6 +23,7 @@ export default React.memo(function JumpInPositionButton(props: ButtonProps) {
       className="jump-in-position"
       target="_blank"
       disabled={loading}
+      data-place={dataPlace}
     >
       <span>{l("components.button.jump_in")}</span>
       <img

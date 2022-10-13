@@ -7,6 +7,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { SegmentPlace } from "../../../modules/segment"
 import PlaceCard from "../PlaceCard/PlaceCard"
 
 import "./PlaceList.css"
@@ -17,6 +18,7 @@ export type PlaceListProps = {
     e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
   ) => void
+  dataPlace: SegmentPlace
   loadingFavorites?: Set<string>
   size?: number
   className?: string
@@ -27,6 +29,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
   const {
     places,
     onClickFavorite,
+    dataPlace,
     className,
     loading,
     size,
@@ -55,6 +58,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               place={place}
               loading={loading}
               onClickFavorite={onClickFavorite}
+              dataPlace={dataPlace}
               loadingFavorites={
                 place?.id ? loadingFavorites?.has(place.id) : false
               }
@@ -72,6 +76,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               place={place}
               loading={loading}
               onClickFavorite={onClickFavorite}
+              dataPlace={dataPlace}
               loadingFavorites={
                 place?.id ? loadingFavorites?.has(place.id) : false
               }

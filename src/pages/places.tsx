@@ -6,6 +6,7 @@ import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -34,6 +35,7 @@ import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
 import { getPois } from "../modules/pois"
+import { SegmentPlace } from "../modules/segment"
 
 import "./places.css"
 
@@ -49,6 +51,7 @@ export default function IndexPage() {
   const l = useFormatMessage()
   const mobile = useMobileMediaQuery()
   const location = useLocation()
+  const track = useTrackContext()
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
@@ -63,10 +66,14 @@ export default function IndexPage() {
         const pois = await getPois()
         options.positions = pois
       }
+      track(SegmentPlace.FilterChange, {
+        filter: options,
+        place: SegmentPlace.Places,
+      })
 
       return Places.get().getPlaces(options)
     },
-    [params],
+    [params, track],
     {
       callWithTruthyDeps: true,
       initialValue: defaultResult,
@@ -84,20 +91,28 @@ export default function IndexPage() {
     (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
       e.preventDefault()
       e.stopPropagation()
-      navigate(
-        locations.places({ ...params, page: Number(props.activePage ?? 1) })
-      )
+      const newParams = { ...params, page: Number(props.activePage ?? 1) }
+      track(SegmentPlace.FilterChange, {
+        filters: newParams,
+        place: SegmentPlace.PlacesChangePagination,
+      })
+      navigate(locations.places(newParams))
     },
-    [params]
+    [params, track]
   )
 
   const handleChangePois = useCallback(
     (e: React.SyntheticEvent<any>, props: { value?: any }) => {
       e.preventDefault()
       e.stopPropagation()
-      navigate(locations.places({ ...params, only_pois: !!props.value }))
+      const newParams = { ...params, only_pois: !!props.value }
+      track(SegmentPlace.FilterChange, {
+        filters: newParams,
+        place: SegmentPlace.PlacesChangePois,
+      })
+      navigate(locations.places(newParams))
     },
-    [params]
+    [params, track]
   )
 
   const handleChangeOrder = useCallback(
@@ -105,9 +120,14 @@ export default function IndexPage() {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
         PlaceListOrderBy.UPDATED_AT
-      navigate(locations.places({ ...params, order_by: value }))
+      const newParams = { ...params, order_by: value }
+      track(SegmentPlace.FilterChange, {
+        filters: newParams,
+        place: SegmentPlace.PlacesChangePois,
+      })
+      navigate(locations.places(newParams))
     },
-    [params]
+    [params, track]
   )
 
   const [ff] = useFeatureFlagContext()
@@ -223,6 +243,7 @@ export default function IndexPage() {
               loadingFavorites={handlingFavorite}
               loading={loading}
               size={loading ? PAGE_SIZE : undefined}
+              dataPlace={SegmentPlace.Places}
             />
             <div className="places__pagination">
               <Pagination

@@ -20,22 +20,23 @@ export type PlaceCardProps = {
     e: React.MouseEvent<HTMLButtonElement>,
     place: AggregatePlaceAttributes
   ) => void
+  dataPlace?: SegmentPlace
   loading?: boolean
   loadingFavorites?: boolean
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
-  const { place, loading, loadingFavorites } = props
+  const { place, loading, loadingFavorites, onClickFavorite, dataPlace } = props
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
       e.stopPropagation()
       e.preventDefault()
-      if (props.onClickFavorite && place) {
-        props.onClickFavorite(e, place)
+      if (onClickFavorite && place) {
+        onClickFavorite(e, place)
       }
     },
-    [place, props.onClickFavorite]
+    [place, onClickFavorite]
   )
 
   const href = useMemo(() => place && locations.place(place.id), [place])
@@ -67,11 +68,13 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             onClick={handleJumpInTrack}
             data-event={SegmentPlace.JumpIn}
             data-place-id={place?.id}
+            data-place={dataPlace}
           />
           <FavoriteButton
             active={!!place?.user_favorite}
             onClick={handleClickFavorite}
             loading={loading || loadingFavorites}
+            dataPlace={dataPlace}
           />
         </div>
       </Card.Content>

@@ -37,7 +37,7 @@ export default function PlacePage() {
 
   const [placeRetrived] = usePlaceId(params.get("id"))
 
-  const a = useMemo(() => [[placeRetrived]], [placeRetrived])
+  const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
   const [
     [[place]],
     {
@@ -48,7 +48,7 @@ export default function PlacePage() {
       handleDislike,
       handlingDislike,
     },
-  ] = usePlacesManager(a)
+  ] = usePlacesManager(placeMemo)
 
   const handleShare = useCallback(
     (e: React.MouseEvent<any>) => {

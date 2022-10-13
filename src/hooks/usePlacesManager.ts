@@ -21,7 +21,11 @@ export default function usePlacesManager(
   }, [placesDefault])
 
   const [handlingFavorite, handleFavorite] = useAsyncTasks(
-    async (id, place: AggregatePlaceAttributes) => {
+    async (
+      id,
+      place: AggregatePlaceAttributes,
+      tracking: Record<string, string> = {}
+    ) => {
       if (account === null) {
         accountState.select()
       } else if (place) {
@@ -31,6 +35,7 @@ export default function usePlacesManager(
         )
         if (favoritesResponse) {
           track(SegmentPlace.Favorite, {
+            ...tracking,
             placeId: place.id,
             placeUserFavorite: !place.user_favorite,
           })
