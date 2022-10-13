@@ -25,10 +25,10 @@
 }
 
 .place-description .place-description__right-side-container {
-  padding: 0 0 0 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  margin-left: 20px;
 }
 
 .place-description .place-description__text-container {
@@ -61,7 +61,7 @@
 .place-description .place-description__buttons-container {
   display: flex;
   flex-direction: column;
-  margin: auto auto 0;
+  margin-bottom: 0;
 }
 
 .place-description
@@ -88,71 +88,24 @@
   margin: 15px 5px 0;
 }
 
-.place-description .place-description__bottom-container {
-  margin-top: 20px;
-}
-
-.place-description.loading .place-description__bottom-container {
-  opacity: 0;
-}
-
-.place-description .place-description__bottom-container h3 {
-  text-transform: uppercase;
-  font-size: 14px;
-  color: var(--secondary-text);
-}
-
-.place-description .place-description__bottom-container h3:nth-child(3) {
-  margin-top: 30px;
-}
-
-.place-description .place-description__bottom-container p {
-  font-size: 15px;
-}
-
-.place-description .place-description__bottom-container .ui.label {
-  font-size: 13px;
-  color: var(--secondary-text);
-  margin: 0;
-}
-
-@media only screen and (min-width: 1200px) {
-  .place-description__cover {
-    width: 775px;
-  }
-
+@media only screen and (min-width: 992px) {
   .place-description__text-container {
     width: 329px;
   }
 
-  .place-description__cover,
-  .place-description__right-side-container {
-    height: 532px;
-  }
-}
-
-@media only screen and (min-width: 992px) and (max-width: 1199px) {
   .place-description__cover {
-    width: 603px;
-  }
-
-  .place-description__text-container {
-    width: 310px;
+    width: 462px;
   }
 
   .place-description__cover,
   .place-description__right-side-container {
-    height: 415px;
+    height: 316px;
   }
 }
 
 @media only screen and (min-width: 768px) and (max-width: 991px) {
   .place-description__cover {
-    width: 467px;
-  }
-
-  .place-description__text-container {
-    width: 236px;
+    width: 388px;
   }
 
   .place-description .place-description__text-container h1 {
@@ -161,7 +114,11 @@
 
   .place-description__cover,
   .place-description__right-side-container {
-    height: 320px;
+    height: 279px;
+  }
+
+  .place-description .place-description__right-side-container {
+    margin-left: 20px;
   }
 }
 
@@ -180,10 +137,11 @@
     margin-bottom: 20px;
   }
 
-  .place-description__right-side-container {
+  .place-description .place-description__right-side-container {
     height: auto;
     width: 100%;
     padding: 0;
+    margin-left: 0;
   }
 
   .place-description__box-wrapper {

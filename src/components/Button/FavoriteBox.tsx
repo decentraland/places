@@ -22,7 +22,6 @@ export default React.memo(function FavoriteBox(props: FavoriteBoxProps) {
   const l = useFormatMessage()
   return (
     <Button
-      secondary
       onClick={onClick}
       className={TokenList.join(["button-box", active && "button-box__active"])}
       target="_blank"

@@ -4,8 +4,6 @@ import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrack
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
-import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
@@ -111,18 +109,6 @@ export default React.memo(function PlaceDescription(
             </div>
           </div>
         </div>
-      </div>
-      <div className="place-description__bottom-container">
-        {place.description && (
-          <>
-            <h3>{l("components.place_description.description")}</h3>
-            <p>{place.description}</p>
-          </>
-        )}
-        <h3>{l("components.place_description.location")}</h3>
-        <Label>
-          <Icon name="map marker alternate" /> {place.base_position}
-        </Label>
       </div>
     </div>
   )

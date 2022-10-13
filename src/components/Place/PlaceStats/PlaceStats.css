@@ -1,11 +1,10 @@
 .place-stats {
   border-top: solid 1px rgba(115, 110, 125, 0.24);
-  border-bottom: solid 1px rgba(115, 110, 125, 0.24);
   width: 100%;
   display: flex;
-  justify-content: space-between;
+  justify-content: space-around;
   flex-wrap: wrap;
-  padding: 10px 0;
+  padding: 10px 20px;
 }
 
 .place-stats span.dcl.stats,
@@ -42,6 +41,11 @@
   margin-left: auto;
 }
 
+.place-stats > span.dcl.stats > .ui.header {
+  font-size: 15px;
+  font-weight: 400;
+}
+
 @media only screen and (max-width: 425px) {
   .place-stats {
     display: flex;
@@ -53,6 +57,7 @@
     align-items: center;
     width: 100%;
   }
+
   .place-stats span.dcl.stats .ui.header.sub {
     margin-bottom: 0;
     width: 50%;
@@ -60,10 +65,14 @@
   }
   .place-stats span.dcl.stats .ui.header:not(.sub) {
     margin-top: 0;
-    font-weight: 400;
   }
 
   .place-stats__point-of-interest .label {
     margin-left: 0;
+  }
+
+  .place-stats.loading .dcl.stats .ui.header:after {
+    width: 40%;
+    left: 50%;
   }
 }
