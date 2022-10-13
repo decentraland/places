@@ -17,12 +17,15 @@ import "decentraland-ui/dist/themes/base-theme.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "decentraland-ui/dist/themes/alternative/light-theme.css"
 // eslint-disable-next-line css-import-order/css-import-order
+import "decentraland-gatsby/dist/variables.css"
+// eslint-disable-next-line css-import-order/css-import-order
 import "./src/theme.css"
 
 import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
 import UserMenu from "decentraland-gatsby/dist/components/User/UserMenu"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
+import ShareProvider from "decentraland-gatsby/dist/context/Share/ShareProvider"
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 
@@ -31,7 +34,7 @@ export const registerServiceWorker = () => true
 export const wrapRootElement = ({ element }) => (
   <AuthProvider>
     <FeatureFlagProvider endpoint="https://feature-flags.decentraland.org/places.json">
-      {element}
+      <ShareProvider>{element}</ShareProvider>
     </FeatureFlagProvider>
   </AuthProvider>
 )

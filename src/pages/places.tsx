@@ -12,7 +12,6 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Box } from "decentraland-ui/dist/components/Box/Box"
-import { Card } from "decentraland-ui/dist/components/Card/Card"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
@@ -24,7 +23,6 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
-import PlaceCard from "../components/Place/PlaceCard/PlaceCard"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
@@ -80,7 +78,6 @@ export default function IndexPage() {
     usePlacesManager(placesMemo)
 
   const loading = placesState.version === 0 || placesState.loading
-  const length = places.length || 0
   const total = result.total || 0
 
   const handleChangePage = useCallback(
@@ -186,9 +183,6 @@ export default function IndexPage() {
               <div>
                 <HeaderMenu stackable>
                   <HeaderMenu.Left>
-                    {/* <Header sub>
-                      {l("general.count_places", { count: total })}
-                    </Header> */}
                     <div
                       onClick={(e) =>
                         handleChangePois(e, { value: !params.only_pois })
@@ -223,22 +217,13 @@ export default function IndexPage() {
                 </HeaderMenu>
               </div>
             )}
-            {loading && (
-              <div>
-                <Card.Group itemsPerRow={4}>
-                  {Array.from(Array(PAGE_SIZE), (_, i) => {
-                    return <PlaceCard key={i} loading />
-                  })}
-                </Card.Group>
-              </div>
-            )}
-            {!loading && length > 0 && (
-              <PlaceList
-                places={places}
-                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-                loadingFavorites={handlingFavorite}
-              />
-            )}
+            <PlaceList
+              places={places}
+              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+              loadingFavorites={handlingFavorite}
+              loading={loading}
+              size={loading ? PAGE_SIZE : undefined}
+            />
             <div className="places__pagination">
               <Pagination
                 activePage={params.page}
