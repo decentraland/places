@@ -27,6 +27,10 @@
   margin-top: 2px;
 }
 
+.place-list__container.overview-list__place-list .ui.card.place-card.hidden a {
+  cursor: default;
+}
+
 @media only screen and (min-width: 1200px) {
 }
 @media only screen and (min-width: 992px) and (max-width: 1199px) {

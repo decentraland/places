@@ -25,11 +25,25 @@ export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
 }
 
 export function isMetadataEmpty(deployment: ContentDepoymentScene) {
+  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
+  if (thumbnail && !thumbnail.startsWith("https://")) {
+    const content = deployment.content.find(
+      (content) => content.key === thumbnail
+    )
+    if (
+      !content ||
+      content.hash ===
+        "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku" ||
+      content.hash === "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n"
+    ) {
+      thumbnail = null
+    }
+  }
   return (
-    (!deployment.metadata?.display?.title ||
+    ((!deployment.metadata?.display?.title ||
       deployment.metadata?.display?.title === "interactive-text") &&
-    !deployment.metadata?.display?.description &&
-    !deployment.metadata?.display?.navmapThumbnail
+      !deployment.metadata?.display?.description) ||
+    !thumbnail
   )
 }
 
