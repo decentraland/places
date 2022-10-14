@@ -6,6 +6,7 @@ import {
   ContentDepoymentScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
 import { DeploymentTrackAttributes } from "./types"
 
@@ -25,25 +26,12 @@ export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
 }
 
 export function isMetadataEmpty(deployment: ContentDepoymentScene) {
-  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
-  if (thumbnail && !thumbnail.startsWith("https://")) {
-    const content = deployment.content.find(
-      (content) => content.key === thumbnail
-    )
-    if (
-      !content ||
-      content.hash ===
-        "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku" ||
-      content.hash === "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n"
-    ) {
-      thumbnail = null
-    }
-  }
+  const thumbnail = getThumbnailFromDeployment(deployment)
   return (
     ((!deployment.metadata?.display?.title ||
       deployment.metadata?.display?.title === "interactive-text") &&
       !deployment.metadata?.display?.description) ||
-    !thumbnail
+    !!thumbnail.startsWith("https://api.decentraland.org")
   )
 }
 
