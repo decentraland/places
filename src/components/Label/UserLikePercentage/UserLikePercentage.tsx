@@ -5,23 +5,25 @@ import Label, {
   LabelProps,
 } from "semantic-ui-react/dist/commonjs/elements/Label"
 
+import { toPercent } from "../../../modules/number"
 import { ThumbUp } from "../../Icon/ThumbUp"
 
 import "./UserLikePercentage.css"
 
 export type UserLikePercentageProps = LabelProps & {
-  total: number
+  value: number
   loading?: boolean
 }
 
 export default React.memo(function UserLikePercentage(
   props: UserLikePercentageProps
 ) {
-  const { loading, className, total } = props
+  const { loading, className, value } = props
+
   return (
     <Label className={TokenList.join(["user-count", className])}>
       <ThumbUp noHover active />
-      {!loading && `${total}%`}
+      {!loading && `${toPercent(value)}%`}
     </Label>
   )
 })
