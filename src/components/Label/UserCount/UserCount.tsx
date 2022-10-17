@@ -10,16 +10,16 @@ import { Players } from "../../Icon/Players"
 import "./UserCount.css"
 
 export type UserCountProps = LabelProps & {
-  total: number
+  value: number
   loading?: boolean
 }
 
 export default React.memo(function UserCount(props: UserCountProps) {
-  const { loading, className, total } = props
+  const { loading, className, value } = props
   return (
     <Label className={TokenList.join(["user-count", className])}>
       <Players noHover active />
-      {!loading && total}
+      {!loading && value}
     </Label>
   )
 })
