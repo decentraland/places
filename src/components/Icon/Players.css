@@ -3,12 +3,6 @@
   overflow: visible !important;
 }
 
-.icon-players.empty-stroke path {
-  stroke: transparent;
-  stroke-width: 1.5px;
-  fill: #161518;
-}
-
 .icon-players path {
   fill: transparent;
   stroke: #161518;

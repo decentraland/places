@@ -7,7 +7,6 @@ import "./Players.css"
 export const Players = React.memo(function (
   props: React.SVGAttributes<SVGElement> & {
     active?: boolean
-    emptyStroke?: boolean
     noHover?: boolean
   }
 ) {
@@ -18,7 +17,6 @@ export const Players = React.memo(function (
       className={TokenList.join([
         "icon-players",
         props.active && "active",
-        props.emptyStroke && "empty-stroke",
         props.noHover && "no-hover",
         props.className,
       ])}

@@ -18,7 +18,7 @@ export default React.memo(function UserCount(props: UserCountProps) {
   const { loading, className, total } = props
   return (
     <Label className={TokenList.join(["user-count", className])}>
-      <Players emptyStroke noHover />
+      <Players noHover active />
       {!loading && total}
     </Label>
   )
