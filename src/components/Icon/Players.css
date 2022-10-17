@@ -1,0 +1,26 @@
+.icon-players {
+  width: 24px;
+  overflow: visible !important;
+}
+
+.icon-players path {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 1.5px;
+}
+
+:hover > .icon-players:not(.no-hover) path {
+  fill: #d9d9d9;
+  stroke: #161518;
+  stroke-width: 1.5px;
+}
+
+.icon-players.active path {
+  fill: #ff2d55;
+  stroke: none;
+}
+
+:hover > .icon-players.active:not(.no-hover) path {
+  fill: #c82443;
+  stroke: none;
+}
