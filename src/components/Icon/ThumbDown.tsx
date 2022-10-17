@@ -5,7 +5,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import "./ThumbDown.css"
 
 export const ThumbDown = React.memo(function (
-  props: React.SVGAttributes<SVGElement> & { active: boolean }
+  props: React.SVGAttributes<SVGElement> & { active?: boolean }
 ) {
   return (
     <svg
