@@ -2,7 +2,7 @@ import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Cataly
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 import { v4 as uuid } from "uuid"
 
-import { PlaceAttributes } from "./types"
+import { PlaceAttributes, unwantedThumbnailHash } from "./types"
 
 const DECENTRALAND_URL =
   process.env.GATSBY_DECENTRALAND_URL ||
@@ -20,27 +20,7 @@ export function createPlaceFromDeployment(
     .slice(0, 100)
     .map((tag) => tag.slice(0, 25))
 
-  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
-  if (thumbnail && !thumbnail.startsWith("https://")) {
-    const content = deployment.content.find(
-      (content) => content.key === thumbnail
-    )
-    if (
-      !content ||
-      content.hash ===
-        "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
-    ) {
-      thumbnail = null
-    } else {
-      thumbnail = `https://peer.decentraland.org/content/contents/${content.hash}`
-    }
-  }
-
-  if (!thumbnail) {
-    thumbnail = Land.get().getMapImage({
-      selected: positions,
-    })
-  }
+  const thumbnail = getThumbnailFromDeployment(deployment)
 
   let contact_name = deployment?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {
@@ -85,4 +65,26 @@ export function placeTargetUrl(
   }
 
   return target.toString()
+}
+
+export function getThumbnailFromDeployment(deployment: ContentDepoymentScene) {
+  const positions = (deployment?.pointers || []).sort()
+  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
+  if (thumbnail && !thumbnail.startsWith("https://")) {
+    const content = deployment.content.find(
+      (content) => content.key === thumbnail
+    )
+    if (!content || unwantedThumbnailHash.includes(content.hash)) {
+      thumbnail = null
+    } else {
+      thumbnail = `https://peer.decentraland.org/content/contents/${content.hash}`
+    }
+  }
+
+  if (!thumbnail) {
+    thumbnail = Land.get().getMapImage({
+      selected: positions,
+    })
+  }
+  return thumbnail
 }
