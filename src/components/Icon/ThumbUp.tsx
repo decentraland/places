@@ -5,7 +5,10 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import "./ThumbUp.css"
 
 export const ThumbUp = React.memo(function (
-  props: React.SVGAttributes<SVGElement> & { active: boolean }
+  props: React.SVGAttributes<SVGElement> & {
+    active?: boolean
+    noHover?: boolean
+  }
 ) {
   return (
     <svg
@@ -13,6 +16,7 @@ export const ThumbUp = React.memo(function (
       viewBox="2 1 20 20"
       className={TokenList.join([
         "icon-thumb-up",
+        props.noHover && "no-hover",
         props.active && "active",
         props.className,
       ])}

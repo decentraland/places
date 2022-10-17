@@ -11,8 +11,8 @@
   stroke-width: 2px;
 }
 
-:hover > .icon-thumb-up path,
-:hover > .icon-thumb-up rect {
+:hover > .icon-thumb-up:not(.no-hover) path,
+:hover > .icon-thumb-up:not(.no-hover) rect {
   fill: #d9d9d9;
   stroke: #161518;
   stroke-width: 2px;
@@ -24,8 +24,8 @@
   stroke: none;
 }
 
-:hover > .icon-thumb-up.active path,
-:hover > .icon-thumb-up.active rect {
+:hover > .icon-thumb-up.active:not(.no-hover) path,
+:hover > .icon-thumb-up.active:not(.no-hover) rect {
   fill: #c82443;
   stroke: none;
 }
