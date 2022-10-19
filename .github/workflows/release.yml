@@ -77,7 +77,7 @@ jobs:
         id: deploy
         uses: decentraland/dcl-deploy-action@main
         with:
-          dockerImage: "${{ needs.build-push.outputs.push-to-quay[0] }}"
+          dockerImage: "${{ needs.push-to-quay.outputs.registry-paths }}"
           serviceName: places2
           env: dev
           token: ${{ secrets.GITHUB_TOKEN }}
