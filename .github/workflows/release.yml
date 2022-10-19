@@ -68,16 +68,16 @@ jobs:
       - name: Print image url
         run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
 
-  # deployment:
-  #   needs: [build-push]
-  #   name: "Deploy to: dev"
-  #   runs-on: ubuntu-latest
-  #   steps:
-  #     - name: Trigger deployment
-  #       id: deploy
-  #       uses: decentraland/dcl-deploy-action@main
-  #       with:
-  #         dockerImage: "${{ needs.build-push.outputs.registry-path }}"
-  #         serviceName: places
-  #         env: dev
-  #         token: ${{ secrets.GITHUB_TOKEN }}
+  deployment:
+    needs: [build-push]
+    name: "Deploy to: dev"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment
+        id: deploy
+        uses: decentraland/dcl-deploy-action@main
+        with:
+          dockerImage: "${{ needs.build-push.outputs.registry-path }}"
+          serviceName: places
+          env: dev
+          token: ${{ secrets.GITHUB_TOKEN }}
