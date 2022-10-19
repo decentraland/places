@@ -77,7 +77,7 @@ jobs:
         id: deploy
         uses: decentraland/dcl-deploy-action@main
         with:
-          dockerImage: "${{ needs.build-push.outputs.registry-path }}"
+          dockerImage: "${{ needs.build-push.outputs.registry-path[0] }}"
           serviceName: places2
           env: dev
           token: ${{ secrets.GITHUB_TOKEN }}
