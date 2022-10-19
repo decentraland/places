@@ -44,7 +44,7 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: setup envs
-        run: echo .env
+        run: touch .env
 
       - name: build image
         id: build-image
