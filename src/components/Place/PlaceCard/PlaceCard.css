@@ -1,6 +1,7 @@
 .ui.card.place-card {
   border-radius: 10px;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+  height: 327px;
 }
 
 .ui.card.place-card:hover {
@@ -41,8 +42,19 @@
 
 .ui.card.place-card .content .header {
   font-weight: 600;
-  height: 75px;
   overflow: hidden !important;
+}
+
+.ui.card.place-card .content .place-card__stats {
+  display: flex;
+}
+
+.ui.card.place-card .content .place-card__stats .ui.label {
+  padding: 0;
+}
+
+.ui.card.place-card .content .place-card__stats .ui.label:first-child {
+  margin-right: 13px;
 }
 
 .ui.card.place-card .place-card__cover .dg.ImgFixed {

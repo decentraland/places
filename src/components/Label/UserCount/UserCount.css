@@ -7,6 +7,10 @@
   background-color: transparent;
 }
 
+.ui.label.user-count.hidden {
+  opacity: 0;
+}
+
 .ui.label.user-count svg {
   width: 15px;
   margin-right: 5px;
