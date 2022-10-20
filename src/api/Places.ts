@@ -129,4 +129,12 @@ export default class Places extends API {
   async getPlacesMyFavorites(options?: { limit: number; offset: number }) {
     return this.getPlaces({ only_favorites: true, ...options })
   }
+
+  async getPlacesMostActive(options?: { limit: number; offset: number }) {
+    return this.getPlaces({
+      order_by: "most_active",
+      order: "desc",
+      ...options,
+    })
+  }
 }
