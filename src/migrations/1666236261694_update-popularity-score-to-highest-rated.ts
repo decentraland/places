@@ -5,6 +5,7 @@ import PlaceModel from "../entities/Place/model"
 export const shorthands: ColumnDefinitions | undefined = undefined
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
+  pgm.db.query(`UPDATE places set "popularity_score" = 0`)
   pgm.renameColumn(PlaceModel.tableName, "popularity_score", "like_rate")
 }
 
