@@ -1,8 +1,15 @@
-import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentDepoymentScene,
+  HotScene,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 import { v4 as uuid } from "uuid"
 
-import { PlaceAttributes, unwantedThumbnailHash } from "./types"
+import {
+  AggregatePlaceAttributes,
+  PlaceAttributes,
+  unwantedThumbnailHash,
+} from "./types"
 
 const DECENTRALAND_URL =
   process.env.GATSBY_DECENTRALAND_URL ||
@@ -87,4 +94,20 @@ export function getThumbnailFromDeployment(deployment: ContentDepoymentScene) {
     })
   }
   return thumbnail
+}
+
+export function placesWithUserCount(
+  places: AggregatePlaceAttributes[],
+  hotScenes: HotScene[]
+) {
+  return places.map((place) => {
+    const hotScenePlaces = hotScenes.find(
+      (scene) => place.base_position == scene.baseCoords.join(",")
+    )
+
+    return {
+      ...place,
+      user_count: hotScenePlaces ? hotScenePlaces.usersTotalCount : 0,
+    }
+  })
 }

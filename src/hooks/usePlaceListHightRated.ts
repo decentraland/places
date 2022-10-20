@@ -3,13 +3,13 @@ import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 
-export function usePlaceListPopular(options?: {
+export function usePlaceListHightRated(options?: {
   limit: number
   offset: number
 }) {
   return useAsyncMemo(
     async () => {
-      const result = await Places.get().getPlacesPopular(options)
+      const result = await Places.get().getPlacesHightRated(options)
       return result.data
     },
     [options?.limit, options?.offset],

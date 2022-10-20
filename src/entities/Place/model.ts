@@ -7,7 +7,8 @@ import {
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
-import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
+import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
+import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import EntityPlaceModel from "../EntityPlace/model"
@@ -107,8 +108,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<AggregatePlaceAttributes[]> {
     const orderBy =
       oneOf(options.order_by, [
-        PlaceListOrderBy.POPULARITY,
-        PlaceListOrderBy.ACTIVITY,
+        PlaceListOrderBy.HIGHT_RATED,
         PlaceListOrderBy.UPDATED_AT,
       ]) ?? PlaceListOrderBy.UPDATED_AT
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
@@ -283,5 +283,43 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     `
 
     return this.namedRowCount("summary_activity", sql)
+  }
+
+  static async findWithHotScenes(
+    options: FindWithAggregatesOptions,
+    hotScenes: HotScene[]
+  ): Promise<AggregatePlaceAttributes[]> {
+    const { offset, limit, order, ...extraOptions } = options
+    const places = await this.findWithAggregates({
+      offset: 0,
+      limit: 100,
+      order,
+      ...extraOptions,
+    })
+
+    const hotScenePlaces = hotScenes
+      .filter(
+        (scene) =>
+          !!places.find(
+            (place) => place.base_position == scene.baseCoords.join(",")
+          )
+      )
+      .map((scene) => {
+        const hotScenePlaces = places.find(
+          (place) => place.base_position == scene.baseCoords.join(",")
+        )
+        return {
+          ...hotScenePlaces!,
+          user_count: scene.usersTotalCount,
+        }
+      })
+    if (order === "asc") {
+      hotScenePlaces.reverse()
+    }
+
+    const from = numeric(offset || 0, { min: 0 })
+    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+
+    return hotScenePlaces.slice(from, to)
   }
 }

@@ -119,7 +119,7 @@ export default class Places extends API {
     return this.getPlaces({ order_by: "updated_at", order: "desc", ...options })
   }
 
-  async getPlacesPopular(options?: { limit: number; offset: number }) {
+  async getPlacesHightRated(options?: { limit: number; offset: number }) {
     return this.getPlaces({
       order_by: "popularity_score",
       order: "desc",

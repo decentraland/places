@@ -11,9 +11,9 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import { PlaceListOrderBy } from "../entities/Place/types"
+import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
-import { usePlaceListPopular } from "../hooks/usePlaceListPopular"
 import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
@@ -30,8 +30,8 @@ export default function OverviewPage() {
   const [account] = useAuthContext()
   const [placeListLastUpdates, placeListLastUpdatesState] =
     usePlaceListRecentlyUpdates(overviewOptions)
-  const [placeListPopular, placeListPopularState] =
-    usePlaceListPopular(overviewOptions)
+  const [placeListHightRated, placeListHightRatedState] =
+    usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(overviewOptions)
   const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
@@ -39,13 +39,13 @@ export default function OverviewPage() {
   const placesMemo = useMemo(
     () => [
       placeListLastUpdates,
-      placeListPopular,
+      placeListHightRated,
       placeListMyFavorites.data,
       placeListPois,
     ],
     [
       placeListLastUpdates,
-      placeListPopular,
+      placeListHightRated,
       placeListMyFavorites,
       placeListPois,
     ]
@@ -90,18 +90,18 @@ export default function OverviewPage() {
       <Container className="full overview-container">
         <OverviewList
           places={popularList}
-          title={l("pages.overview.popular")}
+          title={l("pages.overview.hight_rated")}
           href={locations.places({
-            order_by: PlaceListOrderBy.POPULARITY,
+            order_by: PlaceListOrderBy.HIGHT_RATED,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListPopularState.loading}
+          loading={placeListHightRatedState.loading}
           loadingFavorites={handlingFavorite}
-          dataPlace={SegmentPlace.OverviewPopular}
+          dataPlace={SegmentPlace.OverviewHightRated}
         />
         {account &&
           placeListMyFavorites &&
