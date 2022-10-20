@@ -9,6 +9,9 @@ jobs:
 
   build-push:
     runs-on: ubuntu-20.04
+    outputs:
+      registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
+      registry-paths: ${{ steps.push-to-quay.outputs.registry-paths }}
 
     steps:
       - uses: actions/checkout@v2
@@ -68,7 +71,6 @@ jobs:
       - name: Print image url
         run: |
           echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
-          echo "registry-path=${{ steps.push-to-quay.outputs.registry-paths[0] }}" >> $GITHUB_OUTPUT
 
   deployment:
     needs: [build-push]
