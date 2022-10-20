@@ -7,7 +7,7 @@ on:
 
 jobs:
 
-  release:
+  build-push:
     runs-on: ubuntu-20.04
 
     steps:
@@ -43,5 +43,41 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: building
-        run: npm run build
+      - name: setup envs
+        run: touch .env
+
+      - name: build image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: places
+          tags: ${{ github.sha }} ${{ github.ref_name }} latest
+          dockerfiles: |
+            ./Dockerfile
+
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: quay.io/decentraland
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_TOKEN }}
+
+      - name: Print image url
+        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+
+  deployment:
+    needs: [build-push]
+    name: "Deploy to: dev"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger deployment
+        id: deploy
+        uses: decentraland/dcl-deploy-action@main
+        with:
+          dockerImage: "${{ needs.build-push.outputs.registry-path }}"
+          serviceName: places2
+          env: dev
+          token: ${{ secrets.GITHUB_TOKEN }}

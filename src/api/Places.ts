@@ -11,8 +11,7 @@ import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
 
 export default class Places extends API {
-  static Url =
-    process.env.GATSBY_PLACES_URL || `https://places.decentraland.org/api`
+  static Url = env(`PLACES_URL`, `https://places.decentraland.org/api`)
 
   static Cache = new Map<string, Places>()
 
