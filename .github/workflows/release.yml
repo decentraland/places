@@ -66,7 +66,9 @@ jobs:
           password: ${{ secrets.QUAY_TOKEN }}
 
       - name: Print image url
-        run: echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+        run: |
+          echo "Image pushed to ${{ steps.push-to-quay.outputs.registry-paths }}"
+          echo "registry-path=${{ steps.push-to-quay.outputs.registry-paths[0] }}" >> $GITHUB_OUTPUT
 
   deployment:
     needs: [build-push]
