@@ -247,7 +247,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SET
         "likes" = c.count_likes,
         "dislikes" = c.count_dislikes,
-        "highest_rated" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
+        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
+                            ELSE c.count_active_likes / c.count_active_total::float
+                       END)
       FROM counted c
       WHERE "id" = ${placeId}
     `

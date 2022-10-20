@@ -30,7 +30,7 @@ test("should return a list of places with query", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 0 }]))
   const request = new Request("/")
   const url = new URL(
-    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&order_by=highest_rated&order=asc"
+    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&order_by=like_rate&order=asc"
   )
   const placeResponse = await getPlaceList({
     request,

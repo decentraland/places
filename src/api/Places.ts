@@ -120,7 +120,7 @@ export default class Places extends API {
 
   async getPlacesHightRated(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      order_by: "popularity_score",
+      order_by: "like_rate",
       order: "desc",
       ...options,
     })

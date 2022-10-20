@@ -65,7 +65,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           <div className="place-card__stats">
             <UserLikePercentage
               loading={loading}
-              value={place?.highest_rated || 0}
+              value={place?.like_rate || 0}
             />
             <UserCount loading={loading} value={place?.user_count || 0} />
           </div>
