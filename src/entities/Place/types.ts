@@ -16,7 +16,7 @@ export type PlaceAttributes = {
   favorites: number
 
   activity_score: BigInt
-  popularity_score: number
+  highest_rated: number
 
   deployed_at: Date
   disabled: boolean
@@ -38,7 +38,7 @@ export type GetPlaceParams = {
 
 export enum PlaceListOrderBy {
   MOST_ACTIVE = "most_active",
-  HIGHT_RATED = "hight_rated",
+  HIGHEST_RATED = "highest_rated",
   UPDATED_AT = "updated_at",
 }
 

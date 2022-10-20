@@ -52,7 +52,7 @@ export default function OverviewPage() {
   )
 
   const [
-    [lastUpdatesList, popularList, myFavoritesList, poisList],
+    [lastUpdatesList, hightRatedList, myFavoritesList, poisList],
     { handleFavorite, handlingFavorite },
   ] = usePlacesManager(placesMemo)
 
@@ -89,10 +89,10 @@ export default function OverviewPage() {
       <Navigation activeTab={NavigationTab.Overview} />
       <Container className="full overview-container">
         <OverviewList
-          places={popularList}
-          title={l("pages.overview.hight_rated")}
+          places={hightRatedList}
+          title={l("pages.overview.highest_rated")}
           href={locations.places({
-            order_by: PlaceListOrderBy.HIGHT_RATED,
+            order_by: PlaceListOrderBy.HIGHEST_RATED,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {

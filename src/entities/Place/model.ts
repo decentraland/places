@@ -108,7 +108,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<AggregatePlaceAttributes[]> {
     const orderBy =
       oneOf(options.order_by, [
-        PlaceListOrderBy.HIGHT_RATED,
+        PlaceListOrderBy.HIGHEST_RATED,
         PlaceListOrderBy.UPDATED_AT,
       ]) ?? PlaceListOrderBy.UPDATED_AT
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
@@ -247,7 +247,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SET
         "likes" = c.count_likes,
         "dislikes" = c.count_dislikes,
-        "popularity_score" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
+        "highest_rated" = (1.0 + c.count_active_likes) / (2.0 + c.count_active_total::float)
       FROM counted c
       WHERE "id" = ${placeId}
     `

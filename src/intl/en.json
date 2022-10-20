@@ -3,8 +3,8 @@
     "count_places": "{count} {count, plural, one {place} other {places}}",
     "order_by": {
       "updated_at": "Recently Updated",
-      "popularity_score": "Highest rated",
-      "activity_score": "Most active"
+      "highest_rated": "Highest Rated",
+      "most_active": "Most Active"
     },
     "place_share": "Look at this place I found in Decentraland: "
   },
@@ -51,7 +51,7 @@
     "overview": {
       "title": "Places",
       "search_the_metaverse": "Search the Metaverse",
-      "hight_rated": "Highest Rated",
+      "highest_rated": "Highest Rated",
       "Featured": "Featured Places",
       "my_favorites": "My Favorites",
       "recently_updated": "Recently Updated",
