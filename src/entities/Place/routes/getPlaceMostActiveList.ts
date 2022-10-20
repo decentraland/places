@@ -3,7 +3,7 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { sort } from "radash/dist/array"
+import { sort, unique } from "radash/dist/array"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import PlaceModel from "../model"
@@ -43,9 +43,7 @@ export const getPlaceMostActiveList = Router.memo(
       limit: numeric(query.limit, { min: 0, max: 100 }),
       only_favorites: !!bool(query.only_favorites),
       positions: query.positions.length
-        ? hotScenesPositions.filter((position) =>
-            query.positions.includes(position)
-          )
+        ? unique([...hotScenesPositions, ...query.positions])
         : hotScenesPositions,
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
