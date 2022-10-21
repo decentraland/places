@@ -17,7 +17,13 @@ export type UserCountProps = LabelProps & {
 export default React.memo(function UserCount(props: UserCountProps) {
   const { loading, className, value } = props
   return (
-    <Label className={TokenList.join(["user-count", className])}>
+    <Label
+      className={TokenList.join([
+        "user-count",
+        className,
+        value === 0 && "hidden",
+      ])}
+    >
       <Players noHover active />
       {!loading && value}
     </Label>

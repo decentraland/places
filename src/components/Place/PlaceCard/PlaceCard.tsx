@@ -11,6 +11,8 @@ import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import FavoriteButton from "../../Button/FavoriteButton"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
+import UserCount from "../../Label/UserCount/UserCount"
+import UserLikePercentage from "../../Label/UserLikePercentage/UserLikePercentage"
 
 import "./PlaceCard.css"
 
@@ -60,6 +62,13 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       <Card.Content>
         <Card.Header as="a" href={href}>
           {place?.title || " "}
+          <div className="place-card__stats">
+            <UserLikePercentage
+              loading={loading}
+              value={place?.like_rate || 0}
+            />
+            <UserCount loading={loading} value={place?.user_count || 0} />
+          </div>
         </Card.Header>
         <div className="place-card__button-container">
           <JumpInPositionButton

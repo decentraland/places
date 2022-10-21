@@ -40,8 +40,8 @@ export const getPlaceListQuerySchema = schema({
       type: "string",
       description: "Order places by",
       enum: [
-        PlaceListOrderBy.POPULARITY,
-        PlaceListOrderBy.ACTIVITY,
+        PlaceListOrderBy.HIGHEST_RATED,
+        PlaceListOrderBy.MOST_ACTIVE,
         PlaceListOrderBy.UPDATED_AT,
       ],
       nullable: true,
@@ -129,17 +129,17 @@ export const placeSchema = schema({
     likes: {
       type: "number",
       minimum: 0,
-      description: "The number of of likes on the place",
+      description: "The number of likes on the place",
     },
     dislikes: {
       type: "number",
       minimum: 0,
-      description: "The number of of dislikes on the place",
+      description: "The number of dislikes on the place",
     },
     favorites: {
       type: "number",
       minimum: 0,
-      description: "The number of of favorites on the place",
+      description: "The number of favorites on the place",
     },
     deployed_at: {
       description: "The date when the place was deployed",
@@ -176,6 +176,11 @@ export const placeSchema = schema({
     user_favorite: {
       type: "boolean",
       description: "True if user seletect as favorite the place",
+    },
+    user_count: {
+      type: "number",
+      minimum: 0,
+      description: "The number of users in the place",
     },
   },
 })
