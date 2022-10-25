@@ -2,12 +2,10 @@
 import { Type } from "decentraland-gatsby/dist/entities/Database/types"
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
-import PlaceActivityModel from "../entities/PlaceActivity/model"
-
 export const shorthands: ColumnDefinitions | undefined = undefined
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-  pgm.createTable(PlaceActivityModel.tableName, {
+  pgm.createTable("place_activities", {
     place_id: {
       type: Type.UUID,
       primaryKey: true,
@@ -26,9 +24,9 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     },
   })
 
-  pgm.createIndex(PlaceActivityModel.tableName, ["place_id", "users"])
+  pgm.createIndex("place_activities", ["place_id", "users"])
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropTable(PlaceActivityModel.tableName, { cascade: true })
+  pgm.dropTable("place_activities", { cascade: true })
 }

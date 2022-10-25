@@ -25,8 +25,6 @@ import express from "express"
 import categoryRoute from "./entities/Category/routes"
 import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
 import placeRoute from "./entities/Place/routes"
-import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
-import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
@@ -35,8 +33,6 @@ import userLikesRoute from "./entities/UserLikes/routes"
 
 const tasks = tasksManager()
 tasks.use(checkDeployments)
-tasks.use(checkActivity)
-tasks.use(summaryActivity)
 
 const app = express()
 app.set("x-powered-by", false)
