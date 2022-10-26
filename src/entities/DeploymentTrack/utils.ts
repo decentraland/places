@@ -1,29 +1,7 @@
-import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
-import {
-  ContentDeploymentSortingField,
-  ContentDeploymentSortingOrder,
-  ContentDepoymentScene,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
-import { DeploymentTrackAttributes } from "./types"
-
-export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
-  const contentDeploymentsResponse = await Catalyst.from(
-    catalyst.base_url
-  ).getContentDeployments({
-    from: catalyst.from,
-    limit: catalyst.limit,
-    entityTypes: [EntityType.SCENE],
-    onlyCurrentlyPointed: true,
-    sortingField: ContentDeploymentSortingField.LocalTimestamp,
-    sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
-  })
-
-  return contentDeploymentsResponse.deployments as ContentDepoymentScene[]
-}
 
 export function isMetadataEmpty(deployment: ContentDepoymentScene) {
   const thumbnail = getThumbnailFromDeployment(deployment)
