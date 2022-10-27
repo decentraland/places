@@ -27,6 +27,7 @@ import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployment
 import placeRoute from "./entities/Place/routes"
 import { checkActivity } from "./entities/PlaceActivity/task/checkActivity"
 import { summaryActivity } from "./entities/PlaceActivityDaily/task/summaryActivity"
+import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
@@ -56,6 +57,7 @@ app.use("/api", [
 ])
 
 app.use(metrics)
+app.use(socialRoutes)
 app.use(
   filesystem("public", "404.html", {
     defaultHeaders: {
