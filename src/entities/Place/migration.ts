@@ -78,7 +78,6 @@ async function updatePlaces(
         .join(",")}  WHERE positions && ${
         "'{\"" + place.base_position + "\"}'"
       }`
-      console.log(queryString)
       pgm.db.query(
         queryString,
         keys.map((key) => place[key])
@@ -89,10 +88,6 @@ async function updatePlaces(
 
 async function deletePlaces(places: string[], pgm: MigrationBuilder) {
   if (places.length > 0) {
-    const query = `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
-      "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
-    }`
-    console.log(query)
     pgm.db.query(
       `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
         "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
