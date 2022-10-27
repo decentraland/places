@@ -17,7 +17,6 @@ export type PlaceAttributes = {
 
   like_rate: number
 
-  deployed_at: Date
   disabled: boolean
   disabled_at: Date | null
   created_at: Date

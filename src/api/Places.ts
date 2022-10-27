@@ -30,7 +30,6 @@ export default class Places extends API {
   static parsePlace(place: AggregatePlaceAttributes): AggregatePlaceAttributes {
     return {
       ...place,
-      deployed_at: Time.date(place.deployed_at),
       created_at: Time.date(place.created_at),
       updated_at: Time.date(place.updated_at),
       disabled_at: Time.date(place.disabled_at),
