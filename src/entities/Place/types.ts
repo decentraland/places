@@ -15,7 +15,6 @@ export type PlaceAttributes = {
   dislikes: number
   favorites: number
 
-  activity_score: BigInt
   like_rate: number
 
   deployed_at: Date

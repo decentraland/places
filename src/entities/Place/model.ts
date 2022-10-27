@@ -12,7 +12,6 @@ import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import EntityPlaceModel from "../EntityPlace/model"
-import PlaceActivityDailyModel from "../PlaceActivityDaily/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
@@ -254,37 +253,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "id" = ${placeId}
     `
     return this.namedQuery("update_likes", sql)
-  }
-
-  static async summaryActivities() {
-    const sql = SQL`
-      WITH range_activity AS (
-        SELECT
-          daily_activity."place_id",
-          sum(daily_activity."activity") as "activity"
-        FROM (
-          SELECT
-            "place_id",
-            "date",
-            (sum("users"::float) / sum("checks"::float) * ${
-              10 ** SIGNIFICANT_DECIMALS
-            })::bigint as activity
-          FROM
-            ${table(PlaceActivityDailyModel)}
-          WHERE
-            "date" >= (now() - ${SUMMARY_ACTIVITY_RANGE}::interval)
-          GROUP BY "place_id", "date"
-        ) daily_activity
-        GROUP BY "place_id"
-      )
-
-      UPDATE ${table(this)}
-      SET "activity_score" = range_activity.activity
-      FROM range_activity
-      WHERE "id" = range_activity.place_id
-    `
-
-    return this.namedRowCount("summary_activity", sql)
   }
 
   static async findWithHotScenes(
