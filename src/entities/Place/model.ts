@@ -5,13 +5,11 @@ import {
   limit,
   offset,
   table,
-  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
-import EntityPlaceModel from "../EntityPlace/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
@@ -27,21 +25,6 @@ export const SIGNIFICANT_DECIMALS = 4
 
 export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
-
-  static async findByEntityIds(
-    entityIds: string[]
-  ): Promise<(PlaceAttributes & { entity_id: string })[]> {
-    if (entityIds.length === 0) {
-      return []
-    }
-    const sql = SQL`
-      SELECT * FROM ${table(this)} p
-      LEFT JOIN ${table(EntityPlaceModel)} ep ON "p"."id" = "ep"."place_id"
-      WHERE "ep"."entity_id" IN ${values(entityIds)}
-    `
-
-    return this.namedQuery("find_by_entity_ids", sql)
-  }
 
   static async findEnabledByPositions(
     positions: string[]

@@ -23,7 +23,6 @@ import {
 import express from "express"
 
 import categoryRoute from "./entities/Category/routes"
-import { checkDeployments } from "./entities/DeploymentTrack/task/chekDeployments"
 import placeRoute from "./entities/Place/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
@@ -32,7 +31,6 @@ import userLikesRoute from "./entities/UserLikes/routes"
 // jobs.cron('@eachMinute', () => console.log('Runnign Job...'))
 
 const tasks = tasksManager()
-tasks.use(checkDeployments)
 
 const app = express()
 app.set("x-powered-by", false)
