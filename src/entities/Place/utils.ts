@@ -1,8 +1,10 @@
+import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
-  ContentDepoymentScene,
+  EntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
+import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { v4 as uuid } from "uuid"
 
 import {
@@ -22,50 +24,6 @@ export function siteUrl(pathname = "") {
   return target
 }
 
-export function createPlaceFromDeployment(
-  deployment: ContentDepoymentScene,
-  data: Partial<Omit<PlaceAttributes, "id">> = {}
-): PlaceAttributes {
-  const now = new Date()
-  const title = deployment?.metadata?.display?.title || null
-  const positions = (deployment?.pointers || []).sort()
-  const tags = (deployment?.metadata?.tags || [])
-    .slice(0, 100)
-    .map((tag) => tag.slice(0, 25))
-
-  const thumbnail = getThumbnailFromDeployment(deployment)
-
-  let contact_name = deployment?.metadata?.contact?.name || null
-  if (contact_name && contact_name.trim() === "author-name") {
-    contact_name = null
-  }
-
-  return {
-    id: uuid(),
-    owner: deployment?.metadata?.owner || null,
-    title: title ? title.slice(0, 50) : null,
-    description: deployment?.metadata?.display?.description || null,
-    image: thumbnail,
-    positions,
-    tags,
-    likes: 0,
-    dislikes: 0,
-    favorites: 0,
-    like_rate: 0.5,
-    base_position: deployment?.metadata?.scene?.base || positions[0],
-    contact_name,
-    contact_email: deployment?.metadata?.contact?.email || null,
-    content_rating: deployment?.metadata?.policy?.contentRating || null,
-    disabled: false,
-    disabled_at:
-      !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
-    deployed_at: new Date(deployment.entityTimestamp),
-    created_at: now,
-    updated_at: now,
-    ...data,
-  }
-}
-
 export function placeTargetUrl(
   place: Pick<PlaceAttributes, "base_position">,
   realm?: string
@@ -79,12 +37,12 @@ export function placeTargetUrl(
   return target.toString()
 }
 
-export function getThumbnailFromDeployment(deployment: ContentDepoymentScene) {
+export function getThumbnailFromDeployment(deployment: EntityScene) {
   const positions = (deployment?.pointers || []).sort()
   let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
   if (thumbnail && !thumbnail.startsWith("https://")) {
     const content = deployment.content.find(
-      (content) => content.key === thumbnail
+      (content) => content.file === thumbnail
     )
     if (!content || unwantedThumbnailHash.includes(content.hash)) {
       thumbnail = null
@@ -115,4 +73,68 @@ export function placesWithUserCount(
       user_count: hotScenePlaces ? hotScenePlaces.usersTotalCount : 0,
     }
   })
+}
+
+export function createPlaceFromEntityScene(
+  entityScene: EntityScene,
+  data: Partial<Omit<PlaceAttributes, "id">> = {}
+) {
+  const now = Time.from().format("YYYYMMDD hh:mm:ss ZZ")
+  const title = entityScene?.metadata?.display?.title || null
+  const positions = (entityScene?.pointers || []).sort()
+  const tags = (entityScene?.metadata?.tags || [])
+    .slice(0, 100)
+    .map((tag) => tag.slice(0, 25))
+
+  const thumbnail = getThumbnailFromDeployment(entityScene)
+
+  let contact_name = entityScene?.metadata?.contact?.name || null
+  if (contact_name && contact_name.trim() === "author-name") {
+    contact_name = null
+  }
+
+  return {
+    id: uuid(),
+    owner: entityScene?.metadata?.owner || null,
+    title: title ? title.slice(0, 50) : null,
+    description: entityScene?.metadata?.display?.description || null,
+    image: thumbnail,
+    positions,
+    tags,
+    likes: 0,
+    dislikes: 0,
+    favorites: 0,
+    like_rate: 0,
+    base_position: entityScene?.metadata?.scene?.base || positions[0],
+    contact_name,
+    contact_email: entityScene?.metadata?.contact?.email || null,
+    content_rating: entityScene?.metadata?.policy?.contentRating || null,
+    disabled: false,
+    disabled_at:
+      !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
+    created_at: now,
+    updated_at: now,
+    ...data,
+  }
+}
+
+export async function createEntityScenesFromDefaultPlaces(
+  places: Partial<PlaceAttributes>[]
+) {
+  const batch = places.map((place) => place.base_position!)
+  return Catalyst.get().getEntityScenes(batch)
+}
+
+export async function createPlaceFromDefaultPlaces(
+  places: Partial<PlaceAttributes>[]
+) {
+  const entityScenes = await createEntityScenesFromDefaultPlaces(places)
+  return entityScenes.map((entityScene) =>
+    createPlaceFromEntityScene(
+      entityScene,
+      places.find((place) =>
+        entityScene.pointers.includes(place.base_position!)
+      )
+    )
+  )
 }

@@ -19,6 +19,7 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
       notNull: true,
     },
   })
+  pgm.addIndex(PlaceModel.tableName, ["disabled", "activity_score"])
   pgm.createTable("place_activities", {
     place_id: {
       type: Type.UUID,

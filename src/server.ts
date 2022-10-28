@@ -1,6 +1,4 @@
 import { databaseInitializer } from "decentraland-gatsby/dist/entities/Database/utils"
-// import manager from 'decentraland-gatsby/dist/entities/Job/index'
-// import { jobInitializer } from 'decentraland-gatsby/dist/entities/Job/utils'
 import metrics from "decentraland-gatsby/dist/entities/Prometheus/routes"
 import RequestError from "decentraland-gatsby/dist/entities/Route/error"
 import handle from "decentraland-gatsby/dist/entities/Route/handle"
@@ -27,9 +25,6 @@ import placeRoute from "./entities/Place/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
-
-// const jobs = manager()
-// jobs.cron('@eachMinute', () => console.log('Runnign Job...'))
 
 const tasks = tasksManager()
 

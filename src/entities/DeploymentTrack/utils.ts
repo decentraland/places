@@ -1,9 +1,32 @@
-import { ContentDepoymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { EntityType } from "@dcl/schemas/dist/platform/entity"
+import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
+import {
+  ContentDeploymentSortingField,
+  ContentDeploymentSortingOrder,
+  ContentDepoymentScene,
+  EntityScene,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
+import { DeploymentTrackAttributes } from "./types"
 
-export function isMetadataEmpty(deployment: ContentDepoymentScene) {
+export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
+  const contentDeploymentsResponse = await Catalyst.from(
+    catalyst.base_url
+  ).getContentDeployments({
+    from: catalyst.from,
+    limit: catalyst.limit,
+    entityTypes: [EntityType.SCENE],
+    onlyCurrentlyPointed: true,
+    sortingField: ContentDeploymentSortingField.LocalTimestamp,
+    sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
+  })
+
+  return contentDeploymentsResponse.deployments as ContentDepoymentScene[]
+}
+
+export function isMetadataEmpty(deployment: EntityScene) {
   const thumbnail = getThumbnailFromDeployment(deployment)
   return (
     ((!deployment.metadata?.display?.title ||
@@ -13,7 +36,7 @@ export function isMetadataEmpty(deployment: ContentDepoymentScene) {
   )
 }
 
-export function isRoad(deployment: ContentDepoymentScene) {
+export function isRoad(deployment: EntityScene) {
   return deployment.pointers.every((position) => {
     const roadsMap = roads as Record<string, Record<string, true>>
     const [x, y] = position.split(",")

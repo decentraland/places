@@ -141,11 +141,6 @@ export const placeSchema = schema({
       minimum: 0,
       description: "The number of favorites on the place",
     },
-    deployed_at: {
-      description: "The date when the place was deployed",
-      type: "string",
-      format: "date-time",
-    },
     disabled: {
       type: "boolean",
       description: "True if the place is disabled",
