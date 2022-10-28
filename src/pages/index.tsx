@@ -11,9 +11,10 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import { PlaceListOrderBy } from "../entities/Place/types"
+import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
+import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
-import { usePlaceListPopular } from "../hooks/usePlaceListPopular"
 import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
@@ -28,31 +29,41 @@ export default function OverviewPage() {
   const l = useFormatMessage()
 
   const [account] = useAuthContext()
+  const [placeListMostActive, placeListMostActiveState] =
+    usePlaceListMostActive(overviewOptions)
   const [placeListLastUpdates, placeListLastUpdatesState] =
     usePlaceListRecentlyUpdates(overviewOptions)
-  const [placeListPopular, placeListPopularState] =
-    usePlaceListPopular(overviewOptions)
+  const [placeListHightRated, placeListHightRatedState] =
+    usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(overviewOptions)
   const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
 
   const placesMemo = useMemo(
     () => [
+      placeListMostActive,
       placeListLastUpdates,
-      placeListPopular,
+      placeListHightRated,
       placeListMyFavorites.data,
       placeListPois,
     ],
     [
+      placeListMostActive,
       placeListLastUpdates,
-      placeListPopular,
+      placeListHightRated,
       placeListMyFavorites,
       placeListPois,
     ]
   )
 
   const [
-    [lastUpdatesList, popularList, myFavoritesList, poisList],
+    [
+      mostActiveList,
+      lastUpdatesList,
+      hightRatedList,
+      myFavoritesList,
+      poisList,
+    ],
     { handleFavorite, handlingFavorite },
   ] = usePlacesManager(placesMemo)
 
@@ -89,19 +100,34 @@ export default function OverviewPage() {
       <Navigation activeTab={NavigationTab.Overview} />
       <Container className="full overview-container">
         <OverviewList
-          places={popularList}
-          title={l("pages.overview.popular")}
+          places={mostActiveList}
+          title={l("pages.overview.most_active")}
           href={locations.places({
-            order_by: PlaceListOrderBy.POPULARITY,
+            order_by: PlaceListOrderBy.MOST_ACTIVE,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListPopularState.loading}
+          loading={placeListMostActiveState.loading}
           loadingFavorites={handlingFavorite}
-          dataPlace={SegmentPlace.OverviewPopular}
+          dataPlace={SegmentPlace.OverviewMostActive}
+        />
+        <OverviewList
+          places={hightRatedList}
+          title={l("pages.overview.highest_rated")}
+          href={locations.places({
+            order_by: PlaceListOrderBy.HIGHEST_RATED,
+          })}
+          onClickFavorite={(e, place) =>
+            handleFavorite(place.id, place, {
+              place: e.currentTarget.dataset.place!,
+            })
+          }
+          loading={placeListHightRatedState.loading}
+          loadingFavorites={handlingFavorite}
+          dataPlace={SegmentPlace.OverviewHightRated}
         />
         {account &&
           placeListMyFavorites &&

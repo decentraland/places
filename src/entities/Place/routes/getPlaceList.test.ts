@@ -20,7 +20,7 @@ test("should return a list of places with no query", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 0,
-    data: [{}],
+    data: [{ user_count: 0 }],
   })
   expect(find.mock.calls.length).toBe(2)
 })
@@ -30,7 +30,7 @@ test("should return a list of places with query", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 0 }]))
   const request = new Request("/")
   const url = new URL(
-    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&order_by=popularity_score&order=asc"
+    "https://localhost/?position=123,123&position=234,234&limit=1&offset=1&order_by=like_rate&order=asc"
   )
   const placeResponse = await getPlaceList({
     request,
@@ -40,9 +40,26 @@ test("should return a list of places with query", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 0,
-    data: [{}],
+    data: [{ user_count: 0 }],
   })
   expect(find.mock.calls.length).toBe(2)
+})
+
+test("should return a list of places with order by most_active", async () => {
+  find.mockResolvedValueOnce(Promise.resolve([{}]))
+  const request = new Request("/")
+  const url = new URL("https://localhost/?&order_by=most_active&limit=1")
+  const placeResponse = await getPlaceList({
+    request,
+    url,
+  })
+
+  expect(placeResponse.body).toEqual({
+    ok: true,
+    total: 1,
+    data: [{ user_count: 0 }],
+  })
+  expect(find.mock.calls.length).toBe(1)
 })
 
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
