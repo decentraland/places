@@ -1,7 +1,8 @@
-import React, { useCallback, useMemo } from "react"
+import React, { ReactHTMLElement, useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
@@ -56,11 +57,25 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         !loading && !place && "hidden",
       ])}
     >
-      <a className="place-card__cover" href={href}>
+      <a
+        className="place-card__cover"
+        href={href}
+        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+          e.preventDefault()
+          href && navigate(href)
+        }}
+      >
         <ImgFixed src={place?.image || ""} dimension="wide" />
       </a>
       <Card.Content>
-        <Card.Header as="a" href={href}>
+        <Card.Header
+          as="a"
+          href={href}
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+            e.preventDefault()
+            href && navigate(href)
+          }}
+        >
           {place?.title || " "}
           <div className="place-card__stats">
             <UserLikePercentage

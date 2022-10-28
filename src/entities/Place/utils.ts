@@ -51,6 +51,7 @@ export function createPlaceFromDeployment(
     contact_email: deployment?.metadata?.contact?.email || null,
     content_rating: deployment?.metadata?.policy?.contentRating || null,
     disabled: false,
+    featured: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     deployed_at: new Date(deployment.entityTimestamp),

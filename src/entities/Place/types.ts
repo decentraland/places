@@ -10,13 +10,11 @@ export type PlaceAttributes = {
   contact_name: string | null
   contact_email: string | null
   content_rating: string | null
-
   likes: number
   dislikes: number
   favorites: number
-
   like_rate: number
-
+  featured: boolean
   deployed_at: Date
   disabled: boolean
   disabled_at: Date | null
@@ -46,6 +44,7 @@ export type GetPlaceListQuery = {
   offset: string
   positions: string[]
   only_favorites: string
+  only_featured: string
   order_by: string
   order: string
 }
@@ -54,6 +53,7 @@ export type PlaceListOptions = {
   offset: number
   limit: number
   only_favorites: boolean
+  only_featured: boolean
   positions: string[]
   order_by: string
   order: string

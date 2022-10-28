@@ -18,6 +18,7 @@ export const getPlaceMostActiveList = Router.memo(
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
+      only_featured: ctx.url.searchParams.get("only_featured"),
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: ctx.url.searchParams.get("order") || "desc",
     })
@@ -42,6 +43,7 @@ export const getPlaceMostActiveList = Router.memo(
       offset: numeric(query.offset, { min: 0 }),
       limit: numeric(query.limit, { min: 0, max: 100 }),
       only_favorites: !!bool(query.only_favorites),
+      only_featured: !!bool(query.only_featured),
       positions: query.positions.length
         ? unique([...hotScenesPositions, ...query.positions])
         : hotScenesPositions,

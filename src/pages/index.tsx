@@ -2,6 +2,9 @@ import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
+import Carousel2, {
+  IndicatorsType,
+} from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
@@ -10,7 +13,12 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
-import { PlaceListOrderBy } from "../entities/Place/types"
+import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
+import {
+  AggregatePlaceAttributes,
+  PlaceListOrderBy,
+} from "../entities/Place/types"
+import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
@@ -29,6 +37,8 @@ export default function OverviewPage() {
   const l = useFormatMessage()
 
   const [account] = useAuthContext()
+  const [placeListFeatured, placeListFeaturedState] =
+    usePlaceListFeatured(overviewOptions)
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
   const [placeListLastUpdates, placeListLastUpdatesState] =
@@ -41,6 +51,7 @@ export default function OverviewPage() {
 
   const placesMemo = useMemo(
     () => [
+      placeListFeatured,
       placeListMostActive,
       placeListLastUpdates,
       placeListHightRated,
@@ -48,6 +59,7 @@ export default function OverviewPage() {
       placeListPois,
     ],
     [
+      placeListFeatured,
       placeListMostActive,
       placeListLastUpdates,
       placeListHightRated,
@@ -58,6 +70,7 @@ export default function OverviewPage() {
 
   const [
     [
+      featuredList,
       mostActiveList,
       lastUpdatesList,
       hightRatedList,
@@ -98,6 +111,16 @@ export default function OverviewPage() {
         <meta name="twitter:site" content={l("social.home.site") || ""} />
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
+
+      {featuredList.length > 0 && (
+        <Carousel2
+          className="overview__carousel2"
+          isFullscreen
+          indicatorsType={IndicatorsType.Dash}
+          items={featuredList}
+          component={PlaceFeatured}
+        />
+      )}
       <Container className="full overview-container">
         <OverviewList
           places={mostActiveList}
