@@ -45,6 +45,10 @@
       "realms": "Realms",
       "description": "description",
       "location": "location"
+    },
+    "place_featured": {
+      "jump_in": "Jump In",
+      "find_out_more": "find out more"
     }
   },
   "pages": {

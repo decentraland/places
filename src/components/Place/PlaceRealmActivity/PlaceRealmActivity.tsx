@@ -3,7 +3,6 @@ import React from "react"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { Header } from "decentraland-ui/dist/components/Header/Header"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import { Table } from "decentraland-ui/dist/components/Table/Table"
 
