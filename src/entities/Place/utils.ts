@@ -98,7 +98,7 @@ export function createPlaceFromEntityScene(
     likes: 0,
     dislikes: 0,
     favorites: 0,
-    like_rate: 0.5,
+    like_rate: 0,
     base_position: entityScene?.metadata?.scene?.base || positions[0],
     contact_name,
     contact_email: entityScene?.metadata?.contact?.email || null,
