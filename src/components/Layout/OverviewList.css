@@ -14,6 +14,14 @@
   margin-bottom: 30px;
 }
 
+.overview-list__place-list
+  .place-list__carousel
+  .swiper-slide
+  .ui.card.place-card {
+  margin-left: auto;
+  margin-right: auto;
+}
+
 .overview-list__place-list .ui.card.place-card:first-child {
   margin-left: 0;
 }
@@ -59,20 +67,30 @@
   .overview-list__place-list .ui.card.place-card:nth-child(2) {
     margin-right: 0;
   }
+
+  .overview-list__place-list {
+    display: block;
+  }
 }
 @media only screen and (max-width: 425px) {
   .place-list__container.overview-list__place-list .ui.card.place-card {
     width: 82vw;
     margin: 5px;
   }
+
   .place-list__container.overview-list__place-list
     .ui.link.card.place-card:hover {
     box-shadow: var(--shadow-1);
   }
+
   .ui.overview-list
     .dcl.header-menu
     .dcl.header-menu-left
     h2.dg.Title.Title--small {
     font-size: 24px;
+  }
+
+  .overview-list__place-list {
+    display: block;
   }
 }
