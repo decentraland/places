@@ -15,7 +15,6 @@ export type PlaceAttributes = {
   favorites: number
   like_rate: number
   featured: boolean
-  deployed_at: Date
   disabled: boolean
   disabled_at: Date | null
   created_at: Date
