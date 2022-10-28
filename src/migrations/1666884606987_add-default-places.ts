@@ -1,4 +1,7 @@
-import { createPlaceMigration } from "../entities/Place/migration"
-import defaulPlace from "../seed/01_places.json"
+/* eslint-disable @typescript-eslint/no-unused-vars */
+/* eslint-disable @typescript-eslint/naming-convention */
+import { MigrationBuilder } from "node-pg-migrate"
 
-export const { up, down } = createPlaceMigration(defaulPlace)
+export async function up(pgm: MigrationBuilder): Promise<void> {}
+
+export async function down(pgm: MigrationBuilder): Promise<void> {}
