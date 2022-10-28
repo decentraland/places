@@ -24,6 +24,7 @@ import express from "express"
 
 import categoryRoute from "./entities/Category/routes"
 import placeRoute from "./entities/Place/routes"
+import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
@@ -50,6 +51,7 @@ app.use("/api", [
 ])
 
 app.use(metrics)
+app.use(socialRoutes)
 app.use(
   filesystem("public", "404.html", {
     defaultHeaders: {

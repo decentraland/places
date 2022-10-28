@@ -93,7 +93,9 @@ export default function PlacePage() {
   return (
     <>
       <Helmet>
-        <title>{place?.title || l("social.place.title") || ""}</title>
+        <title>{`${place?.title ? place?.title + " | " : ""}${l(
+          "social.place.title"
+        )}`}</title>
         <meta
           name="description"
           content={place?.description || l("social.place.description") || ""}
