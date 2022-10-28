@@ -21,7 +21,13 @@ export default React.memo(function UserLikePercentage(
   const { loading, className, value } = props
 
   return (
-    <Label className={TokenList.join(["user-count", className])}>
+    <Label
+      className={TokenList.join([
+        "user-like",
+        className,
+        value === 0 && "hidden",
+      ])}
+    >
       <ThumbUp noHover active />
       {!loading && `${toPercent(value)}%`}
     </Label>
