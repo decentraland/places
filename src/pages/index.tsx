@@ -14,10 +14,7 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
-import {
-  AggregatePlaceAttributes,
-  PlaceListOrderBy,
-} from "../entities/Place/types"
+import { PlaceListOrderBy } from "../entities/Place/types"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
@@ -37,8 +34,7 @@ export default function OverviewPage() {
   const l = useFormatMessage()
 
   const [account] = useAuthContext()
-  const [placeListFeatured, placeListFeaturedState] =
-    usePlaceListFeatured(overviewOptions)
+  const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
   const [placeListLastUpdates, placeListLastUpdatesState] =
@@ -112,7 +108,7 @@ export default function OverviewPage() {
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
 
-      {featuredList.length > 0 && (
+      {featuredList.length > 0 && !placeListFeaturedState.loading && (
         <Carousel2
           className="overview__carousel2"
           isFullscreen
