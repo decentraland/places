@@ -18,6 +18,12 @@ const DECENTRALAND_URL =
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
 
+export function siteUrl(pathname = "") {
+  const target = new URL(DECENTRALAND_URL)
+  target.pathname = pathname
+  return target
+}
+
 export function placeTargetUrl(
   place: Pick<PlaceAttributes, "base_position">,
   realm?: string
