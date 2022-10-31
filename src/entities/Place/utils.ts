@@ -64,8 +64,10 @@ export function placesWithUserCount(
   hotScenes: HotScene[]
 ) {
   return places.map((place) => {
-    const hotScenePlaces = hotScenes.find(
-      (scene) => place.base_position == scene.baseCoords.join(",")
+    const hotScenePlaces = hotScenes.find((scene) =>
+      scene.parcels
+        .map((parsel) => parsel.join(","))
+        .includes(place.base_position)
     )
 
     return {

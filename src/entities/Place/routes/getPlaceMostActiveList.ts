@@ -3,7 +3,7 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { sort, unique } from "radash/dist/array"
+import { flat, sort, unique } from "radash/dist/array"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import PlaceModel from "../model"
@@ -25,8 +25,10 @@ export const getPlaceMostActiveList = Router.memo(
 
     const hotScenes = await getHotScenes()
 
-    const hotScenesPositions = hotScenes.map((scene) =>
-      scene.baseCoords.join(",")
+    const hotScenesParcels = hotScenes.map((scene) => scene.parcels)
+
+    const hotScenesPositions = flat(hotScenesParcels).map((scene) =>
+      scene.join(",")
     )
 
     const userAuth = await withAuthOptional(ctx)
