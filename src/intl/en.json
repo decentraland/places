@@ -73,8 +73,8 @@
     "my_places": {
       "title": "My Places",
       "favorites": "My Favorites",
-      "no_favorite_selected": "You didn't select a Place as a favorite, find ",
-      "go_to_overview": "the places you like the most"
+      "no_favorite_selected": "You haven’t saved any Places to your favorites. Find ",
+      "go_to_overview": "the places you like most."
     }
   },
   "social": {

@@ -61,4 +61,16 @@
   .place-list__container .ui.card:first-child {
     margin-top: 0;
   }
+
+  .overview-list__place-list
+    .carousel2:not(.fullscreen)
+    .swiper.carousel2__horizontal {
+    padding-right: 0;
+    padding-left: 0;
+  }
+
+  .overview-list__place-list .carousel2__horizontal .swiper-button-next,
+  .overview-list__place-list .carousel2__horizontal .swiper-button-prev {
+    display: none;
+  }
 }

@@ -4,6 +4,7 @@ import NavigationMenu from "decentraland-gatsby/dist/components/Layout/Navigatio
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
+import { PlaceListOrderBy } from "../../entities/Place/types"
 import locations from "../../modules/locations"
 
 export enum NavigationTab {
@@ -33,7 +34,9 @@ export default function Navigation(props: NavigationProps) {
           </NavigationMenu.Item>
           <NavigationMenu.Item
             active={props.activeTab === NavigationTab.Places}
-            href={locations.places({})}
+            href={locations.places({
+              order_by: PlaceListOrderBy.HIGHEST_RATED,
+            })}
           >
             {l("navigation.places")}
           </NavigationMenu.Item>
