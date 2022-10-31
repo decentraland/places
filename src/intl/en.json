@@ -3,7 +3,7 @@
     "count_places": "{count} {count, plural, one {place} other {places}}",
     "order_by": {
       "updated_at": "Recently Updated",
-      "highest_rated": "Highest Rated",
+      "like_rate": "Highest Rated",
       "most_active": "Most Active"
     },
     "place_share": "Look at this place I found in Decentraland: "

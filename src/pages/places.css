@@ -61,4 +61,30 @@
   .places-page .places-page__filters .ui.header {
     margin-left: 22px;
   }
+
+  .ui.grid.places-page
+    > .row
+    > .column.places-page__list
+    .place-list__container {
+    width: calc(100% + 28px);
+  }
+}
+
+@media only screen and (max-width: 425px) {
+  .ui.grid.places-page
+    > .row
+    > .column.places-page__list
+    .place-list__container {
+    width: 100%;
+    margin: 0;
+  }
+
+  .ui.grid.places-page
+    > .row
+    > .column.places-page__list
+    .place-list__container
+    .ui.card.place-card {
+    margin-right: 0;
+    margin-left: 0;
+  }
 }
