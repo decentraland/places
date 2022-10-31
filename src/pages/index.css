@@ -4,14 +4,23 @@
 
 .overview__carousel2 {
   margin-top: -24px;
+  margin-bottom: 22px;
 }
 
+/* TODO: Check if we need this into carousel2 */
+.carousel2.overview__carousel2.fullscreen .swiper-button-next:after,
+.carousel2.overview__carousel2.fullscreen .swiper-button-prev:after {
+  font-size: 16px;
+}
+
+/* TODO: Check if we need this into carousel2 */
 @media (max-width: 768px) {
   .overview__carousel2 {
     margin-top: -22px;
   }
 }
 
+/* TODO: Check if we need this into carousel2 */
 @media only screen and (max-width: 425px) {
   .overview__carousel2 .swiper-button-prev,
   .overview__carousel2 .swiper-button-next {

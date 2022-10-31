@@ -52,6 +52,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
           className="place-list__carousel"
           indicatorsType={IndicatorsType.Dash}
           items={places}
+          progress
           component={(props) => (
             <PlaceCard
               key={props.item?.id}
