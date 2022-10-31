@@ -1,8 +1,8 @@
 import React from "react"
 
-import Carousel, {
+import Carousel2, {
   IndicatorsType,
-} from "decentraland-gatsby/dist/components/Carousel/Carousel"
+} from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
@@ -48,23 +48,23 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         <PlaceCard loading={loading} />
       )}
       {!loading && isMobile && size && size < 10 && (
-        <Carousel
+        <Carousel2
           className="place-list__carousel"
           indicatorsType={IndicatorsType.Dash}
-        >
-          {places.map((place, key) => (
+          items={places}
+          component={(props) => (
             <PlaceCard
-              key={place?.id || key}
-              place={place}
+              key={props.item?.id}
+              place={props.item}
               loading={loading}
               onClickFavorite={onClickFavorite}
               dataPlace={dataPlace}
               loadingFavorites={
-                place?.id ? loadingFavorites?.has(place.id) : false
+                props.item?.id ? loadingFavorites?.has(props.item.id) : false
               }
             />
-          ))}
-        </Carousel>
+          )}
+        />
       )}
 
       {(!isMobile || (isMobile && (!size || size >= 10))) &&
