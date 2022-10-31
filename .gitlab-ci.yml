@@ -44,8 +44,6 @@ build:code:
 
     - source ./node_modules/.bin/setup-environment
 
-    - aws s3 rm s3://places-website-2e52317 --recursive
-
     # - env | grep GATSBY_ > .env
 
     # # login repository
