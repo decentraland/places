@@ -53,6 +53,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
           indicatorsType={IndicatorsType.Dash}
           items={places}
           progress
+          isNavigationHide
           component={(props) => (
             <PlaceCard
               key={props.item?.id}
