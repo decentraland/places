@@ -1,3 +1,4 @@
+import API from "decentraland-gatsby/dist/utils/api/API"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
   EntityScene,
@@ -5,6 +6,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
+import env from "decentraland-gatsby/dist/utils/env"
 import { v4 as uuid } from "uuid"
 
 import {
@@ -17,6 +19,8 @@ const DECENTRALAND_URL =
   process.env.GATSBY_DECENTRALAND_URL ||
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
+
+const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
 export function siteUrl(pathname = "") {
   const target = new URL(DECENTRALAND_URL)
@@ -95,7 +99,7 @@ export function createPlaceFromEntityScene(
     contact_name = null
   }
 
-  return {
+  const placeParsed = {
     id: uuid(),
     owner: entityScene?.metadata?.owner || null,
     title: title ? title.slice(0, 50) : null,
@@ -119,6 +123,12 @@ export function createPlaceFromEntityScene(
     updated_at: now,
     ...data,
   }
+
+  if (placeParsed.image && !placeParsed.image.startsWith("https")) {
+    placeParsed.image = new URL(placeParsed.image, PLACES_URL).toString()
+  }
+
+  return placeParsed
 }
 
 export async function createEntityScenesFromDefaultPlaces(
