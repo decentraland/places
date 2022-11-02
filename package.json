@@ -96,6 +96,7 @@
     "build:server": "tsc -p .",
     "build:front": "gatsby build",
     "update:roads": "ts-node bin/roads.ts",
+    "update:places": "ts-node bin/placeMigrations.ts",
     "develop": "gatsby develop --https -H 0.0.0.0",
     "format": "prettier --write '**/*.{ts,tsx,js,jsx,json,md,mdx,css}'",
     "start": "concurrently -c green,blue -n express,gatsby 'npm run serve' 'npm run develop'",

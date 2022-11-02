@@ -1,0 +1,4 @@
+import { createPlaceMigration } from "../entities/Place/migration"
+import defaulPlace from "../seed/FILENAME"
+
+export const { up, down } = createPlaceMigration(defaulPlace)
