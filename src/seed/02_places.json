@@ -1,0 +1,29 @@
+{
+  "create": [
+    { "base_position": "-29,80" },
+    { "base_position": "159,124" },
+    { "base_position": "-105,-147" },
+    { "base_position": "-29,91" },
+    { "base_position": "85,48" },
+    { "base_position": "-69,28" },
+    { "base_position": "54,98" }
+  ],
+  "update": [
+    {
+      "base_position": "-101,127",
+      "image": "/images/places/ice_poker_the_stronghold.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "-29,55",
+      "image": "/images/places/wondermine.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "120,-12",
+      "image": "/images/places/butterfly_prawn.jpeg",
+      "featured": true
+    }
+  ],
+  "delete": []
+}
