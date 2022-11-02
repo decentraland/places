@@ -4,7 +4,7 @@ import Catalyst, {
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
-import uuid from "uuid"
+import { v4 as uuid } from "uuid"
 
 import { isMetadataEmpty, isRoad } from "../DeploymentTrack/utils"
 import PlaceModel from "./model"
