@@ -26,7 +26,7 @@ Promise.resolve().then(async () => {
     .padStart(2, "0")}_places.json`
 
   const newPlacesTarget = resolve(__dirname, `../src/seed/${newPlacesFile}`)
-  console.log(`creating ${newPlacesTarget}`)
+  console.log(`creating ${newPlacesFile}`)
   writeFileSync(newPlacesTarget, placesStringWithoutComments)
 
   placesJsonFiles.push(newPlacesFile)
@@ -64,6 +64,14 @@ Promise.resolve().then(async () => {
     __dirname,
     `../src/migrations/${migrationFileName}`
   )
-  console.log(`adding new migration file ${placesJsonFiles.join(", ")}`)
+  console.log(`adding new migration file ${newPlacesFile}`)
   writeFileSync(migrationTarget, migrationString)
+
+  console.log("--")
+  console.log(
+    `Job done. Pleace open this file and edit as needed: ${newPlacesTarget}`
+  )
+  console.log(
+    `If you want to see an example please read this: ${testFromExample}`
+  )
 })
