@@ -72,6 +72,6 @@ Promise.resolve().then(async () => {
     `Job done. Pleace open this file and edit as needed: ${newPlacesTarget}`
   )
   console.log(
-    `If you want to see an example please read this: ${testFromExample}`
+    `If you want to see an example please read this: ${placesFromExample}`
   )
 })
