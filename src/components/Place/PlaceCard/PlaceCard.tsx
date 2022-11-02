@@ -1,10 +1,13 @@
-import React, { ReactHTMLElement, useCallback, useMemo } from "react"
+import React, { useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
+import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
+import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
@@ -41,6 +44,9 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     },
     [place, onClickFavorite]
   )
+
+  const l = useFormatMessage()
+  const isMobile = useMobileMediaQuery()
 
   const href = useMemo(() => place && locations.place(place.id), [place])
 
@@ -86,14 +92,31 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           </div>
         </Card.Header>
         <div className="place-card__button-container">
-          <JumpInPositionButton
-            href={placerUrl}
-            loading={loading}
-            onClick={handleJumpInTrack}
-            data-event={SegmentPlace.JumpIn}
-            data-place-id={place?.id}
-            data-place={dataPlace}
-          />
+          {!isMobile && (
+            <JumpInPositionButton
+              href={placerUrl}
+              loading={loading}
+              onClick={handleJumpInTrack}
+              data-event={SegmentPlace.JumpIn}
+              data-place-id={place?.id}
+              data-place={dataPlace}
+            />
+          )}
+          {isMobile && (
+            <Button
+              as="a"
+              href={href}
+              size="small"
+              loading={loading}
+              className="place-card__find-out"
+              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                e.preventDefault()
+                href && navigate(href)
+              }}
+            >
+              {l("components.button.find_out_more")}
+            </Button>
+          )}
           <FavoriteButton
             active={!!place?.user_favorite}
             onClick={handleClickFavorite}

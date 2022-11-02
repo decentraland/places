@@ -83,3 +83,9 @@
   display: flex;
   justify-content: space-between;
 }
+
+.ui.card.place-card
+  .place-card__button-container
+  .ui.button.place-card__find-out {
+  width: 100%;
+}
