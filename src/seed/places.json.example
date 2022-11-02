@@ -1,0 +1,29 @@
+/* {
+  "create": [
+    { 
+      "base_position": "0,0", //MANDATORY
+      "title": "TITLE TO UPDATE",
+      "description": "DESCRIPTION TO UPDATE",
+      "image": "/images/places/FILENAME",
+      "featured": true
+    },
+    { "base_position": "37,-144" }
+  ],
+  "update": [
+    {
+      "base_position": "144,-7",
+      "image": "/images/places/dice_masters.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "-29,55",
+      "featured": false
+    }
+  ],
+  "delete": ["-69,28","85,48"]
+} */
+{
+  "create": [],
+  "update": [],
+  "delete": []
+}
