@@ -1,0 +1,11 @@
+{
+  "create": [{ "base_position": "37,-144" }],
+  "update": [
+    {
+      "base_position": "144,-7",
+      "image": "/images/places/dice_masters.jpeg",
+      "featured": true
+    }
+  ],
+  "delete": []
+}

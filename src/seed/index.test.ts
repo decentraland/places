@@ -1,6 +1,6 @@
 import { validateMigratedPlaces } from "../entities/Place/migration"
 
-const files = ["01_places.json", "02_places.json"]
+const files = ["01_places.json", "02_places.json", "03_places.json"]
 
 for (const file of files) {
   test(`should be able to migrate ${file} places`, async () => {
