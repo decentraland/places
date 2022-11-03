@@ -150,7 +150,7 @@
   }
 }
 
-@media only screen and (max-width: 425px) {
+@media only screen and (max-width: 435px) {
   .place-description__box-wrapper {
     justify-content: space-between;
   }

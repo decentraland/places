@@ -46,7 +46,7 @@
   font-weight: 400;
 }
 
-@media only screen and (max-width: 425px) {
+@media only screen and (max-width: 435px) {
   .place-stats {
     display: flex;
     flex-direction: column;
