@@ -245,17 +245,19 @@ export default function IndexPage() {
               size={loading ? PAGE_SIZE : undefined}
               dataPlace={SegmentPlace.Places}
             />
-            <div className="places__pagination">
-              <Pagination
-                activePage={params.page}
-                totalPages={Math.ceil(total / PAGE_SIZE) || 1}
-                onPageChange={handleChangePage}
-                firstItem={mobile ? null : undefined}
-                lastItem={mobile ? null : undefined}
-                boundaryRange={mobile ? 1 : undefined}
-                siblingRange={mobile ? 0 : undefined}
-              />
-            </div>
+            {!loading && places.length > 0 && (
+              <div className="places__pagination">
+                <Pagination
+                  activePage={params.page}
+                  totalPages={Math.ceil(total / PAGE_SIZE) || 1}
+                  onPageChange={handleChangePage}
+                  firstItem={mobile ? null : undefined}
+                  lastItem={mobile ? null : undefined}
+                  boundaryRange={mobile ? 1 : undefined}
+                  siblingRange={mobile ? 0 : undefined}
+                />
+              </div>
+            )}
           </Grid.Column>
         </Grid.Row>
       </Grid>

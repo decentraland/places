@@ -209,17 +209,21 @@ export default function PlacesPage() {
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.MyPlace}
         />
-        <div className="places__pagination">
-          <Pagination
-            activePage={params.page}
-            totalPages={Math.ceil(placeListMyFavorites.total / PAGE_SIZE) || 1}
-            onPageChange={handleChangePage}
-            firstItem={mobile ? null : undefined}
-            lastItem={mobile ? null : undefined}
-            boundaryRange={mobile ? 1 : undefined}
-            siblingRange={mobile ? 0 : undefined}
-          />
-        </div>
+        {!accountState.loading && myFavoritesList.length !== 0 && (
+          <div className="places__pagination">
+            <Pagination
+              activePage={params.page}
+              totalPages={
+                Math.ceil(placeListMyFavorites.total / PAGE_SIZE) || 1
+              }
+              onPageChange={handleChangePage}
+              firstItem={mobile ? null : undefined}
+              lastItem={mobile ? null : undefined}
+              boundaryRange={mobile ? 1 : undefined}
+              siblingRange={mobile ? 0 : undefined}
+            />
+          </div>
+        )}
       </Container>
     </>
   )
