@@ -47,14 +47,14 @@
   }
 }
 
-@media only screen and (min-width: 426px) and (max-width: 767px) {
+@media only screen and (min-width: 436px) and (max-width: 767px) {
   .place-featured .dcl.hero {
     padding: 0 80px;
     width: calc(100% - 160px);
   }
 }
 
-@media only screen and (max-width: 425px) {
+@media only screen and (max-width: 435px) {
   .place-featured .dcl.hero {
     padding: 0 16px;
     width: calc(100% - 32px);

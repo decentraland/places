@@ -58,7 +58,7 @@
     margin-right: 0;
   }
 }
-@media only screen and (min-width: 426px) and (max-width: 767px) {
+@media only screen and (min-width: 436px) and (max-width: 767px) {
   .overview-list__place-list .ui.card.place-card:nth-child(3),
   .overview-list__place-list .ui.card.place-card:nth-child(4),
   .overview-list__place-list .ui.card.place-card:nth-child(5) {
@@ -72,7 +72,7 @@
     display: block;
   }
 }
-@media only screen and (max-width: 425px) {
+@media only screen and (max-width: 435px) {
   .place-list__container.overview-list__place-list .ui.card.place-card {
     width: 82vw;
     margin: 5px;

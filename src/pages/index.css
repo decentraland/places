@@ -21,7 +21,7 @@
 }
 
 /* TODO: Check if we need this into carousel2 */
-@media only screen and (max-width: 425px) {
+@media only screen and (max-width: 435px) {
   .overview__carousel2 .swiper-button-prev,
   .overview__carousel2 .swiper-button-next {
     display: none;

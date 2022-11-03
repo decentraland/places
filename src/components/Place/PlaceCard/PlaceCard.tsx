@@ -3,11 +3,12 @@ import React, { useCallback, useMemo } from "react"
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import useUserAgentData from "decentraland-gatsby/dist/hooks/useUserAgentData"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
-import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
+import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { placeTargetUrl } from "../../../entities/Place/utils"
@@ -46,7 +47,8 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   )
 
   const l = useFormatMessage()
-  const isMobile = useMobileMediaQuery()
+  const isTabletOrMobile = useTabletAndBelowMediaQuery()
+  const userAgentData = useUserAgentData()
 
   const href = useMemo(() => place && locations.place(place.id), [place])
 
@@ -92,7 +94,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           </div>
         </Card.Header>
         <div className="place-card__button-container">
-          {!isMobile && (
+          {!(isTabletOrMobile || userAgentData.mobile) && (
             <JumpInPositionButton
               href={placerUrl}
               loading={loading}
@@ -102,7 +104,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
               data-place={dataPlace}
             />
           )}
-          {isMobile && (
+          {(isTabletOrMobile || userAgentData.mobile) && (
             <Button
               as="a"
               href={href}

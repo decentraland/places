@@ -130,6 +130,15 @@ export default function IndexPage() {
     [params, track]
   )
 
+  const handleClearFilter = useCallback(() => {
+    track(SegmentPlace.FilterClear)
+    navigate(
+      locations.places({
+        order_by: PlaceListOrderBy.HIGHEST_RATED,
+      })
+    )
+  }, [params, track])
+
   const [ff] = useFeatureFlagContext()
 
   if (ff.flags[FeatureFlags.Maintenance]) {
@@ -178,6 +187,7 @@ export default function IndexPage() {
                     <Icon name="filter" /> {l("pages.places.filters_title")}
                   </>
                 }
+                onClear={handleClearFilter}
               >
                 <Box header={l("pages.places.sort_by")} borderless>
                   <Select
@@ -194,6 +204,18 @@ export default function IndexPage() {
                       }
                     )}
                   />
+                </Box>
+                <Box header={l("pages.places.filter")} borderless>
+                  <div
+                    onClick={(e) =>
+                      handleChangePois(e, { value: !params.only_pois })
+                    }
+                    className="places-page__filter-container"
+                  >
+                    <Filter active={params.only_pois}>
+                      {l("pages.places.pois")}
+                    </Filter>
+                  </div>
                 </Box>
               </FilterContainerModal>
             </Grid.Column>
@@ -245,17 +267,19 @@ export default function IndexPage() {
               size={loading ? PAGE_SIZE : undefined}
               dataPlace={SegmentPlace.Places}
             />
-            <div className="places__pagination">
-              <Pagination
-                activePage={params.page}
-                totalPages={Math.ceil(total / PAGE_SIZE) || 1}
-                onPageChange={handleChangePage}
-                firstItem={mobile ? null : undefined}
-                lastItem={mobile ? null : undefined}
-                boundaryRange={mobile ? 1 : undefined}
-                siblingRange={mobile ? 0 : undefined}
-              />
-            </div>
+            {!loading && places.length > 0 && (
+              <div className="places__pagination">
+                <Pagination
+                  activePage={params.page}
+                  totalPages={Math.ceil(total / PAGE_SIZE) || 1}
+                  onPageChange={handleChangePage}
+                  firstItem={mobile ? null : undefined}
+                  lastItem={mobile ? null : undefined}
+                  boundaryRange={mobile ? 1 : undefined}
+                  siblingRange={mobile ? 0 : undefined}
+                />
+              </div>
+            )}
           </Grid.Column>
         </Grid.Row>
       </Grid>
