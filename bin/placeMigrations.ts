@@ -59,7 +59,7 @@ Promise.resolve().then(async () => {
     "FILENAME",
     `${newPlacesFile}`
   )
-  const migrationFileName = `${new Date().getTime()}_automatic-update-static-places`
+  const migrationFileName = `${new Date().getTime()}_automatic-update-static-places.ts`
   const migrationTarget = resolve(
     __dirname,
     `../src/migrations/${migrationFileName}`

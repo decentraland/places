@@ -18,7 +18,8 @@
       "jump_in": "jump in",
       "favorite": "favorite",
       "share": "share",
-      "join": "join"
+      "join": "join",
+      "find_out_more": "find out more"
     },
     "place_starts": {
       "active": "active",
@@ -58,7 +59,7 @@
       "highest_rated": "Highest Rated",
       "most_active": "Most Active",
       "my_favorites": "My Favorites",
-      "recently_updated": "Recently Updated",
+      "recently_updated": "Recently Added",
       "points_of_interest": "Points of Interest",
       "view_all": "view all"
     },
