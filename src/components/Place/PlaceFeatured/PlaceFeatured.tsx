@@ -9,6 +9,7 @@ import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 import {
   NotMobile,
   useMobileMediaQuery,
+  useTabletAndBelowMediaQuery,
 } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
@@ -31,6 +32,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   const placeDetailUrl = useMemo(() => item && locations.place(item.id), [item])
   const handleJumpInTrack = useTrackLinkContext()
   const isMobile = useMobileMediaQuery()
+  const isTabletOrMobile = useTabletAndBelowMediaQuery()
 
   return (
     <div
@@ -41,7 +43,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
         <Hero.Header>{item.title}</Hero.Header>
         <Hero.Description>{item.description}</Hero.Description>
         <Hero.Actions>
-          <NotMobile>
+          {!isTabletOrMobile && (
             <Button
               primary
               as="a"
@@ -54,7 +56,8 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
             >
               {l("components.place_featured.jump_in")}
             </Button>
-          </NotMobile>
+          )}
+
           <Button
             secondary
             as="a"
