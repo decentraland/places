@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useMemo } from "react"
 
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -7,7 +7,6 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 import {
-  NotMobile,
   useMobileMediaQuery,
   useTabletAndBelowMediaQuery,
 } from "decentraland-ui/dist/components/Media/Media"
