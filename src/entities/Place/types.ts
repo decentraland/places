@@ -3,6 +3,7 @@ export type PlaceAttributes = {
   title: string | null
   description: string | null
   image: string | null
+  featured_image: string | null
   owner: string | null
   tags: string[]
   positions: string[]
