@@ -90,14 +90,15 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
           >
             {l("components.place_detail.about")}
           </Tabs.Tab>
-          {placeRealmActivities.length > 0 && (
+          {/* TODO: decide what to do with it
+          placeRealmActivities.length > 0 && (
             <Tabs.Tab
               onClick={() => setActiveTab(PlaceDetailsTab.Realms)}
               active={activeTab === PlaceDetailsTab.Realms}
             >
               {l("components.place_detail.realms")}
             </Tabs.Tab>
-          )}
+          ) */}
         </Tabs.Left>
       </Tabs>
       {activeTab === PlaceDetailsTab.About && (
@@ -126,14 +127,15 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
           />
         </>
       )}
-      {activeTab === PlaceDetailsTab.Realms &&
+      {/* TODO: decide what to do with it
+      activeTab === PlaceDetailsTab.Realms &&
         placeRealmActivities.length > 0 && (
           <PlaceRealmActivity
             place={place}
             loading={loading}
             activities={placeRealmActivities}
           />
-        )}
+        ) */}
     </div>
   )
 })

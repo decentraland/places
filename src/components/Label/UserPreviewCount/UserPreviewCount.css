@@ -1,0 +1,17 @@
+.ui.label.user-preview {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  height: 30px;
+  color: #716b7c;
+  background-color: transparent;
+}
+
+.ui.label.user-preview svg {
+  width: 15px;
+  margin-right: 5px;
+}
+
+.ui.label.user-preview svg path {
+  fill: #716b7c;
+}

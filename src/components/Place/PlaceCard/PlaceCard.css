@@ -1,11 +1,8 @@
 .ui.card.place-card {
   border-radius: 10px;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  height: 327px;
-}
-
-.ui.card.place-card:hover {
-  transform: translateY(-4px);
+  height: 242px;
+  overflow: hidden;
 }
 
 .ui.card.place-card.hidden {
@@ -18,6 +15,10 @@
 
 .ui.card.place-card.loading .ui.button {
   visibility: hidden;
+}
+
+.ui.card.place-card .place-card__cover {
+  overflow: hidden;
 }
 
 .ui.card.place-card.loading .place-card__cover {
@@ -45,26 +46,85 @@
   overflow: hidden !important;
 }
 
-.ui.card.place-card .content .place-card__stats {
+.ui.card.place-card .place-card__stats {
+  position: absolute;
+  width: 100%;
+  top: 0;
   display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0) 61.6%,
+    rgba(0, 0, 0, 0.65) 100%
+  );
 }
 
-.ui.card.place-card .content .place-card__stats .ui.label {
-  padding: 0;
+.ui.card.place-card
+  .place-card__stats
+  .place-card__stats-top
+  .ui.label.user-count {
+  display: inline-flex;
+  margin: 9px;
+  background: rgba(0, 0, 0, 0.65);
+  color: white;
+  border-radius: 5px;
+  font-size: 13px;
 }
 
-.ui.card.place-card .content .place-card__stats .ui.label:first-child {
-  margin-right: 13px;
+.ui.card.place-card .place-card__stats .place-card__stats-top .ui.label svg,
+.ui.card.place-card .place-card__stats .place-card__stats-bottom .ui.label svg {
+  width: 13px;
 }
 
-.ui.card.place-card .place-card__cover .dg.ImgFixed {
+.ui.card.place-card
+  .place-card__stats
+  .place-card__stats-top
+  .ui.label.user-count
+  svg
+  path {
+  fill: white;
+}
+
+.ui.card.place-card .place-card__stats .place-card__stats-bottom {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.ui.card.place-card .place-card__stats .place-card__stats-bottom .ui.label {
+  font-size: 13px;
+  color: white;
+  margin-bottom: 2px;
+}
+
+.ui.card.place-card .place-card__stats .place-card__stats-bottom .ui.label path,
+.ui.card.place-card
+  .place-card__stats
+  .place-card__stats-bottom
+  .ui.label
+  rect {
+  fill: white;
+}
+
+.ui.card.place-card .place-card__cover .dg.ImgFixed,
+.ui.card.place-card .place-card__stats {
   height: 175.3px;
+}
+
+.ui.card.place-card .content .header {
+  margin-bottom: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ui.card.place-card .content,
 .ui.card.place-card .place-card__cover .dg.ImgFixed {
   opacity: 1;
-  transition: opacity ease 0.3s;
+  transition: all ease 0.3s;
+}
+
+.ui.card.place-card:hover .place-card__cover .dg.ImgFixed {
+  transform: scale(1.05);
 }
 
 .ui.card.place-card.loading .content {
