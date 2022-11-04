@@ -36,7 +36,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   return (
     <div
       className={TokenList.join(["place-featured", loading && "loading"])}
-      style={{ backgroundImage: `url("${item.image}")` }}
+      style={{ backgroundImage: `url("${item.featured_image || item.image}")` }}
     >
       <Hero centered={isMobile}>
         <Hero.Header>{item.title}</Hero.Header>
