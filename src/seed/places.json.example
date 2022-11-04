@@ -5,6 +5,7 @@
       "title": "TITLE TO UPDATE",
       "description": "DESCRIPTION TO UPDATE",
       "image": "/images/places/FILENAME",
+      "featured_image": "/images/places/FILENAME",
       "featured": true
     },
     { "base_position": "37,-144" }
@@ -12,7 +13,7 @@
   "update": [
     {
       "base_position": "144,-7",
-      "image": "/images/places/dice_masters.jpeg",
+      "featured_image": "/images/places/dice_masters.jpeg",
       "featured": true
     },
     {
