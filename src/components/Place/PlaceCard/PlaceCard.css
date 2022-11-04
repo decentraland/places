@@ -1,7 +1,6 @@
 .ui.card.place-card {
   border-radius: 10px;
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
-  height: 242px;
   overflow: hidden;
 }
 
@@ -31,6 +30,7 @@
 .ui.card.place-card .content {
   padding: 10px;
   border-top-color: var(--divider);
+  margin-top: -1px;
 }
 
 .ui.card.place-card.loading .content .header {
