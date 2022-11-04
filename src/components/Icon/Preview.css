@@ -1,0 +1,26 @@
+.icon-preview {
+  width: 24px;
+  overflow: visible !important;
+}
+
+.icon-preview path {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 1.5px;
+}
+
+:hover > .icon-preview:not(.no-hover) path {
+  fill: #d9d9d9;
+  stroke: #161518;
+  stroke-width: 1.5px;
+}
+
+.icon-preview.active path {
+  fill: #ff2d55;
+  stroke: none;
+}
+
+:hover > .icon-preview.active:not(.no-hover) path {
+  fill: #c82443;
+  stroke: none;
+}

@@ -18,6 +18,7 @@ import FavoriteButton from "../../Button/FavoriteButton"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import UserCount from "../../Label/UserCount/UserCount"
 import UserLikePercentage from "../../Label/UserLikePercentage/UserLikePercentage"
+import UserPreviewCount from "../../Label/UserPreviewCount/UserPreviewCount"
 
 import "./PlaceCard.css"
 
@@ -51,7 +52,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const userAgentData = useUserAgentData()
 
   const href = useMemo(() => place && locations.place(place.id), [place])
-
   const placerUrl = place && placeTargetUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()
@@ -74,6 +74,19 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         }}
       >
         <ImgFixed src={place?.image || ""} dimension="wide" />
+        <div className="place-card__stats">
+          <div className="place-card__stats-top">
+            <UserCount loading={loading} value={place?.user_count || 0} />
+          </div>
+          <div className="place-card__stats-bottom">
+            {/* TODO: add visitor monthly count value */}
+            <UserPreviewCount loading={loading} value={""} />
+            <UserLikePercentage
+              loading={loading}
+              value={place?.like_rate || 0}
+            />
+          </div>
+        </div>
       </a>
       <Card.Content>
         <Card.Header
@@ -85,47 +98,53 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           }}
         >
           {place?.title || " "}
-          <div className="place-card__stats">
-            <UserLikePercentage
-              loading={loading}
-              value={place?.like_rate || 0}
-            />
-            <UserCount loading={loading} value={place?.user_count || 0} />
-          </div>
         </Card.Header>
-        <div className="place-card__button-container">
-          {!(isTabletOrMobile || userAgentData.mobile) && (
-            <JumpInPositionButton
-              href={placerUrl}
-              loading={loading}
-              onClick={handleJumpInTrack}
-              data-event={SegmentPlace.JumpIn}
-              data-place-id={place?.id}
-              data-place={dataPlace}
+        <Card.Meta
+          as="a"
+          href={href}
+          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
+            e.preventDefault()
+            href && navigate(href)
+          }}
+        >
+          {place?.contact_name || " "}
+        </Card.Meta>
+        {false && (
+          /* hidden for now */
+          <div className="place-card__button-container">
+            {!(isTabletOrMobile || userAgentData.mobile) && (
+              <JumpInPositionButton
+                href={placerUrl}
+                loading={loading}
+                onClick={handleJumpInTrack}
+                data-event={SegmentPlace.JumpIn}
+                data-place-id={place?.id}
+                data-place={dataPlace}
+              />
+            )}
+            {(isTabletOrMobile || userAgentData.mobile) && (
+              <Button
+                as="a"
+                href={href}
+                size="small"
+                loading={loading}
+                className="place-card__find-out"
+                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+                  e.preventDefault()
+                  href && navigate(href)
+                }}
+              >
+                {l("components.button.find_out_more")}
+              </Button>
+            )}
+            <FavoriteButton
+              active={!!place?.user_favorite}
+              onClick={handleClickFavorite}
+              loading={loading || loadingFavorites}
+              dataPlace={dataPlace}
             />
-          )}
-          {(isTabletOrMobile || userAgentData.mobile) && (
-            <Button
-              as="a"
-              href={href}
-              size="small"
-              loading={loading}
-              className="place-card__find-out"
-              onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                e.preventDefault()
-                href && navigate(href)
-              }}
-            >
-              {l("components.button.find_out_more")}
-            </Button>
-          )}
-          <FavoriteButton
-            active={!!place?.user_favorite}
-            onClick={handleClickFavorite}
-            loading={loading || loadingFavorites}
-            dataPlace={dataPlace}
-          />
-        </div>
+          </div>
+        )}
       </Card.Content>
     </Card>
   )
