@@ -114,9 +114,10 @@ export default function OverviewPage() {
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
 
-      {featuredList.length > 0 && !placeListFeaturedState.loading && (
+      {(placeListFeaturedState.loading || featuredList.length > 0) && (
         <Carousel2
           className="overview__carousel2"
+          loading={placeListFeaturedState.loading}
           isFullscreen
           indicatorsType={IndicatorsType.Dash}
           items={featuredList}
@@ -135,7 +136,10 @@ export default function OverviewPage() {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListMostActiveState.loading}
+          loading={
+            placeListMostActiveState.version === 0 ||
+            placeListMostActiveState.loading
+          }
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewMostActive}
         />
@@ -150,7 +154,10 @@ export default function OverviewPage() {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListHightRatedState.loading}
+          loading={
+            placeListHightRatedState.version === 0 ||
+            placeListHightRatedState.loading
+          }
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewHightRated}
         />
@@ -166,7 +173,10 @@ export default function OverviewPage() {
                   place: e.currentTarget.dataset.place!,
                 })
               }
-              loading={placeListMyFavoritesState.loading}
+              loading={
+                placeListMyFavoritesState.version === 0 ||
+                placeListMyFavoritesState.loading
+              }
               loadingFavorites={handlingFavorite}
               dataPlace={SegmentPlace.OverviewMyFavorites}
             />
@@ -182,7 +192,10 @@ export default function OverviewPage() {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListLastUpdatesState.loading}
+          loading={
+            placeListLastUpdatesState.version === 0 ||
+            placeListLastUpdatesState.loading
+          }
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewRecentlyUpdated}
         />
@@ -195,7 +208,9 @@ export default function OverviewPage() {
               place: e.currentTarget.dataset.place!,
             })
           }
-          loading={placeListPoisState.loading}
+          loading={
+            placeListPoisState.version === 0 || placeListPoisState.loading
+          }
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewPointsOfInterest}
         />

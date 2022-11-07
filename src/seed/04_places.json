@@ -1,0 +1,33 @@
+{
+  "create": [
+    {
+      "base_position": "23,71"
+    },
+    {
+      "base_position": "-150,64"
+    }
+  ],
+  "update": [
+    {
+      "base_position": "-101,127",
+      "featured_image": "/images/places/ice_poker_the_stronghold.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "-29,55",
+      "featured_image": "/images/places/wondermine.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "120,-12",
+      "featured_image": "/images/places/butterfly_prawn.jpeg",
+      "featured": true
+    },
+    {
+      "base_position": "144,-7",
+      "featured_image": "/images/places/dice_masters.jpeg",
+      "featured": true
+    }
+  ],
+  "delete": ["37,-144"]
+}
