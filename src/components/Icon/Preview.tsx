@@ -13,7 +13,7 @@ export const Preview = React.memo(function (
   return (
     <svg
       {...props}
-      viewBox="0 0 16 16"
+      viewBox="0 0 16 13"
       className={TokenList.join([
         "icon-preview",
         props.active && "active",
