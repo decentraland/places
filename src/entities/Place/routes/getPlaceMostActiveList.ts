@@ -6,9 +6,10 @@ import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { flat, sort, unique } from "radash/dist/array"
 
 import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { FindWithAggregatesOptions, PlaceListOrderBy } from "../types"
-import { placesWithUserCount } from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 import { validateGetPlaceListQuery } from "./getPlaceList"
 
 export const getPlaceMostActiveList = Router.memo(
@@ -23,7 +24,10 @@ export const getPlaceMostActiveList = Router.memo(
       order: ctx.url.searchParams.get("order") || "desc",
     })
 
-    const hotScenes = await getHotScenes()
+    const [hotScenes, sceneStats] = await Promise.all([
+      getHotScenes(),
+      getSceneStats(),
+    ])
 
     const hotScenesParcels = hotScenes.map((scene) => scene.parcels)
 
@@ -62,8 +66,8 @@ export const getPlaceMostActiveList = Router.memo(
     })
 
     const hotScenePlaces = sort(
-      placesWithUserCount(places, hotScenes),
-      (place) => place.user_count,
+      placesWithUserVisits(placesWithUserCount(places, hotScenes), sceneStats),
+      (place) => place.user_count || 0,
       !order || order === "desc"
     )
 

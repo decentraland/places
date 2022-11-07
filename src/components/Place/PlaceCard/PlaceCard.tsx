@@ -80,7 +80,10 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
           </div>
           <div className="place-card__stats-bottom">
             {/* TODO: add visitor monthly count value */}
-            <UserPreviewCount loading={loading} value={""} />
+            <UserPreviewCount
+              loading={loading}
+              value={place?.user_visits || 0}
+            />
             <UserLikePercentage
               loading={loading}
               value={place?.like_rate || 0}

@@ -6,10 +6,11 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
 import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
-import { placesWithUserCount } from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 
 export const validateGetPlaceParams =
   Router.validator<GetPlaceParams>(getPlaceParamsSchema)
@@ -32,8 +33,11 @@ export const getPlace = Router.memo(
       )
     }
     const hotScenes = await getHotScenes()
-    const placeWithUserCount = placesWithUserCount([place], hotScenes)[0]
+    const sceneStats = await getSceneStats()
+    let aggregatedPlaces = [place]
+    aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes)
+    aggregatedPlaces = placesWithUserVisits(aggregatedPlaces, sceneStats)
 
-    return new ApiResponse(placeWithUserCount)
+    return new ApiResponse(aggregatedPlaces[0])
   }
 )

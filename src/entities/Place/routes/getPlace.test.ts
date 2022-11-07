@@ -33,7 +33,7 @@ test("should return place if the module found it", async () => {
   })
   expect(placeResponse.body).toEqual({
     ok: true,
-    data: { user_count: 0 },
+    data: { user_count: 0, user_visits: 0 },
   })
   expect(findOne.mock.calls.length).toBe(1)
 })

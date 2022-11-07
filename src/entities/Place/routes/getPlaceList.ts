@@ -5,6 +5,7 @@ import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { getPlaceListQuerySchema } from "../schemas"
 import {
@@ -12,7 +13,7 @@ import {
   GetPlaceListQuery,
   PlaceListOrderBy,
 } from "../types"
-import { placesWithUserCount } from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 import { getPlaceMostActiveList } from "./getPlaceMostActiveList"
 
 export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
@@ -52,12 +53,16 @@ export const getPlaceList = Router.memo(
       order: query.order,
     }
 
-    const [data, total, hotScenes] = await Promise.all([
+    const [data, total, hotScenes, sceneStats] = await Promise.all([
       PlaceModel.findWithAggregates(options),
       PlaceModel.countPlaces(options),
       getHotScenes(),
+      getSceneStats(),
     ])
 
-    return new ApiResponse(placesWithUserCount(data, hotScenes), { total })
+    return new ApiResponse(
+      placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
+      { total }
+    )
   }
 )

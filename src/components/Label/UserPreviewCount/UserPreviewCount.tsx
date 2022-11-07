@@ -1,5 +1,6 @@
 import React from "react"
 
+import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import Label, {
   LabelProps,
@@ -10,13 +11,14 @@ import { Preview } from "../../Icon/Preview"
 import "./UserPreviewCount.css"
 
 export type UserPreviewCountProps = LabelProps & {
-  value?: string
+  value?: number
   loading?: boolean
 }
 
 export default React.memo(function UserPreviewCount(
   props: UserPreviewCountProps
 ) {
+  const l = useFormatMessage()
   const { loading, className, value } = props
   return (
     <Label
@@ -27,7 +29,7 @@ export default React.memo(function UserPreviewCount(
       ])}
     >
       <Preview noHover active />
-      {!loading && value}
+      {!loading && l("general.visits", { value })}
     </Label>
   )
 })

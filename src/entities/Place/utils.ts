@@ -4,6 +4,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 
+import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import {
   AggregatePlaceAttributes,
   PlaceAttributes,
@@ -54,6 +55,28 @@ export function getThumbnailFromDeployment(deployment: EntityScene) {
     })
   }
   return thumbnail
+}
+
+export function placesWithUserVisits(
+  places: AggregatePlaceAttributes[],
+  sceneStats: SceneStatsMap
+) {
+  return places.map((place) => {
+    let stats: SceneStats | undefined = sceneStats[place.base_position]
+    if (!stats) {
+      const statsPosition = (place.positions || []).find(
+        (position) => sceneStats[position]
+      )
+      if (statsPosition) {
+        stats = sceneStats[statsPosition]
+      }
+    }
+
+    return {
+      ...place,
+      user_visits: stats?.last_30d?.users || 0,
+    }
+  })
 }
 
 export function placesWithUserCount(
