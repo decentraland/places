@@ -1,5 +1,6 @@
 {
   "general": {
+    "visits": "{value, number, ::compact-short}",
     "count_places": "{count} {count, plural, one {place} other {places}}",
     "order_by": {
       "updated_at": "Recently Updated",

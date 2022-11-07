@@ -183,6 +183,12 @@ export const placeSchema = schema({
       minimum: 0,
       description: "The number of users in the place",
     },
+    user_visits: {
+      type: "number",
+      minimum: 0,
+      description:
+        "The number of users that had visited the place in the last 30 days",
+    },
   },
 })
 

@@ -20,7 +20,7 @@ test("should return a list of places with no query", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 0,
-    data: [{ user_count: 0 }],
+    data: [{ user_count: 0, user_visits: 0 }],
   })
   expect(find.mock.calls.length).toBe(2)
 })
@@ -40,7 +40,7 @@ test("should return a list of places with query", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 0,
-    data: [{ user_count: 0 }],
+    data: [{ user_count: 0, user_visits: 0 }],
   })
   expect(find.mock.calls.length).toBe(2)
 })
@@ -57,7 +57,7 @@ test("should return a list of places with order by most_active", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     total: 1,
-    data: [{ user_count: 0 }],
+    data: [{ user_count: 0, user_visits: 0 }],
   })
   expect(find.mock.calls.length).toBe(1)
 })
