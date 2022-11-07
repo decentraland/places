@@ -4,20 +4,24 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
 import "./Players.css"
 
-export const Players = React.memo(function (
-  props: React.SVGAttributes<SVGElement> & {
-    active?: boolean
-    noHover?: boolean
-  }
-) {
+export type PlayersProps = React.SVGAttributes<SVGElement> & {
+  active?: boolean
+  noHover?: boolean
+}
+
+export const Players = React.memo(function ({
+  active,
+  noHover,
+  ...props
+}: PlayersProps) {
   return (
     <svg
       {...props}
       viewBox="0 0 16 16"
       className={TokenList.join([
         "icon-players",
-        props.active && "active",
-        props.noHover && "no-hover",
+        active && "active",
+        noHover && "no-hover",
         props.className,
       ])}
     >

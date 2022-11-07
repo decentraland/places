@@ -4,16 +4,18 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
 import "./Heart.css"
 
-export const Heart = React.memo(function (
-  props: React.SVGAttributes<SVGElement> & { active?: boolean }
-) {
+export type HeartProps = React.SVGAttributes<SVGElement> & {
+  active?: boolean
+}
+
+export const Heart = React.memo(function ({ active, ...props }: HeartProps) {
   return (
     <svg
       {...props}
       viewBox="0 0 24 24"
       className={TokenList.join([
         "icon-heart",
-        props.active && "active",
+        active && "active",
         props.className,
       ])}
     >
