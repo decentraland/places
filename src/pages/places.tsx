@@ -105,7 +105,29 @@ export default function IndexPage() {
     (e: React.SyntheticEvent<any>, props: { value?: any }) => {
       e.preventDefault()
       e.stopPropagation()
-      const newParams = { ...params, only_pois: !!props.value }
+      const newParams = {
+        ...params,
+        only_featured: false,
+        only_pois: !!props.value,
+      }
+      track(SegmentPlace.FilterChange, {
+        filters: newParams,
+        place: SegmentPlace.PlacesChangePois,
+      })
+      navigate(locations.places(newParams))
+    },
+    [params, track]
+  )
+
+  const handleChangeFeatured = useCallback(
+    (e: React.SyntheticEvent<any>, props: { value?: any }) => {
+      e.preventDefault()
+      e.stopPropagation()
+      const newParams = {
+        ...params,
+        only_pois: false,
+        only_featured: !!props.value,
+      }
       track(SegmentPlace.FilterChange, {
         filters: newParams,
         place: SegmentPlace.PlacesChangePois,
@@ -216,6 +238,16 @@ export default function IndexPage() {
                       {l("pages.places.pois")}
                     </Filter>
                   </div>
+                  <div
+                    onClick={(e) =>
+                      handleChangeFeatured(e, { value: !params.only_featured })
+                    }
+                    className="places-page__filter-container"
+                  >
+                    <Filter active={params.only_featured}>
+                      {l("pages.places.featured")}
+                    </Filter>
+                  </div>
                 </Box>
               </FilterContainerModal>
             </Grid.Column>
@@ -233,6 +265,18 @@ export default function IndexPage() {
                     >
                       <Filter active={params.only_pois}>
                         {l("pages.places.pois")}
+                      </Filter>
+                    </div>
+                    <div
+                      onClick={(e) =>
+                        handleChangeFeatured(e, {
+                          value: !params.only_featured,
+                        })
+                      }
+                      className="places-page__filter-container"
+                    >
+                      <Filter active={params.only_featured}>
+                        {l("pages.places.featured")}
                       </Filter>
                     </div>
                   </HeaderMenu.Left>

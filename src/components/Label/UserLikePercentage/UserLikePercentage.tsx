@@ -28,7 +28,7 @@ export default React.memo(function UserLikePercentage(
         value === 0 && "hidden",
       ])}
     >
-      <ThumbUp noHover active />
+      <ThumbUp nohover active />
       {!loading && `${toPercent(value)}%`}
     </Label>
   )

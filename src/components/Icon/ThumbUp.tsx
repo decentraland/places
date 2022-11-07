@@ -6,12 +6,12 @@ import "./ThumbUp.css"
 
 export type ThumbUpProps = React.SVGAttributes<SVGElement> & {
   active?: boolean
-  noHover?: boolean
+  nohover?: boolean
 }
 
 export const ThumbUp = React.memo(function ({
   active,
-  noHover,
+  nohover,
   ...props
 }: ThumbUpProps) {
   return (
@@ -20,7 +20,7 @@ export const ThumbUp = React.memo(function ({
       viewBox="2 1 20 20"
       className={TokenList.join([
         "icon-thumb-up",
-        noHover && "no-hover",
+        nohover && "no-hover",
         active && "active",
         props.className,
       ])}

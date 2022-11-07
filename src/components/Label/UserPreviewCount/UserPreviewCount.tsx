@@ -28,7 +28,7 @@ export default React.memo(function UserPreviewCount(
         !value && "hidden",
       ])}
     >
-      <Preview noHover active />
+      <Preview nohover active />
       {!loading && l("general.visits", { value })}
     </Label>
   )
