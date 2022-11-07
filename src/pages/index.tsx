@@ -16,6 +16,7 @@ import OverviewList from "../components/Layout/OverviewList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import { PlaceListOrderBy } from "../entities/Place/types"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
+import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
@@ -39,6 +40,8 @@ export default function OverviewPage() {
   const l = useFormatMessage()
 
   const [account] = useAuthContext()
+  const [placeListHighlighted, placeListHighlightedState] =
+    usePlaceListHighlighted()
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
@@ -53,6 +56,7 @@ export default function OverviewPage() {
 
   const placesMemo = useMemo(
     () => [
+      placeListHighlighted,
       placeListFeatured,
       placeListMostActive,
       placeListLastUpdates,
@@ -61,6 +65,7 @@ export default function OverviewPage() {
       placeListPois,
     ],
     [
+      placeListHighlighted,
       placeListFeatured,
       placeListMostActive,
       placeListLastUpdates,
@@ -72,6 +77,7 @@ export default function OverviewPage() {
 
   const [
     [
+      highlightedList,
       featuredList,
       mostActiveList,
       lastUpdatesList,
@@ -114,13 +120,13 @@ export default function OverviewPage() {
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
 
-      {(placeListFeaturedState.loading || featuredList.length > 0) && (
+      {(placeListHighlightedState.loading || highlightedList.length > 0) && (
         <Carousel2
           className="overview__carousel2"
-          loading={placeListFeaturedState.loading}
+          loading={placeListHighlightedState.loading}
           isFullscreen
           indicatorsType={IndicatorsType.Dash}
-          items={featuredList}
+          items={highlightedList}
           component={PlaceFeatured}
         />
       )}

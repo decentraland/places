@@ -95,6 +95,7 @@
 
   .place-description__cover {
     width: 462px;
+    border-radius: 10px;
   }
 
   .place-description__cover,

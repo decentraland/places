@@ -143,4 +143,11 @@ export default class Places extends API {
       ...options,
     })
   }
+
+  async getPlacesHighlighted(options?: { limit: number; offset: number }) {
+    return this.getPlaces({
+      only_highlighted: true,
+      ...options,
+    })
+  }
 }

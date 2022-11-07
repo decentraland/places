@@ -1,12 +1,13 @@
 import { createPlaceMigration } from "../entities/Place/migration"
 import { PlaceAttributes } from "../entities/Place/types"
-import defaulPlace from "../seed/04_places.json"
+import defaulPlace from "../seed/05_places.json"
 
 const attributes: Array<keyof PlaceAttributes> = [
   "id",
   "title",
   "description",
   "image",
+  "highlighted_image",
   "featured_image",
   "owner",
   "tags",
@@ -19,6 +20,7 @@ const attributes: Array<keyof PlaceAttributes> = [
   "dislikes",
   "favorites",
   "like_rate",
+  "highlighted",
   "featured",
   "disabled",
   "disabled_at",

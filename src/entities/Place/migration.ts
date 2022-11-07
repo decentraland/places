@@ -125,12 +125,13 @@ export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
 
 async function insertPlaces(
   places: Partial<PlaceAttributes>[],
+  attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ) {
   if (places.length > 0) {
     const newPlaces = await createPlaceFromDefaultPlaces(places)
     newPlaces.forEach((place) => {
-      const keys = Object.keys(place) as Array<keyof typeof place>
+      const keys = attributes
       const queryString = `INSERT INTO ${PlaceModel.tableName} (${keys.join(
         ","
       )})
@@ -145,12 +146,13 @@ async function insertPlaces(
 
 async function updatePlaces(
   places: Partial<PlaceAttributes>[],
+  attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ) {
   if (places.length > 0) {
     const updatePlaces = await createPlaceFromDefaultPlaces(places)
     updatePlaces.forEach((place) => {
-      const keys = Object.keys(place) as Array<keyof typeof place>
+      const keys = attributes
       const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
         .map((k, i) => `${k}=$${i + 1}`)
         .join(",")}  WHERE positions && ${
@@ -176,17 +178,19 @@ async function deletePlaces(places: string[], pgm: MigrationBuilder) {
 
 export async function up(
   defaultPlaces: PlacesStatic,
+  attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ): Promise<void> {
   await validateMigratedPlaces(defaultPlaces)
 
-  await insertPlaces(defaultPlaces.create, pgm)
-  await updatePlaces(defaultPlaces.update, pgm)
+  await insertPlaces(defaultPlaces.create, attributes, pgm)
+  await updatePlaces(defaultPlaces.update, attributes, pgm)
   await deletePlaces(defaultPlaces.delete, pgm)
 }
 
 export async function down(
   defaultPlaces: PlacesStatic,
+  attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ): Promise<void> {
   const placesToRestore = {
@@ -204,12 +208,15 @@ export async function down(
   }
 
   await deletePlaces(placesToRestore.delete, pgm)
-  await insertPlaces(placesToRestore.create, pgm)
+  await insertPlaces(placesToRestore.create, attributes, pgm)
 }
 
-export function createPlaceMigration(defaultPlaces: PlacesStatic) {
+export function createPlaceMigration(
+  defaultPlaces: PlacesStatic,
+  attributes: Array<keyof PlaceAttributes>
+) {
   return {
-    up: async (pgm: MigrationBuilder) => up(defaultPlaces, pgm),
-    down: async (pgm: MigrationBuilder) => down(defaultPlaces, pgm),
+    up: async (pgm: MigrationBuilder) => up(defaultPlaces, attributes, pgm),
+    down: async (pgm: MigrationBuilder) => down(defaultPlaces, attributes, pgm),
   }
 }

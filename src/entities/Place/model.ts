@@ -136,6 +136,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         p.disabled is false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
           SQL.raw(
@@ -156,7 +157,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countPlaces(
     options: Pick<
       FindWithAggregatesOptions,
-      "user" | "only_favorites" | "positions" | "only_featured"
+      | "user"
+      | "only_favorites"
+      | "positions"
+      | "only_featured"
+      | "only_highlighted"
     >
   ) {
     if (options.user && !isEthereumAddress(options.user)) {
@@ -176,6 +181,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         p.disabled is false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
           SQL.raw(
