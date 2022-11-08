@@ -149,24 +149,26 @@ export default function OverviewPage() {
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewMostActive}
         />
-        <OverviewList
-          places={featuredList}
-          title={l("pages.overview.featured")}
-          href={locations.places({
-            only_featured: true,
-          })}
-          onClickFavorite={(e, place) =>
-            handleFavorite(place.id, place, {
-              place: e.currentTarget.dataset.place!,
-            })
-          }
-          loading={
-            placeListFeaturedState.version === 0 ||
-            placeListFeaturedState.loading
-          }
-          loadingFavorites={handlingFavorite}
-          dataPlace={SegmentPlace.OverviewFeatured}
-        />
+        {featuredList.length > 0 && (
+          <OverviewList
+            places={featuredList}
+            title={l("pages.overview.featured")}
+            href={locations.places({
+              only_featured: true,
+            })}
+            onClickFavorite={(e, place) =>
+              handleFavorite(place.id, place, {
+                place: e.currentTarget.dataset.place!,
+              })
+            }
+            loading={
+              placeListFeaturedState.version === 0 ||
+              placeListFeaturedState.loading
+            }
+            loadingFavorites={handlingFavorite}
+            dataPlace={SegmentPlace.OverviewFeatured}
+          />
+        )}
         <OverviewList
           places={hightRatedList}
           title={l("pages.overview.highest_rated")}
