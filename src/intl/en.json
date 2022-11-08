@@ -22,10 +22,10 @@
       "join": "join",
       "find_out_more": "find out more"
     },
-    "place_starts": {
+    "place_stats": {
       "active": "active",
       "favorites": "favorites",
-      "visits": "visits",
+      "visits": "visits (last 30 d)",
       "created": "created",
       "updated": "updated",
       "point_of_interest": "point of interest",

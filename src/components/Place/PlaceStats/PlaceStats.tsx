@@ -8,13 +8,13 @@ import { Stats } from "decentraland-ui/dist/components/Stats/Stats"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import { PlaceAttributes } from "../../../entities/Place/types"
+import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import shorterNumber from "../../../utils/number/sortenNumber"
 
 import "./PlaceStats.css"
 
 export type PlaceStatsProps = {
-  place: PlaceAttributes
+  place: AggregatePlaceAttributes
   users: number
   poi?: boolean
   loading?: boolean
@@ -26,18 +26,21 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
 
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
-      <Stats title={l("components.place_starts.active")}>
+      <Stats title={l("components.place_stats.active")}>
         <Header>{users}</Header>
       </Stats>
-      <Stats title={l("components.place_starts.favorites")}>
+      <Stats title={l("components.place_stats.favorites")}>
         <Header>{shorterNumber(place.favorites)}</Header>
       </Stats>
-      <Stats title={l("components.place_starts.updated")}>
+      <Stats title={l("components.place_stats.visits")}>
+        <Header>{shorterNumber(place.user_visits || 0)}</Header>
+      </Stats>
+      <Stats title={l("components.place_stats.updated")}>
         {Time.from(place.updated_at).format("D/MM/YYYY")}
       </Stats>
       {poi && (
         <Stats
-          title={l("components.place_starts.point_of_interest")}
+          title={l("components.place_stats.point_of_interest")}
           className="place-stats__point-of-interest"
         >
           <Label>

@@ -79,7 +79,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             <UserCount loading={loading} value={place?.user_count || 0} />
           </div>
           <div className="place-card__stats-bottom">
-            {/* TODO: add visitor monthly count value */}
             <UserPreviewCount
               loading={loading}
               value={place?.user_visits || 0}
