@@ -44,6 +44,13 @@
 
 .ui.card.place-card .content .header {
   font-weight: 600;
+  margin-bottom: 0;
+}
+
+.ui.card.place-card .content .header,
+.ui.card.place-card .content .meta {
+  text-overflow: ellipsis;
+  white-space: nowrap;
   overflow: hidden !important;
 }
 
@@ -112,12 +119,6 @@
 .ui.card.place-card .place-card__cover .dg.ImgFixed,
 .ui.card.place-card .place-card__stats {
   height: 175.3px;
-}
-
-.ui.card.place-card .content .header {
-  margin-bottom: 0;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .ui.card.place-card .content,
