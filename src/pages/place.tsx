@@ -50,7 +50,6 @@ export default function PlacePage() {
       handlingDislike,
     },
   ] = usePlacesManager(placeMemo)
-  console.log(place)
 
   const handleShare = useCallback(
     (e: React.MouseEvent<any>) => {
