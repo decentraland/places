@@ -13,6 +13,8 @@ const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 export type PlacesPageOptions = {
   only_pois: boolean
   only_favorites: boolean
+  only_featured: boolean
+  only_highlighted: boolean
   order_by: PlaceListOrderBy
   order: "asc" | "desc"
   page: number
@@ -21,6 +23,8 @@ export type PlacesPageOptions = {
 const pageOptionsDefault: PlacesPageOptions = {
   only_favorites: false,
   only_pois: false,
+  only_featured: false,
+  only_highlighted: false,
   order_by: PlaceListOrderBy.UPDATED_AT,
   order: "desc",
   page: 1,
@@ -29,6 +33,11 @@ const pageOptionsDefault: PlacesPageOptions = {
 export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
   return {
     only_pois: bool(params.get("only_pois")) ?? pageOptionsDefault.only_pois,
+    only_featured:
+      bool(params.get("only_featured")) ?? pageOptionsDefault.only_featured,
+    only_highlighted:
+      bool(params.get("only_highlighted")) ??
+      pageOptionsDefault.only_highlighted,
     only_favorites:
       bool(params.get("only_favorites")) ?? pageOptionsDefault.only_favorites,
     order_by:

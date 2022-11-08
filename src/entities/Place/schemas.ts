@@ -42,6 +42,12 @@ export const getPlaceListQuerySchema = schema({
       description: "True if shows only featured places",
       nullable: true,
     },
+    only_highlighted: {
+      type: "string",
+      format: "boolean",
+      description: "True if shows only highlighted places",
+      nullable: true,
+    },
     order_by: {
       type: "string",
       description: "Order places by",

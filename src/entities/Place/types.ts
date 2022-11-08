@@ -3,6 +3,7 @@ export type PlaceAttributes = {
   title: string | null
   description: string | null
   image: string | null
+  highlighted_image: string | null
   featured_image: string | null
   owner: string | null
   tags: string[]
@@ -15,6 +16,7 @@ export type PlaceAttributes = {
   dislikes: number
   favorites: number
   like_rate: number
+  highlighted: boolean
   featured: boolean
   disabled: boolean
   disabled_at: Date | null
@@ -46,6 +48,7 @@ export type GetPlaceListQuery = {
   positions: string[]
   only_favorites: string
   only_featured: string
+  only_highlighted: string
   order_by: string
   order: string
 }
@@ -55,6 +58,7 @@ export type PlaceListOptions = {
   limit: number
   only_favorites: boolean
   only_featured: boolean
+  only_highlighted: boolean
   positions: string[]
   order_by: string
   order: string

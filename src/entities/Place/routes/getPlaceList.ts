@@ -32,6 +32,7 @@ export const getPlaceList = Router.memo(
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       only_featured: ctx.url.searchParams.get("only_featured"),
+      only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
         ctx.url.searchParams.get("order_by") || PlaceListOrderBy.UPDATED_AT,
       order: ctx.url.searchParams.get("order") || "desc",
@@ -48,6 +49,7 @@ export const getPlaceList = Router.memo(
       limit: numeric(query.limit, { min: 0, max: 100 }),
       only_favorites: !!bool(query.only_favorites),
       only_featured: !!bool(query.only_featured),
+      only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
       order_by: query.order_by,
       order: query.order,

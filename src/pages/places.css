@@ -57,6 +57,10 @@
   color: var(--text);
 }
 
+.ui.page.modals .content .places-page__filter-container {
+  margin-bottom: 20px;
+}
+
 @media only screen and (min-width: 768px) {
   .places-page .places-page__filters .ui.header {
     margin-left: 22px;

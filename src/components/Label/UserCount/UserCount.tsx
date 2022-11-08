@@ -24,7 +24,7 @@ export default React.memo(function UserCount(props: UserCountProps) {
         value === 0 && "hidden",
       ])}
     >
-      <Players noHover active />
+      <Players nohover active />
       {!loading && value}
     </Label>
   )

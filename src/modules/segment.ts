@@ -9,6 +9,7 @@ export enum SegmentPlace {
   FilterClear = "Filter Clear",
   Featured = "Featured",
   OverviewMostActive = "Overview Most Active",
+  OverviewFeatured = "Overview Featured",
   OverviewHightRated = "Overview Hight Rated",
   OverviewMyFavorites = "Overview My Favorites",
   OverviewRecentlyUpdated = "Overview Recently Updated",

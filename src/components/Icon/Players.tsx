@@ -6,12 +6,12 @@ import "./Players.css"
 
 export type PlayersProps = React.SVGAttributes<SVGElement> & {
   active?: boolean
-  noHover?: boolean
+  nohover?: boolean
 }
 
 export const Players = React.memo(function ({
   active,
-  noHover,
+  nohover,
   ...props
 }: PlayersProps) {
   return (
@@ -21,7 +21,7 @@ export const Players = React.memo(function ({
       className={TokenList.join([
         "icon-players",
         active && "active",
-        noHover && "no-hover",
+        nohover && "no-hover",
         props.className,
       ])}
     >
