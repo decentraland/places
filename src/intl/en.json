@@ -25,8 +25,7 @@
     "place_stats": {
       "active": "active",
       "favorites": "favorites",
-      "visits_30_days": "visits last 30 days",
-      "visits": "visits",
+      "visits": "visits (last 30 d)",
       "created": "created",
       "updated": "updated",
       "point_of_interest": "point of interest",

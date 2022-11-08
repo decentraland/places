@@ -32,7 +32,7 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
       <Stats title={l("components.place_stats.favorites")}>
         <Header>{shorterNumber(place.favorites)}</Header>
       </Stats>
-      <Stats title={l("components.place_stats.visits_30_days")}>
+      <Stats title={l("components.place_stats.visits")}>
         <Header>{shorterNumber(place.user_visits || 0)}</Header>
       </Stats>
       <Stats title={l("components.place_stats.updated")}>
