@@ -84,27 +84,27 @@
   "social": {
     "home": {
       "title": "Places Overview",
-      "description": "description",
-      "image": "image",
-      "site": "site",
-      "card": "card",
-      "creator": "creator"
+      "description": "Decentraland is a virtual social platform built and governed by its users. Every day, users enter the world to meet up, play games, attend live events, trade in the marketplace, engage with brands, visit galleries and much more",
+      "image": "https://places.decentraland.org/images/background-v3@1x.jpg",
+      "site": "@decentraland",
+      "card": "summary_large_image",
+      "creator": "@decentraland"
     },
     "places": {
       "title": "Places",
-      "description": "description",
-      "image": "image",
-      "site": "site",
-      "card": "card",
-      "creator": "creator"
+      "description": "Decentraland is a virtual social platform built and governed by its users. Every day, users enter the world to meet up, play games, attend live events, trade in the marketplace, engage with brands, visit galleries and much more",
+      "image": "https://places.decentraland.org/images/background-v3@1x.jpg",
+      "site": "@decentraland",
+      "card": "summary_large_image",
+      "creator": "@decentraland"
     },
     "my_places": {
       "title": "My Places",
-      "description": "description",
-      "image": "image",
-      "site": "site",
-      "card": "card",
-      "creator": "creator"
+      "description": "Decentraland is a virtual social platform built and governed by its users. Every day, users enter the world to meet up, play games, attend live events, trade in the marketplace, engage with brands, visit galleries and much more",
+      "image": "https://places.decentraland.org/images/background-v3@1x.jpg",
+      "site": "@decentraland",
+      "card": "summary_large_image",
+      "creator": "@decentraland"
     },
     "place": {
       "title": "Decentraland Place",

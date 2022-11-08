@@ -3,34 +3,17 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
+import { sort } from "radash/dist/array"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
-import { getPlaceListQuerySchema } from "../schemas"
-import {
-  FindWithAggregatesOptions,
-  GetPlaceListQuery,
-  PlaceListOrderBy,
-} from "../types"
+import { FindWithAggregatesOptions, PlaceListOrderBy } from "../types"
 import { placesWithUserCount, placesWithUserVisits } from "../utils"
-import { getPlaceMostActiveList } from "./getPlaceMostActiveList"
-import { getPlaceUserVisitsList } from "./getPlaceUserVisitsList"
+import { validateGetPlaceListQuery } from "./getPlaceList"
 
-export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
-  getPlaceListQuerySchema
-)
-
-export const getPlaceList = Router.memo(
+export const getPlaceUserVisitsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
-    if (ctx.url.searchParams.get("order_by") === PlaceListOrderBy.MOST_ACTIVE) {
-      return getPlaceMostActiveList(ctx)
-    } else if (
-      ctx.url.searchParams.get("order_by") === PlaceListOrderBy.USER_VISITS
-    ) {
-      return getPlaceUserVisitsList(ctx)
-    }
-
     const query = await validateGetPlaceListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
       offset: ctx.url.searchParams.get("offset"),
@@ -38,16 +21,24 @@ export const getPlaceList = Router.memo(
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
-      order_by:
-        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.UPDATED_AT,
+      order_by: PlaceListOrderBy.USER_VISITS,
       order: ctx.url.searchParams.get("order") || "desc",
     })
 
+    const [hotScenes, sceneStats] = await Promise.all([
+      getHotScenes(),
+      getSceneStats(),
+    ])
+
     const userAuth = await withAuthOptional(ctx)
 
-    if (bool(query.only_favorites) && !userAuth?.address) {
+    if (
+      (bool(query.only_favorites) && !userAuth?.address) ||
+      numeric(query.offset) > hotScenes.length
+    ) {
       return new ApiResponse([], { total: 0 })
     }
+
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }),
@@ -55,21 +46,30 @@ export const getPlaceList = Router.memo(
       only_favorites: !!bool(query.only_favorites),
       only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),
-      positions: query.positions,
-      order_by: query.order_by,
+      positions: ctx.url.searchParams.getAll("positions"),
+      order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
     }
 
-    const [data, total, hotScenes, sceneStats] = await Promise.all([
-      PlaceModel.findWithAggregates(options),
-      PlaceModel.countPlaces(options),
-      getHotScenes(),
-      getSceneStats(),
-    ])
+    const { offset, limit, order, ...extraOptions } = options
+    const places = await PlaceModel.findWithAggregates({
+      offset: 0,
+      limit: 100,
+      order,
+      ...extraOptions,
+    })
 
-    return new ApiResponse(
-      placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
-      { total }
+    const userVisitsPlaces = sort(
+      placesWithUserVisits(placesWithUserCount(places, hotScenes), sceneStats),
+      (place) => place.user_visits || 0,
+      !order || order === "desc"
     )
+
+    const total = userVisitsPlaces.length
+
+    const from = numeric(offset || 0, { min: 0 })
+    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+
+    return new ApiResponse(userVisitsPlaces.slice(from, to), { total })
   }
 )
