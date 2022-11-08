@@ -40,6 +40,7 @@ export enum PlaceListOrderBy {
   MOST_ACTIVE = "most_active",
   HIGHEST_RATED = "like_rate",
   UPDATED_AT = "updated_at",
+  USER_VISITS = "user_visits",
 }
 
 export type GetPlaceListQuery = {
