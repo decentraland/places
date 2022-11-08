@@ -38,7 +38,6 @@ export default function PlacePage() {
   const [placeRetrived] = usePlaceId(params.get("id"))
 
   const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
-  console.log(placeMemo)
   const [
     [[place]],
     {
