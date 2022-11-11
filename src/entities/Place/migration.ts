@@ -53,6 +53,7 @@ export function createPlaceFromEntityScene(
     contact_name,
     contact_email: entityScene?.metadata?.contact?.email || null,
     content_rating: entityScene?.metadata?.policy?.contentRating || null,
+    highlighted: false,
     featured: false,
     disabled: false,
     disabled_at:
