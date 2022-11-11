@@ -7,7 +7,7 @@ export enum SegmentPlace {
   Join = "Join",
   FilterChange = "Filter Change",
   FilterClear = "Filter Clear",
-  Featured = "Featured",
+  highlighted = "highlighted",
   OverviewMostActive = "Overview Most Active",
   OverviewFeatured = "Overview Featured",
   OverviewHightRated = "Overview Hight Rated",

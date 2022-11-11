@@ -1,0 +1,14 @@
+{
+  "create": [],
+  "update": [
+    {
+      "base_position": "-9,-9",
+      "image": "/images/places/genesis_plaza.jpg",
+      "highlighted_image": "/images/places/genesis_plaza_banner.jpg",
+      "description": "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
+      "highlighted": true,
+      "featured": false
+    }
+  ],
+  "delete": []
+}
