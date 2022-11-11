@@ -36,7 +36,9 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   return (
     <div
       className={TokenList.join(["place-featured", loading && "loading"])}
-      style={{ backgroundImage: `url("${item.featured_image || item.image}")` }}
+      style={{
+        backgroundImage: `url("${item.highlighted_image || item.image}")`,
+      }}
     >
       <Hero centered={isMobile}>
         <Hero.Header>{item.title}</Hero.Header>
@@ -51,7 +53,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
               target="_blank"
               data-event={SegmentPlace.JumpIn}
               data-place-id={item?.id}
-              data-place={SegmentPlace.Featured}
+              data-place={SegmentPlace.highlighted}
             >
               {l("components.place_featured.jump_in")}
             </Button>

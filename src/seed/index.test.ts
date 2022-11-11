@@ -9,6 +9,7 @@ const files = [
   "06_places.json",
   "07_places.json",
   "08_places.json",
+  "09_places.json",
 ]
 
 for (const file of files) {
