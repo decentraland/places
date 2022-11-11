@@ -1,0 +1,67 @@
+{
+  "create": [
+    {
+      "base_position": "58,95",
+      "featured": true
+    },
+    {
+      "base_position": "52,92",
+      "featured": true
+    },
+    {
+      "base_position": "-16,106",
+      "featured": true
+    },
+    {
+      "base_position": "58,89",
+      "featured": false
+    },
+    {
+      "base_position": "-83,125",
+      "featured": false
+    },
+    {
+      "base_position": "-123,-82",
+      "featured": false
+    }
+  ],
+  "update": [
+    {
+      "base_position": "59,101",
+      "featured": true
+    },
+    {
+      "base_position": "54,84",
+      "featured": true
+    },
+    {
+      "base_position": "-101,127",
+      "featured_image": "/images/places/ice_poker_the_stronghold.jpeg",
+      "highlighted": true,
+      "featured": false
+    },
+    {
+      "base_position": "-29,55",
+      "highlighted": false,
+      "featured": false
+    },
+    {
+      "base_position": "120,-12",
+      "highlighted": false,
+      "featured": false
+    },
+    {
+      "base_position": "144,-7",
+      "highlighted": false,
+      "featured": false
+    },
+    {
+      "base_position": "-9,-9",
+      "image": "/images/places/genesis_plaza_banner.jpg",
+      "description": "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
+      "highlighted": true,
+      "featured": false
+    }
+  ],
+  "delete": []
+}

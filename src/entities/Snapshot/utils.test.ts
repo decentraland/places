@@ -1,6 +1,6 @@
 import { fetchScore } from "./utils"
 
-test("fetchScore", async () => {
+test.skip("fetchScore", async () => {
   expect(await fetchScore("")).toBe(0)
   expect(await fetchScore("0x0000000000000000000000000000000000000000")).toBe(0)
   expect(
