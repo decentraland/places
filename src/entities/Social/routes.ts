@@ -6,10 +6,11 @@ import routes from "decentraland-gatsby/dist/entities/Route/routes"
 import { readOnce } from "decentraland-gatsby/dist/entities/Route/routes/file"
 import { Request } from "express"
 import { escape } from "html-escaper"
-import isUUID from "validator/lib/isUUID"
 
 import copies from "../../intl/en.json"
+import validPosition from "../../utils/position/validPosition"
 import PlaceModel from "../Place/model"
+import { PlaceListOrderBy } from "../Place/types"
 import { placeTargetUrl, siteUrl } from "../Place/utils"
 
 export default routes((router) => {
@@ -27,12 +28,23 @@ async function readFile(req: Request) {
 }
 
 export async function injectPlaceMetadata(req: Request) {
-  const id = String(req.query.id || "")
+  const position = String(req.query.position || "")
   const page = await readFile(req)
-  if (isUUID(id)) {
-    const place = await PlaceModel.findByIdWithAggregates(id, {
-      user: undefined,
-    })
+  const parsedPosition = validPosition(position)
+  console.log(parsedPosition)
+  if (parsedPosition) {
+    const place = (
+      await PlaceModel.findWithAggregates({
+        positions: [parsedPosition.join(",")],
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_featured: false,
+        only_highlighted: false,
+        order_by: PlaceListOrderBy.UPDATED_AT,
+        order: "asc",
+      })
+    )[0]
 
     if (place) {
       return replaceHelmetMetadata(page.toString(), {

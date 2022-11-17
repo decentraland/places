@@ -68,7 +68,8 @@ export function fromPlacesOptions(
 
 export default {
   home: () => API.url(GATSBY_BASE_URL, "/"),
-  place: (id: string) => API.url(GATSBY_BASE_URL, "/place/", { id }),
+  place: (position: string) =>
+    API.url(GATSBY_BASE_URL, "/place/", { position }),
   places: (options: Partial<PlacesPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/places/", fromPlacesOptions(options)),
   my_places: (options: Partial<PlacesPageOptions>) =>

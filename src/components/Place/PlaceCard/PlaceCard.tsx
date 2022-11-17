@@ -51,7 +51,10 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const isTabletOrMobile = useTabletAndBelowMediaQuery()
   const userAgentData = useUserAgentData()
 
-  const href = useMemo(() => place && locations.place(place.id), [place])
+  const href = useMemo(
+    () => place && locations.place(place.base_position),
+    [place]
+  )
   const placerUrl = place && placeTargetUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()

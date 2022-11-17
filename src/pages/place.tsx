@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -10,13 +10,14 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
-import { usePlaceId } from "../hooks/usePlaceId"
+import { usePlacePosition } from "../hooks/usePlacePosition"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
@@ -34,10 +35,23 @@ export default function PlacePage() {
   const [share] = useShareContext()
   const location = useLocation()
   const params = new URLSearchParams(location.search)
-
-  const [placeRetrived] = usePlaceId(params.get("id"))
+  const [placeRetrived] = usePlacePosition(params.get("position"))
 
   const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
+
+  useEffect(() => {
+    if (
+      placeRetrived &&
+      placeRetrived.base_position &&
+      placeRetrived.base_position.replace(",", ".") !== params.get("position")
+    ) {
+      navigate(
+        locations.place(placeRetrived.base_position?.replace(",", ".")),
+        { replace: true }
+      )
+    }
+  }, [placeRetrived, params.get("position")])
+
   const [
     [[place]],
     {
@@ -61,11 +75,8 @@ export default function PlacePage() {
         share({
           title: place.title || undefined,
           text: `${l("general.place_share")}${shareableText}`,
-          url: location.origin + locations.place(place.id),
+          url: location.origin + locations.place(place.base_position),
           thumbnail: place.image || undefined,
-        })
-        track(SegmentPlace.Share, {
-          placeId: place.id,
         })
       }
     },

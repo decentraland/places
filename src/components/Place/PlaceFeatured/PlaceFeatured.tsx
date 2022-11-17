@@ -28,7 +28,10 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
 
   const l = useFormatMessage()
   const placeJumpInUrl = item && placeTargetUrl(item)
-  const placeDetailUrl = useMemo(() => item && locations.place(item.id), [item])
+  const placeDetailUrl = useMemo(
+    () => item && locations.place(item.base_position),
+    [item]
+  )
   const handleJumpInTrack = useTrackLinkContext()
   const isMobile = useMobileMediaQuery()
   const isTabletOrMobile = useTabletAndBelowMediaQuery()
