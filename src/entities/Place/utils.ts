@@ -108,7 +108,7 @@ export function placesWithLastUpdate(
 
     return {
       ...place,
-      updated_scene_at: entityScenePlaces
+      last_deployed_at: entityScenePlaces
         ? new Date(entityScene[0].timestamp)
         : undefined,
     }

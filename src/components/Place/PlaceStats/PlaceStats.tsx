@@ -39,7 +39,7 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
         {Time.from(place.created_at).format("D/MM/YYYY")}
       </Stats>
       <Stats title={l("components.place_stats.updated")}>
-        {Time.from(place.updated_scene_at).format("D/MM/YYYY")}
+        {Time.from(place.last_deployed_at).format("D/MM/YYYY")}
       </Stats>
       {poi && (
         <Stats
