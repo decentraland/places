@@ -1,0 +1,10 @@
+{
+  "create": [],
+  "update": [
+    {
+      "base_position": "98,-67",
+      "image": "/images/places/dragon-city.png"
+    }
+  ],
+  "delete": []
+}
