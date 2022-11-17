@@ -11,7 +11,11 @@ import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
-import { placesWithUserCount, placesWithUserVisits } from "../utils"
+import {
+  placesWithLastUpdate,
+  placesWithUserCount,
+  placesWithUserVisits,
+} from "../utils"
 
 export const validateGetPlaceParams =
   Router.validator<GetPlaceParams>(getPlaceParamsSchema)
@@ -39,12 +43,8 @@ export const getPlace = Router.memo(
     let aggregatedPlaces = [place]
     aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes)
     aggregatedPlaces = placesWithUserVisits(aggregatedPlaces, sceneStats)
+    aggregatedPlaces = placesWithLastUpdate(aggregatedPlaces, entityScene)
 
-    return new ApiResponse({
-      ...aggregatedPlaces[0],
-      updated_scene_at: entityScene.length
-        ? new Date(entityScene[0].timestamp)
-        : undefined,
-    })
+    return new ApiResponse(aggregatedPlaces[0])
   }
 )

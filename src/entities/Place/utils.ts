@@ -96,3 +96,21 @@ export function placesWithUserCount(
     }
   })
 }
+
+export function placesWithLastUpdate(
+  places: AggregatePlaceAttributes[],
+  entityScene: EntityScene[]
+) {
+  return places.map((place) => {
+    const entityScenePlaces = entityScene.find((scene) =>
+      scene.metadata.scene.base.includes(place.base_position)
+    )
+
+    return {
+      ...place,
+      updated_scene_at: entityScenePlaces
+        ? new Date(entityScene[0].timestamp)
+        : undefined,
+    }
+  })
+}
