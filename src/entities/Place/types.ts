@@ -30,6 +30,7 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_favorite: boolean
   user_count?: number
   user_visits?: number
+  updated_scene_at?: Date
 }
 
 export type GetPlaceParams = {
