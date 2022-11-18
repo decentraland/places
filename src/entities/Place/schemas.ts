@@ -51,11 +51,7 @@ export const getPlaceListQuerySchema = schema({
     order_by: {
       type: "string",
       description: "Order places by",
-      enum: [
-        PlaceListOrderBy.HIGHEST_RATED,
-        PlaceListOrderBy.MOST_ACTIVE,
-        PlaceListOrderBy.UPDATED_AT,
-      ],
+      enum: [PlaceListOrderBy.HIGHEST_RATED, PlaceListOrderBy.MOST_ACTIVE],
       nullable: true,
     },
     order: {

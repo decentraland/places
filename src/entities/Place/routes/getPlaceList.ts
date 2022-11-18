@@ -44,7 +44,7 @@ export const getPlaceList = Router.memo(
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
-        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.UPDATED_AT,
+        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.HIGHEST_RATED,
       order: ctx.url.searchParams.get("order") || "desc",
     })
 
