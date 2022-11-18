@@ -99,17 +99,18 @@ export function placesWithUserCount(
 
 export function placesWithLastUpdate(
   places: AggregatePlaceAttributes[],
-  entityScene: EntityScene[]
+  entityScene: (EntityScene | null)[]
 ) {
   return places.map((place) => {
-    const entityScenePlaces = entityScene.find((scene) =>
-      scene.metadata.scene.base.includes(place.base_position)
+    const entityScenePlaces = entityScene.find(
+      (scene) =>
+        scene && scene.metadata.scene.base.includes(place.base_position)
     )
 
     return {
       ...place,
       last_deployed_at: entityScenePlaces
-        ? new Date(entityScene[0].timestamp)
+        ? new Date(entityScenePlaces.timestamp)
         : undefined,
     }
   })

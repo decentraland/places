@@ -1,14 +1,38 @@
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
+import DataLoader from "dataloader"
+import Catalyst, {
+  EntityScene,
+} from "decentraland-gatsby/dist/utils/api/Catalyst"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { memo } from "radash/dist/curry"
 
-export const getEntityScenes = memo(
-  async (positions: string[]) => {
-    try {
-      return await Catalyst.get().getEntityScenes(positions)
-    } catch (error) {
-      return []
+const loader = new DataLoader(
+  async function (
+    positions: readonly string[]
+  ): Promise<(EntityScene | null)[]> {
+    const entityScenes = await Catalyst.get().getEntityScenes(
+      positions as string[]
+    )
+
+    const entityScenesMap = new Map()
+
+    for (const entityScene of entityScenes) {
+      entityScenesMap.set(entityScene.metadata.scene.base, entityScene)
+      entityScene.metadata.scene.parcels.forEach((parcel) => {
+        entityScenesMap.set(parcel, entityScene)
+      })
     }
+    return positions.map((position) => entityScenesMap.get(position) || null)
   },
-  { ttl: Time.Hour, key: (positions: string[]) => positions.join(",") }
+  { cache: false }
 )
+
+export const getEntityScene = memo(
+  async (position: string) => {
+    return loader.load(position)
+  },
+  { ttl: Time.Hour, key: (position: string) => position }
+)
+
+export const getEntityScenes = async (positions: string[]) => {
+  return Promise.all(positions.map((position) => getEntityScene(position)))
+}
