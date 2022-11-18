@@ -12,7 +12,7 @@ import {
 } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { placeTargetUrl } from "../../../entities/Place/utils"
+import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 
@@ -27,7 +27,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   const { item, loading } = props
 
   const l = useFormatMessage()
-  const placeJumpInUrl = item && placeTargetUrl(item)
+  const placeJumpInUrl = item && explorerPlaceUrl(item)
   const placeDetailUrl = useMemo(
     () => item && locations.place(item.base_position),
     [item]

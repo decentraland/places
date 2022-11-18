@@ -7,7 +7,7 @@ import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media
 import { Table } from "decentraland-ui/dist/components/Table/Table"
 
 import { PlaceAttributes } from "../../../entities/Place/types"
-import { placeTargetUrl } from "../../../entities/Place/utils"
+import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
 import JoinButton from "../../Button/JoinButton"
 
@@ -64,7 +64,7 @@ export default React.memo(function PlaceRealmActivity(
                   {!isMobile && (
                     <Table.Cell textAlign="right">
                       <JoinButton
-                        href={placeTargetUrl(place, name)}
+                        href={explorerPlaceUrl(place, name)}
                         loading={loading}
                         onClick={handleJumpInTrack}
                         data-event={SegmentPlace}

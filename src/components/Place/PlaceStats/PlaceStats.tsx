@@ -30,13 +30,13 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
         <Header>{users}</Header>
       </Stats>
       <Stats title={l("components.place_stats.favorites")}>
-        <Header>{shorterNumber(place.favorites)}</Header>
+        <Header>{shorterNumber(place?.favorites)}</Header>
       </Stats>
       <Stats title={l("components.place_stats.visits")}>
-        <Header>{shorterNumber(place.user_visits || 0)}</Header>
+        <Header>{shorterNumber(place?.user_visits || 0)}</Header>
       </Stats>
       <Stats title={l("components.place_stats.updated")}>
-        {Time.from(place.updated_at).format("D/MM/YYYY")}
+        {Time.from(place?.updated_at).format("D/MM/YYYY")}
       </Stats>
       {poi && (
         <Stats

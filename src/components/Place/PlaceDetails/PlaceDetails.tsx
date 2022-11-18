@@ -104,18 +104,18 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
       {activeTab === PlaceDetailsTab.About && (
         <>
           <div className="place-details__description-container">
-            {place.description && (
+            {place?.description && (
               <>
                 <h3>{l("components.place_detail.description")}</h3>
                 <div>
-                  <p>{place.description}</p>
+                  <p>{place?.description}</p>
                 </div>
               </>
             )}
             <h3>{l("components.place_detail.location")}</h3>
             <div>
               <Label>
-                <Icon name="map marker alternate" /> {place.base_position}
+                <Icon name="map marker alternate" /> {place?.base_position}
               </Label>
             </div>
           </div>

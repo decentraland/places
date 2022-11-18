@@ -1,7 +1,7 @@
 import { isInsideWorldLimits } from "@dcl/schemas/dist/dapps/world"
 
-function validPosition(positionString?: string | null) {
-  if (!positionString) return false
+function toCanonicalPosition(positionString?: string | null, glue = ".") {
+  if (!positionString) return null
   const position = positionString.split(/[,.;|]+/).map((pos) => Number(pos))
   if (
     position.length !== 2 ||
@@ -9,9 +9,9 @@ function validPosition(positionString?: string | null) {
     !Number.isFinite(position[1]) ||
     !isInsideWorldLimits(position[0], position[1])
   ) {
-    return false
+    return null
   }
-  return position
+  return position.join(glue)
 }
 
-export default validPosition
+export default toCanonicalPosition

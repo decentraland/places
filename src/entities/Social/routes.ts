@@ -4,14 +4,15 @@ import { replaceHelmetMetadata } from "decentraland-gatsby/dist/entities/Gatsby/
 import { handleRaw } from "decentraland-gatsby/dist/entities/Route/handle"
 import routes from "decentraland-gatsby/dist/entities/Route/routes"
 import { readOnce } from "decentraland-gatsby/dist/entities/Route/routes/file"
-import { Request } from "express"
+import { Request, Response } from "express"
 import { escape } from "html-escaper"
+import isUUID from "validator/lib/isUUID"
 
 import copies from "../../intl/en.json"
-import validPosition from "../../utils/position/validPosition"
+import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import PlaceModel from "../Place/model"
-import { PlaceListOrderBy } from "../Place/types"
-import { placeTargetUrl, siteUrl } from "../Place/utils"
+import { AggregatePlaceAttributes, PlaceListOrderBy } from "../Place/types"
+import { explorerPlaceUrl, explorerUrl, placeUrl } from "../Place/utils"
 
 export default routes((router) => {
   router.get("/place/", handleRaw(injectPlaceMetadata, "html"))
@@ -27,38 +28,47 @@ async function readFile(req: Request) {
   return readOnce(path)
 }
 
-export async function injectPlaceMetadata(req: Request) {
+export async function injectPlaceMetadata(req: Request, res: Response) {
   const position = String(req.query.position || "")
+  const id = String(req.query.id || "")
   const page = await readFile(req)
-  const parsedPosition = validPosition(position)
-  console.log(parsedPosition)
-  if (parsedPosition) {
-    const place = (
+  const canonicalPosition = toCanonicalPosition(position, ",")
+
+  let place: AggregatePlaceAttributes | null = null
+  if (id && isUUID(id)) {
+    place = await PlaceModel.findByIdWithAggregates(id, {
+      user: undefined,
+    })
+  } else if (canonicalPosition) {
+    place = (
       await PlaceModel.findWithAggregates({
-        positions: [parsedPosition.join(",")],
+        positions: [canonicalPosition],
         offset: 0,
         limit: 1,
         only_favorites: false,
         only_featured: false,
         only_highlighted: false,
-        order_by: PlaceListOrderBy.UPDATED_AT,
+        order_by: PlaceListOrderBy.HIGHEST_RATED,
         order: "asc",
       })
     )[0]
-
-    if (place) {
-      return replaceHelmetMetadata(page.toString(), {
-        ...(copies.social.place as any),
-        title: escape(place.title || "") + " | Decentraland Place",
-        description: escape((place.description || "").trim()),
-        image: place.image || "",
-        url: placeTargetUrl(place),
-        "twitter:card": "summary_large_image",
-      })
-    }
   }
 
-  const url = siteUrl().toString() + req.originalUrl.slice(1)
+  if (place) {
+    const url = placeUrl(place)
+    res.set("link", `<${url.toString()}>; rel=canonical`)
+
+    return replaceHelmetMetadata(page.toString(), {
+      ...(copies.social.place as any),
+      title: escape(place.title || "") + " | Decentraland Place",
+      description: escape((place.description || "").trim()),
+      image: place.image || "",
+      url: placeUrl(place),
+      "twitter:card": "summary_large_image",
+    })
+  }
+
+  const url = explorerUrl().toString() + req.originalUrl.slice(1)
   return replaceHelmetMetadata(page.toString(), {
     ...(copies.social.place as any),
     url,
