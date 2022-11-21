@@ -25,7 +25,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   only_pois: false,
   only_featured: false,
   only_highlighted: false,
-  order_by: PlaceListOrderBy.UPDATED_AT,
+  order_by: PlaceListOrderBy.HIGHEST_RATED,
   order: "desc",
   page: 1,
 }

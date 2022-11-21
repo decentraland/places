@@ -5,11 +5,16 @@ import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { sort } from "radash/dist/array"
 
+import { getEntityScenes } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { FindWithAggregatesOptions, PlaceListOrderBy } from "../types"
-import { placesWithUserCount, placesWithUserVisits } from "../utils"
+import {
+  placesWithLastUpdate,
+  placesWithUserCount,
+  placesWithUserVisits,
+} from "../utils"
 import { validateGetPlaceListQuery } from "./getPlaceList"
 
 export const getPlaceUserVisitsList = Router.memo(
@@ -59,8 +64,18 @@ export const getPlaceUserVisitsList = Router.memo(
       ...extraOptions,
     })
 
+    const entityScene = await getEntityScenes(
+      places.map((place) => place.base_position)
+    )
+
     const userVisitsPlaces = sort(
-      placesWithUserVisits(placesWithUserCount(places, hotScenes), sceneStats),
+      placesWithLastUpdate(
+        placesWithUserVisits(
+          placesWithUserCount(places, hotScenes),
+          sceneStats
+        ),
+        entityScene
+      ),
       (place) => place.user_visits || 0,
       !order || order === "desc"
     )
