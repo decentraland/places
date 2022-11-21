@@ -3,8 +3,10 @@ import {
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
+import env from "decentraland-gatsby/dist/utils/env"
 
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
+import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import {
   AggregatePlaceAttributes,
   PlaceAttributes,
@@ -16,18 +18,33 @@ const DECENTRALAND_URL =
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
 
-export function siteUrl(pathname = "") {
+export function explorerUrl(pathname = "") {
   const target = new URL(DECENTRALAND_URL)
   target.pathname = pathname
   return target
 }
 
-export function placeTargetUrl(
+export function placeUrl(place: PlaceAttributes) {
+  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
+  target.pathname = `/place/`
+  return target
+}
+
+export function siteUrl(pathname = "") {
+  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  target.pathname = pathname
+  return target
+}
+
+export function explorerPlaceUrl(
   place: Pick<PlaceAttributes, "base_position">,
   realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
-  target.searchParams.set("position", place.base_position)
+  if (place) {
+    target.searchParams.set("position", place.base_position)
+  }
   if (realm) {
     target.searchParams.set("realm", realm)
   }
