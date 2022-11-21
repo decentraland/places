@@ -2,10 +2,14 @@ import React from "react"
 
 import NavigationMenu from "decentraland-gatsby/dist/components/Layout/NavigationMenu"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
 import locations from "../../modules/locations"
+import { OpenBlank } from "../Icon/OpenBlank"
+
+import "./Navigation.css"
 
 export enum NavigationTab {
   Overview = "overview",
@@ -20,6 +24,7 @@ export type NavigationProps = {
 export default function Navigation(props: NavigationProps) {
   const l = useFormatMessage()
   const [account] = useAuthContext()
+  const track = useTrackLinkContext()
 
   return (
     <NavigationMenu
@@ -48,6 +53,13 @@ export default function Navigation(props: NavigationProps) {
               {l("navigation.my_places")}
             </NavigationMenu.Item>
           )}
+          <NavigationMenu.Item
+            active={false}
+            href={l("navigation.faq_target")}
+            onClick={track}
+          >
+            {l("navigation.faq")} <OpenBlank />
+          </NavigationMenu.Item>
         </>
       }
     />
