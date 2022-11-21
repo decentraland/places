@@ -74,6 +74,10 @@ body {
   }
   .navigation-menu .dcl.tabs .dcl.tabs-left .dg.Link .dcl.tab {
     color: var(--text);
+    margin-right: 16px;
+  }
+  .navigation-menu .dcl.tabs .dcl.tabs-left .dg.Link:last-child .dcl.tab {
+    margin-right: 0;
   }
   .navigation-menu .dcl.tabs .dcl.tabs-left .dcl.tab .active-bar {
     bottom: -10px;

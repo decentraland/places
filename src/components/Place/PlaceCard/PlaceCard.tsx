@@ -14,7 +14,6 @@ import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
-import toCanonicalPosition from "../../../utils/position/toCanonicalPosition"
 import FavoriteButton from "../../Button/FavoriteButton"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import UserCount from "../../Label/UserCount/UserCount"
@@ -53,7 +52,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const userAgentData = useUserAgentData()
 
   const href = useMemo(
-    () => place && locations.place(toCanonicalPosition(place.base_position)!),
+    () => place && locations.place(place.base_position),
     [place]
   )
   const placerUrl = place && explorerPlaceUrl(place)

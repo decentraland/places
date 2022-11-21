@@ -53,10 +53,7 @@ export default function PlacePage() {
       toCanonicalPosition(placeRetrived.base_position) !==
         params.get("position")
     ) {
-      navigate(
-        locations.place(toCanonicalPosition(placeRetrived.base_position)!),
-        { replace: true }
-      )
+      navigate(locations.place(placeRetrived.base_position), { replace: true })
     }
   }, [placeRetrived, params.get("position")])
 
