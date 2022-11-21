@@ -1,0 +1,9 @@
+.navigation-menu svg.icon.open-black {
+  fill: var(--primary);
+  display: inline;
+  vertical-align: text-top;
+  width: 0.6em;
+  margin-left: 0.4em;
+  margin-top: 0.2em;
+  height: auto;
+}
