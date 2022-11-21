@@ -22,6 +22,7 @@ import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
+import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
 export type EventPageState = {
   updating: Record<string, boolean>
@@ -49,11 +50,11 @@ export default function PlacePage() {
   useEffect(() => {
     if (
       placeRetrived &&
-      placeRetrived.base_position &&
-      placeRetrived.base_position.replace(",", ".") !== params.get("position")
+      toCanonicalPosition(placeRetrived.base_position) !==
+        params.get("position")
     ) {
       navigate(
-        locations.place(placeRetrived.base_position?.replace(",", ".")),
+        locations.place(toCanonicalPosition(placeRetrived.base_position)!),
         { replace: true }
       )
     }
@@ -97,7 +98,7 @@ export default function PlacePage() {
   }
 
   if (
-    placeRetrivedState.version > 0 &&
+    placeRetrivedState.loaded &&
     !placeRetrivedState.loading &&
     !placeRetrived
   ) {

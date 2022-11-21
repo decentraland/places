@@ -12,7 +12,7 @@ import copies from "../../intl/en.json"
 import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import PlaceModel from "../Place/model"
 import { AggregatePlaceAttributes, PlaceListOrderBy } from "../Place/types"
-import { explorerPlaceUrl, explorerUrl, placeUrl } from "../Place/utils"
+import { placeUrl, siteUrl } from "../Place/utils"
 
 export default routes((router) => {
   router.get("/place/", handleRaw(injectPlaceMetadata, "html"))
@@ -68,7 +68,7 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
     })
   }
 
-  const url = explorerUrl().toString() + req.originalUrl.slice(1)
+  const url = siteUrl().toString() + req.originalUrl.slice(1)
   return replaceHelmetMetadata(page.toString(), {
     ...(copies.social.place as any),
     url,

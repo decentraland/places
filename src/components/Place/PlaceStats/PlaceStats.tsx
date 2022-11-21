@@ -14,8 +14,8 @@ import shorterNumber from "../../../utils/number/sortenNumber"
 import "./PlaceStats.css"
 
 export type PlaceStatsProps = {
-  place: AggregatePlaceAttributes
-  users: number
+  place?: AggregatePlaceAttributes
+  users?: number
   poi?: boolean
   loading?: boolean
 }
@@ -30,16 +30,16 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
         <Header>{users}</Header>
       </Stats>
       <Stats title={l("components.place_stats.favorites")}>
-        <Header>{shorterNumber(place?.favorites)}</Header>
+        <Header>{shorterNumber(place?.favorites || 0)}</Header>
       </Stats>
       <Stats title={l("components.place_stats.visits")}>
         <Header>{shorterNumber(place?.user_visits || 0)}</Header>
       </Stats>
       <Stats title={l("components.place_stats.added")}>
-        {Time.from(place.created_at).format("D/MM/YYYY")}
+        {Time.from(place?.created_at).format("D/MM/YYYY")}
       </Stats>
       <Stats title={l("components.place_stats.updated")}>
-        {Time.from(place.last_deployed_at).format("D/MM/YYYY")}
+        {Time.from(place?.last_deployed_at).format("D/MM/YYYY")}
       </Stats>
       {poi && (
         <Stats
