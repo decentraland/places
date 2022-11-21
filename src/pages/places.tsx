@@ -141,7 +141,7 @@ export default function IndexPage() {
     (_: React.SyntheticEvent<any>, props: { value?: any }) => {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
-        PlaceListOrderBy.UPDATED_AT
+        PlaceListOrderBy.HIGHEST_RATED
       const newParams = { ...params, order_by: value }
       track(SegmentPlace.FilterChange, {
         filters: newParams,

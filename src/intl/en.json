@@ -29,7 +29,8 @@
       "created": "created",
       "updated": "updated",
       "point_of_interest": "point of interest",
-      "favorite": "favorite"
+      "favorite": "favorite",
+      "added": "added"
     },
     "place_description": {
       "created_by": "created by"

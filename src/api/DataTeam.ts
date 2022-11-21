@@ -1,6 +1,4 @@
 import API from "decentraland-gatsby/dist/utils/api/API"
-import Options from "decentraland-gatsby/dist/utils/api/Options"
-import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
 export type SceneStatsMap = Record<string, SceneStats>
