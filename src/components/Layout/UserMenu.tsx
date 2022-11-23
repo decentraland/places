@@ -15,10 +15,6 @@ export default React.memo(function UserMenu() {
 
   return (
     <Menu
-      onClickSettings={undefined as any}
-      hasActivity={false}
-      onClickActivity={undefined as any}
-      onClickProfile={undefined as any}
       menuItems={
         <>
           <MenuItem onClick={handleClickDocs}>
