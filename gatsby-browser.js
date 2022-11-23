@@ -24,12 +24,13 @@ import "decentraland-gatsby/dist/variables.css"
 import "./src/theme.css"
 
 import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
-import UserMenu from "decentraland-gatsby/dist/components/User/UserMenu"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
 import ShareProvider from "decentraland-gatsby/dist/context/Share/ShareProvider"
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
+
+import UserMenu from "./src/components/Layout/UserMenu"
 
 export const registerServiceWorker = () => true
 
