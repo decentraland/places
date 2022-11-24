@@ -117,5 +117,8 @@
       "card": "card",
       "creator": "creator"
     }
+  },
+  "user_menu": {
+    "api": "API"
   }
 }
