@@ -4,6 +4,7 @@ import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/Ap
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
 
+import { getEntityScenes } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
@@ -13,7 +14,11 @@ import {
   GetPlaceListQuery,
   PlaceListOrderBy,
 } from "../types"
-import { placesWithUserCount, placesWithUserVisits } from "../utils"
+import {
+  placesWithLastUpdate,
+  placesWithUserCount,
+  placesWithUserVisits,
+} from "../utils"
 import { getPlaceMostActiveList } from "./getPlaceMostActiveList"
 import { getPlaceUserVisitsList } from "./getPlaceUserVisitsList"
 
@@ -39,7 +44,7 @@ export const getPlaceList = Router.memo(
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
-        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.UPDATED_AT,
+        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.HIGHEST_RATED,
       order: ctx.url.searchParams.get("order") || "desc",
     })
 
@@ -67,8 +72,15 @@ export const getPlaceList = Router.memo(
       getSceneStats(),
     ])
 
+    const entityScene = await getEntityScenes(
+      data.map((place) => place.base_position)
+    )
+
     return new ApiResponse(
-      placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
+      placesWithLastUpdate(
+        placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
+        entityScene
+      ),
       { total }
     )
   }

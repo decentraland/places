@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -10,17 +10,19 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
-import { usePlaceId } from "../hooks/usePlaceId"
+import { usePlaceFromParams } from "../hooks/usePlaceFromParams"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
+import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
 export type EventPageState = {
   updating: Record<string, boolean>
@@ -30,14 +32,31 @@ export default function PlacePage() {
   const l = useFormatMessage()
   const track = useTrackContext()
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [account, accountState] = useAuthContext()
   const [share] = useShareContext()
   const location = useLocation()
-  const params = new URLSearchParams(location.search)
 
-  const [placeRetrived] = usePlaceId(params.get("id"))
+  const params = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
 
-  const placeMemo = useMemo(() => [[placeRetrived]], [placeRetrived])
+  const [placeRetrived, placeRetrivedState] = usePlaceFromParams(params)
+
+  const placeMemo = useMemo(
+    () => (!placeRetrived ? [[]] : [[placeRetrived]]),
+    [placeRetrived]
+  )
+
+  useEffect(() => {
+    if (
+      placeRetrived &&
+      toCanonicalPosition(placeRetrived.base_position) !==
+        params.get("position")
+    ) {
+      navigate(locations.place(placeRetrived.base_position), { replace: true })
+    }
+  }, [placeRetrived, params.get("position")])
+
   const [
     [[place]],
     {
@@ -61,18 +80,13 @@ export default function PlacePage() {
         share({
           title: place.title || undefined,
           text: `${l("general.place_share")}${shareableText}`,
-          url: location.origin + locations.place(place.id),
+          url: location.origin + locations.place(place.base_position),
           thumbnail: place.image || undefined,
-        })
-        track(SegmentPlace.Share, {
-          placeId: place.id,
         })
       }
     },
     [place, track]
   )
-
-  const loading = accountState.loading
 
   const [ff] = useFeatureFlagContext()
 
@@ -80,7 +94,11 @@ export default function PlacePage() {
     return <MaintenancePage />
   }
 
-  if (!loading && !place) {
+  if (
+    placeRetrivedState.loaded &&
+    !placeRetrivedState.loading &&
+    !placeRetrived
+  ) {
     return (
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout full>
@@ -143,20 +161,20 @@ export default function PlacePage() {
           <PlaceDescription
             place={place}
             onClickLike={async () =>
-              handleLike(place.id, place.user_like ? null : true)
+              handleLike(place?.id, place.user_like ? null : true)
             }
             onClickDislike={async () =>
-              handleDislike(place.id, place.user_dislike ? null : false)
+              handleDislike(place?.id, place.user_dislike ? null : false)
             }
             onClickShare={async (e) => handleShare(e)}
-            onClickFavorite={async () => handleFavorite(place.id, place)}
-            loading={loading}
-            loadingFavorite={handlingFavorite.has(place.id)}
-            loadingLike={handlingLike.has(place.id)}
-            loadingDislike={handlingDislike.has(place.id)}
+            onClickFavorite={async () => handleFavorite(place?.id, place)}
+            loading={placeRetrivedState.loading}
+            loadingFavorite={handlingFavorite.has(place?.id)}
+            loadingLike={handlingLike.has(place?.id)}
+            loadingDislike={handlingDislike.has(place?.id)}
             dataPlace={SegmentPlace.Place}
           />
-          <PlaceDetails place={place} loading={loading} />
+          <PlaceDetails place={place} loading={placeRetrivedState.loading} />
         </ItemLayout>
       </Container>
     </>

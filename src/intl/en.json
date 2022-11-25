@@ -12,7 +12,9 @@
   "navigation": {
     "overview": "Overview",
     "places": "All Places",
-    "my_places": "My Places"
+    "my_places": "My Places",
+    "faq": "FAQ",
+    "faq_target": "https://docs.decentraland.org/creator/places/faq/"
   },
   "components": {
     "button": {
@@ -29,7 +31,8 @@
       "created": "created",
       "updated": "updated",
       "point_of_interest": "point of interest",
-      "favorite": "favorite"
+      "favorite": "favorite",
+      "added": "added"
     },
     "place_description": {
       "created_by": "created by"
@@ -114,5 +117,8 @@
       "card": "card",
       "creator": "creator"
     }
+  },
+  "user_menu": {
+    "api": "API"
   }
 }

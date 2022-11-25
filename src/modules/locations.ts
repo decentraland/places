@@ -7,6 +7,7 @@ import API from "decentraland-gatsby/dist/utils/api/API"
 
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import { PlaceListOrderBy } from "../entities/Place/types"
+import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
 const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 
@@ -25,7 +26,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   only_pois: false,
   only_featured: false,
   only_highlighted: false,
-  order_by: PlaceListOrderBy.UPDATED_AT,
+  order_by: PlaceListOrderBy.HIGHEST_RATED,
   order: "desc",
   page: 1,
 }
@@ -68,9 +69,13 @@ export function fromPlacesOptions(
 
 export default {
   home: () => API.url(GATSBY_BASE_URL, "/"),
-  place: (id: string) => API.url(GATSBY_BASE_URL, "/place/", { id }),
+  place: (position: string) => {
+    const canonicalPosition = toCanonicalPosition(position)!
+    return API.url(GATSBY_BASE_URL, "/place/", { position: canonicalPosition })
+  },
   places: (options: Partial<PlacesPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/places/", fromPlacesOptions(options)),
   my_places: (options: Partial<PlacesPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/my_places/", fromPlacesOptions(options)),
+  docs: () => API.url("/docs/"),
 }

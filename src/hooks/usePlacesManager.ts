@@ -90,6 +90,7 @@ export default function usePlacesManager(
     [handlingFavorite]
   )
   const modifyingLike = useMemo(() => new Set(handlingLike), [handlingLike])
+
   const modifyingDislike = useMemo(
     () => new Set(handlingDislike),
     [handlingDislike]

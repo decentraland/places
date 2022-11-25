@@ -6,7 +6,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { placeTargetUrl } from "../../../entities/Place/utils"
+import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
 import DislikeBox from "../../Button/DislikeBox"
 import FavoriteBox from "../../Button/FavoriteBox"
@@ -45,7 +45,7 @@ export default React.memo(function PlaceDescription(
     loadingFavorite,
   } = props
   const l = useFormatMessage()
-  const placerUrl = placeTargetUrl(place)
+  const placerUrl = explorerPlaceUrl(place)
   const isMobile = useMobileMediaQuery()
 
   const handleJumpInTrack = useTrackLinkContext()
@@ -67,8 +67,8 @@ export default React.memo(function PlaceDescription(
         ></div>
         <div className="place-description__right-side-container">
           <div className="place-description__text-container">
-            <h1>{place.title}</h1>
-            {place.contact_name && (
+            <h1>{place?.title}</h1>
+            {place?.contact_name && (
               <p>
                 {l("components.place_description.created_by")}{" "}
                 <strong>{place.contact_name}</strong>
@@ -82,7 +82,7 @@ export default React.memo(function PlaceDescription(
                 loading={loading}
                 onClick={handleJumpInTrack}
                 data-event={SegmentPlace.JumpIn}
-                data-place-id={place.id}
+                data-place-id={place?.id}
                 data-place={dataPlace}
               />
             )}
@@ -90,20 +90,20 @@ export default React.memo(function PlaceDescription(
               <LikeBox
                 onClick={onClickLike}
                 loading={loading || loadingLike}
-                total={place.likes}
-                active={place.user_like}
+                total={place?.likes}
+                active={place?.user_like}
               />
               <DislikeBox
                 onClick={onClickDislike}
                 loading={loading || loadingDislike}
-                total={place.dislikes}
-                active={place.user_dislike}
+                total={place?.dislikes}
+                active={place?.user_dislike}
               />
               <ShareBox onClick={onClickShare} loading={loading} />
               <FavoriteBox
                 onClick={onClickFavorite}
                 loading={loading || loadingFavorite}
-                active={place.user_favorite}
+                active={place?.user_favorite}
                 dataPlace={dataPlace}
               />
             </div>

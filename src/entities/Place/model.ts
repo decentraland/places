@@ -88,11 +88,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWithAggregates(
     options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
-    const orderBy =
-      oneOf(options.order_by, [
-        PlaceListOrderBy.HIGHEST_RATED,
-        PlaceListOrderBy.UPDATED_AT,
-      ]) ?? PlaceListOrderBy.UPDATED_AT
+    const orderBy = PlaceListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)

@@ -207,7 +207,8 @@ export default function OverviewPage() {
               dataPlace={SegmentPlace.OverviewMyFavorites}
             />
           )}
-        <OverviewList
+        {/* TODO: need to add last_deployed_at with a task to make this  */}
+        {/* <OverviewList
           places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}
           href={locations.places({
@@ -224,7 +225,7 @@ export default function OverviewPage() {
           }
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.OverviewRecentlyUpdated}
-        />
+        /> */}
         <OverviewList
           places={poisList}
           title={l("pages.overview.points_of_interest")}

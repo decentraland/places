@@ -11,7 +11,7 @@ import { Card } from "decentraland-ui/dist/components/Card/Card"
 import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { placeTargetUrl } from "../../../entities/Place/utils"
+import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import FavoriteButton from "../../Button/FavoriteButton"
@@ -51,8 +51,11 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const isTabletOrMobile = useTabletAndBelowMediaQuery()
   const userAgentData = useUserAgentData()
 
-  const href = useMemo(() => place && locations.place(place.id), [place])
-  const placerUrl = place && placeTargetUrl(place)
+  const href = useMemo(
+    () => place && locations.place(place.base_position),
+    [place]
+  )
+  const placerUrl = place && explorerPlaceUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()
 
