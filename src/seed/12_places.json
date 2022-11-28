@@ -1,0 +1,20 @@
+{
+  "create": [
+    {
+      "base_position": "-101,127",
+      "highlighted_image": "/images/places/ice_poker_the_stronghold.jpeg",
+      "highlighted": true,
+      "featured": false
+    },
+    {
+      "base_position": "-9,-9",
+      "image": "/images/places/genesis_plaza.jpg",
+      "highlighted_image": "/images/places/genesis_plaza_banner.jpg",
+      "description": "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
+      "highlighted": true,
+      "featured": false
+    }
+  ],
+  "update": [],
+  "delete": []
+}

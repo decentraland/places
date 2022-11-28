@@ -1,6 +1,6 @@
 import { createPlaceMigration } from "../entities/Place/migration"
 import { PlaceAttributes } from "../entities/Place/types"
-import defaultPlace from "../seed/06_places.json"
+import defaultPlace from "../seed/11_places.json"
 
 const attributes: Array<keyof PlaceAttributes> = [
   "id",
