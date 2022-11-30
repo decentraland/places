@@ -42,7 +42,7 @@ export default function PlacesPage() {
       pageSize: PAGE_SIZE,
     })
     track(SegmentPlace.FilterChange, {
-      filter: paginationResult,
+      filters: paginationResult,
       place: SegmentPlace.MyPlace,
     })
 
@@ -69,7 +69,7 @@ export default function PlacesPage() {
       e.stopPropagation()
       const newParams = { page: Number(props.activePage ?? 1) }
       track(SegmentPlace.FilterChange, {
-        filter: newParams,
+        filters: newParams,
         place: SegmentPlace.MyPlaceChangePagination,
       })
       navigate(locations.my_places(newParams))
