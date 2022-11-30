@@ -67,7 +67,7 @@ export default function IndexPage() {
         options.positions = pois
       }
       track(SegmentPlace.FilterChange, {
-        filter: options,
+        filters: options,
         place: SegmentPlace.Places,
       })
 
