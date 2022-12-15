@@ -7,7 +7,6 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
 import { intersects, sum } from "radash/dist/array"
-import rehypeRaw from "rehype-raw"
 import rehypeSanitize from "rehype-sanitize"
 import remarkGfm from "remark-gfm"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
@@ -16,9 +15,7 @@ import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { getPois } from "../../../modules/pois"
 import { getServers } from "../../../modules/servers"
-import PlaceRealmActivity, {
-  ReamlActivity,
-} from "../PlaceRealmActivity/PlaceRealmActivity"
+import { ReamlActivity } from "../PlaceRealmActivity/PlaceRealmActivity"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
@@ -113,13 +110,11 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
               <>
                 <h3>{l("components.place_detail.description")}</h3>
                 <div>
-                  <p>
-                    <ReactMarkdown
-                      children={place?.description}
-                      rehypePlugins={[rehypeSanitize, rehypeRaw]}
-                      remarkPlugins={[remarkGfm]}
-                    />
-                  </p>
+                  <ReactMarkdown
+                    children={place?.description}
+                    rehypePlugins={[rehypeSanitize]}
+                    remarkPlugins={[remarkGfm]}
+                  />
                 </div>
               </>
             )}
