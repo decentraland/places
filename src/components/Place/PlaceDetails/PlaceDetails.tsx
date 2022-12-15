@@ -8,6 +8,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
 import { intersects, sum } from "radash/dist/array"
 import rehypeRaw from "rehype-raw"
+import rehypeSanitize from "rehype-sanitize"
 import remarkGfm from "remark-gfm"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
@@ -115,7 +116,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
                   <p>
                     <ReactMarkdown
                       children={place?.description}
-                      rehypePlugins={[rehypeRaw]}
+                      rehypePlugins={[rehypeSanitize, rehypeRaw]}
                       remarkPlugins={[remarkGfm]}
                     />
                   </p>
