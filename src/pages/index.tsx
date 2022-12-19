@@ -21,7 +21,8 @@ import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
-import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates"
+/* TODO: need to add last_deployed_at with a task to make this  */
+/* import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates" */
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
@@ -45,8 +46,9 @@ export default function OverviewPage() {
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
-  const [placeListLastUpdates, placeListLastUpdatesState] =
-    usePlaceListRecentlyUpdates(overviewOptions)
+  /* TODO: need to add last_deployed_at with a task to make this  */
+  /* const [placeListLastUpdates, placeListLastUpdatesState] =
+    usePlaceListRecentlyUpdates(overviewOptions) */
   const [placeListHightRated, placeListHightRatedState] =
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
@@ -59,7 +61,6 @@ export default function OverviewPage() {
       placeListHighlighted,
       placeListFeatured,
       placeListMostActive,
-      placeListLastUpdates,
       placeListHightRated,
       placeListMyFavorites.data,
       placeListPois,
@@ -68,7 +69,6 @@ export default function OverviewPage() {
       placeListHighlighted,
       placeListFeatured,
       placeListMostActive,
-      placeListLastUpdates,
       placeListHightRated,
       placeListMyFavorites,
       placeListPois,
@@ -80,7 +80,6 @@ export default function OverviewPage() {
       highlightedList,
       featuredList,
       mostActiveList,
-      lastUpdatesList,
       hightRatedList,
       myFavoritesList,
       poisList,
