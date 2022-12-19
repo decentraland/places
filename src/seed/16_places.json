@@ -1,0 +1,17 @@
+{
+  "create": [],
+  "update": [
+    {
+      "base_position": "-114,101",
+      "featured": true,
+      "description": "Jump in this holiday season for a friendly Santa vs Krampus multi-player team snowball fight! \n\rGrab some friends, stack those snowballs, perfect your aim, and find a competitor to sprinkle with some holiday spirit. \n\rWhen you need a break, warm up by the fire and get ready to head back into the arena."
+    },
+    {
+      "base_position": "-29,55",
+      "highlighted": false,
+      "featured": false,
+      "image": "/images/places/wondermine_thumb.jpg"
+    }
+  ],
+  "delete": []
+}
