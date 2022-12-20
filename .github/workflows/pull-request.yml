@@ -46,5 +46,14 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: building
-        run: npm run build
+      - name: setup envs
+        run: touch .env
+
+      - name: build image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: places
+          tags: ${{ github.sha }}
+          dockerfiles: |
+            ./Dockerfile
