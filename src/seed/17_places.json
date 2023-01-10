@@ -1,0 +1,50 @@
+{
+  "create": [
+    {
+      "base_position": "36,-81"
+    }
+  ],
+  "update": [
+    {
+      "base_position": "-29,80",
+      "featured": true
+    },
+    {
+      "base_position": "-25,90",
+      "featured": true
+    },
+    {
+      "base_position": "-114,-7",
+      "featured": true
+    },
+    {
+      "base_position": "-69,28",
+      "featured": true
+    },
+    {
+      "base_position": "29,49",
+      "featured": true
+    },
+    {
+      "base_position": "-113,109",
+      "featured": false
+    },
+    {
+      "base_position": "-114,111",
+      "featured": false
+    },
+    {
+      "base_position": " -111,107",
+      "featured": false
+    },
+    {
+      "base_position": "-114,101",
+      "featured": false
+    },
+    {
+      "base_position": " -111,106",
+      "featured": false
+    }
+  ],
+  "delete": []
+}
