@@ -1,0 +1,16 @@
+{
+  "create": [
+    {
+      "base_position": "-36,-3"
+    },
+    {
+      "base_position": "19,-119"
+    }
+  ],
+  "update": [
+    {
+      "base_position": "37,-114"
+    }
+  ],
+  "delete": []
+}
