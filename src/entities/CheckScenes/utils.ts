@@ -11,6 +11,7 @@ import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
 import { DeploymentTrackAttributes } from "./types"
 
+/** @deprecated */
 export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
   const contentDeploymentsResponse = await Catalyst.from(
     catalyst.base_url

@@ -1,3 +1,4 @@
+/** @deprecated */
 export type DeploymentTrackAttributes = {
   id: string
   base_url: string

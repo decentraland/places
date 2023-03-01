@@ -10,6 +10,8 @@
     "npm": "8.*"
   },
   "dependencies": {
+    "@dcl/schemas": "^6.11.1",
+    "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.4.0",
     "aws-sdk": "^2.1002.0",
