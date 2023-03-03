@@ -6,7 +6,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
-import { isRoad } from "../DeploymentTrack/utils"
+import { isRoad } from "../CheckScenes/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"

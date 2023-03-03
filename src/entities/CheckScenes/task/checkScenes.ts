@@ -1,7 +1,7 @@
 import { Task } from "decentraland-gatsby/dist/entities/Task"
 
 import { consumer } from "./consumer"
-import { processScenes } from "./processScenes"
+import { processEntityId } from "./processEntityId"
 
 export const checkScenes = new Task({
   name: "check_scenes",
@@ -9,7 +9,7 @@ export const checkScenes = new Task({
   task: async (ctx) => {
     const logger = ctx.logger
     logger.log(`Information in message`)
-    const sqsConsumed = await consumer.consume(processScenes)
+    const sqsConsumed = await consumer.consume(processEntityId)
 
     if (!sqsConsumed) {
       logger.log(`Check the logs`)
