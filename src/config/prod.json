@@ -4,6 +4,7 @@
   "GATSBY_PLACES_URL": "https://places.decentraland.org/api",
   "GATSBY_LAND_URL": "https://api.decentraland.org",
   "GATSBY_PROFILE_URL": "https://peer.decentraland.org",
+  "GATSBY_INTERCOM_APP_ID": "z0h94kay",
   "GATSBY_ROLLBAR_TOKEN": "026f8cdbada742a9aad5eabbb932aca1",
   "GATSBY_SEGMENT_KEY": "ArbvD4yfvg8hz6UwFHq38A9mQ6a4hHHC"
 }
