@@ -1,7 +1,7 @@
 import React from "react"
 
 import Carousel2, {
-  IndicatorsType,
+  IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
@@ -50,7 +50,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
       {!loading && isMobile && size && size < 10 && (
         <Carousel2
           className="place-list__carousel"
-          indicatorsType={IndicatorsType.Dash}
+          indicatorsType={IndicatorType.Dash}
           items={places}
           progress
           isNavigationHide

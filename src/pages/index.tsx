@@ -3,7 +3,7 @@ import React, { useMemo } from "react"
 import { Helmet } from "react-helmet"
 
 import Carousel2, {
-  IndicatorsType,
+  IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
@@ -124,7 +124,7 @@ export default function OverviewPage() {
           className="overview__carousel2"
           loading={placeListHighlightedState.loading}
           isFullscreen
-          indicatorsType={IndicatorsType.Dash}
+          indicatorsType={IndicatorType.Dash}
           items={highlightedList}
           component={PlaceFeatured}
         />
