@@ -1,9 +1,9 @@
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
+  ContentDeploymentScene,
   ContentDeploymentSortingField,
   ContentDeploymentSortingOrder,
-  ContentDepoymentScene,
   EntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
@@ -23,7 +23,7 @@ export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
     sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
   })
 
-  return contentDeploymentsResponse.deployments as ContentDepoymentScene[]
+  return contentDeploymentsResponse.deployments as ContentDeploymentScene[]
 }
 
 export function isMetadataEmpty(deployment: EntityScene) {
