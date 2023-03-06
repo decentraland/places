@@ -1,4 +1,5 @@
 import {
+  ContentDeploymentScene,
   EntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
@@ -52,6 +53,7 @@ export function explorerPlaceUrl(
   return target.toString()
 }
 
+/** @deprecated */
 export function getThumbnailFromDeployment(deployment: EntityScene) {
   const positions = (deployment?.pointers || []).sort()
   let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
@@ -67,7 +69,36 @@ export function getThumbnailFromDeployment(deployment: EntityScene) {
   }
 
   if (!thumbnail) {
-    thumbnail = Land.get().getMapImage({
+    thumbnail = Land.getInstance().getMapImage({
+      selected: positions,
+    })
+  }
+  return thumbnail
+}
+
+export function getThumbnailFromContentDeployment(
+  deployment: ContentDeploymentScene,
+  options: { url?: string } = {}
+) {
+  const positions = (deployment?.pointers || []).sort()
+  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
+  if (thumbnail && !thumbnail.startsWith("https://")) {
+    const content = deployment.content.find(
+      (content) => content.key === thumbnail
+    )
+    const contentServerUrl = (
+      options.url || "https://peer.decentraland.org/content"
+    ).replace(/\/+$/, "")
+
+    if (!content || unwantedThumbnailHash.includes(content.hash)) {
+      thumbnail = null
+    } else {
+      thumbnail = `${contentServerUrl}/contents/${content.hash}`
+    }
+  }
+
+  if (!thumbnail) {
+    thumbnail = Land.getInstance().getMapImage({
       selected: positions,
     })
   }

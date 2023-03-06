@@ -4,9 +4,12 @@ import {
   ContentDeploymentScene,
   ContentDeploymentSortingField,
   ContentDeploymentSortingOrder,
+  ContentDeploymentWorld,
   EntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import areSamePositions from "../../utils/array/areSamePositions"
+import { PlaceAttributes } from "../Place/types"
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
 import { DeploymentTrackAttributes } from "./types"
@@ -37,11 +40,47 @@ export function isMetadataEmpty(deployment: EntityScene) {
   )
 }
 
-export function isRoad(deployment: EntityScene) {
+export function isRoad(deployment: Pick<EntityScene, "pointers">) {
   return deployment.pointers.every((position) => {
     const roadsMap = roads as Record<string, Record<string, true>>
     const [x, y] = position.split(",")
 
     return (roadsMap[x] && roadsMap[x][y]) || false
   })
+}
+
+export function isNewPlace(
+  contentDeployment: ContentDeploymentScene | ContentDeploymentWorld,
+  places: PlaceAttributes[]
+) {
+  if (places.length === 0) {
+    return true
+  }
+  const sameBasePosition = places.find(
+    (place) => place.base_position === contentDeployment.metadata.scene.base
+  )
+
+  if (sameBasePosition) {
+    return false
+  }
+
+  const samePosition = places.find((place) =>
+    areSamePositions(contentDeployment.pointers, place.positions)
+  )
+
+  if (samePosition) {
+    return false
+  }
+
+  return true
+}
+
+export function isSamePlace(
+  contentDeployment: ContentDeploymentScene | ContentDeploymentWorld,
+  place: PlaceAttributes
+) {
+  return (
+    place.base_position === contentDeployment.metadata.scene.base ||
+    areSamePositions(contentDeployment.pointers, place.positions)
+  )
 }

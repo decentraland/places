@@ -279,4 +279,25 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     return hotScenePlaces.slice(from, to)
   }
+
+  static async insertPlace(
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) {
+    const keys = attributes
+    const sql = SQL`INSERT INTO ${PlaceModel.tableName} (${keys.join(",")})
+              VALUES (${keys.map((k) => `${place[k]}`).join(",")})`
+    return this.namedQuery("insert_place", sql)
+  }
+
+  static updatePlace = (
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) => {
+    const keys = attributes
+    const sql = SQL`UPDATE ${PlaceModel.tableName} SET ${keys
+      .map((k) => `${k}=${place[k]}`)
+      .join(",")}  WHERE positions && ${"'{\"" + place.base_position + "\"}'"}`
+    return this.namedQuery("insert_place", sql)
+  }
 }

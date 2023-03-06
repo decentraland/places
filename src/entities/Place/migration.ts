@@ -1,6 +1,7 @@
 import Catalyst, {
   EntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
+import { ContentDeploymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
@@ -9,7 +10,10 @@ import { v4 as uuid } from "uuid"
 import { isRoad } from "../CheckScenes/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
-import { getThumbnailFromDeployment } from "./utils"
+import {
+  getThumbnailFromContentDeployment,
+  getThumbnailFromDeployment,
+} from "./utils"
 
 export type PlacesStatic = {
   create: Array<Partial<PlaceAttributes>>
@@ -19,6 +23,7 @@ export type PlacesStatic = {
 
 const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
+/** @deprecated */
 export function createPlaceFromEntityScene(
   entityScene: EntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
@@ -70,6 +75,7 @@ export function createPlaceFromEntityScene(
   return placeParsed
 }
 
+/** @deprecated */
 async function fetchEntityScenesFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
@@ -77,6 +83,7 @@ async function fetchEntityScenesFromDefaultPlaces(
   return Catalyst.get().getEntityScenes(batch)
 }
 
+/** @deprecated */
 async function createPlaceFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
@@ -124,7 +131,8 @@ export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
   return true
 }
 
-async function insertPlaces(
+/** @deprecated */
+async function insertPlacesWithEntityScenes(
   places: Partial<PlaceAttributes>[],
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
@@ -145,7 +153,8 @@ async function insertPlaces(
   }
 }
 
-async function updatePlaces(
+/** @deprecated */
+async function updatePlacesWithEntityScenes(
   places: Partial<PlaceAttributes>[],
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
@@ -167,7 +176,11 @@ async function updatePlaces(
   }
 }
 
-async function deletePlaces(places: string[], pgm: MigrationBuilder) {
+/** @deprecated */
+async function deletePlacesWithEntityScenes(
+  places: string[],
+  pgm: MigrationBuilder
+) {
   if (places.length > 0) {
     pgm.db.query(
       `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
@@ -184,9 +197,9 @@ export async function up(
 ): Promise<void> {
   await validateMigratedPlaces(defaultPlaces)
 
-  await insertPlaces(defaultPlaces.create, attributes, pgm)
-  await updatePlaces(defaultPlaces.update, attributes, pgm)
-  await deletePlaces(defaultPlaces.delete, pgm)
+  await insertPlacesWithEntityScenes(defaultPlaces.create, attributes, pgm)
+  await updatePlacesWithEntityScenes(defaultPlaces.update, attributes, pgm)
+  await deletePlacesWithEntityScenes(defaultPlaces.delete, pgm)
 }
 
 export async function down(
@@ -208,10 +221,11 @@ export async function down(
     )
   }
 
-  await deletePlaces(placesToRestore.delete, pgm)
-  await insertPlaces(placesToRestore.create, attributes, pgm)
+  await deletePlacesWithEntityScenes(placesToRestore.delete, pgm)
+  await insertPlacesWithEntityScenes(placesToRestore.create, attributes, pgm)
 }
 
+/** @deprecated */
 export function createPlaceMigration(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>

@@ -20,6 +20,7 @@ export type PlaceAttributes = {
   featured: boolean
   disabled: boolean
   disabled_at: Date | null
+  visible: boolean
   created_at: Date
   updated_at: Date
 }

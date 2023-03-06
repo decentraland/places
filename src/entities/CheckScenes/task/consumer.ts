@@ -19,7 +19,12 @@ export type InternalElement = {
 }
 
 class MemoryConsumer {
-  async consume(taskRunner: (job: DeploymentToSqs) => Promise<boolean>) {
+  async consume(
+    taskRunner: (job: DeploymentToSqs) => Promise<{
+      isNewPlace: boolean
+      placesDisable: number
+    }>
+  ) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const q = new AsyncQueue<InternalElement>((action) => void 0)
     // TODO: kill if there is nothing in next
@@ -36,7 +41,12 @@ class MemoryConsumer {
 class SNSConsumer {
   constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
 
-  async consume(taskRunner: (job: DeploymentToSqs) => Promise<boolean>) {
+  async consume(
+    taskRunner: (job: DeploymentToSqs) => Promise<{
+      isNewPlace: boolean
+      placesDisable: number
+    }>
+  ) {
     try {
       const response = await Promise.race([
         this.sqs.receiveMessage(this.params).promise(),
