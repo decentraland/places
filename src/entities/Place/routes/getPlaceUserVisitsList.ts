@@ -28,6 +28,7 @@ export const getPlaceUserVisitsList = Router.memo(
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by: PlaceListOrderBy.USER_VISITS,
       order: ctx.url.searchParams.get("order") || "desc",
+      with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([
@@ -71,7 +72,9 @@ export const getPlaceUserVisitsList = Router.memo(
     const userVisitsPlaces = sort(
       placesWithLastUpdate(
         placesWithUserVisits(
-          placesWithUserCount(places, hotScenes),
+          placesWithUserCount(places, hotScenes, {
+            withRealmsDetail: !!query.with_realms_detail,
+          }),
           sceneStats
         ),
         entityScene

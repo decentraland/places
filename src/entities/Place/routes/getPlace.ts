@@ -22,7 +22,7 @@ export const validateGetPlaceParams =
 
 export const getPlace = Router.memo(
   async (
-    ctx: Context<{ place_id: string }, "params" | "request">
+    ctx: Context<{ place_id: string }, "params" | "url" | "request">
   ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> => {
     const params = await validateGetPlaceParams(ctx.params)
     const userAuth = await withAuthOptional(ctx)
@@ -41,7 +41,9 @@ export const getPlace = Router.memo(
     const sceneStats = await getSceneStats()
     const entityScene = await getEntityScene(place.base_position)
     let aggregatedPlaces = [place]
-    aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes)
+    aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes, {
+      withRealmsDetail: !!ctx.url.searchParams.get("with_realms_detail"),
+    })
     aggregatedPlaces = placesWithUserVisits(aggregatedPlaces, sceneStats)
     aggregatedPlaces = placesWithLastUpdate(aggregatedPlaces, [entityScene])
 

@@ -28,6 +28,7 @@ export const getPlaceMostActiveList = Router.memo(
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: ctx.url.searchParams.get("order") || "desc",
+      with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([
@@ -79,7 +80,9 @@ export const getPlaceMostActiveList = Router.memo(
     const hotScenePlaces = sort(
       placesWithLastUpdate(
         placesWithUserVisits(
-          placesWithUserCount(places, hotScenes),
+          placesWithUserCount(places, hotScenes, {
+            withRealmsDetail: !!query.with_realms_detail,
+          }),
           sceneStats
         ),
         entityScene

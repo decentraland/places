@@ -46,6 +46,7 @@ export const getPlaceList = Router.memo(
       order_by:
         ctx.url.searchParams.get("order_by") || PlaceListOrderBy.HIGHEST_RATED,
       order: ctx.url.searchParams.get("order") || "desc",
+      with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -78,7 +79,12 @@ export const getPlaceList = Router.memo(
 
     return new ApiResponse(
       placesWithLastUpdate(
-        placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
+        placesWithUserVisits(
+          placesWithUserCount(data, hotScenes, {
+            withRealmsDetail: !!query.with_realms_detail,
+          }),
+          sceneStats
+        ),
         entityScene
       ),
       { total }

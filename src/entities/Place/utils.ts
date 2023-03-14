@@ -98,7 +98,10 @@ export function placesWithUserVisits(
 
 export function placesWithUserCount(
   places: AggregatePlaceAttributes[],
-  hotScenes: HotScene[]
+  hotScenes: HotScene[],
+  options?: {
+    withRealmsDetail: boolean
+  }
 ) {
   return places.map((place) => {
     const hotScenePlaces = hotScenes.find((scene) =>
@@ -107,10 +110,16 @@ export function placesWithUserCount(
         .includes(place.base_position)
     )
 
-    return {
+    const placeWithAggregates = {
       ...place,
       user_count: hotScenePlaces ? hotScenePlaces.usersTotalCount : 0,
     }
+
+    if (options?.withRealmsDetail) {
+      placeWithAggregates.realms_detail = hotScenePlaces?.realms
+    }
+
+    return placeWithAggregates
   })
 }
 
