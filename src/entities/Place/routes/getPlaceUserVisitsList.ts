@@ -17,6 +17,7 @@ import {
 } from "../utils"
 import { validateGetPlaceListQuery } from "./getPlaceList"
 
+/** @deprecated */
 export const getPlaceUserVisitsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
     const query = await validateGetPlaceListQuery({
