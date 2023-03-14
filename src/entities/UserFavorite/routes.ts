@@ -26,7 +26,7 @@ export const validateGetPlaceBody = Router.validator<UpdateUserFavoriteBody>(
 )
 
 async function updateFavorites(
-  ctx: Context<{ place_id: string }, "request" | "params" | "body">
+  ctx: Context<{ place_id: string }, "request" | "url" | "params" | "body">
 ) {
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)

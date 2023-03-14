@@ -1,3 +1,5 @@
+import { Realm } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 export type PlaceAttributes = {
   id: string
   title: string | null
@@ -32,6 +34,7 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_count?: number
   user_visits?: number
   last_deployed_at?: Date
+  realms_detail?: Realm[]
 }
 
 export type GetPlaceParams = {
@@ -54,6 +57,7 @@ export type GetPlaceListQuery = {
   only_highlighted: string
   order_by: string
   order: string
+  with_realms_detail: string
 }
 
 export type PlaceListOptions = {

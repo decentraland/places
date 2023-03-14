@@ -4,6 +4,7 @@ import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/Ap
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
+import { bool } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import { getEntityScene } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
@@ -22,7 +23,7 @@ export const validateGetPlaceParams =
 
 export const getPlace = Router.memo(
   async (
-    ctx: Context<{ place_id: string }, "params" | "request">
+    ctx: Context<{ place_id: string }, "params" | "url" | "request">
   ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> => {
     const params = await validateGetPlaceParams(ctx.params)
     const userAuth = await withAuthOptional(ctx)
@@ -41,7 +42,9 @@ export const getPlace = Router.memo(
     const sceneStats = await getSceneStats()
     const entityScene = await getEntityScene(place.base_position)
     let aggregatedPlaces = [place]
-    aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes)
+    aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes, {
+      withRealmsDetail: !!bool(ctx.url.searchParams.get("with_realms_detail")),
+    })
     aggregatedPlaces = placesWithUserVisits(aggregatedPlaces, sceneStats)
     aggregatedPlaces = placesWithLastUpdate(aggregatedPlaces, [entityScene])
 

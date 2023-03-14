@@ -61,6 +61,44 @@ export const getPlaceListQuerySchema = schema({
       enum: ["asc", "desc"],
       nullable: true,
     },
+    with_realms_detail: {
+      type: "string",
+      format: "boolean",
+      description: "Add the numbers of users in each Realm (experimental)",
+      nullable: true,
+    },
+  },
+})
+
+export const realmSchema = schema({
+  type: "object",
+  required: [],
+  properties: {
+    serverName: {
+      type: "string",
+      description: "The name of the Realm server",
+    },
+    url: {
+      type: "string",
+      description: "The url of the Realm",
+    },
+    usersCount: {
+      type: "number",
+      description: "The total amount of users of the Realm",
+    },
+    userParcels: {
+      type: "array",
+      description: "Array of parcels for users of the Realm",
+      items: {
+        type: "array",
+        description: "X and Y of the parcel",
+        minItems: 2,
+        maxItems: 2,
+        items: {
+          type: "number",
+        },
+      },
+    },
   },
 })
 
@@ -184,6 +222,11 @@ export const placeSchema = schema({
       type: "number",
       minimum: 0,
       description: "The number of users in the place",
+    },
+    realms_detail: {
+      type: "array",
+      description: "A list of realms with users in each Realm (experimental)",
+      items: realmSchema,
     },
     user_visits: {
       type: "number",
