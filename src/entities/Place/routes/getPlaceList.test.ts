@@ -131,6 +131,43 @@ test("should return a list of places with order by most_active", async () => {
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 
+test("should return a list of places with Realm details", async () => {
+  find.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
+  catalystHotScenes.mockResolvedValueOnce(
+    Promise.resolve([hotSceneGenesisPlaza])
+  )
+  catalystEntityScenes.mockResolvedValueOnce(
+    Promise.resolve([entitySceneGenesisPlaza])
+  )
+  catalystSceneStats.mockResolvedValueOnce(
+    Promise.resolve(sceneStatsGenesisPlaza)
+  )
+  const request = new Request("/")
+  const url = new URL("https://localhost/?with_realms_detail=true")
+  const placeResponse = await getPlaceList({
+    request,
+    url,
+  })
+  expect(placeResponse.body).toEqual({
+    ok: true,
+    total: 1,
+    data: [
+      {
+        ...placeGenesisPlaza,
+        user_count: hotSceneGenesisPlaza.usersTotalCount,
+        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
+        realms_detail: hotSceneGenesisPlaza.realms,
+      },
+    ],
+  })
+  expect(find.mock.calls.length).toBe(2)
+  expect(catalystHotScenes.mock.calls.length).toBe(1)
+  expect(catalystEntityScenes.mock.calls.length).toBe(1)
+  expect(catalystSceneStats.mock.calls.length).toBe(1)
+})
+
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
   const request = new Request("/")
   const url = new URL("https://localhost/?only_favorites=true")

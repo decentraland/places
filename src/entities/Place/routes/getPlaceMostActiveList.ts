@@ -2,7 +2,11 @@ import { withAuthOptional } from "decentraland-gatsby/dist/entities/Auth/routes/
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
-import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
+import {
+  bool,
+  numeric,
+  oneOf,
+} from "decentraland-gatsby/dist/entities/Schema/utils"
 import { flat, sort, unique } from "radash/dist/array"
 
 import { getEntityScenes } from "../../../modules/entityScene"
@@ -27,7 +31,9 @@ export const getPlaceMostActiveList = Router.memo(
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by: PlaceListOrderBy.MOST_ACTIVE,
-      order: ctx.url.searchParams.get("order") || "desc",
+      order:
+        oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
+      with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([
@@ -79,7 +85,9 @@ export const getPlaceMostActiveList = Router.memo(
     const hotScenePlaces = sort(
       placesWithLastUpdate(
         placesWithUserVisits(
-          placesWithUserCount(places, hotScenes),
+          placesWithUserCount(places, hotScenes, {
+            withRealmsDetail: !!query.with_realms_detail,
+          }),
           sceneStats
         ),
         entityScene

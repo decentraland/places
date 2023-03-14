@@ -2,7 +2,11 @@ import { withAuthOptional } from "decentraland-gatsby/dist/entities/Auth/routes/
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
-import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
+import {
+  bool,
+  numeric,
+  oneOf,
+} from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import { getEntityScenes } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
@@ -44,8 +48,13 @@ export const getPlaceList = Router.memo(
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
-        ctx.url.searchParams.get("order_by") || PlaceListOrderBy.HIGHEST_RATED,
-      order: ctx.url.searchParams.get("order") || "desc",
+        oneOf(ctx.url.searchParams.get("order_by"), [
+          PlaceListOrderBy.HIGHEST_RATED,
+          PlaceListOrderBy.UPDATED_AT,
+        ]) || PlaceListOrderBy.HIGHEST_RATED,
+      order:
+        oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
+      with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -78,7 +87,12 @@ export const getPlaceList = Router.memo(
 
     return new ApiResponse(
       placesWithLastUpdate(
-        placesWithUserVisits(placesWithUserCount(data, hotScenes), sceneStats),
+        placesWithUserVisits(
+          placesWithUserCount(data, hotScenes, {
+            withRealmsDetail: !!bool(query.with_realms_detail),
+          }),
+          sceneStats
+        ),
         entityScene
       ),
       { total }
