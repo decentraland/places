@@ -116,7 +116,7 @@ export function placesWithUserCount(
     }
 
     if (options?.withRealmsDetail) {
-      placeWithAggregates.realms_detail = hotScenePlaces?.realms
+      placeWithAggregates.realms_detail = hotScenePlaces?.realms || []
     }
 
     return placeWithAggregates
