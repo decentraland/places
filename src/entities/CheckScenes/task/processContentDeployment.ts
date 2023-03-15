@@ -8,6 +8,11 @@ import uuid from "uuid"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment } from "../../Place/utils"
+import {
+  notifyDisablePlaces,
+  notifyNewPlace,
+  notifyUpdatePlace,
+} from "../../Slack/utils"
 import { isNewPlace, isSamePlace } from "../utils"
 
 const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
@@ -48,10 +53,10 @@ export async function processContentDeployment(
 
   const isNew = isNewPlace(contentDeployment, places)
   if (isNew) {
-    PlaceModel.insertPlace(
-      createPlaceFromContentDeploymentScene(contentDeployment),
-      placesAttributes
-    )
+    const newPlace = createPlaceFromContentDeploymentScene(contentDeployment)
+    PlaceModel.insertPlace(newPlace, placesAttributes)
+
+    notifyNewPlace(newPlace)
   }
 
   if (isNew && places.length === 0) {
@@ -61,23 +66,28 @@ export async function processContentDeployment(
   if (isNew && places.length) {
     const placesToDisable = places.map((place) => place.id)
     PlaceModel.disablePlaces(placesToDisable)
+    notifyDisablePlaces(places)
     return { isNewPlace: true, placesDisable: placesToDisable.length }
   }
 
-  const placesToDisable: string[] = []
+  const placesToDisable: PlaceAttributes[] = []
   places.map((place) => {
     if (isSamePlace(contentDeployment, place)) {
-      PlaceModel.updatePlace(
-        createPlaceFromContentDeploymentScene(contentDeployment, places[0]),
-        placesAttributes
+      const updatePlace = createPlaceFromContentDeploymentScene(
+        contentDeployment,
+        place
       )
+      PlaceModel.updatePlace(updatePlace, placesAttributes)
+      notifyUpdatePlace(updatePlace)
     } else {
-      placesToDisable.push(place.id)
+      placesToDisable.push(place)
     }
   })
 
   if (placesToDisable.length) {
-    PlaceModel.disablePlaces(placesToDisable)
+    const placesIdToDisable = places.map((place) => place.id)
+    PlaceModel.disablePlaces(placesIdToDisable)
+    notifyDisablePlaces(placesToDisable)
   }
 
   return { isNewPlace: false, placesDisable: placesToDisable.length }
@@ -120,7 +130,9 @@ export function createPlaceFromContentDeploymentScene(
     content_rating:
       contentDeploymentScene?.metadata?.policy?.contentRating || null,
     highlighted: false,
+    highlighted_image: null,
     featured: false,
+    featured_image: null,
     disabled: false,
     visible: false,
     disabled_at:
