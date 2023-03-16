@@ -4,8 +4,7 @@ import {
   ContentDeploymentScene,
   ContentDeploymentSortingField,
   ContentDeploymentSortingOrder,
-  ContentDeploymentWorld,
-  EntityScene,
+  ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import areSamePositions from "../../utils/array/areSamePositions"
@@ -30,7 +29,8 @@ export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
   return contentDeploymentsResponse.deployments as ContentDeploymentScene[]
 }
 
-export function isMetadataEmpty(deployment: EntityScene) {
+/**@deprecated */
+export function isMetadataEmpty(deployment: ContentEntityScene) {
   const thumbnail = getThumbnailFromDeployment(deployment)
   return (
     ((!deployment.metadata?.display?.title ||
@@ -40,7 +40,7 @@ export function isMetadataEmpty(deployment: EntityScene) {
   )
 }
 
-export function isRoad(deployment: Pick<EntityScene, "pointers">) {
+export function isRoad(deployment: Pick<ContentEntityScene, "pointers">) {
   return deployment.pointers.every((position) => {
     const roadsMap = roads as Record<string, Record<string, true>>
     const [x, y] = position.split(",")
@@ -50,14 +50,14 @@ export function isRoad(deployment: Pick<EntityScene, "pointers">) {
 }
 
 export function isNewPlace(
-  contentDeployment: ContentDeploymentScene | ContentDeploymentWorld,
+  contentDeployment: ContentEntityScene,
   places: PlaceAttributes[]
 ) {
   if (places.length === 0) {
     return true
   }
   const sameBasePosition = places.find(
-    (place) => place.base_position === contentDeployment.metadata.scene.base
+    (place) => place.base_position === contentDeployment.metadata.scene!.base
   )
 
   if (sameBasePosition) {
@@ -76,11 +76,11 @@ export function isNewPlace(
 }
 
 export function isSamePlace(
-  contentDeployment: ContentDeploymentScene | ContentDeploymentWorld,
+  contentDeployment: ContentEntityScene,
   place: PlaceAttributes
 ) {
   return (
-    place.base_position === contentDeployment.metadata.scene.base ||
+    place.base_position === contentDeployment.metadata.scene!.base ||
     areSamePositions(contentDeployment.pointers, place.positions)
   )
 }

@@ -9,6 +9,8 @@ export async function processEntityId(job: DeploymentToSqs) {
   if (!job.contentServerUrls) {
     throw new Error("contentServerUrls is required")
   }
+
+  // TODO: check here if contentServerUrls is one of catalyst
   const contentDeployment = await Catalyst.getInstanceFrom(
     job.contentServerUrls[0]
   ).getContentEntity(job.entity.entityId)
@@ -19,14 +21,14 @@ export async function processEntityId(job: DeploymentToSqs) {
     )
   }
 
-  if (contentDeployment.entityType !== EntityType.SCENE) {
+  if (contentDeployment.type !== EntityType.SCENE) {
     throw new Error(`Entity type is not an scene. Type: ${EntityType.SCENE}`)
   }
 
   if (isRoad(contentDeployment)) {
     throw new Error(
       "The scene is a road. The following places can proccede: " +
-        contentDeployment.metadata.scene.base
+        contentDeployment.metadata.scene!.base
     )
   }
 

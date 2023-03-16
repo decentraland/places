@@ -1,6 +1,5 @@
 import {
-  ContentDeploymentScene,
-  EntityScene,
+  ContentEntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
@@ -54,7 +53,7 @@ export function explorerPlaceUrl(
 }
 
 /** @deprecated */
-export function getThumbnailFromDeployment(deployment: EntityScene) {
+export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
   const positions = (deployment?.pointers || []).sort()
   let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
   if (thumbnail && !thumbnail.startsWith("https://")) {
@@ -77,14 +76,14 @@ export function getThumbnailFromDeployment(deployment: EntityScene) {
 }
 
 export function getThumbnailFromContentDeployment(
-  deployment: ContentDeploymentScene,
+  deployment: ContentEntityScene,
   options: { url?: string } = {}
 ) {
   const positions = (deployment?.pointers || []).sort()
   let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
   if (thumbnail && !thumbnail.startsWith("https://")) {
     const content = deployment.content.find(
-      (content) => content.key === thumbnail
+      (content) => content.file === thumbnail
     )
     const contentServerUrl = (
       options.url || "https://peer.decentraland.org/content"
@@ -156,12 +155,12 @@ export function placesWithUserCount(
 
 export function placesWithLastUpdate(
   places: AggregatePlaceAttributes[],
-  entityScene: (EntityScene | null)[]
+  entityScene: (ContentEntityScene | null)[]
 ) {
   return places.map((place) => {
     const entityScenePlaces = entityScene.find(
       (scene) =>
-        scene && scene.metadata.scene.base.includes(place.base_position)
+        scene && scene.metadata.scene!.base.includes(place.base_position)
     )
 
     return {

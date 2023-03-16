@@ -1,7 +1,4 @@
-import {
-  ContentDeploymentScene,
-  ContentDeploymentWorld,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 import uuid from "uuid"
 
@@ -45,7 +42,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
 ]
 
 export async function processContentDeployment(
-  contentDeployment: ContentDeploymentScene | ContentDeploymentWorld
+  contentDeployment: ContentEntityScene
 ) {
   const places = await PlaceModel.findEnabledByPositions(
     contentDeployment.pointers
@@ -94,7 +91,7 @@ export async function processContentDeployment(
 }
 
 export function createPlaceFromContentDeploymentScene(
-  contentDeploymentScene: ContentDeploymentScene,
+  contentDeploymentScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
 ) {
   const now = new Date()

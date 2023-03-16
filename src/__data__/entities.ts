@@ -1,5 +1,6 @@
+import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import {
-  EntityScene,
+  ContentEntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
@@ -417,10 +418,10 @@ export const placeGenesisPlaza: AggregatePlaceAttributes = {
   user_dislike: false,
 }
 
-export const entitySceneGenesisPlaza: EntityScene = {
+export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {
   version: "v3",
   id: "bafkreidw4inuymukjj4otmld76a5qo4sowc6lbqqk6h4dtci4yxv5qkjie",
-  type: "scene",
+  type: EntityType.SCENE,
   timestamp: 1668446525307, //"2022-11-14T17:22:05.307Z"
   pointers: [
     "-9,-9",
@@ -3685,7 +3686,7 @@ export const entitySceneGenesisPlaza: EntityScene = {
       },
     ],
   },
-} as any
+}
 
 export const hotSceneGenesisPlaza: HotScene = {
   id: "bafkreidw4inuymukjj4otmld76a5qo4sowc6lbqqk6h4dtci4yxv5qkjie",

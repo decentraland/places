@@ -1,7 +1,6 @@
 import Catalyst, {
-  EntityScene,
+  ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
-import { ContentDeploymentScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
@@ -10,10 +9,7 @@ import { v4 as uuid } from "uuid"
 import { isRoad } from "../CheckScenes/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
-import {
-  getThumbnailFromContentDeployment,
-  getThumbnailFromDeployment,
-} from "./utils"
+import { getThumbnailFromDeployment } from "./utils"
 
 export type PlacesStatic = {
   create: Array<Partial<PlaceAttributes>>
@@ -25,7 +21,7 @@ const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
 /** @deprecated */
 export function createPlaceFromEntityScene(
-  entityScene: EntityScene,
+  entityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
 ) {
   const now = Time.from().format("YYYYMMDD hh:mm:ss ZZ")
@@ -109,7 +105,7 @@ async function validatePlaces(places: Partial<PlaceAttributes>[]) {
       throw new Error(
         "There is an error with places provided. Migration can't proccede. The following places can proccede: " +
           JSON.stringify(
-            invalidPlacesCreate.map((place) => place.metadata.scene.base),
+            invalidPlacesCreate.map((place) => place.metadata.scene!.base),
             null,
             2
           )

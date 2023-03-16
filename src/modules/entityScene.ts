@@ -1,6 +1,6 @@
 import DataLoader from "dataloader"
 import Catalyst, {
-  EntityScene,
+  ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { memo } from "radash/dist/curry"
@@ -8,7 +8,7 @@ import { memo } from "radash/dist/curry"
 const loader = new DataLoader(
   async function (
     positions: readonly string[]
-  ): Promise<(EntityScene | null)[]> {
+  ): Promise<(ContentEntityScene | null)[]> {
     const entityScenes = await Catalyst.get().getEntityScenes(
       positions as string[]
     )
@@ -16,8 +16,8 @@ const loader = new DataLoader(
     const entityScenesMap = new Map()
 
     for (const entityScene of entityScenes) {
-      entityScenesMap.set(entityScene.metadata.scene.base, entityScene)
-      entityScene.metadata.scene.parcels.forEach((parcel) => {
+      entityScenesMap.set(entityScene.metadata.scene!.base, entityScene)
+      entityScene.metadata.scene!.parcels.forEach((parcel) => {
         entityScenesMap.set(parcel, entityScene)
       })
     }
