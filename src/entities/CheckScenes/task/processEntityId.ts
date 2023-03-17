@@ -3,7 +3,7 @@ import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 
 import { isRoad } from "../utils"
-import { processContentDeployment } from "./processContentDeployment"
+import { processContentDeployment } from "./processContentEntityScene"
 
 export async function processEntityId(job: DeploymentToSqs) {
   if (!job.contentServerUrls) {

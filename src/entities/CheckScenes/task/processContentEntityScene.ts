@@ -4,7 +4,7 @@ import uuid from "uuid"
 
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
-import { getThumbnailFromContentDeployment } from "../../Place/utils"
+import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
 import {
   notifyDisablePlaces,
   notifyNewPlace,
@@ -42,15 +42,15 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
 ]
 
 export async function processContentDeployment(
-  contentDeployment: ContentEntityScene
+  contentEntityScene: ContentEntityScene
 ) {
   const places = await PlaceModel.findEnabledByPositions(
-    contentDeployment.pointers
+    contentEntityScene.pointers
   )
 
-  const isNew = isNewPlace(contentDeployment, places)
+  const isNew = isNewPlace(contentEntityScene, places)
   if (isNew) {
-    const newPlace = createPlaceFromContentDeploymentScene(contentDeployment)
+    const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     PlaceModel.insertPlace(newPlace, placesAttributes)
 
     notifyNewPlace(newPlace)
@@ -69,9 +69,9 @@ export async function processContentDeployment(
 
   const placesToDisable: PlaceAttributes[] = []
   places.map((place) => {
-    if (isSamePlace(contentDeployment, place)) {
-      const updatePlace = createPlaceFromContentDeploymentScene(
-        contentDeployment,
+    if (isSamePlace(contentEntityScene, place)) {
+      const updatePlace = createPlaceFromContentEntityScene(
+        contentEntityScene,
         place
       )
       PlaceModel.updatePlace(updatePlace, placesAttributes)
@@ -90,29 +90,29 @@ export async function processContentDeployment(
   return { isNewPlace: false, placesDisable: placesToDisable.length }
 }
 
-export function createPlaceFromContentDeploymentScene(
-  contentDeploymentScene: ContentEntityScene,
+export function createPlaceFromContentEntityScene(
+  contentEntityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
 ) {
   const now = new Date()
-  const title = contentDeploymentScene?.metadata?.display?.title || null
-  const positions = (contentDeploymentScene?.pointers || []).sort()
-  const tags = (contentDeploymentScene?.metadata?.tags || [])
+  const title = contentEntityScene?.metadata?.display?.title || null
+  const positions = (contentEntityScene?.pointers || []).sort()
+  const tags = (contentEntityScene?.metadata?.tags || [])
     .slice(0, 100)
     .map((tag) => tag.slice(0, 25))
 
-  const thumbnail = getThumbnailFromContentDeployment(contentDeploymentScene)
+  const thumbnail = getThumbnailFromContentEntityScene(contentEntityScene)
 
-  let contact_name = contentDeploymentScene?.metadata?.contact?.name || null
+  let contact_name = contentEntityScene?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {
     contact_name = null
   }
 
   const placeParsed = {
     id: uuid(),
-    owner: contentDeploymentScene?.metadata?.owner || null,
+    owner: contentEntityScene?.metadata?.owner || null,
     title: title ? title.slice(0, 50) : null,
-    description: contentDeploymentScene?.metadata?.display?.description || null,
+    description: contentEntityScene?.metadata?.display?.description || null,
     image: thumbnail,
     positions,
     tags,
@@ -120,12 +120,10 @@ export function createPlaceFromContentDeploymentScene(
     dislikes: 0,
     favorites: 0,
     like_rate: 0,
-    base_position:
-      contentDeploymentScene?.metadata?.scene?.base || positions[0],
+    base_position: contentEntityScene?.metadata?.scene?.base || positions[0],
     contact_name,
-    contact_email: contentDeploymentScene?.metadata?.contact?.email || null,
-    content_rating:
-      contentDeploymentScene?.metadata?.policy?.contentRating || null,
+    contact_email: contentEntityScene?.metadata?.contact?.email || null,
+    content_rating: contentEntityScene?.metadata?.policy?.contentRating || null,
     highlighted: false,
     highlighted_image: null,
     featured: false,
