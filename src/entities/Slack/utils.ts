@@ -49,7 +49,7 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:tada: Place updated: <${placeUrl(place)}|${
+          text: `:white_check_mark: Place updated: <${placeUrl(place)}|${
             place.base_position
           }>`,
         },
@@ -82,7 +82,7 @@ export async function notifyDisablePlaces(places: PlaceAttributes[]) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:tada: ${places.length} ${
+          text: `:x: ${places.length} ${
             places.length > 1 ? "places" : "place"
           } disabled in base positions: ${places
             .map((place) => place.base_position)
@@ -98,6 +98,28 @@ export async function notifyDisablePlaces(places: PlaceAttributes[]) {
             .join("\n\n"),
         },
       },
+    ],
+  })
+}
+
+export async function notifyError(messages: string[]) {
+  logger.log(`sending error to slack`)
+  await sendToSlack({
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:exclamation: There was an error`,
+        },
+      },
+      ...messages.map((message) => ({
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: message,
+        },
+      })),
     ],
   })
 }
