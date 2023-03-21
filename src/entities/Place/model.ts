@@ -1,8 +1,10 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  columns,
   conditional,
   limit,
+  objectValues,
   offset,
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
@@ -285,8 +287,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     attributes: Array<keyof PlaceAttributes>
   ) {
     const keys = attributes
-    const sql = SQL`INSERT INTO ${PlaceModel.tableName} (${keys.join(",")})
-              VALUES (${keys.map((k) => `${place[k]}`).join(",")})`
+    const sql = SQL`INSERT INTO ${table(this)} ${columns(keys)}
+              VALUES ${objectValues(keys, [place])}`
     return this.namedQuery("insert_place", sql)
   }
 
@@ -295,7 +297,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     attributes: Array<keyof PlaceAttributes>
   ) => {
     const keys = attributes
-    const sql = SQL`UPDATE ${PlaceModel.tableName} SET ${keys
+    const sql = SQL`UPDATE ${table(this)} SET ${keys
       .map((k) => `${k}=${place[k]}`)
       .join(",")}  WHERE positions && ${"'{\"" + place.base_position + "\"}'"}`
     return this.namedQuery("insert_place", sql)

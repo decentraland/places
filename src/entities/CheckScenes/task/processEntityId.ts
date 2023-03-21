@@ -1,6 +1,6 @@
 import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
+import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { isRoad } from "../utils"
 import { processContentDeployment } from "./processContentEntityScene"
@@ -10,8 +10,7 @@ export async function processEntityId(job: DeploymentToSqs) {
     throw new Error("contentServerUrls is required")
   }
 
-  // TODO: check here if contentServerUrls is one of catalyst
-  const contentDeployment = await Catalyst.getInstanceFrom(
+  const contentDeployment = await ContentServer.getInstanceFrom(
     job.contentServerUrls[0]
   ).getContentEntity(job.entity.entityId)
 
@@ -25,7 +24,10 @@ export async function processEntityId(job: DeploymentToSqs) {
     throw new Error(`Entity type is not an scene. Type: ${EntityType.SCENE}`)
   }
 
-  if (isRoad(contentDeployment)) {
+  if (
+    !contentDeployment.metadata.worldConfiguration &&
+    isRoad(contentDeployment)
+  ) {
     throw new Error(
       "The scene is a road. The following places can proccede: " +
         contentDeployment.metadata.scene!.base

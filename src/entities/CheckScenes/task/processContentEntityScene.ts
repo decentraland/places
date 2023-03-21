@@ -1,6 +1,6 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
-import uuid from "uuid"
+import { v4 as uuid } from "uuid"
 
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
@@ -52,7 +52,6 @@ export async function processContentDeployment(
   if (isNew) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     PlaceModel.insertPlace(newPlace, placesAttributes)
-
     notifyNewPlace(newPlace)
   }
 

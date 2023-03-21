@@ -1,45 +1,19 @@
 import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
-import { AsyncQueue } from "@well-known-components/pushable-channel"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import env from "decentraland-gatsby/dist/utils/env"
 import delay from "decentraland-gatsby/dist/utils/promise/delay"
+
+import { notifyError } from "../../Slack/utils"
 
 export interface TaskQueueMessage {
   id: string
 }
 
-export type SNSOverSQSMessage = {
-  Message: string
-}
-
-export type InternalElement = {
-  message: TaskQueueMessage
-  job: DeploymentToSqs | null
-}
-
-class MemoryConsumer {
-  async consume(
-    taskRunner: (job: DeploymentToSqs) => Promise<{
-      isNewPlace: boolean
-      placesDisable: number
-    }>
-  ) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const q = new AsyncQueue<InternalElement>((action) => void 0)
-    // TODO: kill if there is nothing in next
-    const it: InternalElement = (await q.next()).value
-    logger.log(`Processing job`, { id: it.message.id })
-    let result
-    if (it.job) {
-      result = await taskRunner(it.job)
-    }
-    return { result, message: it.message }
-  }
-}
-
-class SNSConsumer {
-  constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
+export class SQSConsumer {
+  constructor(
+    public sqs: SQS,
+    public params: AWS.SQS.ReceiveMessageRequest & { FromSns?: boolean }
+  ) {}
 
   async consume(
     taskRunner: (job: DeploymentToSqs) => Promise<{
@@ -60,28 +34,32 @@ class SNSConsumer {
       ) {
         for (const it of response.Messages) {
           const message: TaskQueueMessage = { id: it.MessageId! }
-          const snsOverSqs: SNSOverSQSMessage = JSON.parse(it.Body!)
+          let body = JSON.parse(it.Body!)
+          if (this.params.FromSns) {
+            body = JSON.parse(body.Message)
+          }
           const loggerExtended = logger.extend({
             id: message.id,
-            message: snsOverSqs.Message,
-            QueueUrl: env("QUEUE_ID")!,
+            message: body,
+            QueueUrl: this.params.QueueUrl,
             ReceiptHandle: it.ReceiptHandle!,
           })
 
           try {
             loggerExtended.log(`Processing job`)
 
-            const result = await taskRunner(JSON.parse(snsOverSqs.Message))
+            const result = await taskRunner(JSON.parse(body))
             loggerExtended.log(`Processed job`)
             return { result, message }
           } catch (err: any) {
-            loggerExtended.error(err)
+            notifyError([err.toString(), `\`\`\`${body}\`\`\``])
+            loggerExtended.error(err.toString())
             return { result: undefined, message }
           } finally {
             loggerExtended.log(`Deleting message`)
             await this.sqs
               .deleteMessage({
-                QueueUrl: env("QUEUE_ID")!,
+                QueueUrl: this.params.QueueUrl,
                 ReceiptHandle: it.ReceiptHandle!,
               })
               .promise()
@@ -93,17 +71,3 @@ class SNSConsumer {
     }
   }
 }
-
-export const consumer = env("QUEUE_ID")
-  ? new SNSConsumer(
-      new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
-      {
-        AttributeNames: ["SentTimestamp"],
-        MaxNumberOfMessages: 1,
-        MessageAttributeNames: ["All"],
-        QueueUrl: env("QUEUE_ID")!,
-        WaitTimeSeconds: 15,
-        VisibilityTimeout: 3 * 3600, // 3 hours
-      }
-    )
-  : new MemoryConsumer()
