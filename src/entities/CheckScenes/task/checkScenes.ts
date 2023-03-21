@@ -8,7 +8,7 @@ export function createSceneConsumerTask(
   sqs: SQS,
   params: AWS.SQS.ReceiveMessageRequest & { FromSns?: boolean }
 ) {
-  if (params.QueueUrl) {
+  if (!params.QueueUrl) {
     console.log("Scene consumer task is disabled")
     return null
   }
@@ -18,6 +18,7 @@ export function createSceneConsumerTask(
     repeat: Task.Repeat.Each10Seconds, // TODO: CHANGE TO Each10Minutes
     task: async (ctx) => {
       const logger = ctx.logger
+      logger.log("Start scenes_consumer")
       const sqsConsumed = await consumer.consume(processEntityId)
 
       if (!sqsConsumed) {
