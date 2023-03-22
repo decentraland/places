@@ -10,10 +10,7 @@ export interface TaskQueueMessage {
 }
 
 export class SQSConsumer {
-  constructor(
-    public sqs: SQS,
-    public params: AWS.SQS.ReceiveMessageRequest & { FromSns?: boolean }
-  ) {}
+  constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
 
   async consume(
     taskRunner: (job: DeploymentToSqs) => Promise<{
@@ -34,10 +31,7 @@ export class SQSConsumer {
       ) {
         for (const it of response.Messages) {
           const message: TaskQueueMessage = { id: it.MessageId! }
-          let body = JSON.parse(it.Body!)
-          if (this.params.FromSns) {
-            body = JSON.parse(body.Message)
-          }
+          const body = JSON.parse(JSON.parse(it.Body!).Message)
           const loggerExtended = logger.extend({
             id: message.id,
             message: body,
@@ -49,6 +43,7 @@ export class SQSConsumer {
             loggerExtended.log(`Processing job`)
 
             const result = await taskRunner(JSON.parse(body))
+
             loggerExtended.log(`Processed job`)
             return { result, message }
           } catch (err: any) {

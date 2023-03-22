@@ -6,6 +6,7 @@ import {
   limit,
   objectValues,
   offset,
+  setColumns,
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
@@ -297,9 +298,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     attributes: Array<keyof PlaceAttributes>
   ) => {
     const keys = attributes
-    const sql = SQL`UPDATE ${table(this)} SET ${keys
-      .map((k) => `${k}=${place[k]}`)
-      .join(",")}  WHERE positions && ${"'{\"" + place.base_position + "\"}'"}`
+    const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
+      keys,
+      place
+    )} WHERE ${place.base_position} = ANY("positions") AND
+    disabled = false`
+
     return this.namedQuery("insert_place", sql)
   }
 }

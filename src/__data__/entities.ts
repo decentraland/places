@@ -416,6 +416,7 @@ export const placeGenesisPlaza: AggregatePlaceAttributes = {
   user_favorite: false,
   user_like: false,
   user_dislike: false,
+  categories: [],
 }
 
 export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {

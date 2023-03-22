@@ -25,6 +25,7 @@ export type PlaceAttributes = {
   visible: boolean
   created_at: Date
   updated_at: Date
+  categories: string[]
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {

@@ -19,8 +19,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
   "description",
   "image",
-  "highlighted_image",
-  "featured_image",
   "owner",
   "tags",
   "positions",
@@ -28,17 +26,12 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "contact_name",
   "contact_email",
   "content_rating",
-  "likes",
-  "dislikes",
-  "favorites",
-  "like_rate",
-  "highlighted",
-  "featured",
   "disabled",
   "disabled_at",
   "visible",
   "created_at",
   "updated_at",
+  "categories",
 ]
 
 export async function processContentDeployment(
@@ -51,7 +44,7 @@ export async function processContentDeployment(
   const isNew = isNewPlace(contentEntityScene, places)
   if (isNew) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
-    PlaceModel.insertPlace(newPlace, placesAttributes)
+    await PlaceModel.insertPlace(newPlace, placesAttributes)
     notifyNewPlace(newPlace)
   }
 
@@ -61,19 +54,20 @@ export async function processContentDeployment(
 
   if (isNew && places.length) {
     const placesToDisable = places.map((place) => place.id)
-    PlaceModel.disablePlaces(placesToDisable)
+    await PlaceModel.disablePlaces(placesToDisable)
     notifyDisablePlaces(places)
     return { isNewPlace: true, placesDisable: placesToDisable.length }
   }
 
   const placesToDisable: PlaceAttributes[] = []
-  places.map((place) => {
+
+  places.map(async (place) => {
     if (isSamePlace(contentEntityScene, place)) {
       const updatePlace = createPlaceFromContentEntityScene(
         contentEntityScene,
-        place
+        createPlaceImmutable(place)
       )
-      PlaceModel.updatePlace(updatePlace, placesAttributes)
+      await PlaceModel.updatePlace(updatePlace, placesAttributes)
       notifyUpdatePlace(updatePlace)
     } else {
       placesToDisable.push(place)
@@ -82,7 +76,7 @@ export async function processContentDeployment(
 
   if (placesToDisable.length) {
     const placesIdToDisable = places.map((place) => place.id)
-    PlaceModel.disablePlaces(placesIdToDisable)
+    await PlaceModel.disablePlaces(placesIdToDisable)
     notifyDisablePlaces(placesToDisable)
   }
 
@@ -133,6 +127,7 @@ export function createPlaceFromContentEntityScene(
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     created_at: now,
     updated_at: now,
+    categories: [],
     ...data,
   }
 
@@ -141,4 +136,22 @@ export function createPlaceFromContentEntityScene(
   }
 
   return placeParsed
+}
+
+export function createPlaceImmutable(
+  place: Partial<Omit<PlaceAttributes, "id">>
+) {
+  return {
+    highlighted: place.highlighted,
+    highlighted_image: place.highlighted_image,
+    featured: place.featured,
+    featured_image: place.featured_image,
+    likes: place.likes,
+    dislikes: place.dislikes,
+    favorites: place.favorites,
+    like_rate: place.like_rate,
+    disabled: place.disabled,
+    disabled_at: place.disabled_at,
+    created_at: place.created_at,
+  }
 }
