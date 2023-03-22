@@ -8,6 +8,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import areSamePositions from "../../utils/array/areSamePositions"
+import areShrinkPositions from "../../utils/array/areShrinkPositions"
 import { PlaceAttributes } from "../Place/types"
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
@@ -72,6 +73,14 @@ export function isNewPlace(
     return false
   }
 
+  const shrinkPosition = places.find((place) =>
+    areShrinkPositions(contentDeployment.pointers, place.positions)
+  )
+
+  if (shrinkPosition) {
+    return false
+  }
+
   return true
 }
 
@@ -81,6 +90,7 @@ export function isSamePlace(
 ) {
   return (
     place.base_position === contentDeployment.metadata.scene!.base ||
-    areSamePositions(contentDeployment.pointers, place.positions)
+    areSamePositions(contentDeployment.pointers, place.positions) ||
+    areShrinkPositions(contentDeployment.pointers, place.positions)
   )
 }
