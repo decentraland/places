@@ -301,9 +301,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
-    )} WHERE ${place.base_position} = ANY("positions") AND
-    disabled = false`
+    )} WHERE disabled = false
+    ${conditional(
+      !place.world,
+      SQL` AND ${place.base_position} = ANY("positions")`
+    )}
+    ${conditional(!!place.world, SQL` AND ${place.world_name} = "world_name"`)}`
 
-    return this.namedQuery("insert_place", sql)
+    return this.namedQuery("update_place", sql)
   }
 }

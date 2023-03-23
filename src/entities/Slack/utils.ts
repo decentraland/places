@@ -21,7 +21,7 @@ export async function notifyNewPlace(place: PlaceAttributes) {
         text: {
           type: "mrkdwn",
           text: `:tada: New place added: <${placeUrl(place)}|${
-            place.base_position
+            place.world ? place.world_name : place.base_position
           }>`,
         },
       },
@@ -50,7 +50,7 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         text: {
           type: "mrkdwn",
           text: `:white_check_mark: Place updated: <${placeUrl(place)}|${
-            place.base_position
+            place.world ? place.world_name : place.base_position
           }>`,
         },
       },
@@ -84,8 +84,10 @@ export async function notifyDisablePlaces(places: PlaceAttributes[]) {
           type: "mrkdwn",
           text: `:x: ${places.length} ${
             places.length > 1 ? "places" : "place"
-          } disabled in base positions: ${places
-            .map((place) => place.base_position)
+          } disabled in: ${places
+            .map((place) =>
+              place.world ? place.world_name : place.base_position
+            )
             .join(" - ")}`,
         },
       },
@@ -94,7 +96,12 @@ export async function notifyDisablePlaces(places: PlaceAttributes[]) {
         text: {
           type: "plain_text",
           text: places
-            .map((place) => `${place.title} (${place.base_position})`)
+            .map(
+              (place) =>
+                `${place.title} (${
+                  place.world ? place.world_name : place.base_position
+                })`
+            )
             .join("\n\n"),
         },
       },

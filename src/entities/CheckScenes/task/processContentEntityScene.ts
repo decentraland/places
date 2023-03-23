@@ -10,7 +10,7 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
-import { isNewPlace, isSamePlace } from "../utils"
+import { isNewPlace, isSamePlace, isSameWorld } from "../utils"
 
 const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
@@ -32,6 +32,8 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "categories",
+  "world",
+  "world_name",
 ]
 
 export async function processContentDeployment(
@@ -48,15 +50,35 @@ export async function processContentDeployment(
     notifyNewPlace(newPlace)
   }
 
-  if (isNew && places.length === 0) {
+  if (
+    isNew &&
+    (places.length === 0 || contentEntityScene.metadata.worldConfiguration)
+  ) {
     return { isNewPlace: true, placesDisable: 0 }
   }
 
-  if (isNew && places.length) {
+  if (
+    isNew &&
+    places.length &&
+    !contentEntityScene.metadata.worldConfiguration
+  ) {
     const placesToDisable = places.map((place) => place.id)
     await PlaceModel.disablePlaces(placesToDisable)
     notifyDisablePlaces(places)
     return { isNewPlace: true, placesDisable: placesToDisable.length }
+  }
+
+  if (contentEntityScene.metadata.worldConfiguration) {
+    const placeWorld = places.find((place) =>
+      isSameWorld(contentEntityScene, place)
+    )
+    const updatePlace = createPlaceFromContentEntityScene(
+      contentEntityScene,
+      createPlaceImmutable(placeWorld!)
+    )
+    await PlaceModel.updatePlace(updatePlace, placesAttributes)
+    notifyUpdatePlace(updatePlace)
+    return { isNewPlace: false, placesDisable: 0 }
   }
 
   const placesToDisable: PlaceAttributes[] = []
@@ -128,6 +150,10 @@ export function createPlaceFromContentEntityScene(
     created_at: now,
     updated_at: now,
     categories: [],
+    world: !!contentEntityScene?.metadata?.worldConfiguration,
+    world_name: contentEntityScene?.metadata?.worldConfiguration
+      ? contentEntityScene?.metadata?.worldConfiguration.name
+      : null,
     ...data,
   }
 

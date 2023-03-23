@@ -26,6 +26,8 @@ export type PlaceAttributes = {
   created_at: Date
   updated_at: Date
   categories: string[]
+  world: boolean
+  world_name: string | null
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {

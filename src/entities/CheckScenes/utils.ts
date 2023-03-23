@@ -51,14 +51,19 @@ export function isRoad(deployment: Pick<ContentEntityScene, "pointers">) {
 }
 
 export function isNewPlace(
-  contentDeployment: ContentEntityScene,
+  contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[]
 ) {
   if (places.length === 0) {
     return true
   }
+
+  if (contentEntityScene.metadata.worldConfiguration) {
+    return !places.find((place) => isSameWorld(contentEntityScene, place))
+  }
+
   const sameBasePosition = places.find(
-    (place) => place.base_position === contentDeployment.metadata.scene!.base
+    (place) => place.base_position === contentEntityScene.metadata.scene!.base
   )
 
   if (sameBasePosition) {
@@ -66,7 +71,7 @@ export function isNewPlace(
   }
 
   const samePosition = places.find((place) =>
-    areSamePositions(contentDeployment.pointers, place.positions)
+    areSamePositions(contentEntityScene.pointers, place.positions)
   )
 
   if (samePosition) {
@@ -74,7 +79,7 @@ export function isNewPlace(
   }
 
   const shrinkPosition = places.find((place) =>
-    areShrinkPositions(contentDeployment.pointers, place.positions)
+    areShrinkPositions(contentEntityScene.pointers, place.positions)
   )
 
   if (shrinkPosition) {
@@ -85,12 +90,25 @@ export function isNewPlace(
 }
 
 export function isSamePlace(
-  contentDeployment: ContentEntityScene,
+  contentEntityScene: ContentEntityScene,
   place: PlaceAttributes
 ) {
   return (
-    place.base_position === contentDeployment.metadata.scene!.base ||
-    areSamePositions(contentDeployment.pointers, place.positions) ||
-    areShrinkPositions(contentDeployment.pointers, place.positions)
+    (contentEntityScene.metadata.worldConfiguration &&
+      isSameWorld(contentEntityScene, place)) ||
+    (!contentEntityScene.metadata.worldConfiguration &&
+      (place.base_position === contentEntityScene.metadata.scene!.base ||
+        areSamePositions(contentEntityScene.pointers, place.positions) ||
+        areShrinkPositions(contentEntityScene.pointers, place.positions)))
+  )
+}
+
+export function isSameWorld(
+  contentEntityScene: ContentEntityScene,
+  place: PlaceAttributes
+) {
+  return (
+    place.world &&
+    place.world_name === contentEntityScene.metadata.worldConfiguration?.name
   )
 }
