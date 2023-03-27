@@ -1,5 +1,9 @@
 {
-  "create": [],
+  "create": [
+    {
+      "base_position": "-177,6"
+    }
+  ],
   "update": [],
   "delete": []
 }
