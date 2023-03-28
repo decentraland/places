@@ -45,6 +45,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("find_enabled_by_positions", sql)
   }
 
+  static async findEnabledWorldName(
+    world_name: string
+  ): Promise<PlaceAttributes[]> {
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "disabled" = false
+      AND "world_name" = ${world_name}
+    `
+
+    return this.namedQuery("find_enabled_by_world_name", sql)
+  }
+
   static async findByIdWithAggregates(
     placeId: string,
     options: {

@@ -12,12 +12,7 @@ export interface TaskQueueMessage {
 export class SQSConsumer {
   constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
 
-  async consume(
-    taskRunner: (job: DeploymentToSqs) => Promise<{
-      isNewPlace: boolean
-      placesDisable: number
-    }>
-  ) {
+  async consume(taskRunner: (job: DeploymentToSqs) => Promise<any>) {
     try {
       const response = await Promise.race([
         this.sqs.receiveMessage(this.params).promise(),
@@ -42,12 +37,12 @@ export class SQSConsumer {
           try {
             loggerExtended.log(`Processing job`)
 
-            const result = await taskRunner(JSON.parse(body))
+            const result = await taskRunner(body)
 
             loggerExtended.log(`Processed job`)
             return { result, message }
           } catch (err: any) {
-            notifyError([err.toString(), `\`\`\`${body}\`\`\``])
+            notifyError([err.toString(), `\`\`\`${JSON.stringify(body)}\`\`\``])
             loggerExtended.error(err.toString())
             return { result: undefined, message }
           } finally {

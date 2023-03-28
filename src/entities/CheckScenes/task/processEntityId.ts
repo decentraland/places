@@ -3,7 +3,6 @@ import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { isRoad } from "../utils"
-import { processContentDeployment } from "./processContentEntityScene"
 
 export async function processEntityId(job: DeploymentToSqs) {
   if (!job.contentServerUrls) {
@@ -34,5 +33,5 @@ export async function processEntityId(job: DeploymentToSqs) {
     )
   }
 
-  return processContentDeployment(contentDeployment)
+  return contentDeployment
 }

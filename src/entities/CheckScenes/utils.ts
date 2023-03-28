@@ -58,10 +58,6 @@ export function isNewPlace(
     return true
   }
 
-  if (contentEntityScene.metadata.worldConfiguration) {
-    return !places.find((place) => isSameWorld(contentEntityScene, place))
-  }
-
   const sameBasePosition = places.find(
     (place) => place.base_position === contentEntityScene.metadata.scene!.base
   )
@@ -94,12 +90,8 @@ export function isSamePlace(
   place: PlaceAttributes
 ) {
   return (
-    (contentEntityScene.metadata.worldConfiguration &&
-      isSameWorld(contentEntityScene, place)) ||
-    (!contentEntityScene.metadata.worldConfiguration &&
-      (place.base_position === contentEntityScene.metadata.scene!.base ||
-        areSamePositions(contentEntityScene.pointers, place.positions) ||
-        areShrinkPositions(contentEntityScene.pointers, place.positions)))
+    place.base_position === contentEntityScene.metadata.scene!.base ||
+    areSamePositions(contentEntityScene.pointers, place.positions)
   )
 }
 
