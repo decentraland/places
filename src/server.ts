@@ -23,7 +23,6 @@ import env from "decentraland-gatsby/dist/utils/env"
 import express from "express"
 
 import categoryRoute from "./entities/Category/routes"
-import checkScenesRoute from "./entities/CheckScenes/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
 import placeRoute from "./entities/Place/routes"
 import socialRoutes from "./entities/Social/routes"
@@ -56,7 +55,7 @@ app.use("/api", [
   userFavoriteRoute,
   userLikesRoute,
   placeRoute,
-  checkScenesRoute,
+
   status(),
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)
