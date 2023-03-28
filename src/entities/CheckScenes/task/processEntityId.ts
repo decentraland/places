@@ -28,7 +28,7 @@ export async function processEntityId(job: DeploymentToSqs) {
     isRoad(contentDeployment)
   ) {
     throw new Error(
-      "The scene is a road. The following places can proccede: " +
+      "The scene is a road. The following places can't proccede: " +
         contentDeployment.metadata.scene!.base
     )
   }
