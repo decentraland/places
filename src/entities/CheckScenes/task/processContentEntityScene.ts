@@ -20,10 +20,10 @@ export type ProcessEntitySceneResult =
       disabled: PlaceAttributes[]
     }
 
-export async function processContentEntityScene(
+export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[]
-): Promise<ProcessEntitySceneResult> {
+): ProcessEntitySceneResult {
   const isNew = isNewPlace(contentEntityScene, places)
 
   if (isNew) {
@@ -33,7 +33,10 @@ export async function processContentEntityScene(
     }
   } else {
     return {
-      update: places.find((place) => isSamePlace(contentEntityScene, place))!,
+      update: createPlaceFromContentEntityScene(
+        contentEntityScene,
+        places.find((place) => isSamePlace(contentEntityScene, place))!
+      ),
       disabled: places.filter(
         (place) => !isSamePlace(contentEntityScene, place)
       ),

@@ -6,7 +6,7 @@ import { v4 as uuid } from "uuid"
 import {
   entitySceneGenesisPlaza,
   hotSceneGenesisPlaza,
-  placeGenesisPlaza,
+  placeGenesisPlazaWithAggregatedAttributes,
   sceneStatsGenesisPlaza,
 } from "../../../__data__/entities"
 import DataTeam from "../../../api/DataTeam"
@@ -41,7 +41,9 @@ test("should return 404 when UUID do not exist in the model", async () => {
   expect(findOne.mock.calls.length).toBe(1)
 })
 test("should return place if the module found it", async () => {
-  findOne.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  findOne.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
 
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -62,7 +64,7 @@ test("should return place if the module found it", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     data: {
-      ...placeGenesisPlaza,
+      ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
       user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
       last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
@@ -74,7 +76,9 @@ test("should return place if the module found it", async () => {
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 test("should return place with Realms detail", async () => {
-  findOne.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  findOne.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
 
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -96,7 +100,7 @@ test("should return place with Realms detail", async () => {
   expect(placeResponse.body).toEqual({
     ok: true,
     data: {
-      ...placeGenesisPlaza,
+      ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
       user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
       last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),

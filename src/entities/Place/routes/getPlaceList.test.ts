@@ -4,7 +4,7 @@ import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
   entitySceneGenesisPlaza,
   hotSceneGenesisPlaza,
-  placeGenesisPlaza,
+  placeGenesisPlazaWithAggregatedAttributes,
   sceneStatsGenesisPlaza,
 } from "../../../__data__/entities"
 import DataTeam from "../../../api/DataTeam"
@@ -21,7 +21,9 @@ afterEach(() => {
 })
 
 test("should return a list of places with no query", async () => {
-  find.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  find.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -43,7 +45,7 @@ test("should return a list of places with no query", async () => {
     total: 1,
     data: [
       {
-        ...placeGenesisPlaza,
+        ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
         last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
@@ -57,7 +59,9 @@ test("should return a list of places with no query", async () => {
 })
 
 test("should return a list of places with query", async () => {
-  find.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  find.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -82,7 +86,7 @@ test("should return a list of places with query", async () => {
     total: 1,
     data: [
       {
-        ...placeGenesisPlaza,
+        ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
         last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
@@ -96,7 +100,9 @@ test("should return a list of places with query", async () => {
 })
 
 test("should return a list of places with order by most_active", async () => {
-  find.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  find.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
   )
@@ -118,7 +124,7 @@ test("should return a list of places with order by most_active", async () => {
     total: 1,
     data: [
       {
-        ...placeGenesisPlaza,
+        ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
         last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
@@ -132,7 +138,9 @@ test("should return a list of places with order by most_active", async () => {
 })
 
 test("should return a list of places with Realm details", async () => {
-  find.mockResolvedValueOnce(Promise.resolve([placeGenesisPlaza]))
+  find.mockResolvedValueOnce(
+    Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+  )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -154,7 +162,7 @@ test("should return a list of places with Realm details", async () => {
     total: 1,
     data: [
       {
-        ...placeGenesisPlaza,
+        ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
         last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
