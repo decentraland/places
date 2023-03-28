@@ -30,17 +30,6 @@ test("should accept a DeploymentToSqs and throw an error when contentDeployment 
   expect(contentEntityScene.mock.calls.length).toBe(1)
 })
 
-test("should accept a DeploymentToSqs and return a ContentEntityScene", async () => {
-  contentEntityScene.mockResolvedValueOnce(
-    Promise.resolve(contentEntitySceneGenesisPlaza)
-  )
-
-  const contentDeployment = await processEntityId(sqsMessage)
-  expect(contentDeployment).toEqual(contentEntitySceneGenesisPlaza)
-
-  expect(contentEntityScene.mock.calls.length).toBe(1)
-})
-
 test("should accept a DeploymentToSqs and throw an error when no contentDeployment found", async () => {
   contentEntityScene.mockResolvedValueOnce(
     Promise.resolve(contentEntitySceneRoad)
@@ -49,6 +38,17 @@ test("should accept a DeploymentToSqs and throw an error when no contentDeployme
   await expect(async () =>
     processEntityId(sqsMessageWithWrongEntityId)
   ).rejects.toThrowError()
+
+  expect(contentEntityScene.mock.calls.length).toBe(1)
+})
+
+test("should accept a DeploymentToSqs and return a ContentEntityScene", async () => {
+  contentEntityScene.mockResolvedValueOnce(
+    Promise.resolve(contentEntitySceneGenesisPlaza)
+  )
+
+  const contentDeployment = await processEntityId(sqsMessage)
+  expect(contentDeployment).toEqual(contentEntitySceneGenesisPlaza)
 
   expect(contentEntityScene.mock.calls.length).toBe(1)
 })
