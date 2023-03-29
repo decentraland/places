@@ -71,30 +71,80 @@ export function createPlaceFromEntityScene(
   return placeParsed
 }
 
-/** @deprecated */
+async function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
+  if (places.length > 0) {
+    const invalidWorldData = places.filter(
+      (place) => place.world_name && place.base_position
+    )
+    if (invalidWorldData.length > 0) {
+      throw new Error(
+        "There is an error with places provided. Migration can't proccede. The following world can't proccede because a base_position was provided: " +
+          JSON.stringify(
+            invalidWorldData.map((place) => place.world_name),
+            null,
+            2
+          )
+      )
+    }
+  }
+}
+
+async function updatePlacesAndWorlds(
+  places: Partial<PlaceAttributes>[],
+  attributes: Array<keyof PlaceAttributes>,
+  pgm: MigrationBuilder
+) {
+  if (places.length > 0) {
+    places.forEach((place) => {
+      const keys = attributes
+      const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
+        .map((k, i) => `${k}=$${i + 1}`)
+        .join(",")}  WHERE 
+        ${place.base_position && `positions && '{" ${place.base_position} "}'`}
+        ${place.world_name && `world_name == '${place.world_name}'`}
+      `
+
+      pgm.db.query(
+        queryString,
+        keys.map((key) => place[key])
+      )
+    })
+  }
+}
+
+export async function upJustUpdateAllowed(
+  defaultPlaces: PlacesStatic,
+  attributes: Array<keyof PlaceAttributes>,
+  pgm: MigrationBuilder
+): Promise<void> {
+  await validatePlacesWorlds(defaultPlaces.update)
+
+  await updatePlacesAndWorlds(defaultPlaces.update, attributes, pgm)
+}
+
+export function createPlaceNewMigrationUpdate(
+  defaultPlaces: PlacesStatic,
+  attributes: Array<keyof PlaceAttributes>
+) {
+  return {
+    up: async (pgm: MigrationBuilder) =>
+      upJustUpdateAllowed(defaultPlaces, attributes, pgm),
+    down: async () => {},
+  }
+}
+
+/**@deprecated */
 async function fetchEntityScenesFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
   const batch = places.map((place) => place.base_position!)
-  return Catalyst.get().getEntityScenes(batch)
+  return Catalyst.getInstance().getEntityScenes(batch)
 }
 
-/** @deprecated */
-async function createPlaceFromDefaultPlaces(
+/**@deprecated */
+async function validatePlacesWithEntityScenes(
   places: Partial<PlaceAttributes>[]
 ) {
-  const entityScenes = await fetchEntityScenesFromDefaultPlaces(places)
-  return entityScenes.map((entityScene) =>
-    createPlaceFromEntityScene(
-      entityScene,
-      places.find((place) =>
-        entityScene.pointers.includes(place.base_position!)
-      )
-    )
-  )
-}
-
-async function validatePlaces(places: Partial<PlaceAttributes>[]) {
   if (places.length > 0) {
     const entityScenesCreate = await fetchEntityScenesFromDefaultPlaces(places)
 
@@ -114,11 +164,27 @@ async function validatePlaces(places: Partial<PlaceAttributes>[]) {
   }
 }
 
+/** @deprecated */
+async function createPlaceFromDefaultPlaces(
+  places: Partial<PlaceAttributes>[]
+) {
+  const entityScenes = await fetchEntityScenesFromDefaultPlaces(places)
+  return entityScenes.map((entityScene) =>
+    createPlaceFromEntityScene(
+      entityScene,
+      places.find((place) =>
+        entityScene.pointers.includes(place.base_position!)
+      )
+    )
+  )
+}
+
+/**@deprecated */
 export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
   await Promise.all([
-    validatePlaces(defaultPlaces.create),
-    validatePlaces(defaultPlaces.update),
-    validatePlaces(
+    validatePlacesWithEntityScenes(defaultPlaces.create),
+    validatePlacesWithEntityScenes(defaultPlaces.update),
+    validatePlacesWithEntityScenes(
       defaultPlaces.delete.map((position) => ({
         base_position: position,
       }))
@@ -186,6 +252,7 @@ async function deletePlacesWithEntityScenes(
   }
 }
 
+/** @deprecated */
 export async function up(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>,
@@ -198,6 +265,7 @@ export async function up(
   await deletePlacesWithEntityScenes(defaultPlaces.delete, pgm)
 }
 
+/** @deprecated */
 export async function down(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>,
