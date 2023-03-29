@@ -1,10 +1,10 @@
-
 {
   "create": [],
   "update": [
-  {
-    "base_position": "129,49",
-    "featured": false
-  }],
+    {
+      "base_position": "129,49",
+      "featured": false
+    }
+  ],
   "delete": []
 }
