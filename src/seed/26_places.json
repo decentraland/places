@@ -1,0 +1,14 @@
+
+{
+  "create": [],
+  "update": [
+    {
+      "base_position": "144,-7",
+      "featured": false
+    },
+    {
+      "base_position": "129,49",
+      "featured": true
+    }],
+  "delete": []
+}
