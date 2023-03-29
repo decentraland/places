@@ -6,13 +6,14 @@ import {
   ContentDeploymentSortingOrder,
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import areSamePositions from "../../utils/array/areSamePositions"
 import areShrinkPositions from "../../utils/array/areShrinkPositions"
 import { PlaceAttributes } from "../Place/types"
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
-import { DeploymentTrackAttributes } from "./types"
+import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 /** @deprecated */
 export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
@@ -103,4 +104,12 @@ export function isSameWorld(
     place.world &&
     place.world_name === contentEntityScene.metadata.worldConfiguration?.name
   )
+}
+
+export async function getWorldAbout(
+  url: string,
+  worldName: string
+): Promise<WorldAbout> {
+  const worldContentServer = await ContentServer.getInstanceFrom(url)
+  return worldContentServer.fetch(`/world/${worldName}/about`)
 }

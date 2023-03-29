@@ -10,3 +10,29 @@ export type DeploymentTrackAttributes = {
   created_at: Date
   updated_at: Date
 }
+
+export type WorldAbout = {
+  healthy: boolean
+  acceptingUsers: boolean
+  configurations: {
+    networkId: number
+    globalScenesUrn: string[]
+    scenesUrn: string[]
+    minimap: { enabled: false }
+    skybox: {}
+    realmName: string
+  }
+  content: {
+    healthy: boolean
+    publicUrl: string
+  }
+  lambdas: {
+    healthy: boolean
+    publicUrl: string
+  }
+  comms: {
+    healthy: boolean
+    protocol: string
+    fixedAdapter: string
+  }
+}

@@ -1,5 +1,4 @@
 import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
-import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
@@ -8,6 +7,7 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
+import { getWorldAbout } from "../utils"
 import {
   ProcessEntitySceneResult,
   createPlaceFromContentEntityScene,
@@ -53,37 +53,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         disabled: [],
       }
     } else {
-      type WorldAbout = {
-        healthy: boolean
-        acceptingUsers: boolean
-        configurations: {
-          networkId: number
-          globalScenesUrn: string[]
-          scenesUrn: string[]
-          minimap: { enabled: false }
-          skybox: {}
-          realmName: string
-        }
-        content: {
-          healthy: boolean
-          publicUrl: string
-        }
-        lambdas: {
-          healthy: boolean
-          publicUrl: string
-        }
-        comms: {
-          healthy: boolean
-          protocol: string
-          fixedAdapter: string
-        }
-      }
-
-      const worldContentServer = await ContentServer.getInstanceFrom(
-        job.contentServerUrls![0]
-      )
-      const worldAbout: WorldAbout = await worldContentServer.fetch(
-        `/world/${contentEntityScene.metadata.worldConfiguration.name}/about`
+      const worldAbout = await getWorldAbout(
+        job.contentServerUrls![0],
+        contentEntityScene.metadata.worldConfiguration.name
       )
 
       if (
