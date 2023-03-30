@@ -17,6 +17,10 @@ export type PlacesStatic = {
   delete: string[]
 }
 
+export type PlacesStaticUpdate = {
+  update: Array<Partial<PlaceAttributes>>
+}
+
 const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
 /** @deprecated */
@@ -71,7 +75,7 @@ export function createPlaceFromEntityScene(
   return placeParsed
 }
 
-async function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
+export async function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
   if (places.length > 0) {
     const invalidWorldData = places.filter(
       (place) => place.world_name && place.base_position
@@ -96,14 +100,17 @@ async function updatePlacesAndWorlds(
 ) {
   if (places.length > 0) {
     places.forEach((place) => {
-      const keys = attributes
+      const keys = attributes.filter((attr) => attr in place)
       const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
         .map((k, i) => `${k}=$${i + 1}`)
         .join(",")}  WHERE 
-        ${place.base_position && `positions && '{" ${place.base_position} "}'`}
-        ${place.world_name && `world_name == '${place.world_name}'`}
+        ${
+          place.base_position
+            ? `'${place.base_position}' = ANY("positions")`
+            : ""
+        }
+        ${place.world_name ? `world_name = '${place.world_name}'` : ""}
       `
-
       pgm.db.query(
         queryString,
         keys.map((key) => place[key])
@@ -113,7 +120,7 @@ async function updatePlacesAndWorlds(
 }
 
 export async function upJustUpdateAllowed(
-  defaultPlaces: PlacesStatic,
+  defaultPlaces: PlacesStaticUpdate,
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ): Promise<void> {
@@ -123,7 +130,7 @@ export async function upJustUpdateAllowed(
 }
 
 export function createPlaceNewMigrationUpdate(
-  defaultPlaces: PlacesStatic,
+  defaultPlaces: PlacesStaticUpdate,
   attributes: Array<keyof PlaceAttributes>
 ) {
   return {

@@ -23,15 +23,22 @@ Promise.resolve().then(async () => {
 
   const newPlacesFile = `${(placesJsonFiles.length + 1)
     .toString()
-    .padStart(2, "0")}_places.json`
+    .padStart(2, "0")}_places_new.json`
 
   const newPlacesTarget = resolve(__dirname, `../src/seed/${newPlacesFile}`)
   console.log(`creating ${newPlacesFile}`)
   writeFileSync(newPlacesTarget, placesStringWithoutComments)
 
-  placesJsonFiles.push(newPlacesFile)
+  const placesNewJsonFiles = filesInFolder.filter((file) =>
+    file.endsWith("places_new.json")
+  )
 
-  const testFromExample = resolve(__dirname, "../src/seed/index.test.example")
+  placesNewJsonFiles.push(newPlacesFile)
+
+  const testFromExample = resolve(
+    __dirname,
+    "../src/seed/indexNew.test.example"
+  )
   const testExample = readFileSync(testFromExample, {
     encoding: "utf8",
     flag: "r",
@@ -39,11 +46,13 @@ Promise.resolve().then(async () => {
 
   const testString = testExample.replace(
     "FILENAME",
-    `"${placesJsonFiles.join('", "')}"`
+    `"${placesNewJsonFiles.join('", "')}"`
   )
 
-  const testTarget = resolve(__dirname, `../src/seed/index.test.ts`)
-  console.log(`updating test file with filenames ${placesJsonFiles.join(", ")}`)
+  const testTarget = resolve(__dirname, `../src/seed/indexNew.test.ts`)
+  console.log(
+    `updating test file with filenames ${placesNewJsonFiles.join(", ")}`
+  )
   writeFileSync(testTarget, testString)
 
   const migrationFromExample = resolve(
