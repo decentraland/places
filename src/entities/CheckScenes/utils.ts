@@ -9,7 +9,6 @@ import {
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import areSamePositions from "../../utils/array/areSamePositions"
-import areShrinkPositions from "../../utils/array/areShrinkPositions"
 import { PlaceAttributes } from "../Place/types"
 import { getThumbnailFromDeployment } from "../Place/utils"
 import roads from "./data/roads.json"
@@ -51,12 +50,12 @@ export function isRoad(deployment: Pick<ContentEntityScene, "pointers">) {
   })
 }
 
-export function isNewPlace(
+export function findSamePlace(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[]
-) {
+): PlaceAttributes | null {
   if (places.length === 0) {
-    return true
+    return null
   }
 
   const sameBasePosition = places.find(
@@ -64,7 +63,7 @@ export function isNewPlace(
   )
 
   if (sameBasePosition) {
-    return false
+    return sameBasePosition
   }
 
   const samePosition = places.find((place) =>
@@ -72,28 +71,10 @@ export function isNewPlace(
   )
 
   if (samePosition) {
-    return false
+    return samePosition
   }
 
-  const shrinkPosition = places.find((place) =>
-    areShrinkPositions(contentEntityScene.pointers, place.positions)
-  )
-
-  if (shrinkPosition) {
-    return false
-  }
-
-  return true
-}
-
-export function isSamePlace(
-  contentEntityScene: ContentEntityScene,
-  place: PlaceAttributes
-) {
-  return (
-    place.base_position === contentEntityScene.metadata.scene!.base ||
-    areSamePositions(contentEntityScene.pointers, place.positions)
-  )
+  return null
 }
 
 export function isSameWorld(

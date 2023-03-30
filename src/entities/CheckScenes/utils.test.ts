@@ -3,7 +3,7 @@ import {
   contentEntitySceneRoad,
   placeGenesisPlazaWithAggregatedAttributes,
 } from "../../__data__/entities"
-import { isNewPlace, isRoad, isSamePlace } from "./utils"
+import { findSamePlace, isRoad } from "./utils"
 
 describe("isRoads", () => {
   test("should return true, this is a road", async () => {
@@ -14,24 +14,13 @@ describe("isRoads", () => {
 describe("isNewPlace", () => {
   test("should return false, is not new place", async () => {
     expect(
-      isNewPlace(contentEntitySceneGenesisPlaza, [
+      findSamePlace(contentEntitySceneGenesisPlaza, [
         placeGenesisPlazaWithAggregatedAttributes,
       ])
-    ).toBeFalsy()
+    ).toBe(placeGenesisPlazaWithAggregatedAttributes)
   })
 
   test("should return true, is new place", async () => {
-    expect(isNewPlace(contentEntitySceneGenesisPlaza, [])).toBeTruthy()
-  })
-})
-
-describe("isSamePlace", () => {
-  test("should return true, is the same place", async () => {
-    expect(
-      isSamePlace(
-        contentEntitySceneGenesisPlaza,
-        placeGenesisPlazaWithAggregatedAttributes
-      )
-    ).toBeTruthy()
+    expect(findSamePlace(contentEntitySceneGenesisPlaza, [])).toBeNull()
   })
 })
