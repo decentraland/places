@@ -17,7 +17,7 @@ export const updateUserLikeBodySchema = schema({
     like: {
       type: "boolean",
       description: "True if the place is selected as like",
-      nullable: true,
+      nullable: true as any,
     },
   },
 })

@@ -1,9 +1,17 @@
-import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
+import { AuthChain } from "@dcl/schemas/dist/misc/auth-chain"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import delay from "decentraland-gatsby/dist/utils/promise/delay"
 
 import { notifyError } from "../../Slack/utils"
+
+export declare type DeploymentToSqs = {
+  entity: {
+    entityId: string
+    authChain: AuthChain
+  }
+  contentServerUrls?: string[]
+}
 
 export interface TaskQueueMessage {
   id: string

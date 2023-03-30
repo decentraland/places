@@ -1,11 +1,11 @@
 import { AuthLinkType } from "@dcl/schemas/dist/misc/auth-chain"
-import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import {
   ContentEntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { DeploymentToSqs } from "../entities/CheckScenes/task/consumer"
 import {
   AggregatePlaceAttributes,
   PlaceAttributes,
@@ -10371,6 +10371,7 @@ export const sqsMessage: DeploymentToSqs = {
     entityId: "bafkreidw4inuymukjj4otmld76a5qo4sowc6lbqqk6h4dtci4yxv5qkjie",
     authChain: [
       {
+        signature: "",
         type: AuthLinkType.SIGNER,
         payload: "payload",
       },
@@ -10384,6 +10385,7 @@ export const sqsMessageRoad: DeploymentToSqs = {
     entityId: "QmY3s3UCiwyhmLdRv7H1592DuWeNhj578J4VHrUrfywD92",
     authChain: [
       {
+        signature: "",
         type: AuthLinkType.SIGNER,
         payload: "payload",
       },
@@ -10397,6 +10399,7 @@ export const sqsMessageWithWrongEntityId: DeploymentToSqs = {
     entityId: "XXX",
     authChain: [
       {
+        signature: "",
         type: AuthLinkType.SIGNER,
         payload: "payload",
       },

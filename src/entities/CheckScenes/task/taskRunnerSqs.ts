@@ -1,5 +1,3 @@
-import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
-
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import {
@@ -8,6 +6,7 @@ import {
   notifyUpdatePlace,
 } from "../../Slack/utils"
 import { getWorldAbout } from "../utils"
+import { DeploymentToSqs } from "./consumer"
 import {
   ProcessEntitySceneResult,
   createPlaceFromContentEntityScene,

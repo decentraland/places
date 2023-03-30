@@ -1,8 +1,8 @@
-import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { isRoad } from "../utils"
+import { DeploymentToSqs } from "./consumer"
 
 export async function processEntityId(job: DeploymentToSqs) {
   if (!job.contentServerUrls) {
