@@ -145,15 +145,51 @@ async function insertPlaces(
   }
 }
 
+async function findAndCombinePlaces(
+  placesToUpdate: Partial<PlaceAttributes>[],
+  pgm: MigrationBuilder
+): Promise<Partial<PlaceAttributes>[]> {
+  const basePositionsToUpdate: string[] = placesToUpdate.map(
+    (place) => place.base_position!
+  )
+
+  const query = `
+    SELECT *
+    FROM ${PlaceModel.tableName}
+    WHERE positions && '{${basePositionsToUpdate
+      .map((basePos) => `"${basePos}"`)
+      .join(",")}}'
+  `
+
+  const { rows: placesInDB } = await pgm.db.query(query)
+
+  const combinedPlaces: Partial<PlaceAttributes>[] = placesToUpdate.map(
+    (placeToUpdate) => {
+      const correspondingPlaceInDB = placesInDB.find(
+        (placeInDB) => placeInDB.base_position === placeToUpdate.base_position
+      )
+      return {
+        ...correspondingPlaceInDB,
+        ...placeToUpdate,
+      }
+    }
+  )
+
+  return combinedPlaces
+}
+
 async function updatePlaces(
   places: Partial<PlaceAttributes>[],
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ) {
   if (places.length > 0) {
-    const updatePlaces = await createPlaceFromDefaultPlaces(places)
+    const updatePlaces = await createPlaceFromDefaultPlaces(
+      await findAndCombinePlaces(places, pgm)
+    )
+
     updatePlaces.forEach((place) => {
-      const keys = attributes
+      const keys = attributes.filter((attr) => attr !== "id")
       const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
         .map((k, i) => `${k}=$${i + 1}`)
         .join(",")}  WHERE positions && ${
