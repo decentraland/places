@@ -75,16 +75,19 @@ export function createPlaceFromEntityScene(
   return placeParsed
 }
 
-export async function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
+export function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
   if (places.length > 0) {
     const invalidWorldData = places.filter(
       (place) => place.world_name && place.base_position
     )
     if (invalidWorldData.length > 0) {
       throw new Error(
-        "There is an error with places provided. Migration can't proccede. The following world can't proccede because a base_position was provided: " +
+        "There is an error with places provided. Migration can't proccede. The following scene can't proccede because a base_position and world_name was provided: " +
           JSON.stringify(
-            invalidWorldData.map((place) => place.world_name),
+            invalidWorldData.map((place) => [
+              place.base_position,
+              place.world_name,
+            ]),
             null,
             2
           )
@@ -124,7 +127,7 @@ export async function upJustUpdateAllowed(
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ): Promise<void> {
-  await validatePlacesWorlds(defaultPlaces.update)
+  validatePlacesWorlds(defaultPlaces.update)
 
   await updatePlacesAndWorlds(defaultPlaces.update, attributes, pgm)
 }
