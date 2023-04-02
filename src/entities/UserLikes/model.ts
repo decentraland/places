@@ -25,7 +25,7 @@ export default class UserLikesModel extends Model<UserLikeAttributes> {
         updated_at: now,
       }
 
-      await this.create(newLike)
+      await this.createOne(newLike)
       return newLike
     }
 
