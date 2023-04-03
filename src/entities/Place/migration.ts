@@ -132,7 +132,9 @@ async function insertPlaces(
   if (places.length > 0) {
     const newPlaces = await createPlaceFromDefaultPlaces(places)
     newPlaces.forEach((place) => {
-      const keys = attributes
+      const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
+        keyof PlaceAttributes
+      >
       const queryString = `INSERT INTO ${PlaceModel.tableName} (${keys.join(
         ","
       )})
@@ -189,7 +191,7 @@ async function updatePlaces(
     )
 
     updatePlaces.forEach((place) => {
-      const keys = attributes.filter((attr) => attr !== "id")
+      const keys = [...attributes, "updated_at"] as Array<keyof PlaceAttributes>
       const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
         .map((k, i) => `${k}=$${i + 1}`)
         .join(",")}  WHERE positions && ${
