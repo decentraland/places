@@ -449,7 +449,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
   description: null,
   owner: null,
   image: "https://decentraland.org/images/thumbnail/genesis-plaza.png",
-  tags: [],
+  tags: ["plaza"],
   base_position: "-9,-9",
   positions: [
     "-1,-1",
@@ -4107,6 +4107,7 @@ export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {
         },
       },
     ],
+    tags: ["plaza"],
   },
 }
 
@@ -7376,6 +7377,7 @@ export const contentEntitySceneGenesisPlaza: ContentEntityScene = {
         },
       },
     ],
+    tags: ["plaza"],
   },
 }
 
