@@ -21,8 +21,6 @@ export type PlacesStaticUpdate = {
   update: Array<Partial<PlaceAttributes>>
 }
 
-const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
-
 /** @deprecated */
 export function createPlaceFromEntityScene(
   entityScene: ContentEntityScene,
@@ -36,7 +34,6 @@ export function createPlaceFromEntityScene(
     .map((tag) => tag.slice(0, 25))
 
   const thumbnail = getThumbnailFromDeployment(entityScene)
-
   let contact_name = entityScene?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {
     contact_name = null
@@ -59,17 +56,19 @@ export function createPlaceFromEntityScene(
     contact_email: entityScene?.metadata?.contact?.email || null,
     content_rating: entityScene?.metadata?.policy?.contentRating || null,
     highlighted: false,
+    highlighted_image: null,
     featured: false,
+    featured_image: null,
     disabled: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     created_at: now,
     updated_at: now,
+    categories: [],
+    visible: true,
+    world: false,
+    world_name: null,
     ...data,
-  }
-
-  if (placeParsed.image && !placeParsed.image.startsWith("https")) {
-    placeParsed.image = new URL(placeParsed.image, PLACES_URL).toString()
   }
 
   return placeParsed
@@ -96,17 +95,13 @@ export function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
   }
 }
 
-async function updatePlacesAndWorlds(
-  places: Partial<PlaceAttributes>[],
-  attributes: Array<keyof PlaceAttributes>,
-  pgm: MigrationBuilder
+export function createUpdatePlacesAndWorldsQuery(
+  place: Partial<PlaceAttributes>,
+  keys: Array<keyof PlaceAttributes>
 ) {
-  if (places.length > 0) {
-    places.forEach((place) => {
-      const keys = attributes.filter((attr) => attr in place)
-      const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
-        .map((k, i) => `${k}=$${i + 1}`)
-        .join(",")}  WHERE 
+  return `UPDATE ${PlaceModel.tableName} SET ${keys
+    .map((k, i) => `${k}=$${i + 1}`)
+    .join(",")}  WHERE 
         ${
           place.base_position
             ? `'${place.base_position}' = ANY("positions")`
@@ -114,12 +109,6 @@ async function updatePlacesAndWorlds(
         }
         ${place.world_name ? `world_name = '${place.world_name}'` : ""}
       `
-      pgm.db.query(
-        queryString,
-        keys.map((key) => place[key])
-      )
-    })
-  }
 }
 
 export async function upJustUpdateAllowed(
@@ -129,7 +118,13 @@ export async function upJustUpdateAllowed(
 ): Promise<void> {
   validatePlacesWorlds(defaultPlaces.update)
 
-  await updatePlacesAndWorlds(defaultPlaces.update, attributes, pgm)
+  defaultPlaces.update.forEach((place) => {
+    const keys = attributes.filter((attr) => attr in place)
+    pgm.db.query(
+      createUpdatePlacesAndWorldsQuery(place, keys),
+      keys.map((key) => place[key])
+    )
+  })
 }
 
 export function createPlaceNewMigrationUpdate(
@@ -152,7 +147,7 @@ async function fetchEntityScenesFromDefaultPlaces(
 }
 
 /**@deprecated */
-async function validatePlacesWithEntityScenes(
+export async function validatePlacesWithEntityScenes(
   places: Partial<PlaceAttributes>[]
 ) {
   if (places.length > 0) {
@@ -175,7 +170,7 @@ async function validatePlacesWithEntityScenes(
 }
 
 /** @deprecated */
-async function createPlaceFromDefaultPlaces(
+export async function createPlaceFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
   const entityScenes = await fetchEntityScenesFromDefaultPlaces(places)
@@ -203,63 +198,26 @@ export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
   return true
 }
 
-/** @deprecated */
-async function insertPlacesWithEntityScenes(
-  places: Partial<PlaceAttributes>[],
-  attributes: Array<keyof PlaceAttributes>,
-  pgm: MigrationBuilder
-) {
-  if (places.length > 0) {
-    const newPlaces = await createPlaceFromDefaultPlaces(places)
-    newPlaces.forEach((place) => {
-      const keys = attributes
-      const queryString = `INSERT INTO ${PlaceModel.tableName} (${keys.join(
-        ","
-      )})
+export function createInsertQuery(attributes: Array<keyof PlaceAttributes>) {
+  const keys = attributes
+  return `INSERT INTO ${PlaceModel.tableName} (${keys.join(",")})
             VALUES (${keys.map((k, i) => `$${i + 1}`).join(",")})`
-      pgm.db.query(
-        queryString,
-        keys.map((key) => place[key])
-      )
-    })
-  }
 }
 
-/** @deprecated */
-async function updatePlacesWithEntityScenes(
-  places: Partial<PlaceAttributes>[],
-  attributes: Array<keyof PlaceAttributes>,
-  pgm: MigrationBuilder
+export function createUpdateQuery(
+  basePosition: string,
+  attributes: Array<keyof PlaceAttributes>
 ) {
-  if (places.length > 0) {
-    const updatePlaces = await createPlaceFromDefaultPlaces(places)
-    updatePlaces.forEach((place) => {
-      const keys = attributes
-      const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
-        .map((k, i) => `${k}=$${i + 1}`)
-        .join(",")}  WHERE positions && ${
-        "'{\"" + place.base_position + "\"}'"
-      }`
-      pgm.db.query(
-        queryString,
-        keys.map((key) => place[key])
-      )
-    })
-  }
+  const keys = attributes
+  return `UPDATE ${PlaceModel.tableName} SET ${keys
+    .map((k, i) => `${k}=$${i + 1}`)
+    .join(",")}  WHERE positions && ${"'{\"" + basePosition + "\"}'"}`
 }
 
-/** @deprecated */
-async function deletePlacesWithEntityScenes(
-  places: string[],
-  pgm: MigrationBuilder
-) {
-  if (places.length > 0) {
-    pgm.db.query(
-      `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
-        "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
-      }`
-    )
-  }
+export function createDeleteQuery(places: string[]) {
+  return `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
+    "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
+  }`
 }
 
 /** @deprecated */
@@ -270,9 +228,38 @@ export async function up(
 ): Promise<void> {
   await validateMigratedPlaces(defaultPlaces)
 
-  await insertPlacesWithEntityScenes(defaultPlaces.create, attributes, pgm)
-  await updatePlacesWithEntityScenes(defaultPlaces.update, attributes, pgm)
-  await deletePlacesWithEntityScenes(defaultPlaces.delete, pgm)
+  const placesToCreate = await createPlaceFromDefaultPlaces(
+    defaultPlaces.create
+  )
+
+  placesToCreate.forEach(async (place) => {
+    const keys = [
+      ...attributes,
+      "id",
+      "created_at",
+      "updated_at",
+      "tags",
+    ] as Array<keyof PlaceAttributes>
+    pgm.db.query(
+      createInsertQuery(keys),
+      keys.map((key) => place[key])
+    )
+  })
+
+  const placesToUpdate = await createPlaceFromDefaultPlaces(
+    defaultPlaces.update
+  )
+
+  placesToUpdate.forEach((place) => {
+    const keys = [...attributes, "updated_at"] as Array<keyof PlaceAttributes>
+    pgm.db.query(
+      createUpdateQuery(place.base_position, keys),
+      keys.map((key) => place[key])
+    )
+  })
+
+  defaultPlaces.delete.length &&
+    pgm.db.query(createDeleteQuery(defaultPlaces.delete))
 }
 
 /** @deprecated */
@@ -295,8 +282,21 @@ export async function down(
     )
   }
 
-  await deletePlacesWithEntityScenes(placesToRestore.delete, pgm)
-  await insertPlacesWithEntityScenes(placesToRestore.create, attributes, pgm)
+  placesToRestore.delete.length &&
+    pgm.db.query(createDeleteQuery(defaultPlaces.delete))
+
+  const placesToCreate = await createPlaceFromDefaultPlaces(
+    placesToRestore.create
+  )
+  placesToCreate.forEach(async (scene) => {
+    const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
+      keyof PlaceAttributes
+    >
+    pgm.db.query(
+      createInsertQuery(keys),
+      keys.map((key) => scene[key])
+    )
+  })
 }
 
 /** @deprecated */
