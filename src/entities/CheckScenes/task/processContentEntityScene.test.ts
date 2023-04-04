@@ -76,4 +76,26 @@ describe("processContentEntityScene", () => {
       disabled: [placeGenesisPlazaWithAggregatedAttributes],
     })
   })
+
+  test("should return an object with update place and disabled places", async () => {
+    const processEntitySceneResult = processContentEntityScene(
+      contentEntitySceneMusicFestivalStage,
+      [
+        placeGenesisPlazaWithAggregatedAttributes,
+        createPlaceFromContentEntityScene(contentEntitySceneMusicFestivalStage),
+      ]
+    )
+
+    expect(processEntitySceneResult).toEqual({
+      update: {
+        ...createPlaceFromContentEntityScene(
+          contentEntitySceneMusicFestivalStage
+        ),
+        id: processEntitySceneResult.update!.id,
+        created_at: processEntitySceneResult.update!.created_at,
+        updated_at: processEntitySceneResult.update!.updated_at,
+      },
+      disabled: [placeGenesisPlazaWithAggregatedAttributes],
+    })
+  })
 })
