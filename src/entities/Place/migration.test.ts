@@ -1,5 +1,4 @@
 import {
-  contentEntitySceneRoad,
   entitySceneGenesisPlaza,
   placeGenesisPlaza,
 } from "../../__data__/entities"
@@ -16,7 +15,7 @@ import {
 } from "./migration"
 import { PlaceAttributes } from "./types"
 
-const attributes: Array<keyof PlaceAttributes> = [
+export const attributes: Array<keyof PlaceAttributes> = [
   "title",
   "description",
   "image",
