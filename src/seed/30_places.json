@@ -1,0 +1,53 @@
+{
+  "create": [
+    {
+      "base_position": "-109,-6"
+    },
+    {
+      "base_position": "-123,-126"
+    },
+    {
+      "base_position": "117,-25",
+      "featured": true
+    }
+  ],
+  "update": [
+    {
+      "base_position": "77,55",
+      "featured": true
+    },
+    {
+      "base_position": "-105,-147",
+      "featured": true
+    },
+    {
+      "base_position": "47,-45",
+      "featured": true
+    },
+    {
+      "base_position": "144,-7",
+      "featured": true
+    },
+    {
+      "base_position": "-104,-19",
+      "featured": false
+    },
+    {
+      "base_position": "-59,-125",
+      "featured": false
+    },
+    {
+      "base_position": "-103,-19",
+      "featured": false
+    },
+    {
+      "base_position": "-84,-3",
+      "featured": false
+    },
+    {
+      "base_position": " -92,-10",
+      "featured": false
+    }
+  ],
+  "delete": []
+}
