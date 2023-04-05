@@ -3,7 +3,6 @@ import { PlaceAttributes } from "../entities/Place/types"
 import defaultPlace from "../seed/03_places.json"
 
 const attributes: Array<keyof PlaceAttributes> = [
-  "id",
   "title",
   "description",
   "image",
@@ -14,15 +13,9 @@ const attributes: Array<keyof PlaceAttributes> = [
   "contact_name",
   "contact_email",
   "content_rating",
-  "likes",
-  "dislikes",
-  "favorites",
-  "like_rate",
   "featured",
   "disabled",
   "disabled_at",
-  "created_at",
-  "updated_at",
 ]
 
 export const { up, down } = createPlaceMigration(defaultPlace, attributes)
