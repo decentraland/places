@@ -16,11 +16,29 @@ describe("isRoads", () => {
 })
 
 describe("isNewPlace", () => {
-  test("should return false, is not new place", async () => {
+  test("should return the place found if not new place with same base position", async () => {
     expect(
       findSamePlace(contentEntitySceneGenesisPlaza, [
         placeGenesisPlazaWithAggregatedAttributes,
       ])
+    ).toBe(placeGenesisPlazaWithAggregatedAttributes)
+  })
+
+  test("should return the place found if not new place with different base position", async () => {
+    expect(
+      findSamePlace(
+        {
+          ...contentEntitySceneGenesisPlaza,
+          metadata: {
+            ...contentEntitySceneGenesisPlaza.metadata,
+            scene: {
+              parcels: contentEntitySceneGenesisPlaza.metadata.scene!.parcels,
+              base: "0,0",
+            },
+          },
+        },
+        [placeGenesisPlazaWithAggregatedAttributes]
+      )
     ).toBe(placeGenesisPlazaWithAggregatedAttributes)
   })
 
