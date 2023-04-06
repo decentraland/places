@@ -91,9 +91,5 @@ export function createPlaceFromContentEntityScene(
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
   }
 
-  if (placeParsed.image && !placeParsed.image.startsWith("https")) {
-    placeParsed.image = new URL(placeParsed.image, PLACES_URL).toString()
-  }
-
   return placeParsed
 }

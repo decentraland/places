@@ -5,7 +5,7 @@ import { isRoad } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 
 export async function processEntityId(job: DeploymentToSqs) {
-  if (!job.contentServerUrls) {
+  if (!job.contentServerUrls || job.contentServerUrls.length === 0) {
     throw new Error("contentServerUrls is required")
   }
 
