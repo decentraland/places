@@ -1,10 +1,10 @@
 import {
   contentEntitySceneGenesisPlaza,
-  genesisPlazaSceneStats,
   genesisPlazaThumbnailMap,
   hotSceneGenesisPlaza,
   placeGenesisPlaza,
   placeGenesisPlazaWithAggregatedAttributes,
+  sceneStatsGenesisPlaza,
   sqsMessageWorld,
   worldContentEntitySceneParalax,
 } from "../../__data__/entities"
@@ -119,13 +119,13 @@ describe("get of AggregatePlaceAttributes", () => {
   test("should return a place of type AggregatePlaceAttributes with user_visits", () => {
     const places = placesWithUserVisits(
       [placeGenesisPlazaWithAggregatedAttributes],
-      genesisPlazaSceneStats
+      sceneStatsGenesisPlaza
     )
     expect(places).toEqual([
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_visits:
-          genesisPlazaSceneStats[
+          sceneStatsGenesisPlaza[
             placeGenesisPlazaWithAggregatedAttributes.base_position
           ].last_30d.users,
       },
@@ -140,14 +140,14 @@ describe("get of AggregatePlaceAttributes", () => {
           base_position: "-1,-1",
         },
       ],
-      genesisPlazaSceneStats
+      sceneStatsGenesisPlaza
     )
     expect(places).toEqual([
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         base_position: "-1,-1",
         user_visits:
-          genesisPlazaSceneStats[
+          sceneStatsGenesisPlaza[
             placeGenesisPlazaWithAggregatedAttributes.base_position
           ].last_30d.users,
       },
