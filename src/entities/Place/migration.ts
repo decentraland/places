@@ -65,7 +65,6 @@ export function createPlaceFromEntityScene(
     created_at: now,
     updated_at: now,
     categories: [],
-    visible: true,
     world: false,
     world_name: null,
     ...data,
@@ -233,13 +232,9 @@ export async function up(
   )
 
   placesToCreate.forEach(async (place) => {
-    const keys = [
-      ...attributes,
-      "id",
-      "created_at",
-      "updated_at",
-      "tags",
-    ] as Array<keyof PlaceAttributes>
+    const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
+      keyof PlaceAttributes
+    >
     pgm.db.query(
       createInsertQuery(keys),
       keys.map((key) => place[key])

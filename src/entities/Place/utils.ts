@@ -153,6 +153,7 @@ export function placesWithUserCount(
   })
 }
 
+/** @deprecated */
 export function placesWithLastUpdate(
   places: AggregatePlaceAttributes[],
   entityScene: (ContentEntityScene | null)[]

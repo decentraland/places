@@ -2,7 +2,6 @@ import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Req
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 
 import {
-  entitySceneGenesisPlaza,
   hotSceneGenesisPlaza,
   placeGenesisPlazaWithAggregatedAttributes,
   sceneStatsGenesisPlaza,
@@ -13,7 +12,6 @@ import { getPlaceList } from "./getPlaceList"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(Catalyst.get(), "getHostScenes")
-const catalystEntityScenes = jest.spyOn(Catalyst.get(), "getEntityScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 
 afterEach(() => {
@@ -27,9 +25,6 @@ test("should return a list of places with no query", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
-  )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
   )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
@@ -48,13 +43,11 @@ test("should return a list of places with no query", async () => {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-        last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
       },
     ],
   })
   expect(find.mock.calls.length).toBe(2)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 
@@ -65,9 +58,6 @@ test("should return a list of places with query", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
-  )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
   )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
@@ -89,13 +79,11 @@ test("should return a list of places with query", async () => {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-        last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
       },
     ],
   })
   expect(find.mock.calls.length).toBe(2)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 
@@ -105,9 +93,6 @@ test("should return a list of places with order by most_active", async () => {
   )
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
-  )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
   )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
@@ -127,13 +112,11 @@ test("should return a list of places with order by most_active", async () => {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-        last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
       },
     ],
   })
   expect(find.mock.calls.length).toBe(1)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 
@@ -144,9 +127,6 @@ test("should return a list of places with Realm details", async () => {
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
-  )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
   )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
@@ -165,14 +145,12 @@ test("should return a list of places with Realm details", async () => {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-        last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
         realms_detail: hotSceneGenesisPlaza.realms,
       },
     ],
   })
   expect(find.mock.calls.length).toBe(2)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 

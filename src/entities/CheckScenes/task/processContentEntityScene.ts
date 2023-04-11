@@ -68,7 +68,6 @@ export function createPlaceFromContentEntityScene(
     featured: false,
     featured_image: null,
     disabled: false,
-    visible: false,
     updated_at: now,
     categories: [],
     world: !!contentEntityScene?.metadata?.worldConfiguration,
@@ -87,6 +86,7 @@ export function createPlaceFromContentEntityScene(
     contact_email: contentEntityScene?.metadata?.contact?.email || null,
     content_rating: contentEntityScene?.metadata?.policy?.contentRating || null,
     created_at: now,
+    deployed_at: new Date(contentEntityScene.timestamp),
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
   }

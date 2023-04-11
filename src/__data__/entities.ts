@@ -412,7 +412,6 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     content_rating: null,
     disabled: false,
     disabled_at: null,
-    visible: false,
     created_at: new Date("2022-11-11T04:53:07.000Z"),
     updated_at: new Date("2022-11-11T04:53:07.000Z"),
     favorites: 0,
@@ -429,6 +428,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     categories: [],
     world: false,
     world_name: null,
+    deployed_at: new Date("2022-11-14T17:22:05.307Z"),
   }
 
 export const placeGenesisPlaza: PlaceAttributes = {
@@ -442,7 +442,6 @@ export const placeGenesisPlaza: PlaceAttributes = {
   featured: false,
   featured_image: null,
   disabled: false,
-  visible: false,
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
   categories: [],
   world: false,
@@ -840,6 +839,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
   content_rating: null,
   created_at: new Date("2023-03-28T18:37:39.918Z"),
   disabled_at: null,
+  deployed_at: new Date("2022-11-14T17:22:05.307Z"),
 }
 
 export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {
@@ -10369,7 +10369,6 @@ export const placeWithAggregatedAttributes = {
   ...placeGenesisPlazaWithAggregatedAttributes,
   user_count: 32,
   user_visits: 31676,
-  last_deployed_at: "2022-11-14T17:22:05.307Z",
 }
 
 export const sqsMessage: DeploymentToSqs = {
@@ -10483,9 +10482,9 @@ export const worldPlaceParalax: PlaceAttributes = {
   highlighted_image: null,
   featured: false,
   featured_image: null,
-  visible: false,
   world: true,
   world_name: "paralax.dcl.eth",
+  deployed_at: new Date("2023-03-28T13:05:45.437Z"),
 }
 
 export const worldContentEntitySceneParalax: ContentEntityScene = {

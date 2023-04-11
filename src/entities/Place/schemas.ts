@@ -206,6 +206,11 @@ export const placeSchema = schema({
       type: "string",
       format: "date-time",
     },
+    deployed_at: {
+      description: "The time the place was last deployed",
+      type: "string",
+      format: "date-time",
+    },
     user_like: {
       type: "boolean",
       description: "True if user likes the place",

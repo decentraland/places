@@ -9,7 +9,6 @@ const attributes: Array<keyof PlaceAttributes> = [
   "featured",
   "featured_image",
   "world_name",
-  "visible",
 ]
 
 export const { up, down } = createPlaceNewMigrationUpdate(

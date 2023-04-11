@@ -21,7 +21,6 @@ import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
-/* TODO: need to add last_deployed_at with a task to make this  */
 /* import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates" */
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
@@ -46,7 +45,6 @@ export default function OverviewPage() {
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
-  /* TODO: need to add last_deployed_at with a task to make this  */
   /* const [placeListLastUpdates, placeListLastUpdatesState] =
     usePlaceListRecentlyUpdates(overviewOptions) */
   const [placeListHightRated, placeListHightRatedState] =
@@ -206,7 +204,6 @@ export default function OverviewPage() {
               dataPlace={SegmentPlace.OverviewMyFavorites}
             />
           )}
-        {/* TODO: need to add last_deployed_at with a task to make this  */}
         {/* <OverviewList
           places={lastUpdatesList}
           title={l("pages.overview.recently_updated")}

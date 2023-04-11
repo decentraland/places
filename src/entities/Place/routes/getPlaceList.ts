@@ -8,7 +8,6 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getEntityScenes } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
@@ -18,11 +17,7 @@ import {
   GetPlaceListQuery,
   PlaceListOrderBy,
 } from "../types"
-import {
-  placesWithLastUpdate,
-  placesWithUserCount,
-  placesWithUserVisits,
-} from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 import { getPlaceMostActiveList } from "./getPlaceMostActiveList"
 import { getPlaceUserVisitsList } from "./getPlaceUserVisitsList"
 
@@ -81,19 +76,12 @@ export const getPlaceList = Router.memo(
       getSceneStats(),
     ])
 
-    const entityScene = await getEntityScenes(
-      data.map((place) => place.base_position)
-    )
-
     return new ApiResponse(
-      placesWithLastUpdate(
-        placesWithUserVisits(
-          placesWithUserCount(data, hotScenes, {
-            withRealmsDetail: !!bool(query.with_realms_detail),
-          }),
-          sceneStats
-        ),
-        entityScene
+      placesWithUserVisits(
+        placesWithUserCount(data, hotScenes, {
+          withRealmsDetail: !!bool(query.with_realms_detail),
+        }),
+        sceneStats
       ),
       { total }
     )

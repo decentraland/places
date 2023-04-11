@@ -14,7 +14,6 @@ import {
   getThumbnailFromContentDeployment,
   getThumbnailFromDeployment,
   placeUrl,
-  placesWithLastUpdate,
   placesWithUserCount,
   placesWithUserVisits,
   siteUrl,
@@ -177,19 +176,6 @@ describe("get of AggregatePlaceAttributes", () => {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         realms_detail: hotSceneGenesisPlaza.realms,
-      },
-    ])
-  })
-
-  test("should return a place of type AggregatePlaceAttributes with last_deployed_at", () => {
-    const places = placesWithLastUpdate(
-      [placeGenesisPlazaWithAggregatedAttributes],
-      [contentEntitySceneGenesisPlaza]
-    )
-    expect(places).toEqual([
-      {
-        ...placeGenesisPlazaWithAggregatedAttributes,
-        last_deployed_at: new Date(contentEntitySceneGenesisPlaza.timestamp),
       },
     ])
   })

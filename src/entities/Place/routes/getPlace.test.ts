@@ -1,23 +1,19 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
-import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { v4 as uuid } from "uuid"
 
 import {
-  entitySceneGenesisPlaza,
   hotSceneGenesisPlaza,
   placeGenesisPlazaWithAggregatedAttributes,
   sceneStatsGenesisPlaza,
 } from "../../../__data__/entities"
 import DataTeam from "../../../api/DataTeam"
-import { getEntityScene } from "../../../modules/entityScene"
 import PlaceModel from "../model"
 import { getPlace } from "./getPlace"
 
 const place_id = uuid()
 const findOne = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(Catalyst.get(), "getHostScenes")
-const catalystEntityScenes = jest.spyOn(Catalyst.get(), "getEntityScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 
 afterEach(() => {
@@ -48,9 +44,6 @@ test("should return place if the module found it", async () => {
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
   )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
-  )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
@@ -67,12 +60,10 @@ test("should return place if the module found it", async () => {
       ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
       user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-      last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
     },
   })
   expect(findOne.mock.calls.length).toBe(1)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })
 test("should return place with Realms detail", async () => {
@@ -82,9 +73,6 @@ test("should return place with Realms detail", async () => {
 
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
-  )
-  catalystEntityScenes.mockResolvedValueOnce(
-    Promise.resolve([entitySceneGenesisPlaza])
   )
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
@@ -103,12 +91,10 @@ test("should return place with Realms detail", async () => {
       ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
       user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
-      last_deployed_at: new Date(entitySceneGenesisPlaza.timestamp),
       realms_detail: hotSceneGenesisPlaza.realms,
     },
   })
   expect(findOne.mock.calls.length).toBe(1)
   expect(catalystHotScenes.mock.calls.length).toBe(1)
-  expect(catalystEntityScenes.mock.calls.length).toBe(1)
   expect(catalystSceneStats.mock.calls.length).toBe(1)
 })

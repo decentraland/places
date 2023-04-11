@@ -75,9 +75,9 @@ describe("createPlaceFromEntityScene", () => {
       featured: true,
       created_at: place.created_at,
       updated_at: place.updated_at,
+      deployed_at: place.deployed_at,
       featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
-      visible: place.visible,
     })
   })
   test("should return a place with the correct data with contact_name = author-name", async () => {
@@ -104,9 +104,9 @@ describe("createPlaceFromEntityScene", () => {
       contact_name: null,
       created_at: place.created_at,
       updated_at: place.updated_at,
+      deployed_at: place.deployed_at,
       featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
-      visible: place.visible,
     })
   })
 })
@@ -255,7 +255,7 @@ describe("createPlaceFromDefaultPlaces", () => {
         tags: data[0].tags,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
-        visible: true,
+        deployed_at: data[0].deployed_at,
         id: data[0].id,
       },
     ])

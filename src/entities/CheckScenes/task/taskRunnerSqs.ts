@@ -28,7 +28,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "content_rating",
   "disabled",
   "disabled_at",
-  "visible",
   "created_at",
   "updated_at",
   "categories",
