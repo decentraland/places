@@ -23,7 +23,7 @@ export type ProcessEntitySceneResult =
 export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[]
-): ProcessEntitySceneResult {
+): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
 
   if (!samePlace) {
@@ -31,12 +31,15 @@ export function processContentEntityScene(
       new: createPlaceFromContentEntityScene(contentEntityScene),
       disabled: places,
     }
-  } else {
+  } else if (
+    new Date(samePlace.deployed_at) < new Date(contentEntityScene.timestamp)
+  ) {
     return {
       update: createPlaceFromContentEntityScene(contentEntityScene, samePlace),
       disabled: places.filter((place) => samePlace.id !== place.id),
     }
   }
+  return null
 }
 
 export function createPlaceFromContentEntityScene(

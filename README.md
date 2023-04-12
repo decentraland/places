@@ -141,7 +141,7 @@ The message to be received from the SQS must be sent using `awslocal`. This mess
 And this must be sent as a message body like this using awslocal `awslocal sqs send-message --queue-url {queue-url} --message-body {message}` like:
 
 ```
-$ awslocal sqs send-message --queue-url http://localhost:4566/00000000000/places_test --message-body ''{"Message":"{\\"entity\\":{\\"entityId\\":\\"bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy\\",\\"authChain\\":\\"authChain\\"},\\"contentServerUrls\\":[\\"https://peer.decentraland.org/content\\"]}"}''
+$ awslocal sqs send-message --queue-url http://localhost:4566/00000000000/places_test --message-body '{"Message":"{\"entity\":{\"entityId\":\"bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy\",\"authChain\":\"authChain\"},\"contentServerUrls\":[\"https://peer.decentraland.org/content\"]}"}'
 ```
 
 This will answer with a JSON with the message id like

@@ -30,6 +30,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "disabled_at",
   "created_at",
   "updated_at",
+  "deployed_at",
   "categories",
   "world",
   "world_name",
@@ -82,19 +83,19 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     )
   }
 
-  if (placesToProcess.new) {
+  if (placesToProcess?.new) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.insertPlace(newPlace, placesAttributes)
     notifyNewPlace(newPlace)
   }
 
-  if (placesToProcess.update) {
+  if (placesToProcess?.update) {
     const updatePlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.updatePlace(updatePlace, placesAttributes)
     notifyUpdatePlace(updatePlace)
   }
 
-  if (placesToProcess.disabled.length) {
+  if (placesToProcess?.disabled.length) {
     const placesIdToDisable = placesToProcess.disabled.map((place) => place.id)
     await PlaceModel.disablePlaces(placesIdToDisable)
     notifyDisablePlaces(placesToProcess.disabled)
