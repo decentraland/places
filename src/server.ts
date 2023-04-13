@@ -37,7 +37,7 @@ tasks.use(
       AttributeNames: ["SentTimestamp"],
       MaxNumberOfMessages: 1,
       MessageAttributeNames: ["All"],
-      QueueUrl: env("QUEUE_ID")!,
+      QueueUrl: env("QUEUE_URL")!,
       WaitTimeSeconds: 15,
       VisibilityTimeout: 3 * 3600, // 3 hours
     }
