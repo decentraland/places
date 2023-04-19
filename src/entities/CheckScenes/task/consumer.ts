@@ -20,13 +20,56 @@ export interface TaskQueueMessage {
 export class SQSConsumer {
   constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
 
+  async publish(job: DeploymentToSqs) {
+    const published = await this.sqs
+      .sendMessage({
+        QueueUrl: this.params.QueueUrl,
+        MessageBody: JSON.stringify({
+          Message: JSON.stringify(job),
+        }),
+      })
+      .promise()
+
+    const loggerExtended = logger.extend({
+      id: published.MessageId!,
+      message: job,
+      QueueUrl: this.params.QueueUrl,
+    })
+
+    loggerExtended.log(`Published`)
+
+    return published.MessageId!
+  }
+
+  async publishBatch(jobs: DeploymentToSqs[]) {
+    const entries = jobs.map((job) => ({
+      Id: job.entity.entityId,
+      MessageBody: JSON.stringify({
+        Message: JSON.stringify(job),
+      }),
+    }))
+    const published = await this.sqs
+      .sendMessageBatch({ QueueUrl: this.params.QueueUrl, Entries: entries })
+      .promise()
+
+    const loggerExtended = logger.extend({
+      successfullyPublished: published.Successful.length,
+      failures: published.Failed.length,
+      totalEntries: entries.length,
+    })
+
+    loggerExtended.log(`Published`)
+
+    return published.Successful!.map((it) => it.Id!)
+  }
+
   async consume(taskRunner: (job: DeploymentToSqs) => Promise<any>) {
     try {
       const response = await Promise.race([
         this.sqs.receiveMessage(this.params).promise(),
         delay(30 * 60 * 1000, "Timed out sqs.receiveMessage"),
       ])
-
+      const finalReturn = []
       if (
         typeof response !== "string" &&
         response?.Messages &&
@@ -48,11 +91,17 @@ export class SQSConsumer {
             const result = await taskRunner(body)
 
             loggerExtended.log(`Processed job`)
-            return { result, message }
+            finalReturn.push({ result, message })
           } catch (err: any) {
-            notifyError([err.toString(), `\`\`\`${JSON.stringify(body)}\`\`\``])
-            loggerExtended.error(err.toString())
-            return { result: undefined, message }
+            if (!err.message.includes("The scene is a road")) {
+              notifyError([
+                err.toString(),
+                `\`\`\`${JSON.stringify(body)}\`\`\``,
+              ])
+              loggerExtended.error(err.toString())
+            }
+
+            finalReturn.push({ result: undefined, message })
           } finally {
             loggerExtended.log(`Deleting message`)
             await this.sqs
@@ -64,6 +113,7 @@ export class SQSConsumer {
           }
         }
       }
+      return finalReturn
     } catch (err: any) {
       logger.error(err)
     }

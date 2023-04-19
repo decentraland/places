@@ -25,7 +25,7 @@ export function createSceneConsumerTask(
         logger.log(`Check the logs`)
         return
       }
-      logger.log(JSON.stringify(sqsConsumed.message))
+      logger.log(JSON.stringify(sqsConsumed, null, 2))
     },
   })
 }

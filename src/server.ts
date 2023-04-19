@@ -35,7 +35,7 @@ tasks.use(
     new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
     {
       AttributeNames: ["SentTimestamp"],
-      MaxNumberOfMessages: 1,
+      MaxNumberOfMessages: 10,
       MessageAttributeNames: ["All"],
       QueueUrl: env("QUEUE_URL")!,
       WaitTimeSeconds: 15,

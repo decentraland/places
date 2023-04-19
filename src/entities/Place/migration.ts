@@ -2,7 +2,6 @@ import Catalyst, {
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
-import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
