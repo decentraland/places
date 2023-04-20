@@ -1,7 +1,6 @@
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
-import { isRoad } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 
 export async function processEntityId(job: DeploymentToSqs) {
@@ -21,16 +20,6 @@ export async function processEntityId(job: DeploymentToSqs) {
 
   if (contentDeployment.type !== EntityType.SCENE) {
     throw new Error(`Entity type is not an scene. Type: ${EntityType.SCENE}`)
-  }
-
-  if (
-    !contentDeployment.metadata.worldConfiguration &&
-    isRoad(contentDeployment)
-  ) {
-    throw new Error(
-      "The scene is a road. The following places can't proccede: " +
-        contentDeployment.metadata.scene!.base
-    )
   }
 
   return contentDeployment
