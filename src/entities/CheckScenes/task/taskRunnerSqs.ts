@@ -5,6 +5,8 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
+import CheckScenesModel from "../model"
+import { CheckSceneLogsTypes } from "../types"
 import { getWorldAbout } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import {
@@ -83,21 +85,57 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     )
   }
 
+  if (!placesToProcess) {
+    CheckScenesModel.createOne({
+      entity_id: job.entity.entityId,
+      content_server_url: job.contentServerUrls![0],
+      base_position: contentEntityScene.metadata.scene!.base,
+      positions: contentEntityScene.metadata.scene!.parcels,
+      action: CheckSceneLogsTypes.AVOID,
+      deploy_at: new Date(contentEntityScene.timestamp),
+    })
+  }
+
   if (placesToProcess?.new) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.insertPlace(newPlace, placesAttributes)
     notifyNewPlace(newPlace)
+    CheckScenesModel.createOne({
+      entity_id: job.entity.entityId,
+      content_server_url: job.contentServerUrls![0],
+      base_position: contentEntityScene.metadata.scene!.base,
+      positions: contentEntityScene.metadata.scene!.parcels,
+      action: CheckSceneLogsTypes.NEW,
+      deploy_at: new Date(contentEntityScene.timestamp),
+    })
   }
 
   if (placesToProcess?.update) {
     const updatePlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.updatePlace(updatePlace, placesAttributes)
     notifyUpdatePlace(updatePlace)
+    CheckScenesModel.createOne({
+      entity_id: job.entity.entityId,
+      content_server_url: job.contentServerUrls![0],
+      base_position: contentEntityScene.metadata.scene!.base,
+      positions: contentEntityScene.metadata.scene!.parcels,
+      action: CheckSceneLogsTypes.UPDATE,
+      deploy_at: new Date(contentEntityScene.timestamp),
+    })
   }
 
   if (placesToProcess?.disabled.length) {
     const placesIdToDisable = placesToProcess.disabled.map((place) => place.id)
     await PlaceModel.disablePlaces(placesIdToDisable)
     notifyDisablePlaces(placesToProcess.disabled)
+    placesToProcess.disabled.forEach((place) => {
+      CheckScenesModel.createOne({
+        entity_id: job.entity.entityId,
+        content_server_url: job.contentServerUrls![0],
+        base_position: place.base_position,
+        positions: place.positions,
+        action: CheckSceneLogsTypes.DISABLED,
+      })
+    })
   }
 }
