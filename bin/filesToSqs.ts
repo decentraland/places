@@ -46,8 +46,6 @@ Promise.resolve().then(async () => {
       totalCounter++
       linesPerHash++
       if (line.includes('"entityType":"scene"')) {
-        lineCounter++
-        totalAdded++
         const parsed = JSON.parse(line)
         const data = {
           entity: {
@@ -57,15 +55,20 @@ Promise.resolve().then(async () => {
           contentServerUrls: ["https://peer.decentraland.org/content"],
         }
         batch.push(data)
-        if (batch.length === 10 || last) {
-          await consumer.publishBatch(batch)
-          batch = []
-        }
       }
 
       if (last) {
+        const chunkSize = 10
+        for (let i = 0; i < batch.length; i += chunkSize) {
+          const chunk = batch.slice(i, i + chunkSize)
+          const result = await consumer.publishBatch(chunk)
+          lineCounter += result.length
+          totalAdded += result.length
+        }
+
+        batch = []
+
         totalCounter--
-        lineCounter--
         linesPerHash--
         logger.log(
           `Snapshot ${txtFile}: added ${lineCounter} scenes to SQS from a total of ${totalCounter} lines. Lines per hash: ${linesPerHash}`

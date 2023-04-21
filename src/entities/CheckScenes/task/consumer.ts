@@ -18,6 +18,7 @@ export interface TaskQueueMessage {
 }
 
 export class SQSConsumer {
+  sumatory = 0
   constructor(public sqs: SQS, public params: AWS.SQS.ReceiveMessageRequest) {}
 
   async publish(job: DeploymentToSqs) {
@@ -52,10 +53,12 @@ export class SQSConsumer {
       .sendMessageBatch({ QueueUrl: this.params.QueueUrl, Entries: entries })
       .promise()
 
+    this.sumatory += published.Successful.length
     const loggerExtended = logger.extend({
       successfullyPublished: published.Successful.length,
       failures: published.Failed.length,
       totalEntries: entries.length,
+      totalPublished: this.sumatory,
     })
 
     loggerExtended.log(`Published`)
