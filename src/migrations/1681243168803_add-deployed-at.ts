@@ -13,7 +13,6 @@ export const shorthands: ColumnDefinitions = {
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.addColumn(PlaceModel.tableName, shorthands)
-  pgm.dropColumn(PlaceModel.tableName, ["visible"])
   pgm.sql(`
       UPDATE ${PlaceModel.tableName} SET
       deployed_at=updated_at
@@ -22,11 +21,4 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
   pgm.dropColumns(PlaceModel.tableName, Object.keys(shorthands))
-  pgm.addColumn(PlaceModel.tableName, {
-    visible: {
-      type: Type.Boolean,
-      default: true,
-      notNull: true,
-    },
-  })
 }
