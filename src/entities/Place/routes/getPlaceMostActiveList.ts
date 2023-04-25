@@ -9,16 +9,11 @@ import {
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { flat, sort, unique } from "radash/dist/array"
 
-import { getEntityScenes } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { FindWithAggregatesOptions, PlaceListOrderBy } from "../types"
-import {
-  placesWithLastUpdate,
-  placesWithUserCount,
-  placesWithUserVisits,
-} from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 import { validateGetPlaceListQuery } from "./getPlaceList"
 
 export const getPlaceMostActiveList = Router.memo(
@@ -78,20 +73,14 @@ export const getPlaceMostActiveList = Router.memo(
       ...extraOptions,
     })
 
-    const entityScene = await getEntityScenes(
-      places.map((place) => place.base_position)
-    )
-
     const hotScenePlaces = sort(
-      placesWithLastUpdate(
-        placesWithUserVisits(
-          placesWithUserCount(places, hotScenes, {
-            withRealmsDetail: !!query.with_realms_detail,
-          }),
-          sceneStats
-        ),
-        entityScene
+      placesWithUserVisits(
+        placesWithUserCount(places, hotScenes, {
+          withRealmsDetail: !!query.with_realms_detail,
+        }),
+        sceneStats
       ),
+
       (place) => place.user_count || 0,
       !order || order === "desc"
     )

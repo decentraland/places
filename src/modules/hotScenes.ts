@@ -5,7 +5,7 @@ import { memo } from "radash/dist/curry"
 export const getHotScenes = memo(
   async () => {
     try {
-      return await Catalyst.get().getHostScenes()
+      return await Catalyst.getInstance().getHostScenes()
     } catch (error) {
       return []
     }

@@ -24,6 +24,10 @@ export type PlaceAttributes = {
   disabled_at: Date | null
   created_at: Date
   updated_at: Date
+  categories: string[]
+  world: boolean
+  world_name: string | null
+  deployed_at: Date
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {
@@ -32,7 +36,6 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_favorite: boolean
   user_count?: number
   user_visits?: number
-  last_deployed_at?: Date
   realms_detail?: Realm[]
 }
 

@@ -23,11 +23,11 @@ export type SceneStats = {
     max_concurrent_users: number
   }
   retention: {
-    d1: number
-    d3: number
-    d7: number
-    d14: number
-    d28: number
+    d1: number | null
+    d3: number | null
+    d7: number | null
+    d14: number | null
+    d28: number | null
   }
 }
 

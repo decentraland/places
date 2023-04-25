@@ -1,5 +1,6 @@
 import { resolve } from "path"
 
+import SQS from "aws-sdk/clients/sqs"
 import { databaseInitializer } from "decentraland-gatsby/dist/entities/Database/utils"
 import metrics from "decentraland-gatsby/dist/entities/Prometheus/routes"
 import RequestError from "decentraland-gatsby/dist/entities/Route/error"
@@ -18,15 +19,30 @@ import {
   taskInitializer,
   default as tasksManager,
 } from "decentraland-gatsby/dist/entities/Task"
+import env from "decentraland-gatsby/dist/utils/env"
 import express from "express"
 
 import categoryRoute from "./entities/Category/routes"
+import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
 import placeRoute from "./entities/Place/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
 const tasks = tasksManager()
+tasks.use(
+  createSceneConsumerTask(
+    new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
+    {
+      AttributeNames: ["SentTimestamp"],
+      MaxNumberOfMessages: 10,
+      MessageAttributeNames: ["All"],
+      QueueUrl: env("QUEUE_URL")!,
+      WaitTimeSeconds: 15,
+      VisibilityTimeout: 3 * 3600, // 3 hours
+    }
+  )
+)
 
 const app = express()
 app.set("x-powered-by", false)
@@ -39,6 +55,7 @@ app.use("/api", [
   userFavoriteRoute,
   userLikesRoute,
   placeRoute,
+
   status(),
   handle(async () => {
     throw new RequestError("NotFound", RequestError.NotFound)

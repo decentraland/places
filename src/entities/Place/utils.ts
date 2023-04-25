@@ -1,5 +1,5 @@
 import {
-  EntityScene,
+  ContentEntityScene,
   HotScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
@@ -52,7 +52,8 @@ export function explorerPlaceUrl(
   return target.toString()
 }
 
-export function getThumbnailFromDeployment(deployment: EntityScene) {
+/** @deprecated */
+export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
   const positions = (deployment?.pointers || []).sort()
   let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
   if (thumbnail && !thumbnail.startsWith("https://")) {
@@ -67,7 +68,36 @@ export function getThumbnailFromDeployment(deployment: EntityScene) {
   }
 
   if (!thumbnail) {
-    thumbnail = Land.get().getMapImage({
+    thumbnail = Land.getInstance().getMapImage({
+      selected: positions,
+    })
+  }
+  return thumbnail
+}
+
+export function getThumbnailFromContentDeployment(
+  deployment: ContentEntityScene,
+  options: { url?: string } = {}
+) {
+  const positions = (deployment?.pointers || []).sort()
+  let thumbnail = deployment?.metadata?.display?.navmapThumbnail || null
+  if (thumbnail && !thumbnail.startsWith("https://")) {
+    const content = deployment.content.find(
+      (content) => content.file === thumbnail
+    )
+    const contentServerUrl = (
+      options.url || "https://peer.decentraland.org/content"
+    ).replace(/\/+$/, "")
+
+    if (!content || unwantedThumbnailHash.includes(content.hash)) {
+      thumbnail = null
+    } else {
+      thumbnail = `${contentServerUrl}/contents/${content.hash}`
+    }
+  }
+
+  if (!thumbnail) {
+    thumbnail = Land.getInstance().getMapImage({
       selected: positions,
     })
   }
@@ -123,14 +153,15 @@ export function placesWithUserCount(
   })
 }
 
+/** @deprecated */
 export function placesWithLastUpdate(
   places: AggregatePlaceAttributes[],
-  entityScene: (EntityScene | null)[]
+  entityScene: (ContentEntityScene | null)[]
 ) {
   return places.map((place) => {
     const entityScenePlaces = entityScene.find(
       (scene) =>
-        scene && scene.metadata.scene.base.includes(place.base_position)
+        scene && scene.metadata.scene!.base.includes(place.base_position)
     )
 
     return {

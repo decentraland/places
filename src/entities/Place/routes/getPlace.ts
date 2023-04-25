@@ -6,17 +6,12 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getEntityScene } from "../../../modules/entityScene"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
-import {
-  placesWithLastUpdate,
-  placesWithUserCount,
-  placesWithUserVisits,
-} from "../utils"
+import { placesWithUserCount, placesWithUserVisits } from "../utils"
 
 export const validateGetPlaceParams =
   Router.validator<GetPlaceParams>(getPlaceParamsSchema)
@@ -40,13 +35,11 @@ export const getPlace = Router.memo(
     }
     const hotScenes = await getHotScenes()
     const sceneStats = await getSceneStats()
-    const entityScene = await getEntityScene(place.base_position)
     let aggregatedPlaces = [place]
     aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes, {
       withRealmsDetail: !!bool(ctx.url.searchParams.get("with_realms_detail")),
     })
     aggregatedPlaces = placesWithUserVisits(aggregatedPlaces, sceneStats)
-    aggregatedPlaces = placesWithLastUpdate(aggregatedPlaces, [entityScene])
 
     return new ApiResponse(aggregatedPlaces[0])
   }

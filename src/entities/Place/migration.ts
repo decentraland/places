@@ -1,12 +1,11 @@
 import Catalyst, {
-  EntityScene,
+  ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
-import env from "decentraland-gatsby/dist/utils/env"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
-import { isRoad } from "../DeploymentTrack/utils"
+import { isRoad } from "../CheckScenes/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
@@ -17,10 +16,13 @@ export type PlacesStatic = {
   delete: string[]
 }
 
-const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
+export type PlacesStaticUpdate = {
+  update: Array<Partial<PlaceAttributes>>
+}
 
+/** @deprecated */
 export function createPlaceFromEntityScene(
-  entityScene: EntityScene,
+  entityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {}
 ) {
   const now = Time.from().format("YYYYMMDD hh:mm:ss ZZ")
@@ -31,7 +33,6 @@ export function createPlaceFromEntityScene(
     .map((tag) => tag.slice(0, 25))
 
   const thumbnail = getThumbnailFromDeployment(entityScene)
-
   let contact_name = entityScene?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {
     contact_name = null
@@ -54,30 +55,120 @@ export function createPlaceFromEntityScene(
     contact_email: entityScene?.metadata?.contact?.email || null,
     content_rating: entityScene?.metadata?.policy?.contentRating || null,
     highlighted: false,
+    highlighted_image: null,
     featured: false,
+    featured_image: null,
     disabled: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     created_at: now,
     updated_at: now,
+    categories: [],
+    world: false,
+    world_name: null,
     ...data,
-  }
-
-  if (placeParsed.image && !placeParsed.image.startsWith("https")) {
-    placeParsed.image = new URL(placeParsed.image, PLACES_URL).toString()
   }
 
   return placeParsed
 }
 
+export function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
+  if (places.length > 0) {
+    const invalidWorldData = places.filter(
+      (place) => place.world_name && place.base_position
+    )
+    if (invalidWorldData.length > 0) {
+      throw new Error(
+        "There is an error with places provided. Migration can't proccede. The following scene can't proccede because a base_position and world_name was provided: " +
+          JSON.stringify(
+            invalidWorldData.map((place) => [
+              place.base_position,
+              place.world_name,
+            ]),
+            null,
+            2
+          )
+      )
+    }
+  }
+}
+
+export function createUpdatePlacesAndWorldsQuery(
+  place: Partial<PlaceAttributes>,
+  keys: Array<keyof PlaceAttributes>
+) {
+  return `UPDATE ${PlaceModel.tableName} SET ${keys
+    .map((k, i) => `${k}=$${i + 1}`)
+    .join(",")}  WHERE 
+        ${
+          place.base_position
+            ? `'${place.base_position}' = ANY("positions")`
+            : ""
+        }
+        ${place.world_name ? `world_name = '${place.world_name}'` : ""}
+      `
+}
+
+export async function upJustUpdateAllowed(
+  defaultPlaces: PlacesStaticUpdate,
+  attributes: Array<keyof PlaceAttributes>,
+  pgm: MigrationBuilder
+): Promise<void> {
+  validatePlacesWorlds(defaultPlaces.update)
+
+  defaultPlaces.update.forEach((place) => {
+    const keys = attributes.filter((attr) => attr in place)
+    pgm.db.query(
+      createUpdatePlacesAndWorldsQuery(place, keys),
+      keys.map((key) => place[key])
+    )
+  })
+}
+
+export function createPlaceNewMigrationUpdate(
+  defaultPlaces: PlacesStaticUpdate,
+  attributes: Array<keyof PlaceAttributes>
+) {
+  return {
+    up: async (pgm: MigrationBuilder) =>
+      upJustUpdateAllowed(defaultPlaces, attributes, pgm),
+    down: async () => {},
+  }
+}
+
+/**@deprecated */
 async function fetchEntityScenesFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
   const batch = places.map((place) => place.base_position!)
-  return Catalyst.get().getEntityScenes(batch)
+  return Catalyst.getInstance().getEntityScenes(batch)
 }
 
-async function createPlaceFromDefaultPlaces(
+/**@deprecated */
+export async function validatePlacesWithEntityScenes(
+  places: Partial<PlaceAttributes>[]
+) {
+  if (places.length > 0) {
+    const entityScenesCreate = await fetchEntityScenesFromDefaultPlaces(places)
+
+    const invalidPlacesCreate = entityScenesCreate.filter((scene) =>
+      isRoad(scene)
+    )
+    if (invalidPlacesCreate.length > 0) {
+      throw new Error(
+        "There is an error with places provided. Migration can't proccede. The following places can proccede: " +
+          JSON.stringify(
+            invalidPlacesCreate.map((place) => place.metadata.scene!.base),
+            null,
+            2
+          )
+      )
+    }
+  }
+}
+
+/** @deprecated */
+export async function createPlaceFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
 ) {
   const entityScenes = await fetchEntityScenesFromDefaultPlaces(places)
@@ -91,31 +182,12 @@ async function createPlaceFromDefaultPlaces(
   )
 }
 
-async function validatePlaces(places: Partial<PlaceAttributes>[]) {
-  if (places.length > 0) {
-    const entityScenesCreate = await fetchEntityScenesFromDefaultPlaces(places)
-
-    const invalidPlacesCreate = entityScenesCreate.filter((scene) =>
-      isRoad(scene)
-    )
-    if (invalidPlacesCreate.length > 0) {
-      throw new Error(
-        "There is an error with places provided. Migration can't proccede. The following places can proccede: " +
-          JSON.stringify(
-            invalidPlacesCreate.map((place) => place.metadata.scene.base),
-            null,
-            2
-          )
-      )
-    }
-  }
-}
-
+/**@deprecated */
 export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
   await Promise.all([
-    validatePlaces(defaultPlaces.create),
-    validatePlaces(defaultPlaces.update),
-    validatePlaces(
+    validatePlacesWithEntityScenes(defaultPlaces.create),
+    validatePlacesWithEntityScenes(defaultPlaces.update),
+    validatePlacesWithEntityScenes(
       defaultPlaces.delete.map((position) => ({
         base_position: position,
       }))
@@ -124,62 +196,29 @@ export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
   return true
 }
 
-async function insertPlaces(
-  places: Partial<PlaceAttributes>[],
-  attributes: Array<keyof PlaceAttributes>,
-  pgm: MigrationBuilder
-) {
-  if (places.length > 0) {
-    const newPlaces = await createPlaceFromDefaultPlaces(places)
-    newPlaces.forEach((place) => {
-      const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
-        keyof PlaceAttributes
-      >
-      const queryString = `INSERT INTO ${PlaceModel.tableName} (${keys.join(
-        ","
-      )})
+export function createInsertQuery(attributes: Array<keyof PlaceAttributes>) {
+  const keys = attributes
+  return `INSERT INTO ${PlaceModel.tableName} (${keys.join(",")})
             VALUES (${keys.map((k, i) => `$${i + 1}`).join(",")})`
-      pgm.db.query(
-        queryString,
-        keys.map((key) => place[key])
-      )
-    })
-  }
 }
 
-async function updatePlaces(
-  places: Partial<PlaceAttributes>[],
-  attributes: Array<keyof PlaceAttributes>,
-  pgm: MigrationBuilder
+export function createUpdateQuery(
+  basePosition: string,
+  attributes: Array<keyof PlaceAttributes>
 ) {
-  if (places.length > 0) {
-    const updatePlaces = await createPlaceFromDefaultPlaces(places)
-
-    updatePlaces.forEach((place) => {
-      const keys = [...attributes, "updated_at"] as Array<keyof PlaceAttributes>
-      const queryString = `UPDATE ${PlaceModel.tableName} SET ${keys
-        .map((k, i) => `${k}=$${i + 1}`)
-        .join(",")}  WHERE positions && ${
-        "'{\"" + place.base_position + "\"}'"
-      }`
-      pgm.db.query(
-        queryString,
-        keys.map((key) => place[key])
-      )
-    })
-  }
+  const keys = attributes
+  return `UPDATE ${PlaceModel.tableName} SET ${keys
+    .map((k, i) => `${k}=$${i + 1}`)
+    .join(",")}  WHERE positions && ${"'{\"" + basePosition + "\"}'"}`
 }
 
-async function deletePlaces(places: string[], pgm: MigrationBuilder) {
-  if (places.length > 0) {
-    pgm.db.query(
-      `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
-        "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
-      }`
-    )
-  }
+export function createDeleteQuery(places: string[]) {
+  return `DELETE FROM ${PlaceModel.tableName} WHERE positions && ${
+    "'{" + JSON.stringify(places)?.slice(1, -1) + "}'"
+  }`
 }
 
+/** @deprecated */
 export async function up(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>,
@@ -187,11 +226,37 @@ export async function up(
 ): Promise<void> {
   await validateMigratedPlaces(defaultPlaces)
 
-  await insertPlaces(defaultPlaces.create, attributes, pgm)
-  await updatePlaces(defaultPlaces.update, attributes, pgm)
-  await deletePlaces(defaultPlaces.delete, pgm)
+  const placesToCreate = await createPlaceFromDefaultPlaces(
+    defaultPlaces.create
+  )
+
+  placesToCreate.forEach(async (place) => {
+    const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
+      keyof PlaceAttributes
+    >
+    pgm.db.query(
+      createInsertQuery(keys),
+      keys.map((key) => place[key])
+    )
+  })
+
+  const placesToUpdate = await createPlaceFromDefaultPlaces(
+    defaultPlaces.update
+  )
+
+  placesToUpdate.forEach((place) => {
+    const keys = [...attributes, "updated_at"] as Array<keyof PlaceAttributes>
+    pgm.db.query(
+      createUpdateQuery(place.base_position, keys),
+      keys.map((key) => place[key])
+    )
+  })
+
+  defaultPlaces.delete.length &&
+    pgm.db.query(createDeleteQuery(defaultPlaces.delete))
 }
 
+/** @deprecated */
 export async function down(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>,
@@ -211,10 +276,24 @@ export async function down(
     )
   }
 
-  await deletePlaces(placesToRestore.delete, pgm)
-  await insertPlaces(placesToRestore.create, attributes, pgm)
+  placesToRestore.delete.length &&
+    pgm.db.query(createDeleteQuery(defaultPlaces.delete))
+
+  const placesToCreate = await createPlaceFromDefaultPlaces(
+    placesToRestore.create
+  )
+  placesToCreate.forEach(async (scene) => {
+    const keys = [...attributes, "id", "created_at", "updated_at"] as Array<
+      keyof PlaceAttributes
+    >
+    pgm.db.query(
+      createInsertQuery(keys),
+      keys.map((key) => scene[key])
+    )
+  })
 }
 
+/** @deprecated */
 export function createPlaceMigration(
   defaultPlaces: PlacesStatic,
   attributes: Array<keyof PlaceAttributes>

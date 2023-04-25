@@ -46,7 +46,7 @@ export default function DocsPage() {
         </ApiCard>
 
         <ApiCard
-          id="get-event"
+          id="get-place"
           method="GET"
           path="/api/places/{place_id}"
           description="Returns information about an place by ID"

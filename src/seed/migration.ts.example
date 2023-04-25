@@ -1,24 +1,17 @@
-import { createPlaceMigration } from "../entities/Place/migration"
+import { createPlaceNewMigrationUpdate } from "../entities/Place/migration"
 import { PlaceAttributes } from "../entities/Place/types"
 import defaultPlace from "../seed/FILENAME"
 
 const attributes: Array<keyof PlaceAttributes> = [
-  "title",
-  "description",
-  "image",
-  "highlighted_image",
-  "featured_image",
-  "owner",
-  "tags",
-  "positions",
   "base_position",
-  "contact_name",
-  "contact_email",
-  "content_rating",
+  "highlighted_image",
   "highlighted",
   "featured",
-  "disabled",
-  "disabled_at",
+  "featured_image",
+  "world_name",
 ]
 
-export const { up, down } = createPlaceMigration(defaultPlace, attributes)
+export const { up, down } = createPlaceNewMigrationUpdate(
+  defaultPlace,
+  attributes
+)

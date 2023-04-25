@@ -1,9 +1,12 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  columns,
   conditional,
   limit,
+  objectValues,
   offset,
+  setColumns,
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
@@ -36,10 +39,23 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "disabled" = false
+        AND world = false
         AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
     return this.namedQuery("find_enabled_by_positions", sql)
+  }
+
+  static async findEnabledWorldName(
+    world_name: string
+  ): Promise<PlaceAttributes[]> {
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "disabled" = false
+      AND "world_name" = ${world_name}
+    `
+
+    return this.namedQuery("find_enabled_by_world_name", sql)
   }
 
   static async findByIdWithAggregates(
@@ -131,6 +147,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       WHERE
         p.disabled is false
+        AND world = false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
@@ -176,6 +193,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       WHERE
         p.disabled is false
+        AND world = false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
@@ -278,5 +296,33 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const to = numeric(from + (limit || 100), { min: 0, max: 100 })
 
     return hotScenePlaces.slice(from, to)
+  }
+
+  static async insertPlace(
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) {
+    const keys = attributes
+    const sql = SQL`INSERT INTO ${table(this)} ${columns(keys)}
+              VALUES ${objectValues(keys, [place])}`
+    return this.namedQuery("insert_place", sql)
+  }
+
+  static updatePlace = (
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) => {
+    const keys = attributes
+    const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
+      keys,
+      place
+    )} WHERE disabled = false
+    ${conditional(
+      !place.world,
+      SQL` AND ${place.base_position} = ANY("positions")`
+    )}
+    ${conditional(!!place.world, SQL` AND ${place.world_name} = "world_name"`)}`
+
+    return this.namedQuery("update_place", sql)
   }
 }
