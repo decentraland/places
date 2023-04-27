@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -13,11 +13,11 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Box } from "decentraland-ui/dist/components/Box/Box"
+import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
-import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
 import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
@@ -52,6 +52,7 @@ export default function IndexPage() {
   const mobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
+  const [page, setPage] = useState(1)
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
@@ -80,25 +81,39 @@ export default function IndexPage() {
     }
   )
 
-  const placesMemo = useMemo(() => [result.data], [result.data])
+  const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
+
+  useEffect(() => {
+    if (allPlaces.length !== 0) {
+      setTimeout(
+        () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
+        0
+      )
+    }
+    setAllPlaces((allPlaces) => [...allPlaces, ...result.data])
+  }, [result.data])
+
+  const placesMemo = useMemo(() => [allPlaces], [allPlaces])
+
   const [[places], { handleFavorite, handlingFavorite }] =
     usePlacesManager(placesMemo)
 
   const loading = placesState.version === 0 || placesState.loading
-  const total = result.total || 0
 
-  const handleChangePage = useCallback(
-    (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
+  const handleShowMore = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault()
       e.stopPropagation()
-      const newParams = { ...params, page: Number(props.activePage ?? 1) }
+      const newPage = page + 1
+      setPage(newPage)
+      const newParams = { ...params, page: newPage }
       track(SegmentPlace.FilterChange, {
         filters: newParams,
-        place: SegmentPlace.PlacesChangePagination,
+        place: SegmentPlace.PlacesShowMore,
       })
       navigate(locations.places(newParams))
     },
-    [params, track]
+    [params, page, track]
   )
 
   const handleChangePois = useCallback(
@@ -109,7 +124,10 @@ export default function IndexPage() {
         ...params,
         only_featured: false,
         only_pois: !!props.value,
+        page: 1,
       }
+      setAllPlaces([])
+      setPage(1)
       track(SegmentPlace.FilterChange, {
         filters: newParams,
         place: SegmentPlace.PlacesChangePois,
@@ -127,7 +145,10 @@ export default function IndexPage() {
         ...params,
         only_pois: false,
         only_featured: !!props.value,
+        page: 1,
       }
+      setAllPlaces([])
+      setPage(1)
       track(SegmentPlace.FilterChange, {
         filters: newParams,
         place: SegmentPlace.PlacesChangePois,
@@ -142,7 +163,9 @@ export default function IndexPage() {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
         PlaceListOrderBy.HIGHEST_RATED
-      const newParams = { ...params, order_by: value }
+      const newParams = { ...params, order_by: value, page: 1 }
+      setAllPlaces([])
+      setPage(1)
       track(SegmentPlace.FilterChange, {
         filters: newParams,
         place: SegmentPlace.PlacesChangePois,
@@ -303,25 +326,29 @@ export default function IndexPage() {
                 </HeaderMenu>
               </div>
             )}
-            <PlaceList
-              places={places}
-              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-              loadingFavorites={handlingFavorite}
-              loading={loading}
-              size={loading ? PAGE_SIZE : undefined}
-              dataPlace={SegmentPlace.Places}
-            />
-            {!loading && places.length > 0 && (
+            {placesState.loaded && (
+              <PlaceList
+                places={places}
+                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+                loadingFavorites={handlingFavorite}
+                dataPlace={SegmentPlace.Places}
+              />
+            )}
+            {loading && (
+              <PlaceList
+                className="places-page__list-loading"
+                places={[]}
+                onClickFavorite={() => {}}
+                loading={true}
+                size={PAGE_SIZE}
+                dataPlace={SegmentPlace.Places}
+              />
+            )}
+            {!loading && result.total > places.length && (
               <div className="places__pagination">
-                <Pagination
-                  activePage={params.page}
-                  totalPages={Math.ceil(total / PAGE_SIZE) || 1}
-                  onPageChange={handleChangePage}
-                  firstItem={mobile ? null : undefined}
-                  lastItem={mobile ? null : undefined}
-                  boundaryRange={mobile ? 1 : undefined}
-                  siblingRange={mobile ? 0 : undefined}
-                />
+                <Button primary inverted onClick={handleShowMore}>
+                  {l("pages.places.show_more")}
+                </Button>
               </div>
             )}
           </Grid.Column>

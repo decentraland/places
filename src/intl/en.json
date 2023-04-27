@@ -75,7 +75,8 @@
       "filter": "Filter",
       "sort_by": "Sort by",
       "pois": "Point of interest",
-      "featured": "Featured"
+      "featured": "Featured",
+      "show_more": "Show More"
     },
     "my_places": {
       "title": "My Places",

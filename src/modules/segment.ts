@@ -19,6 +19,7 @@ export enum SegmentPlace {
   Place = "Place",
   Places = "Places",
   PlacesChangePagination = "Places Change Pagination",
+  PlacesShowMore = "Places Show More",
   PlacesChangePois = "Places Change Pois",
   PlacesChangeOrder = "Places Change Order",
 }
