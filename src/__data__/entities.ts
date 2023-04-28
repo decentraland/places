@@ -447,7 +447,8 @@ export const placeGenesisPlaza: PlaceAttributes = {
   world: false,
   world_name: null,
   title: "Genesis Plaza",
-  description: null,
+  description:
+    "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
   owner: null,
   image: "https://decentraland.org/images/thumbnail/genesis-plaza.png",
   tags: ["plaza"],
@@ -3610,6 +3611,8 @@ export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {
   metadata: {
     display: {
       title: "Genesis Plaza",
+      description:
+        "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
       favicon: "favicon_asset",
       navmapThumbnail:
         "https://decentraland.org/images/thumbnail/genesis-plaza.png",
@@ -6880,6 +6883,8 @@ export const contentEntitySceneGenesisPlaza: ContentEntityScene = {
   metadata: {
     display: {
       title: "Genesis Plaza",
+      description:
+        "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
       favicon: "favicon_asset",
       navmapThumbnail:
         "https://decentraland.org/images/thumbnail/genesis-plaza.png",
