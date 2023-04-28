@@ -447,7 +447,8 @@ export const placeGenesisPlaza: PlaceAttributes = {
   world: false,
   world_name: null,
   title: "Genesis Plaza",
-  description: null,
+  description:
+    "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
   owner: null,
   image: "https://decentraland.org/images/thumbnail/genesis-plaza.png",
   tags: ["plaza"],
@@ -3610,6 +3611,8 @@ export const entitySceneGenesisPlaza: ContentEntityScene & { id: string } = {
   metadata: {
     display: {
       title: "Genesis Plaza",
+      description:
+        "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
       favicon: "favicon_asset",
       navmapThumbnail:
         "https://decentraland.org/images/thumbnail/genesis-plaza.png",
@@ -6880,6 +6883,8 @@ export const contentEntitySceneGenesisPlaza: ContentEntityScene = {
   metadata: {
     display: {
       title: "Genesis Plaza",
+      description:
+        "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
       favicon: "favicon_asset",
       navmapThumbnail:
         "https://decentraland.org/images/thumbnail/genesis-plaza.png",
@@ -9906,6 +9911,36 @@ export const contentEntitySceneRoad: ContentEntityScene = {
     main: "game.js",
     tags: [],
   },
+}
+
+export const placeRoad: PlaceAttributes = {
+  id: "c6adac03-0c7a-406d-8285-9abf8b19751f",
+  likes: 0,
+  dislikes: 0,
+  favorites: 0,
+  like_rate: 0,
+  highlighted: false,
+  highlighted_image: null,
+  featured: false,
+  featured_image: null,
+  disabled: false,
+  updated_at: new Date("2023-03-28T18:37:39.918Z"),
+  categories: [],
+  world: false,
+  world_name: null,
+  title: "Road at -89,11 (open road OpenRoad_C)",
+  description: null,
+  owner: null,
+  image: "https://decentraland.org/images/thumbnail/road.png",
+  tags: ["road"],
+  base_position: "-89,11",
+  positions: ["-89,11"],
+  contact_name: "Decentraland Foundation",
+  contact_email: null,
+  content_rating: null,
+  created_at: new Date("2023-03-28T18:37:39.918Z"),
+  disabled_at: null,
+  deployed_at: new Date("2022-11-14T17:22:05.307Z"),
 }
 
 export const hotSceneGenesisPlaza: HotScene = {

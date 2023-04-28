@@ -1,13 +1,21 @@
 import {
   contentEntitySceneGenesisPlaza,
   contentEntitySceneRoad,
+  placeGenesisPlaza,
   placeGenesisPlazaWithAggregatedAttributes,
+  placeRoad,
   sqsMessageWorld,
   worldAboutParalax,
   worldContentEntitySceneParalax,
   worldPlaceParalax,
 } from "../../__data__/entities"
-import { findSamePlace, getWorldAbout, isRoad, isSameWorld } from "./utils"
+import {
+  findNewDeployedPlace,
+  findSamePlace,
+  getWorldAbout,
+  isRoad,
+  isSameWorld,
+} from "./utils"
 
 describe("isRoads", () => {
   test("should return true, this is a road", async () => {
@@ -44,6 +52,28 @@ describe("isNewPlace", () => {
 
   test("should return true, is new place", async () => {
     expect(findSamePlace(contentEntitySceneGenesisPlaza, [])).toBeNull()
+  })
+})
+
+describe("findNewDeployedPlace", () => {
+  test("should return null if there are no places", async () => {
+    expect(findNewDeployedPlace(contentEntitySceneGenesisPlaza, [])).toBeNull()
+  })
+  test("should return null when the content entity scene do not find a place with deployed_at newer", async () => {
+    expect(
+      findNewDeployedPlace(contentEntitySceneGenesisPlaza, [
+        placeRoad,
+        { ...placeGenesisPlaza, deployed_at: new Date("2021-01-01") },
+      ])
+    ).toBeNull()
+  })
+  test("should return a place when the content entity scene find a place with deployed_at newer", async () => {
+    const now = new Date()
+    expect(
+      findNewDeployedPlace(contentEntitySceneGenesisPlaza, [
+        { ...placeGenesisPlaza, deployed_at: now },
+      ])
+    ).toEqual({ ...placeGenesisPlaza, deployed_at: now })
   })
 })
 
