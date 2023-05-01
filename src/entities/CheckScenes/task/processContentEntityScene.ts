@@ -4,7 +4,7 @@ import { v4 as uuid } from "uuid"
 
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
-import { findSamePlace } from "../utils"
+import { findNewDeployedPlace, findSamePlace } from "../utils"
 
 const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
@@ -25,21 +25,21 @@ export function processContentEntityScene(
   places: PlaceAttributes[]
 ): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
-
+  const newDeployedPlace = findNewDeployedPlace(contentEntityScene, places)
+  if (newDeployedPlace) {
+    return null
+  }
   if (!samePlace) {
     return {
       new: createPlaceFromContentEntityScene(contentEntityScene),
       disabled: places,
     }
-  } else if (
-    new Date(samePlace.deployed_at) < new Date(contentEntityScene.timestamp)
-  ) {
-    return {
-      update: createPlaceFromContentEntityScene(contentEntityScene, samePlace),
-      disabled: places.filter((place) => samePlace.id !== place.id),
-    }
   }
-  return null
+
+  return {
+    update: createPlaceFromContentEntityScene(contentEntityScene, samePlace),
+    disabled: places.filter((place) => samePlace.id !== place.id),
+  }
 }
 
 export function createPlaceFromContentEntityScene(

@@ -77,6 +77,22 @@ export function findSamePlace(
   return null
 }
 
+export function findNewDeployedPlace(
+  contentEntityScene: ContentEntityScene,
+  places: PlaceAttributes[]
+): PlaceAttributes | null {
+  if (places.length === 0) {
+    return null
+  }
+
+  const newDeployedPlace = places.find(
+    (place) =>
+      new Date(place.deployed_at) > new Date(contentEntityScene.timestamp)
+  )
+
+  return newDeployedPlace || null
+}
+
 export function isSameWorld(
   contentEntityScene: ContentEntityScene,
   place: PlaceAttributes
