@@ -1,12 +1,18 @@
-import React from "react"
+import React, { CSSProperties } from "react"
+
+import { useMediaQuery } from "react-responsive"
 
 import Carousel2, {
   IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
+import {
+  useMobileMediaQuery,
+  useTabletAndBelowMediaQuery,
+} from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { useCardsPerWindowWidth } from "../../../hooks/useCardsPerWindowSize"
 import { SegmentPlace } from "../../../modules/segment"
 import PlaceCard from "../PlaceCard/PlaceCard"
 
@@ -25,6 +31,10 @@ export type PlaceListProps = {
   loading?: boolean
 }
 
+interface CustomCSSProperties extends CSSProperties {
+  "--card-columns"?: string
+}
+
 export default React.memo(function PlaceList(props: PlaceListProps) {
   const {
     places,
@@ -36,13 +46,25 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     loadingFavorites,
   } = props
 
+  const isBigScreen = useMediaQuery({ minWidth: 1800 })
+  const isTablet = useTabletAndBelowMediaQuery()
   const isMobile = useMobileMediaQuery()
+
+  const cardsToShow = useCardsPerWindowWidth({
+    cardWidth: isBigScreen ? 310 : 260,
+    cardMargin: 14,
+    containerMargin: isTablet ? 14 : 48,
+  })
+
   return (
     <div
       className={TokenList.join([
         "place-list__container",
         className && className,
       ])}
+      style={
+        { "--card-columns": cardsToShow.toString() } as CustomCSSProperties
+      }
     >
       {loading && isMobile && size && size < 10 && (
         <PlaceCard loading={loading} />

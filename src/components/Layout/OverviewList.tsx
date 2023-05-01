@@ -12,7 +12,7 @@ import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMen
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import { AggregatePlaceAttributes } from "../../entities/Place/types"
-import { useCardsPerWindowSize } from "../../hooks/useCardsPerWindowSize"
+import { useCardsPerWindowWidth } from "../../hooks/useCardsPerWindowSize"
 import { SegmentPlace } from "../../modules/segment"
 import PlaceList from "../Place/PlaceList/PlaceList"
 
@@ -44,10 +44,10 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
   } = props
   const l = useFormatMessage()
 
-  const isBigScreen = useMediaQuery({ minWidth: 1096 })
+  const isBigScreen = useMediaQuery({ minWidth: 1800 })
 
-  const cards = useCardsPerWindowSize({
-    cardWidth: isBigScreen ? 302.5 : 240,
+  const cardsToShow = useCardsPerWindowWidth({
+    cardWidth: isBigScreen ? 310 : 260,
     cardMargin: 14,
     containerMargin: 48,
   })
@@ -81,7 +81,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           onClickFavorite={onClickFavorite}
           loading={loading}
           className="overview-list__place-list"
-          size={cards}
+          size={cardsToShow}
           loadingFavorites={loadingFavorites}
           dataPlace={dataPlace}
         />

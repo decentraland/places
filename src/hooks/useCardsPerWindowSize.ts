@@ -1,24 +1,26 @@
 import { useLayoutEffect, useState } from "react"
 
-export function useCardsPerWindowSize(options: {
+export function useCardsPerWindowWidth(options: {
   cardWidth: number
   cardMargin: number
   containerMargin: number
 }) {
+  const { cardWidth, cardMargin, containerMargin } = options
   const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+
   useLayoutEffect(() => {
-    function updateSize() {
+    const updateSize = () => {
       setWindowWidth(window.innerWidth)
     }
     window.addEventListener("resize", updateSize)
-    updateSize()
     return () => window.removeEventListener("resize", updateSize)
   }, [])
 
-  const { cardWidth, cardMargin, containerMargin } = options
-
-  const cardsPerRow = Math.floor(
-    (windowWidth - containerMargin * 2 - cardMargin) / (cardWidth + cardMargin)
+  return Math.max(
+    1,
+    Math.floor(
+      (windowWidth - containerMargin * 2 - cardMargin) /
+        (cardWidth + cardMargin)
+    )
   )
-  return cardsPerRow
 }
