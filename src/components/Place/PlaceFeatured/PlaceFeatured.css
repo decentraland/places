@@ -36,7 +36,12 @@
   margin-right: 10px;
 }
 
-@media screen and (min-width: 1900px) {
+@media screen and (min-width: 2850px) {
+  .place-featured {
+    height: 912px;
+  }
+}
+@media screen and (min-width: 1900px) and (max-width: 2849px) {
   .place-featured {
     height: 570px;
   }
