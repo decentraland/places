@@ -3,6 +3,7 @@
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: flex-start;
+  --card-columns: 1;
 }
 
 .place-list__container .ui.card:first-child {

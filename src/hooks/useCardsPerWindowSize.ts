@@ -1,26 +1,29 @@
-import { useLayoutEffect, useState } from "react"
+import { useEffect, useState } from "react"
 
-export function useCardsPerWindowWidth(options: {
+export function useCardsByWidth(options: {
   cardWidth: number
   cardMargin: number
   containerMargin: number
 }) {
   const { cardWidth, cardMargin, containerMargin } = options
-  const [windowWidth, setWindowWidth] = useState(window.innerWidth)
+  const [cardColumns, setCardColumns] = useState(1)
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     const updateSize = () => {
-      setWindowWidth(window.innerWidth)
+      setCardColumns(
+        Math.max(
+          1,
+          Math.floor(
+            (window.innerWidth - containerMargin * 2 - cardMargin) /
+              (cardWidth + cardMargin)
+          )
+        )
+      )
     }
+    updateSize()
     window.addEventListener("resize", updateSize)
     return () => window.removeEventListener("resize", updateSize)
   }, [])
 
-  return Math.max(
-    1,
-    Math.floor(
-      (windowWidth - containerMargin * 2 - cardMargin) /
-        (cardWidth + cardMargin)
-    )
-  )
+  return cardColumns
 }
