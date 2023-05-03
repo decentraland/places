@@ -47,7 +47,7 @@ describe("validatePlacesWorlds", () => {
         featured: true,
       },
     ])
-    expect(validatePlacesWorldsResult).toBeUndefined()
+    expect(validatePlacesWorldsResult).toBeTruthy()
   })
 
   test("should return throw an error if any of the places to import have base_position and world_name at the same tiem", async () => {

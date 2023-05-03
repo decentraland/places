@@ -90,6 +90,7 @@ export function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
           )
       )
     }
+    return true
   }
 }
 
