@@ -69,13 +69,12 @@ describe("createPlaceFromEntityScene", () => {
       base_position: "-9,-9",
       featured: true,
     })
-    expect(place).toEqual({
+    expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
       ...placeGenesisPlaza,
       id: place.id,
       featured: true,
       created_at: place.created_at,
       updated_at: place.updated_at,
-      deployed_at: place.deployed_at,
       featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
     })
@@ -97,14 +96,13 @@ describe("createPlaceFromEntityScene", () => {
         featured: true,
       }
     )
-    expect(place).toEqual({
+    expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
       ...placeGenesisPlaza,
       id: place.id,
       featured: true,
       contact_name: null,
       created_at: place.created_at,
       updated_at: place.updated_at,
-      deployed_at: place.deployed_at,
       featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
     })
