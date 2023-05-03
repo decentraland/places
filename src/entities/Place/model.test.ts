@@ -32,8 +32,8 @@ describe(`findEnabledByPositions`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
-        WHERE "disabled" = false 
-          AND world = false
+        WHERE "disabled" is false 
+          AND "world" is false
           AND "positions" && $1
       `
         .trim()
@@ -142,8 +142,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
         FROM "places" p
         WHERE
-          p.disabled is false 
-          AND world = false
+          p."disabled" is false 
+          AND "world" is false
           AND p.positions && '{"-9,-9"}'
         ORDER BY p.like_rate DESC
           LIMIT $1
@@ -179,7 +179,7 @@ describe(`findWithAggregates`, () => {
         FROM "places" p 
         LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1 
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2 
-        WHERE p.disabled is false AND world = false AND p.positions && '{"-9,-9"}' 
+        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}' 
         ORDER BY p.like_rate DESC 
           LIMIT $3 
           OFFSET $4
@@ -214,7 +214,7 @@ describe(`findWithAggregates`, () => {
         FROM "places" p 
         LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1 
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2 
-        WHERE p.disabled is false AND world = false AND p.positions && '{"-9,-9"}' 
+        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}' 
         ORDER BY p.like_rate DESC 
           LIMIT $3 
           OFFSET $4
@@ -246,8 +246,8 @@ describe(`countPlaces`, () => {
           count(*) as "total"
         FROM "places" p
         WHERE
-          p.disabled is false 
-          AND world = false
+          p."disabled" is false 
+          AND "world" is false
           AND p.positions && '{"-9,-9"}'
       `
         .trim()
@@ -375,7 +375,7 @@ describe(`findWithHotScenes`, () => {
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
         FROM "places" p
         WHERE
-          p.disabled is false AND world = false
+          p."disabled" is false AND "world" is false
           AND p.positions && '{"-9,-9"}'
         ORDER BY p.like_rate DESC
           LIMIT $1
