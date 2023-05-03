@@ -38,8 +38,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const sql = SQL`
       SELECT * FROM ${table(this)}
-      WHERE "disabled" = false
-        AND world = false
+      WHERE "disabled" is false
+        AND "world" is false
         AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
     `
 
@@ -146,8 +146,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       WHERE
-        p.disabled is false
-        AND world = false
+        p."disabled" is false
+        AND "world" is false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
@@ -192,8 +192,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       WHERE
-        p.disabled is false
-        AND world = false
+        p."disabled" is false
+        AND "world" is false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
