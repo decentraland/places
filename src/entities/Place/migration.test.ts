@@ -199,7 +199,7 @@ describe("validateMigratedPlaces", () => {
       ],
       delete: ["-101,127", "-9,-9"],
     })
-    expect(validateMigratedPlacesResult).toBeTruthy()
+    expect(validateMigratedPlacesResult).toBeUndefined()
   })
 
   test("should return an error if the Place migration has not been created", async () => {
