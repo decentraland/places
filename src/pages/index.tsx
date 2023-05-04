@@ -46,7 +46,7 @@ export default function OverviewPage() {
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(overviewOptions)
-  const [placeListPois, placeListPoisState] = usePlaceListPois()
+  const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
 
   const placesMemo = useMemo(
     () => [

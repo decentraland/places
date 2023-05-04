@@ -3,8 +3,7 @@
   transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
   overflow: hidden;
   height: 244px;
-  min-width: 240px;
-  max-width: 365px;
+  width: 300px;
 }
 
 .ui.card.place-card.hidden {

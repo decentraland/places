@@ -12,7 +12,7 @@ import {
 } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { useCardsByWidth } from "../../../hooks/useCardsPerWindowSize"
+import useCardsByWidth from "../../../hooks/useCardsByWidth"
 import { SegmentPlace } from "../../../modules/segment"
 import PlaceCard from "../PlaceCard/PlaceCard"
 
@@ -46,17 +46,19 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     loadingFavorites,
   } = props
 
-  const isBigScreen = useMediaQuery({ minWidth: 1800 })
   const isTablet = useTabletAndBelowMediaQuery()
   const isMobile = useMobileMediaQuery()
 
   const cardsToShow = useCardsByWidth({
-    cardWidth: isBigScreen ? 310 : 260,
+    cardWidth: 300,
     cardMargin: 14,
     containerMargin: isTablet ? 14 : 48,
   })
 
-  const cardColumns = useMemo(() => cardsToShow.toString(), [cardsToShow])
+  const placeListContainerStyle = useMemo(
+    () => ({ "--card-columns": cardsToShow.toString() } as CustomCSSProperties),
+    [cardsToShow]
+  )
 
   return (
     <div
@@ -64,7 +66,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         "place-list__container",
         className && className,
       ])}
-      style={{ "--card-columns": cardColumns } as CustomCSSProperties}
+      style={placeListContainerStyle}
     >
       {loading && isMobile && size && size < 10 && (
         <PlaceCard loading={loading} />

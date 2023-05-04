@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react"
 
-export function useCardsByWidth(options: {
+export default function useCardsByWidth(options: {
   cardWidth: number
   cardMargin: number
   containerMargin: number
