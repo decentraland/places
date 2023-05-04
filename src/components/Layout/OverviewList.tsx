@@ -44,6 +44,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
   } = props
   const l = useFormatMessage()
 
+  // TODO: change the way this values are set
   const cardsToShow = useCardsByWidth({
     cardWidth: 300,
     cardMargin: 14,

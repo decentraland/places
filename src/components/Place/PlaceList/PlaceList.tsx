@@ -49,6 +49,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
   const isTablet = useTabletAndBelowMediaQuery()
   const isMobile = useMobileMediaQuery()
 
+  // TODO: change the way this values are set
   const cardsToShow = useCardsByWidth({
     cardWidth: 300,
     cardMargin: 14,
