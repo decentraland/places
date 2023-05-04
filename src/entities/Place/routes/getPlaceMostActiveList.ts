@@ -7,7 +7,7 @@ import {
   numeric,
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { flat, sort, unique } from "radash/dist/array"
+import { flat, sort } from "radash/dist/array"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
@@ -59,7 +59,9 @@ export const getPlaceMostActiveList = Router.memo(
       only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions.length
-        ? unique([...hotScenesPositions, ...query.positions])
+        ? hotScenesPositions.filter((position) =>
+            query.positions.includes(position)
+          )
         : hotScenesPositions,
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,

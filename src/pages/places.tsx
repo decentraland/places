@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -8,16 +8,16 @@ import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/Filt
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
-import useAsyncState from "decentraland-gatsby/dist/hooks/useAsyncState"
+import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Box } from "decentraland-ui/dist/components/Box/Box"
+import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
-import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
 import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
@@ -41,12 +41,6 @@ import "./places.css"
 
 const PAGE_SIZE = 24
 
-const defaultResult = {
-  data: [] as AggregatePlaceAttributes[],
-  ok: true,
-  total: 0,
-}
-
 export default function IndexPage() {
   const l = useFormatMessage()
   const mobile = useMobileMediaQuery()
@@ -56,47 +50,63 @@ export default function IndexPage() {
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
   )
-  const [result, placesState] = useAsyncState(
-    async () => {
-      const { only_pois, ...extra } = API.fromPagination(params, {
-        pageSize: PAGE_SIZE,
-      })
-      const options: Partial<PlaceListOptions> = extra
-      if (only_pois) {
-        const pois = await getPois()
-        options.positions = pois
-      }
-      track(SegmentPlace.FilterChange, {
-        filters: options,
-        place: SegmentPlace.Places,
-      })
 
-      return Places.get().getPlaces(options)
-    },
-    [params, track],
-    {
-      callWithTruthyDeps: true,
-      initialValue: defaultResult,
+  const [totalPlaces, setTotalPlaces] = useState(0)
+  const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
+
+  const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
+    const { only_pois, ...extra } = API.fromPagination(params, {
+      pageSize: PAGE_SIZE,
+    })
+    const options: Partial<PlaceListOptions> = extra
+    if (only_pois) {
+      const pois = await getPois()
+      options.positions = pois
     }
-  )
+    track(SegmentPlace.FilterChange, {
+      filters: options,
+      place: SegmentPlace.Places,
+    })
 
-  const placesMemo = useMemo(() => [result.data], [result.data])
+    const placesFetch = await Places.get().getPlaces({
+      ...options,
+      offset: allPlaces.length,
+    })
+
+    setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
+
+    if (placesFetch.total) {
+      setTotalPlaces(placesFetch.total)
+    }
+  }, [params, track])
+
+  useEffect(() => {
+    if (allPlaces.length === 0) {
+      loadPlaces()
+    } else if (allPlaces.length > PAGE_SIZE) {
+      setTimeout(
+        () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
+        0
+      )
+    }
+  }, [allPlaces])
+
+  const placesMemo = useMemo(() => [allPlaces], [allPlaces])
+
   const [[places], { handleFavorite, handlingFavorite }] =
     usePlacesManager(placesMemo)
 
-  const loading = placesState.version === 0 || placesState.loading
-  const total = result.total || 0
+  const loading = loadingPlaces
 
-  const handleChangePage = useCallback(
-    (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {
+  const handleShowMore = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault()
       e.stopPropagation()
-      const newParams = { ...params, page: Number(props.activePage ?? 1) }
       track(SegmentPlace.FilterChange, {
-        filters: newParams,
-        place: SegmentPlace.PlacesChangePagination,
+        filters: params,
+        place: SegmentPlace.PlacesShowMore,
       })
-      navigate(locations.places(newParams))
+      loadPlaces()
     },
     [params, track]
   )
@@ -110,6 +120,7 @@ export default function IndexPage() {
         only_featured: false,
         only_pois: !!props.value,
       }
+      setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
         place: SegmentPlace.PlacesChangePois,
@@ -128,9 +139,10 @@ export default function IndexPage() {
         only_pois: false,
         only_featured: !!props.value,
       }
+      setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
-        place: SegmentPlace.PlacesChangePois,
+        place: SegmentPlace.PlacesChangeFeatured,
       })
       navigate(locations.places(newParams))
     },
@@ -142,10 +154,11 @@ export default function IndexPage() {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
         PlaceListOrderBy.HIGHEST_RATED
-      const newParams = { ...params, order_by: value }
+      const newParams = { ...params, order_by: value, page: 1 }
+      setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
-        place: SegmentPlace.PlacesChangePois,
+        place: SegmentPlace.PlacesChangeOrder,
       })
       navigate(locations.places(newParams))
     },
@@ -303,25 +316,29 @@ export default function IndexPage() {
                 </HeaderMenu>
               </div>
             )}
-            <PlaceList
-              places={places}
-              onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-              loadingFavorites={handlingFavorite}
-              loading={loading}
-              size={loading ? PAGE_SIZE : undefined}
-              dataPlace={SegmentPlace.Places}
-            />
-            {!loading && places.length > 0 && (
+            {allPlaces.length > 0 && (
+              <PlaceList
+                places={places}
+                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
+                loadingFavorites={handlingFavorite}
+                dataPlace={SegmentPlace.Places}
+              />
+            )}
+            {loading && (
+              <PlaceList
+                className="places-page__list-loading"
+                places={[]}
+                onClickFavorite={() => {}}
+                loading={true}
+                size={PAGE_SIZE}
+                dataPlace={SegmentPlace.Places}
+              />
+            )}
+            {!loading && totalPlaces > places.length && (
               <div className="places__pagination">
-                <Pagination
-                  activePage={params.page}
-                  totalPages={Math.ceil(total / PAGE_SIZE) || 1}
-                  onPageChange={handleChangePage}
-                  firstItem={mobile ? null : undefined}
-                  lastItem={mobile ? null : undefined}
-                  boundaryRange={mobile ? 1 : undefined}
-                  siblingRange={mobile ? 0 : undefined}
-                />
+                <Button primary inverted onClick={handleShowMore}>
+                  {l("pages.places.show_more")}
+                </Button>
               </div>
             )}
           </Grid.Column>

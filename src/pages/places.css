@@ -25,6 +25,10 @@
 .ui.grid.places-page > .row > .column.places-page__list > div {
   display: flex;
 }
+.ui.grid.places-page > .row > .column.places-page__list .places__pagination {
+  justify-content: space-around;
+  padding-top: 60px;
+}
 
 .places-page .ui.button.filter-container__button {
   width: 100%;
