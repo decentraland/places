@@ -90,7 +90,6 @@ export function validatePlacesWorlds(places: Partial<PlaceAttributes>[]) {
           )
       )
     }
-    return true
   }
 }
 
@@ -194,7 +193,6 @@ export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
       }))
     ),
   ])
-  return true
 }
 
 export function createInsertQuery(attributes: Array<keyof PlaceAttributes>) {
@@ -271,11 +269,7 @@ export async function down(
     update: [],
   }
 
-  if (!(await validateMigratedPlaces(placesToRestore))) {
-    throw new Error(
-      "There is an error with places provided. Migration can't proccede"
-    )
-  }
+  await validateMigratedPlaces(placesToRestore)
 
   placesToRestore.delete.length &&
     pgm.db.query(createDeleteQuery(defaultPlaces.delete))

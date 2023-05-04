@@ -5,6 +5,6 @@ const files = [FILENAME]
 for (const file of files) {
   test(`should be able to migrate ${file} places`, async () => {
     const places = await import(`./${file}`)
-    expect(await validatePlacesWorlds(places.update)).toBeTruthy()
+    expect(await validatePlacesWorlds(places.update)).toBeUndefined()
   })
 }

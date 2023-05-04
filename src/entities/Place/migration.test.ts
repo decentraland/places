@@ -47,7 +47,7 @@ describe("validatePlacesWorlds", () => {
         featured: true,
       },
     ])
-    expect(validatePlacesWorldsResult).toBeTruthy()
+    expect(validatePlacesWorldsResult).toBeUndefined()
   })
 
   test("should return throw an error if any of the places to import have base_position and world_name at the same tiem", async () => {
@@ -199,7 +199,7 @@ describe("validateMigratedPlaces", () => {
       ],
       delete: ["-101,127", "-9,-9"],
     })
-    expect(validateMigratedPlacesResult).toBeTruthy()
+    expect(validateMigratedPlacesResult).toBeUndefined()
   })
 
   test("should return an error if the Place migration has not been created", async () => {
