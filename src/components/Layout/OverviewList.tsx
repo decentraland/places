@@ -1,5 +1,7 @@
 import React from "react"
 
+import { useMediaQuery } from "react-responsive"
+
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
@@ -10,6 +12,7 @@ import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMen
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import useCardsByWidth from "../../hooks/useCardsByWidth"
 import { SegmentPlace } from "../../modules/segment"
 import PlaceList from "../Place/PlaceList/PlaceList"
 
@@ -40,6 +43,14 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
     dataPlace,
   } = props
   const l = useFormatMessage()
+
+  // TODO: change the way this values are set
+  const cardsToShow = useCardsByWidth({
+    cardWidth: 300,
+    cardMargin: 14,
+    containerMargin: 48,
+  })
+
   return (
     <div className={TokenList.join(["ui overview-list", props.className])}>
       <Container className="full">
@@ -69,7 +80,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           onClickFavorite={onClickFavorite}
           loading={loading}
           className="overview-list__place-list"
-          size={5}
+          size={cardsToShow}
           loadingFavorites={loadingFavorites}
           dataPlace={dataPlace}
         />

@@ -5,26 +5,23 @@ import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { getPois } from "../modules/pois"
 
-export function usePlaceListPois(options?: {
-  limit: number
-  offset: number
-  positions?: string[]
-}) {
+export function usePlaceListPois(options: { limit: number; offset: number }) {
   return useAsyncMemo(
     async () => {
-      let positions = options?.positions
-      if (!positions) {
-        const pois = await getPois()
-        if (!pois || pois.length === 0) {
-          return []
-        }
-        positions = shuffle(pois).slice(0, 5)
+      const pois = await getPois()
+      if (!pois || pois.length === 0) {
+        return []
       }
 
-      const result = await Places.get().getPlaces({ positions })
-      return result.data
+      const result = await Places.get().getPlaces({
+        ...options,
+        positions: pois,
+      })
+      return shuffle(result.data).filter(
+        (place) => !place.image?.startsWith("https://api.decentraland.org")
+      )
     },
-    [options?.limit, options?.offset, options?.positions],
+    [options],
     { initialValue: [] as AggregatePlaceAttributes[] }
   )
 }

@@ -31,43 +31,15 @@
 }
 
 .place-list__container.overview-list__place-list .ui.card.place-card {
-  width: 400px;
   margin-top: 2px;
+  width: 100%;
 }
 
 .place-list__container.overview-list__place-list .ui.card.place-card.hidden a {
   cursor: default;
 }
 
-@media only screen and (min-width: 1200px) {
-}
-@media only screen and (min-width: 992px) and (max-width: 1199px) {
-  .overview-list__place-list .ui.card.place-card:nth-child(5) {
-    display: none;
-  }
-  .overview-list__place-list .ui.card.place-card:nth-child(4) {
-    margin-right: 0;
-  }
-}
-@media only screen and (min-width: 768px) and (max-width: 991px) {
-  .overview-list__place-list .ui.card.place-card:nth-child(4),
-  .overview-list__place-list .ui.card.place-card:nth-child(5) {
-    display: none;
-  }
-  .overview-list__place-list .ui.card.place-card:nth-child(3) {
-    margin-right: 0;
-  }
-}
 @media only screen and (min-width: 436px) and (max-width: 767px) {
-  .overview-list__place-list .ui.card.place-card:nth-child(3),
-  .overview-list__place-list .ui.card.place-card:nth-child(4),
-  .overview-list__place-list .ui.card.place-card:nth-child(5) {
-    display: none;
-  }
-  .overview-list__place-list .ui.card.place-card:nth-child(2) {
-    margin-right: 0;
-  }
-
   .overview-list__place-list {
     display: block;
   }

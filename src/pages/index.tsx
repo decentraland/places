@@ -29,12 +29,7 @@ import { SegmentPlace } from "../modules/segment"
 
 import "./index.css"
 
-const overviewOptions = { limit: 5, offset: 0 }
-const overviewPoisOptions = {
-  limit: 5,
-  offset: 0,
-  positions: ["-119,125", "27,-118", "-38,103", "-85,60", "-75,108"],
-}
+const overviewOptions = { limit: 24, offset: 0 }
 
 export default function OverviewPage() {
   const l = useFormatMessage()
@@ -51,8 +46,7 @@ export default function OverviewPage() {
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(overviewOptions)
-  const [placeListPois, placeListPoisState] =
-    usePlaceListPois(overviewPoisOptions)
+  const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
 
   const placesMemo = useMemo(
     () => [

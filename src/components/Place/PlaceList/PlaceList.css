@@ -3,6 +3,7 @@
   flex-wrap: wrap;
   justify-content: flex-start;
   align-items: flex-start;
+  --card-columns: 1;
 }
 
 .place-list__container .ui.card:first-child {
@@ -12,6 +13,7 @@
 .place-list__container .ui.card.place-card {
   margin-left: 14px;
   margin-right: 14px;
+  width: calc((100% - 30px * var(--card-columns)) / var(--card-columns));
 }
 
 .place-list__carousel {
@@ -19,33 +21,10 @@
   margin-right: auto;
 }
 
-@media only screen and (min-width: 1600px) {
+@media only screen and (max-width: 535px) {
   .place-list__container .ui.card.place-card {
-    width: calc((100% - 30px * 6) / 6);
-  }
-}
-
-@media only screen and (min-width: 1200px) and (max-width: 1600px) {
-  .place-list__container .ui.card.place-card {
-    width: calc((100% - 30px * 5) / 5);
-  }
-}
-
-@media only screen and (min-width: 992px) and (max-width: 1199px) {
-  .place-list__container .ui.card.place-card {
-    width: calc((100% - 30px * 4) / 4);
-  }
-}
-
-@media only screen and (min-width: 768px) and (max-width: 991px) {
-  .place-list__container .ui.card.place-card {
-    width: calc((100% - 30px * 3) / 3);
-  }
-}
-
-@media only screen and (max-width: 767px) {
-  .place-list__container .ui.card.place-card {
-    width: calc((100% - 30px * 2) / 2);
+    margin-left: auto;
+    margin-right: auto;
   }
 }
 
