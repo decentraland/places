@@ -1,0 +1,42 @@
+{
+  "create": [
+    {
+      "base_position": "-22,107"
+    },
+    {
+      "base_position": "14,150",
+      "featured": true
+    },
+    {
+      "base_position": "-8,45",
+      "highlighted_image": "/images/places/test_banner.jpg",
+      "image": "/images/places/test_thumbnail.jpg",
+      "highlighted": true,
+      "featured": true
+    }
+  ],
+  "update": [
+    {
+      "base_position": "47,-45",
+      "featured": false
+    },
+    {
+      "base_position": "-9,-9",
+      "highlighted_image": "/images/places/genesis_plaza_banner.jpg"
+    },
+    {
+      "base_position": "-105,-147",
+      "highlighted_image": "/images/places/vroomway_banner.jpg",
+      "highlighted": true
+    },
+    {
+      "base_position": "-102,129",
+      "highlighted": false
+    }
+  ],
+  "delete": [
+    {
+      "base_position": "144,-7"
+    }
+  ]
+}
