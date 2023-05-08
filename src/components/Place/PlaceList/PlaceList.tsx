@@ -76,6 +76,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
         <Carousel2
           className="place-list__carousel"
           indicatorsType={IndicatorType.Dash}
+          dynamicBullets={true}
           items={places}
           progress
           isNavigationHide
