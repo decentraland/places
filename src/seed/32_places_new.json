@@ -1,0 +1,21 @@
+{
+  "update": [
+    {
+      "base_position": "47,-45",
+      "featured": true
+    },
+    {
+      "base_position": "-9,-9",
+      "highlighted_image": null
+    },
+    {
+      "base_position": "-105,-147",
+      "highlighted_image": null,
+      "highlighted": false
+    },
+    {
+      "base_position": "-102,129",
+      "highlighted": true
+    }
+  ]
+}
