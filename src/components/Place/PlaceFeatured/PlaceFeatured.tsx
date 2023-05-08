@@ -6,15 +6,13 @@ import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
-import {
-  useMobileMediaQuery,
-  useTabletAndBelowMediaQuery,
-} from "decentraland-ui/dist/components/Media/Media"
+import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
+import UserCount from "../../Label/UserCount/UserCount"
 
 import "./PlaceFeatured.css"
 
@@ -33,7 +31,6 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
     [item]
   )
   const handleJumpInTrack = useTrackLinkContext()
-  const isMobile = useMobileMediaQuery()
   const isTabletOrMobile = useTabletAndBelowMediaQuery()
 
   return (
@@ -43,8 +40,12 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
         backgroundImage: `url("${item.highlighted_image || item.image}")`,
       }}
     >
-      <Hero centered={isMobile}>
-        <Hero.Header>{item.title}</Hero.Header>
+      <div className="place-featured__overlay" />
+      <Hero>
+        <Hero.Header>
+          <UserCount loading={loading} value={item?.user_count || 0} />
+          {item.title}
+        </Hero.Header>
         <Hero.Description>{item.description}</Hero.Description>
         <Hero.Actions>
           {!isTabletOrMobile && (

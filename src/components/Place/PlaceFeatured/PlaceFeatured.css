@@ -22,18 +22,57 @@
 .place-featured .dcl.hero .ui.header.hero-title {
   color: var(--text-on-primary);
   font-weight: 700;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  font-size: 32px;
+  line-height: 39px;
 }
 
 .place-featured .dcl.hero .ui.header.hero-subtitle {
   color: var(--text-on-primary);
+  max-width: 400px;
+  font-weight: 600;
+  line-height: 20px;
+  text-shadow: 0px 4px 4px rgba(0, 0, 0, 0.25);
+  font-size: 14px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  -webkit-line-clamp: 3;
 }
 
 .place-featured .dcl.hero .hero-actions {
-  margin-top: 32px;
+  margin-top: 24px;
 }
 
 .place-featured .hero-actions .ui.button:first-child {
   margin-right: 10px;
+}
+
+.place-featured .ui.label.user-count {
+  background: rgba(0, 0, 0, 0.65);
+  border-radius: 5px;
+  color: #fff;
+  display: flex;
+  font-size: 13px;
+  margin: 0;
+  text-align: center;
+  justify-content: center;
+  height: 26px;
+  width: 50px;
+}
+
+.place-featured .place-featured__overlay {
+  background-color: rgba(0, 0, 0, 0.45);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.place-featured .ui.label.user-count svg path {
+  fill: #fff;
 }
 
 @media screen and (min-width: 2850px) {
