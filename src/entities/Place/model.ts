@@ -11,6 +11,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { diff, unique } from "radash/dist/array"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import UserFavoriteModel from "../UserFavorite/model"
@@ -302,7 +303,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     place: Partial<PlaceAttributes>,
     attributes: Array<keyof PlaceAttributes>
   ) {
-    const keys = attributes
+    const keys = unique([...attributes, "id"])
     const sql = SQL`INSERT INTO ${table(this)} ${columns(keys)}
               VALUES ${objectValues(keys, [place])}`
     return this.namedQuery("insert_place", sql)
@@ -312,7 +313,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     place: Partial<PlaceAttributes>,
     attributes: Array<keyof PlaceAttributes>
   ) => {
-    const keys = attributes
+    const keys = unique(diff(attributes, ["id", "created_at"])) as Array<
+      keyof PlaceAttributes
+    >
     const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
