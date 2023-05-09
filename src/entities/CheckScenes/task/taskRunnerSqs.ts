@@ -17,7 +17,6 @@ import {
 import { processEntityId } from "./processEntityId"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
-  "id",
   "title",
   "description",
   "image",
@@ -111,9 +110,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   }
 
   if (placesToProcess?.update) {
-    const updatePlace = createPlaceFromContentEntityScene(contentEntityScene)
-    await PlaceModel.updatePlace(updatePlace, placesAttributes)
-    notifyUpdatePlace(updatePlace)
+    await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
+    notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
       content_server_url: job.contentServerUrls![0],
