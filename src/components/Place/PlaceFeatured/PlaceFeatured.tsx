@@ -43,7 +43,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
       <div className="place-featured__overlay" />
       <Hero>
         <Hero.Header>
-          <div className="place-featured__user-count">
+          <div className="place-featured__label-container">
             <UserCount loading={loading} value={item?.user_count || 0} />
           </div>
           {item.title}
