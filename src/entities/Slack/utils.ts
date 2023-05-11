@@ -20,9 +20,11 @@ export async function notifyNewPlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:tada: New place added: <${placeUrl(place)}|${
-            place.world ? place.world_name : place.base_position
-          }>`,
+          text: `:tada: New ${place.world ? "world" : "place"} added: ${
+            place.world
+              ? place.world_name
+              : `<${placeUrl(place)}|${place.base_position}>`
+          }`,
         },
       },
       {
@@ -49,9 +51,13 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:white_check_mark: Place updated: <${placeUrl(place)}|${
-            place.world ? place.world_name : place.base_position
-          }>`,
+          text: `:white_check_mark: ${
+            place.world ? "World" : "Place"
+          } updated: ${
+            place.world
+              ? place.world_name
+              : `<${placeUrl(place)}|${place.base_position}>`
+          }`,
         },
       },
       {
