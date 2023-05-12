@@ -40,6 +40,8 @@ jobs:
 
       - name: testing
         run: npm test -- --coverage
+        env:
+          NODE_OPTIONS: --max-old-space-size=2048
 
       - name: coveralls
         uses: coverallsapp/github-action@master
