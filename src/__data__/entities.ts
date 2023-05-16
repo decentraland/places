@@ -9864,55 +9864,6 @@ export const contentEntitySceneMusicFestivalStage: ContentEntityScene = {
   },
 }
 
-export const contentEntitySceneRoad: ContentEntityScene = {
-  version: "v3",
-  type: EntityType.SCENE,
-  pointers: ["-89,11"],
-  timestamp: 1581033747428,
-  content: [
-    {
-      file: "game.js",
-      hash: "QmUuqZTFFfMUFDRStnEXa1HE6ucGVjASZSbzRgkeavugiv",
-    },
-    {
-      file: "OpenRoad_C.glb",
-      hash: "QmYM4LFSx6A2sd3m6mmduTuseoPZ7ryQCAau7M3UDotPML",
-    },
-    {
-      file: "scene.json",
-      hash: "QmdjXxWrGhUj8JdcinyvypWAhytNdcV33hrs8m6EAdmMV6",
-    },
-  ],
-  metadata: {
-    display: {
-      title: "Road at -89,11 (open road OpenRoad_C)",
-      favicon: "favicon_asset",
-    },
-    contact: {
-      name: "",
-      email: "",
-    },
-    owner: "",
-    scene: {
-      parcels: ["-89,11"],
-      base: "-89,11",
-    },
-    communications: {
-      type: "webrtc",
-      signalling: "https://signalling-01.decentraland.org",
-    },
-    policy: {
-      contentRating: "E",
-      fly: true,
-      voiceEnabled: true,
-      blacklist: [],
-      teleportPosition: "",
-    },
-    main: "game.js",
-    tags: [],
-  },
-}
-
 export const placeRoad: PlaceAttributes = {
   id: "c6adac03-0c7a-406d-8285-9abf8b19751f",
   likes: 0,

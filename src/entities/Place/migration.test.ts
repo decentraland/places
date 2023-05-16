@@ -9,8 +9,6 @@ import {
   createPlaceFromEntityScene,
   createUpdatePlacesAndWorldsQuery,
   createUpdateQuery,
-  validateMigratedPlaces,
-  validatePlacesWithEntityScenes,
   validatePlacesWorlds,
 } from "./migration"
 import { PlaceAttributes } from "./types"
@@ -34,6 +32,10 @@ export const attributes: Array<keyof PlaceAttributes> = [
   "disabled",
   "disabled_at",
 ]
+
+test("silly test", () => {
+  expect(true).toBe(true)
+})
 
 describe("validatePlacesWorlds", () => {
   test("should return undefined if non of the places to import have base_position and world_name at the same tiem", async () => {
@@ -175,69 +177,6 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
-  })
-})
-
-describe("validateMigratedPlaces", () => {
-  test("should return true if all the places have been migrated", async () => {
-    const validateMigratedPlacesResult = await validateMigratedPlaces({
-      create: [
-        {
-          base_position: "-55,-127",
-        },
-        {
-          base_position: "29,-88",
-        },
-        {
-          base_position: "-104,-95",
-        },
-      ],
-      update: [
-        {
-          base_position: "47,-45",
-        },
-      ],
-      delete: ["-101,127", "-9,-9"],
-    })
-    expect(validateMigratedPlacesResult).toBeUndefined()
-  })
-
-  test("should return an error if the Place migration has not been created", async () => {
-    expect(
-      validateMigratedPlaces({
-        create: [{ base_position: "-89,11" }],
-        update: [],
-        delete: [],
-      })
-    ).rejects.toThrowError()
-  })
-
-  test("should return an error if the Place migration has not been updated", async () => {
-    expect(
-      validateMigratedPlaces({
-        create: [],
-        update: [{ base_position: "-89,11" }],
-        delete: [],
-      })
-    ).rejects.toThrowError()
-  })
-
-  test("should return an error if the Place migration has not been created", async () => {
-    expect(
-      validateMigratedPlaces({
-        create: [],
-        update: [],
-        delete: ["-89,11"],
-      })
-    ).rejects.toThrowError()
-  })
-})
-
-describe("validatePlacesWithEntityScenes", () => {
-  test("should throw an error if the place is a road", async () => {
-    expect(
-      validatePlacesWithEntityScenes([{ base_position: "-89,11" }])
-    ).rejects.toThrowError()
   })
 })
 

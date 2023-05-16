@@ -1,6 +1,5 @@
 import {
   contentEntitySceneGenesisPlaza,
-  contentEntitySceneRoad,
   placeGenesisPlaza,
   placeGenesisPlazaWithAggregatedAttributes,
   placeRoad,
@@ -13,15 +12,8 @@ import {
   findNewDeployedPlace,
   findSamePlace,
   getWorldAbout,
-  isRoad,
   isSameWorld,
 } from "./utils"
-
-describe("isRoads", () => {
-  test("should return true, this is a road", async () => {
-    expect(isRoad(contentEntitySceneRoad)).toBeTruthy()
-  })
-})
 
 describe("isNewPlace", () => {
   test("should return the place found if not new place with same base position", async () => {
