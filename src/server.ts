@@ -30,7 +30,7 @@ import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
 const tasks = tasksManager()
-tasks.use(
+/* tasks.use(
   createSceneConsumerTask(
     new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
     {
@@ -42,7 +42,7 @@ tasks.use(
       VisibilityTimeout: 3 * 3600, // 3 hours
     }
   )
-)
+) */
 
 const app = express()
 app.set("x-powered-by", false)

@@ -39,9 +39,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const sql = SQL`
       SELECT * FROM ${table(this)}
+      JOIN places_positions pp on pp.place_id = places.id
       WHERE "disabled" is false
         AND "world" is false
-        AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
+        AND pp."positions" && ${
+          "{" + JSON.stringify(positions).slice(1, -1) + "}"
+        }
     `
 
     return this.namedQuery("find_enabled_by_positions", sql)
@@ -146,6 +149,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           UserLikesModel
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
+      JOIN places_positions pp on pp.place_id = p.id
       WHERE
         p."disabled" is false
         AND "world" is false
@@ -154,7 +158,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(
           options.positions?.length > 0,
           SQL.raw(
-            `AND p.positions && ${
+            `AND pp.positions && ${
               "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
             }`
           )
@@ -192,6 +196,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
+      JOIN places_positions pp on pp.place_id = p.id
       WHERE
         p."disabled" is false
         AND "world" is false
@@ -200,7 +205,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(
           options.positions?.length > 0,
           SQL.raw(
-            `AND p.positions && ${
+            `AND pp.positions && ${
               "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
             }`
           )
