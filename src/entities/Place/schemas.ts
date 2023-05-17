@@ -26,7 +26,7 @@ export const getPlaceListQuerySchema = schema({
     },
     positions: {
       type: "array",
-      maxItems: 100,
+      maxItems: 1000,
       items: { type: "string", pattern: "^-?\\d{1,3},-?\\d{1,3}$" },
       description: "Filter places in specific positions",
       nullable: true as any,
