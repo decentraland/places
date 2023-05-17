@@ -1,5 +1,6 @@
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
+import PlacePositionModel from "../../PlacePosition/model"
 import {
   notifyDisablePlaces,
   notifyNewPlace,
@@ -98,6 +99,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToProcess?.new) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.insertPlace(newPlace, placesAttributes)
+    await PlacePositionModel.syncBasePosition(placesToProcess.new)
+
     notifyNewPlace(newPlace)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -111,6 +114,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   if (placesToProcess?.update) {
     await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
+    await PlacePositionModel.syncBasePosition(placesToProcess.update)
+
     notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -125,8 +130,21 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToProcess?.disabled.length) {
     const placesIdToDisable = placesToProcess.disabled.map((place) => place.id)
     await PlaceModel.disablePlaces(placesIdToDisable)
+
+    const positions = new Set(
+      placesToProcess.disabled.flatMap((place) => place.positions)
+    )
+    placesToProcess?.new?.positions.forEach((position) =>
+      positions.delete(position)
+    )
+    placesToProcess?.update?.positions.forEach((position) =>
+      positions.delete(position)
+    )
+    await PlacePositionModel.removePositions([...positions])
+
     notifyDisablePlaces(placesToProcess.disabled)
     placesToProcess.disabled.forEach((place) => {
+      // TODO: use createMany instead of createOne
       CheckScenesModel.createOne({
         entity_id: job.entity.entityId,
         content_server_url: job.contentServerUrls![0],

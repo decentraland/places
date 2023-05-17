@@ -33,6 +33,7 @@ export const getPlace = Router.memo(
         `Not found place "${params.place_id}"`
       )
     }
+
     const hotScenes = await getHotScenes()
     const sceneStats = await getSceneStats()
     let aggregatedPlaces = [place]

@@ -57,6 +57,7 @@ export const getPlaceList = Router.memo(
     if (bool(query.only_favorites) && !userAuth?.address) {
       return new ApiResponse([], { total: 0 })
     }
+
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }),
