@@ -1,4 +1,5 @@
-import React, { useMemo } from "react"
+/* eslint-disable import/order */
+import React, { useEffect, useMemo, useState } from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -23,9 +24,16 @@ import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
 /* import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates" */
 import usePlacesManager from "../hooks/usePlacesManager"
+import { useUserHasUsedWorld } from "../hooks/useUserHasUsedWorld"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
+
+import { useGetCategories } from "../hooks/getCategories"
+import CategoryList from "../components/Layout/CategoryList"
+import { useGetCategoryFromId } from "../hooks/useGetCategortFromId"
+import { useGetRecommendations } from "../hooks/useGetRecomendations"
+import RecommendationList from "../components/Layout/RecommendationList"
 
 import "./index.css"
 
@@ -33,8 +41,14 @@ const overviewOptions = { limit: 24, offset: 0 }
 
 export default function OverviewPage() {
   const l = useFormatMessage()
-
   const [account] = useAuthContext()
+
+  // const hasUserUsedTheWorld = true
+  // //todo: esto va asi
+  const hasUserUsedTheWorld = useUserHasUsedWorld()
+  const [categories] = useGetCategories()
+  const [recommendations] = useGetRecommendations()
+
   const [placeListHighlighted, placeListHighlightedState] =
     usePlaceListHighlighted()
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
@@ -122,6 +136,10 @@ export default function OverviewPage() {
         />
       )}
       <Container className="full overview-container">
+        <CategoryList categories={categories} />
+        {account && hasUserUsedTheWorld ? (
+          <RecommendationList recommendations={recommendations} />
+        ) : null}
         <OverviewList
           places={mostActiveList}
           title={l("pages.overview.most_active")}

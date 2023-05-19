@@ -6,9 +6,9 @@
   --card-columns: 1;
 }
 
-.place-list__container .ui.card:first-child {
+/* .place-list__container .ui.card:first-child {
   margin-top: 1rem;
-}
+} */
 
 .place-list__container .ui.card.place-card {
   margin-left: 14px;

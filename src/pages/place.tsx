@@ -93,7 +93,6 @@ export default function PlacePage() {
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
   }
-
   if (
     placeRetrivedState.loaded &&
     !placeRetrivedState.loading &&

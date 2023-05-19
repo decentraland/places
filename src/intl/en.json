@@ -14,7 +14,9 @@
     "places": "All Places",
     "my_places": "My Places",
     "faq": "FAQ",
-    "faq_target": "https://docs.decentraland.org/creator/places/faq/"
+    "faq_target": "https://docs.decentraland.org/creator/places/faq/",
+    "categories": "Categories",
+    "recommendations": "Recommended parcels to visit"
   },
   "components": {
     "button": {
@@ -66,7 +68,9 @@
       "my_favorites": "My Favorites",
       "recently_updated": "Recently Added",
       "points_of_interest": "Points of Interest",
-      "view_all": "view all"
+      "view_all": "view all",
+      "categories": "Categories",
+      "recommendations": "Recommendations"
     },
     "places": {
       "title": "Places",

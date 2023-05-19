@@ -27,3 +27,19 @@
     display: none;
   }
 }
+
+.Atlas canvas {
+  border-radius: 10px;
+}
+
+.dcl.atlas {
+  border-radius: 10px 10px 0px 0px;
+}
+
+.react-tile-map-canvas.draggable {
+  border-radius: 10px 10px 0px 0px;
+}
+
+.ui.card {
+  margin: unset;
+}

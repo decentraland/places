@@ -3,12 +3,15 @@ import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { Category } from "../components/Layout/CategoryList"
 import {
   AggregatePlaceAttributes,
   PlaceListOptions,
 } from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
+
+const ATEAM = "https://places.dcl.guru/"
 
 export default class Places extends API {
   static Url = env(`PLACES_URL`, `https://places.decentraland.org/api`)
@@ -149,5 +152,54 @@ export default class Places extends API {
       only_highlighted: true,
       ...options,
     })
+  }
+
+  //This endpoint checks if user has visited the world checking the visited places by the user, 200 response means the user has used the world.
+  //Other responses means the user is new or does not exist
+  async getUserHasUsedWorld(account: string) {
+    let result = {}
+    await fetch(`${ATEAM}user/${account}`).then((res) =>
+      res.status === 200 ? (result = true) : (result = false)
+    )
+
+    return result
+  }
+
+  //This endpoinds gets the category of common places to visit, we're displaying categories when the user has no recommended places to visit
+  async getCategories() {
+    let result: Category[] = []
+    await fetch(`${ATEAM}category`)
+      .then((response) => response.json())
+      .then((responseBody) => {
+        result = responseBody
+      })
+
+    return result
+  }
+
+  //This endpoinds gets the data from the category
+  async getCategoryFromId(id: string) {
+    let result = {}
+    await fetch(`${ATEAM}category/${id}`)
+      .then((response) => response.json())
+      .then((responseBody) => {
+        result = responseBody
+      })
+
+    return result
+  }
+
+  //This endpoinds gets the data from the category
+  async getRecommendations(address: string) {
+    let result = {}
+    await fetch(
+      `https://places.dcl.guru/user/0xd4fec88a49eb514e9347ec655d0481d8483a9ae0/recommendation`
+    )
+      .then((response) => response.json())
+      .then((responseBody) => {
+        result = responseBody
+      })
+
+    return result
   }
 }
