@@ -99,7 +99,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToProcess?.new) {
     const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
     await PlaceModel.insertPlace(newPlace, placesAttributes)
-    await PlacePositionModel.syncBasePosition(placesToProcess.new)
+    !contentEntityScene.metadata.worldConfiguration &&
+      (await PlacePositionModel.syncBasePosition(placesToProcess.new))
 
     notifyNewPlace(newPlace)
     CheckScenesModel.createOne({
@@ -114,7 +115,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   if (placesToProcess?.update) {
     await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
-    await PlacePositionModel.syncBasePosition(placesToProcess.update)
+    !contentEntityScene.metadata.worldConfiguration &&
+      (await PlacePositionModel.syncBasePosition(placesToProcess.update))
 
     notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
@@ -140,7 +142,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     placesToProcess?.update?.positions.forEach((position) =>
       positions.delete(position)
     )
-    await PlacePositionModel.removePositions([...positions])
+    !contentEntityScene.metadata.worldConfiguration &&
+      (await PlacePositionModel.removePositions([...positions]))
 
     notifyDisablePlaces(placesToProcess.disabled)
     placesToProcess.disabled.forEach((place) => {
