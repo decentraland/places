@@ -99,7 +99,7 @@ export class SQSConsumer {
             if (!err.message.includes("The scene is a road")) {
               notifyError([
                 err.toString(),
-                `\`\`\`${JSON.stringify(body)}\`\`\``,
+                `<${body.contentServerUrls}/${body.entity.entityId}|${body.entity.entityId}>`,
               ])
               loggerExtended.error(err.toString())
             }
