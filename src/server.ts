@@ -30,19 +30,19 @@ import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 
 const tasks = tasksManager()
-// tasks.use(
-//   createSceneConsumerTask(
-//     new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
-//     {
-//       AttributeNames: ["SentTimestamp"],
-//       MaxNumberOfMessages: 10,
-//       MessageAttributeNames: ["All"],
-//       QueueUrl: env("QUEUE_URL")!,
-//       WaitTimeSeconds: 15,
-//       VisibilityTimeout: 3 * 3600, // 3 hours
-//     }
-//   )
-// )
+tasks.use(
+  createSceneConsumerTask(
+    new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
+    {
+      AttributeNames: ["SentTimestamp"],
+      MaxNumberOfMessages: 10,
+      MessageAttributeNames: ["All"],
+      QueueUrl: env("QUEUE_URL")!,
+      WaitTimeSeconds: 15,
+      VisibilityTimeout: 3 * 3600, // 3 hours
+    }
+  )
+)
 
 const app = express()
 app.set("x-powered-by", false)
