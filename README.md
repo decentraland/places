@@ -72,6 +72,16 @@ this project runs gatsby as front-end and a nodejs server as back-end both conne
 
 **back-end** routes are defined using `express` you can find each route in `src/entities/{Entity}/routes.ts` and those are imported ar `src/server.ts`
 
+## Re-Populate `place_positions`
+
+```sql
+TRUNCATE "place_positions";
+INSERT INTO "place_positions" ("base_position", "position")
+  SELECT p.base_position, unnest(p.positions) FROM places p
+    WHERE p.disabled IS FALSE
+      AND p.world    IS FALSE
+```
+
 ## Content Entity Scene
 
 These are the entities that contain all the necessary information to create each of the Places. By means of a SQS queue the EntityId and the Url of the Content server are obtained in order to obtain the information. Next we are going to describe the steps to test this locally.
