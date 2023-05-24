@@ -26,13 +26,15 @@ describe(`findEnabledByPositions`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_enabled_by_positions")
-    expect(sql.values).toEqual(['{"-9,-9"}'])
+    expect(sql.values).toEqual(["-9,-9"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
         WHERE "disabled" is false
           AND "world" is false
-          AND "positions" && $1
+          AND "base_position" IN (
+            SELECT DISTINCT("base_position") FROM "place_positions" "pp" WHERE "pp"."position" IN ($1)
+          )
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -53,7 +55,7 @@ describe(`findEnabledWorldName`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
-        WHERE "disabled" = false
+        WHERE "disabled" is false AND "world" is true
           AND "world_name" = $1
       `
         .trim()
@@ -134,7 +136,7 @@ describe(`findWithAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual([1, 0])
+    expect(sql.values).toEqual(["-9,-9", 1, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
@@ -142,10 +144,12 @@ describe(`findWithAggregates`, () => {
         WHERE
           p."disabled" is false
           AND "world" is false
-          AND p.positions && '{"-9,-9"}'
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
         ORDER BY p.like_rate DESC
-          LIMIT $1
-          OFFSET $2
+          LIMIT $2
+          OFFSET $3
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -169,7 +173,13 @@ describe(`findWithAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual([userLikeTrue.user, userLikeTrue.user, 1, 0])
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "-9,-9",
+      1,
+      0,
+    ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
@@ -177,10 +187,12 @@ describe(`findWithAggregates`, () => {
         FROM "places" p
         LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
-        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}'
+        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
+          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+        )
         ORDER BY p.like_rate DESC
-          LIMIT $3
-          OFFSET $4
+          LIMIT $4
+          OFFSET $5
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -204,7 +216,13 @@ describe(`findWithAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual([userLikeTrue.user, userLikeTrue.user, 100, 0])
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "-9,-9",
+      100,
+      0,
+    ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
@@ -212,10 +230,12 @@ describe(`findWithAggregates`, () => {
         FROM "places" p
         LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
-        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}'
+        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
+          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+        )
         ORDER BY p.like_rate DESC
-          LIMIT $3
-          OFFSET $4
+          LIMIT $4
+          OFFSET $5
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -237,7 +257,7 @@ describe(`countPlaces`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual([])
+    expect(sql.values).toEqual(["-9,-9"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -246,7 +266,9 @@ describe(`countPlaces`, () => {
         WHERE
           p."disabled" is false
           AND "world" is false
-          AND p.positions && '{"-9,-9"}'
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -367,17 +389,19 @@ describe(`findWithHotScenes`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual([100, 0])
+    expect(sql.values).toEqual(["-9,-9", 100, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
         FROM "places" p
         WHERE
           p."disabled" is false AND "world" is false
-          AND p.positions && '{"-9,-9"}'
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
         ORDER BY p.like_rate DESC
-          LIMIT $1
-          OFFSET $2
+          LIMIT $2
+          OFFSET $3
       `
         .trim()
         .replace(/\s{2,}/gi, " ")

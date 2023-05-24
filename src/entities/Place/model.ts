@@ -8,12 +8,14 @@ import {
   offset,
   setColumns,
   table,
+  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { diff, unique } from "radash/dist/array"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
+import PlacePositionModel from "../PlacePosition/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
@@ -41,7 +43,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT * FROM ${table(this)}
       WHERE "disabled" is false
         AND "world" is false
-        AND "positions" && ${"{" + JSON.stringify(positions).slice(1, -1) + "}"}
+        AND "base_position" IN (
+          SELECT DISTINCT("base_position")
+          FROM ${table(PlacePositionModel)} "pp"
+          WHERE "pp"."position" IN ${values(positions)}
+        )
     `
 
     return this.namedQuery("find_enabled_by_positions", sql)
@@ -52,8 +58,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<PlaceAttributes[]> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
-      WHERE "disabled" = false
-      AND "world_name" = ${world_name}
+      WHERE
+        "disabled" is false
+        AND "world" is true
+        AND "world_name" = ${world_name}
     `
 
     return this.namedQuery("find_enabled_by_world_name", sql)
@@ -147,17 +155,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       WHERE
-        p."disabled" is false
-        AND "world" is false
+        p."disabled" is false AND "world" is false
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
-          SQL.raw(
-            `AND p.positions && ${
-              "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
-            }`
-          )
+          SQL`AND p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position IN ${values(options.positions)}
+            )`
         )}
       ORDER BY ${order}
       ${limit(options.limit, { max: 100 })}
@@ -199,11 +206,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
-          SQL.raw(
-            `AND p.positions && ${
-              "'{" + JSON.stringify(options.positions)?.slice(1, -1) + "}'"
-            }`
-          )
+          SQL`AND p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position IN ${values(options.positions)}
+            )`
         )}
     `
     const results: { total: number }[] = await this.namedQuery(
@@ -319,12 +326,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
-    )} WHERE disabled = false
+    )} WHERE disabled is false
     ${conditional(
       !place.world,
-      SQL` AND ${place.base_position} = ANY("positions")`
+      SQL`AND world is false AND "base_position" IN (
+        SELECT DISTINCT("base_position")
+        FROM ${table(PlacePositionModel)} "pp"
+        WHERE "pp"."position" = ${place.base_position}
+      )`
     )}
-    ${conditional(!!place.world, SQL` AND ${place.world_name} = "world_name"`)}`
+    ${conditional(
+      !!place.world,
+      SQL` AND world is true AND ${place.world_name} = "world_name"`
+    )}`
 
     return this.namedQuery("update_place", sql)
   }
