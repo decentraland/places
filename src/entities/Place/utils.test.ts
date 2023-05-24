@@ -1,13 +1,11 @@
-import {
-  contentEntitySceneGenesisPlaza,
-  genesisPlazaThumbnailMap,
-  hotSceneGenesisPlaza,
-  placeGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-  sceneStatsGenesisPlaza,
-  sqsMessageWorld,
-  worldContentEntitySceneParalax,
-} from "../../__data__/entities"
+import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
+import { genesisPlazaThumbnailMap } from "../../__data__/entities"
+import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
+import { sqsMessageWorld } from "../../__data__/sqs"
+import { worldContentEntitySceneParalax } from "../../__data__/world"
 import {
   explorerPlaceUrl,
   explorerUrl,

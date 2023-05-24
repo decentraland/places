@@ -1,10 +1,8 @@
-import {
-  hotSceneGenesisPlaza,
-  placeGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-  userLikeTrue,
-  worldPlaceParalax,
-} from "../../__data__/entities"
+import { userLikeTrue } from "../../__data__/entities"
+import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { worldPlaceParalax } from "../../__data__/world"
 import PlaceModel from "./model"
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
@@ -32,7 +30,7 @@ describe(`findEnabledByPositions`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
-        WHERE "disabled" is false 
+        WHERE "disabled" is false
           AND "world" is false
           AND "positions" && $1
       `
@@ -55,7 +53,7 @@ describe(`findEnabledWorldName`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
-        WHERE "disabled" = false 
+        WHERE "disabled" = false
           AND "world_name" = $1
       `
         .trim()
@@ -78,9 +76,9 @@ describe(`findByIdWithAggregates`, () => {
     expect(sql.values).toEqual([placeGenesisPlaza.id])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT p.* , false as user_favorite , false as "user_like" , 
-        false as "user_dislike" 
-        FROM "places" p 
+        SELECT p.* , false as user_favorite , false as "user_like" ,
+        false as "user_dislike"
+        FROM "places" p
         WHERE "p"."id" = $1
       `
         .trim()
@@ -104,12 +102,12 @@ describe(`findByIdWithAggregates`, () => {
     ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT p.* , uf."user" is not null as user_favorite , 
-          coalesce(ul."like",false) as "user_like" , 
-          not coalesce(ul."like",true) as "user_dislike" 
-        FROM "places" p 
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1 
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2 
+        SELECT p.* , uf."user" is not null as user_favorite ,
+          coalesce(ul."like",false) as "user_like" ,
+          not coalesce(ul."like",true) as "user_dislike"
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
         WHERE "p"."id" = $3
       `
         .trim()
@@ -142,7 +140,7 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
         FROM "places" p
         WHERE
-          p."disabled" is false 
+          p."disabled" is false
           AND "world" is false
           AND p.positions && '{"-9,-9"}'
         ORDER BY p.like_rate DESC
@@ -174,14 +172,14 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([userLikeTrue.user, userLikeTrue.user, 1, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" , 
-          not coalesce(ul."like",true) as "user_dislike" 
-        FROM "places" p 
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1 
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2 
-        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}' 
-        ORDER BY p.like_rate DESC 
-          LIMIT $3 
+        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
+          not coalesce(ul."like",true) as "user_dislike"
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}'
+        ORDER BY p.like_rate DESC
+          LIMIT $3
           OFFSET $4
       `
         .trim()
@@ -209,14 +207,14 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([userLikeTrue.user, userLikeTrue.user, 100, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" , 
-          not coalesce(ul."like",true) as "user_dislike" 
-        FROM "places" p 
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1 
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2 
-        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}' 
-        ORDER BY p.like_rate DESC 
-          LIMIT $3 
+        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
+          not coalesce(ul."like",true) as "user_dislike"
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        WHERE p."disabled" is false AND "world" is false AND p.positions && '{"-9,-9"}'
+        ORDER BY p.like_rate DESC
+          LIMIT $3
           OFFSET $4
       `
         .trim()
@@ -246,7 +244,7 @@ describe(`countPlaces`, () => {
           count(*) as "total"
         FROM "places" p
         WHERE
-          p."disabled" is false 
+          p."disabled" is false
           AND "world" is false
           AND p.positions && '{"-9,-9"}'
       `

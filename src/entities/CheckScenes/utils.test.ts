@@ -1,13 +1,13 @@
+import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { placeRoad } from "../../__data__/placeRoad"
+import { sqsMessageWorld } from "../../__data__/sqs"
 import {
-  contentEntitySceneGenesisPlaza,
-  placeGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-  placeRoad,
-  sqsMessageWorld,
   worldAboutParalax,
   worldContentEntitySceneParalax,
   worldPlaceParalax,
-} from "../../__data__/entities"
+} from "../../__data__/world"
 import {
   findNewDeployedPlace,
   findSamePlace,

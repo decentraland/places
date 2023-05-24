@@ -1,7 +1,5 @@
-import {
-  entitySceneGenesisPlaza,
-  placeGenesisPlaza,
-} from "../../__data__/entities"
+import { entitySceneGenesisPlaza } from "../../__data__/entitySceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import {
   createDeleteQuery,
   createInsertQuery,

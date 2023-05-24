@@ -1,11 +1,9 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 
-import {
-  hotSceneGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-  sceneStatsGenesisPlaza,
-} from "../../../__data__/entities"
+import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "../../../api/DataTeam"
 import PlaceModel from "../model"
 import { getPlaceList } from "./getPlaceList"
