@@ -2,7 +2,8 @@ import { resolve } from "path"
 
 import SQS from "aws-sdk/clients/sqs"
 import { databaseInitializer } from "decentraland-gatsby/dist/entities/Database/utils"
-import metrics from "decentraland-gatsby/dist/entities/Prometheus/routes"
+import { gatsbyRegister } from "decentraland-gatsby/dist/entities/Prometheus/metrics"
+import metrics from "decentraland-gatsby/dist/entities/Prometheus/routes/utils"
 import RequestError from "decentraland-gatsby/dist/entities/Route/error"
 import handle from "decentraland-gatsby/dist/entities/Route/handle"
 import {
@@ -21,6 +22,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Task"
 import env from "decentraland-gatsby/dist/utils/env"
 import express from "express"
+import { register } from "prom-client"
 
 import categoryRoute from "./entities/Category/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
@@ -62,7 +64,7 @@ app.use("/api", [
   }),
 ])
 
-app.use(metrics)
+app.use(metrics([gatsbyRegister, register]))
 app.use(socialRoutes)
 app.use(
   gatsby(resolve(__filename, "../../public"), {
