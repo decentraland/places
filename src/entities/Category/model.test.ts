@@ -1,4 +1,4 @@
-import { categories } from "../../__data__/entities"
+import { categories } from "../../__data__/categories"
 import CategoryModel from "./model"
 
 const find = jest.spyOn(CategoryModel, "namedQuery")

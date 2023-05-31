@@ -33,6 +33,8 @@ describe("UserLikesModel", () => {
   })
   test("should return an object with UserLikeAttributes with a change from like to unlike", async () => {
     find.mockResolvedValueOnce(Promise.resolve(userLikeTrue))
+    update.mockResolvedValueOnce(Promise.resolve(userLikeFalse))
+
     const updateLike = await UserLikesModel.like(
       {
         user: "0x8Cff6832174091DAe86F0244e3Fd92d4CeD2Fe07",
@@ -40,7 +42,6 @@ describe("UserLikesModel", () => {
       },
       { like: false, user_activity: 0 }
     )
-    update.mockResolvedValueOnce(Promise.resolve(userLikeFalse))
     expect(updateLike).toEqual({
       ...userLikeFalse,
       created_at: updateLike.created_at,

@@ -1,10 +1,8 @@
-import {
-  hotSceneGenesisPlaza,
-  placeGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-  userLikeTrue,
-  worldPlaceParalax,
-} from "../../__data__/entities"
+import { userLikeTrue } from "../../__data__/entities"
+import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { worldPlaceParalax } from "../../__data__/world"
 import PlaceModel from "./model"
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
