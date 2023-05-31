@@ -1,9 +1,7 @@
-import {
-  contentEntitySceneGenesisPlaza,
-  contentEntitySceneMusicFestivalStage,
-  placeGenesisPlaza,
-  placeGenesisPlazaWithAggregatedAttributes,
-} from "../../../__data__/entities"
+import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
+import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
+import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import {
   createPlaceFromContentEntityScene,
   processContentEntityScene,

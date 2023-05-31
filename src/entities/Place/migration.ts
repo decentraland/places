@@ -5,7 +5,6 @@ import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
-import { isRoad } from "../CheckScenes/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
@@ -99,7 +98,7 @@ export function createUpdatePlacesAndWorldsQuery(
 ) {
   return `UPDATE ${PlaceModel.tableName} SET ${keys
     .map((k, i) => `${k}=$${i + 1}`)
-    .join(",")}  WHERE 
+    .join(",")}  WHERE
         ${
           place.base_position
             ? `'${place.base_position}' = ANY("positions")`
@@ -144,29 +143,6 @@ async function fetchEntityScenesFromDefaultPlaces(
   return Catalyst.getInstance().getEntityScenes(batch)
 }
 
-/**@deprecated */
-export async function validatePlacesWithEntityScenes(
-  places: Partial<PlaceAttributes>[]
-) {
-  if (places.length > 0) {
-    const entityScenesCreate = await fetchEntityScenesFromDefaultPlaces(places)
-
-    const invalidPlacesCreate = entityScenesCreate.filter((scene) =>
-      isRoad(scene)
-    )
-    if (invalidPlacesCreate.length > 0) {
-      throw new Error(
-        "There is an error with places provided. Migration can't proccede. The following places can proccede: " +
-          JSON.stringify(
-            invalidPlacesCreate.map((place) => place.metadata.scene!.base),
-            null,
-            2
-          )
-      )
-    }
-  }
-}
-
 /** @deprecated */
 export async function createPlaceFromDefaultPlaces(
   places: Partial<PlaceAttributes>[]
@@ -180,19 +156,6 @@ export async function createPlaceFromDefaultPlaces(
       )
     )
   )
-}
-
-/**@deprecated */
-export async function validateMigratedPlaces(defaultPlaces: PlacesStatic) {
-  await Promise.all([
-    validatePlacesWithEntityScenes(defaultPlaces.create),
-    validatePlacesWithEntityScenes(defaultPlaces.update),
-    validatePlacesWithEntityScenes(
-      defaultPlaces.delete.map((position) => ({
-        base_position: position,
-      }))
-    ),
-  ])
 }
 
 export function createInsertQuery(attributes: Array<keyof PlaceAttributes>) {
@@ -223,8 +186,6 @@ export async function up(
   attributes: Array<keyof PlaceAttributes>,
   pgm: MigrationBuilder
 ): Promise<void> {
-  await validateMigratedPlaces(defaultPlaces)
-
   const placesToCreate = await createPlaceFromDefaultPlaces(
     defaultPlaces.create
   )
@@ -268,8 +229,6 @@ export async function down(
     delete: defaultPlaces.create.map((place) => place.base_position!),
     update: [],
   }
-
-  await validateMigratedPlaces(placesToRestore)
 
   placesToRestore.delete.length &&
     pgm.db.query(createDeleteQuery(defaultPlaces.delete))

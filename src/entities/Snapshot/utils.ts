@@ -90,6 +90,7 @@ export async function fetchScore(address: string) {
   try {
     const res = await fetch(`https://score.snapshot.org/`, {
       method: "POST",
+      timeout: 10000,
       headers: {
         "content-type": "application/json",
       },

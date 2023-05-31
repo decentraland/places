@@ -1,4 +1,4 @@
-import { sceneStatsGenesisPlaza } from "../__data__/entities"
+import { sceneStatsGenesisPlaza } from "../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "./DataTeam"
 
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
