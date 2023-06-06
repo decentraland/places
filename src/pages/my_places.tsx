@@ -32,7 +32,7 @@ const PAGE_SIZE = 24
 
 export default function PlacesPage() {
   const l = useFormatMessage()
-  const mobile = useMobileMediaQuery()
+  const isMobile = useMobileMediaQuery()
   const [account, accountState] = useAuthContext()
   const location = useLocation()
   const track = useTrackContext()
@@ -217,10 +217,10 @@ export default function PlacesPage() {
                 Math.ceil(placeListMyFavorites.total / PAGE_SIZE) || 1
               }
               onPageChange={handleChangePage}
-              firstItem={mobile ? null : undefined}
-              lastItem={mobile ? null : undefined}
-              boundaryRange={mobile ? 1 : undefined}
-              siblingRange={mobile ? 0 : undefined}
+              firstItem={isMobile ? null : undefined}
+              lastItem={isMobile ? null : undefined}
+              boundaryRange={isMobile ? 1 : undefined}
+              siblingRange={isMobile ? 0 : undefined}
             />
           </div>
         )}

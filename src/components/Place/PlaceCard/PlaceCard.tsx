@@ -3,12 +3,9 @@ import React, { useCallback, useMemo } from "react"
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import useUserAgentData from "decentraland-gatsby/dist/hooks/useUserAgentData"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
-import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
@@ -48,9 +45,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   )
 
   const l = useFormatMessage()
-  const isTabletOrMobile = useTabletAndBelowMediaQuery()
-  const userAgentData = useUserAgentData()
-
   const href = useMemo(
     () => place && locations.place(place.base_position),
     [place]
@@ -117,31 +111,14 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         {false && (
           /* hidden for now */
           <div className="place-card__button-container">
-            {!(isTabletOrMobile || userAgentData.mobile) && (
-              <JumpInPositionButton
-                href={placerUrl}
-                loading={loading}
-                onClick={handleJumpInTrack}
-                data-event={SegmentPlace.JumpIn}
-                data-place-id={place?.id}
-                data-place={dataPlace}
-              />
-            )}
-            {(isTabletOrMobile || userAgentData.mobile) && (
-              <Button
-                as="a"
-                href={href}
-                size="small"
-                loading={loading}
-                className="place-card__find-out"
-                onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
-                  e.preventDefault()
-                  href && navigate(href)
-                }}
-              >
-                {l("components.button.find_out_more")}
-              </Button>
-            )}
+            <JumpInPositionButton
+              href={placerUrl}
+              loading={loading}
+              onClick={handleJumpInTrack}
+              data-event={SegmentPlace.JumpIn}
+              data-place-id={place?.id}
+              data-place={dataPlace}
+            />
             <FavoriteButton
               active={!!place?.user_favorite}
               onClick={handleClickFavorite}

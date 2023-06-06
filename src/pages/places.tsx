@@ -43,7 +43,7 @@ const PAGE_SIZE = 24
 
 export default function IndexPage() {
   const l = useFormatMessage()
-  const mobile = useMobileMediaQuery()
+  const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
   const params = useMemo(
@@ -213,7 +213,7 @@ export default function IndexPage() {
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>
-          {mobile && (
+          {isMobile && (
             <Grid.Column tablet={4} className="places-page__filters">
               <FilterContainerModal
                 title="Filters"
@@ -266,7 +266,7 @@ export default function IndexPage() {
             </Grid.Column>
           )}
           <Grid.Column tablet={16} className="places-page__list">
-            {!mobile && (
+            {!isMobile && (
               <div>
                 <HeaderMenu stackable>
                   <HeaderMenu.Left>
