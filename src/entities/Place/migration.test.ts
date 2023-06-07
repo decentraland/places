@@ -191,6 +191,7 @@ describe("createPlaceFromDefaultPlaces", () => {
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
         deployed_at: data[0].deployed_at,
+        image: data[0].image,
         id: data[0].id,
       },
     ])
