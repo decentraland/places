@@ -3,7 +3,6 @@ import React from "react"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
@@ -46,7 +45,6 @@ export default React.memo(function PlaceDescription(
   } = props
   const l = useFormatMessage()
   const placerUrl = explorerPlaceUrl(place)
-  const isMobile = useMobileMediaQuery()
 
   const handleJumpInTrack = useTrackLinkContext()
 
@@ -76,16 +74,14 @@ export default React.memo(function PlaceDescription(
             )}
           </div>
           <div className="place-description__buttons-container">
-            {!isMobile && (
-              <JumpInPositionButton
-                href={placerUrl}
-                loading={loading}
-                onClick={handleJumpInTrack}
-                data-event={SegmentPlace.JumpIn}
-                data-place-id={place?.id}
-                data-place={dataPlace}
-              />
-            )}
+            <JumpInPositionButton
+              href={placerUrl}
+              loading={loading}
+              onClick={handleJumpInTrack}
+              data-event={SegmentPlace.JumpIn}
+              data-place-id={place?.id}
+              data-place={dataPlace}
+            />
             <div className="place-description__box-wrapper">
               <LikeBox
                 onClick={onClickLike}

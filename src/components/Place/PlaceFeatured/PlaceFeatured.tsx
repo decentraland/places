@@ -6,7 +6,6 @@ import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
-import { useTabletAndBelowMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
@@ -31,7 +30,6 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
     [item]
   )
   const handleJumpInTrack = useTrackLinkContext()
-  const isTabletOrMobile = useTabletAndBelowMediaQuery()
 
   return (
     <div
@@ -50,20 +48,18 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
         </Hero.Header>
         <Hero.Description>{item.description}</Hero.Description>
         <Hero.Actions>
-          {!isTabletOrMobile && (
-            <Button
-              primary
-              as="a"
-              href={placeJumpInUrl}
-              onClick={handleJumpInTrack}
-              target="_blank"
-              data-event={SegmentPlace.JumpIn}
-              data-place-id={item?.id}
-              data-place={SegmentPlace.highlighted}
-            >
-              {l("components.place_featured.jump_in")}
-            </Button>
-          )}
+          <Button
+            primary
+            as="a"
+            href={placeJumpInUrl}
+            onClick={handleJumpInTrack}
+            target="_blank"
+            data-event={SegmentPlace.JumpIn}
+            data-place-id={item?.id}
+            data-place={SegmentPlace.highlighted}
+          >
+            {l("components.place_featured.jump_in")}
+          </Button>
 
           <Button
             secondary

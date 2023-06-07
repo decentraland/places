@@ -13,12 +13,16 @@ import JoinButton from "../../Button/JoinButton"
 
 import "./PlaceRealmActivity.css"
 
-export type ReamlActivity = { name: string; activity: number }
+export type RealmActivity = { name: string; activity: number }
 
 export type PlaceRealmActivityProps = {
   place: PlaceAttributes
-  activities: ReamlActivity[]
+  activities: RealmActivity[]
   loading?: boolean
+}
+
+function summaryRealmActivity(activities: RealmActivity[]): RealmActivity[] {
+  return []
 }
 
 export default React.memo(function PlaceRealmActivity(
@@ -61,17 +65,15 @@ export default React.memo(function PlaceRealmActivity(
                 <Table.Row key={index}>
                   <Table.Cell>{name.toLocaleUpperCase()}</Table.Cell>
                   <Table.Cell>{activity}</Table.Cell>
-                  {!isMobile && (
-                    <Table.Cell textAlign="right">
-                      <JoinButton
-                        href={explorerPlaceUrl(place, name)}
-                        loading={loading}
-                        onClick={handleJumpInTrack}
-                        data-event={SegmentPlace}
-                        data-realm={name}
-                      />
-                    </Table.Cell>
-                  )}
+                  <Table.Cell textAlign="right">
+                    <JoinButton
+                      href={explorerPlaceUrl(place, name)}
+                      loading={loading}
+                      onClick={handleJumpInTrack}
+                      data-event={SegmentPlace}
+                      data-realm={name}
+                    />
+                  </Table.Cell>
                 </Table.Row>
               )
             })}

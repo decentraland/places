@@ -15,7 +15,7 @@ import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { getPois } from "../../../modules/pois"
 import { getServers } from "../../../modules/servers"
-import { ReamlActivity } from "../PlaceRealmActivity/PlaceRealmActivity"
+import { RealmActivity } from "../PlaceRealmActivity/PlaceRealmActivity"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
@@ -42,7 +42,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
     [place, pois]
   )
 
-  const placeRealmActivities: ReamlActivity[] = useMemo(() => {
+  const placeRealmActivities: RealmActivity[] = useMemo(() => {
     if (place && servers) {
       const positions = new Set(place.positions)
       return servers
