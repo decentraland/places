@@ -33,6 +33,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   world: true,
   world_name: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
+  hidden: false,
 }
 
 export const worldContentEntitySceneParalax: ContentEntityScene = {

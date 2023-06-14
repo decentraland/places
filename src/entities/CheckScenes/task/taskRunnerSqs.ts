@@ -6,6 +6,7 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
+import { verifyWorldsIndexing } from "../../World/task/verifyWorldsIndexing"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
 import { getWorldAbout } from "../utils"
@@ -36,6 +37,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "categories",
   "world",
   "world_name",
+  "hidden",
 ]
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
@@ -48,9 +50,15 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       contentEntityScene.metadata.worldConfiguration.name
     )
 
+    const worldIndexing = await verifyWorldsIndexing([
+      contentEntityScene.metadata.worldConfiguration.name,
+    ])
+
     if (!worlds.length) {
       placesToProcess = {
-        new: createPlaceFromContentEntityScene(contentEntityScene),
+        new: createPlaceFromContentEntityScene(contentEntityScene, {
+          hidden: worldIndexing.hasNonIndexNames,
+        }),
         disabled: [],
       }
     } else {
@@ -68,10 +76,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       }
 
       placesToProcess = {
-        update: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          worlds[0]
-        ),
+        update: createPlaceFromContentEntityScene(contentEntityScene, {
+          ...worlds[0],
+          hidden: worldIndexing.hasNonIndexNames,
+        }),
         disabled: [],
       }
     }
@@ -97,12 +105,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   }
 
   if (placesToProcess?.new) {
-    const newPlace = createPlaceFromContentEntityScene(contentEntityScene)
-    await PlaceModel.insertPlace(newPlace, placesAttributes)
+    await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.new))
 
-    notifyNewPlace(newPlace)
+    notifyNewPlace(placesToProcess.new)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
       content_server_url: job.contentServerUrls![0],
