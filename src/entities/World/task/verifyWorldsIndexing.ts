@@ -1,4 +1,3 @@
-import { Logger } from "decentraland-gatsby/dist/entities/Development/logger"
 import fetch from "node-fetch"
 
 type ShouldIndexResponseProps = {
@@ -21,11 +20,6 @@ export async function verifyWorldsIndexing(names: string[]) {
   const shouldNotIndexNames = shouldIndex.data
     .map((world) => world.shouldBeIndexed !== true && world.dclName)
     .filter((world) => !!world) as string[]
-
-  const logger = new Logger()
-  logger.log(
-    `Should index ${shouldIndexNames.length} - Should not index ${shouldNotIndexNames.length}`
-  )
 
   return {
     indexNames: shouldIndexNames,

@@ -30,6 +30,7 @@ import placeRoute from "./entities/Place/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
+import { checkWorldsIndexingTask } from "./entities/World/task/checkWorldsIndexingTask"
 
 const tasks = tasksManager()
 tasks.use(
@@ -45,6 +46,7 @@ tasks.use(
     }
   )
 )
+tasks.use(checkWorldsIndexingTask)
 
 const app = express()
 app.set("x-powered-by", false)
