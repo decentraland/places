@@ -20,6 +20,10 @@ import PlacePositionModel from "../PlacePosition/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 import {
+  FindWorldWithAggregatesOptions,
+  WorldListOrderBy,
+} from "../World/types"
+import {
   AggregatePlaceAttributes,
   FindWithAggregatesOptions,
   PlaceAttributes,
@@ -384,5 +388,104 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       `
 
     return this.namedRowCount("update_world_hidden", sql)
+  }
+
+  static async findWorld(
+    options: FindWorldWithAggregatesOptions
+  ): Promise<AggregatePlaceAttributes[]> {
+    const orderBy = WorldListOrderBy.HIGHEST_RATED
+    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
+
+    const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)
+
+    const sql = SQL`
+      SELECT p.*
+      ${conditional(
+        !!options.user,
+        SQL`, uf.user is not null as user_favorite`
+      )}
+      ${conditional(!options.user, SQL`, false as user_favorite`)}
+      ${conditional(
+        !!options.user,
+        SQL`, coalesce(ul.like,false) as user_like`
+      )}
+      ${conditional(!options.user, SQL`, false as user_like`)}
+      ${conditional(
+        !!options.user,
+        SQL`, not coalesce(ul.like,true) as user_dislike`
+      )}
+      ${conditional(!options.user, SQL`, false as user_dislike`)}
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && !options.only_favorites,
+        SQL`LEFT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserLikesModel
+        )} ul on p.id = ul.place_id AND ul.user = ${options.user}`
+      )}
+      WHERE
+        p.disabled is false AND world is true AND hidden is false
+        ${conditional(
+          options.names.length > 0,
+          SQL`AND world_name = ANY(ARRAY[${join(
+            options.names.map((item) => SQL`${item}`)
+          )}])`
+        )}
+      ORDER BY ${order}
+      ${limit(options.limit, { max: 100 })}
+      ${offset(options.offset)}
+    `
+
+    return await this.namedQuery("find_worlds", sql)
+  }
+
+  static async countWorlds(
+    options: Pick<
+      FindWorldWithAggregatesOptions,
+      "user" | "only_favorites" | "names"
+    >
+  ) {
+    if (options.user && !isEthereumAddress(options.user)) {
+      return 0
+    }
+
+    const query = SQL`
+      SELECT
+        count(*) as total
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      WHERE
+        p.disabled is false
+        AND world is true
+        AND hidden is false
+        ${conditional(
+          options.names.length > 0,
+          SQL`AND world_name = ANY(ARRAY[${join(
+            options.names.map((item) => SQL`${item}`)
+          )}])`
+        )}
+    `
+    const results: { total: number }[] = await this.namedQuery(
+      "count_worlds",
+      query
+    )
+
+    return results[0].total
   }
 }

@@ -19,6 +19,7 @@ import {
   updateUserLikeBodySchema,
   userLikeResponseSchema,
 } from "../entities/UserLikes/schema"
+import { getWorldListQuerySchema } from "../entities/World/schemas"
 
 import "./index.css"
 
@@ -35,7 +36,7 @@ export default function DocsPage() {
           id="get-places"
           method="GET"
           path="/api/places"
-          description="Returns the list of the upcoming places"
+          description="Returns the list of the places"
         >
           <ApiDetails
             title="Request"
@@ -91,6 +92,20 @@ export default function DocsPage() {
             cors="*"
             params={userLikeResponseSchema}
           />
+        </ApiCard>
+
+        <ApiCard
+          id="get-worlds"
+          method="GET"
+          path="/api/worlds"
+          description="Returns the list of the worlds"
+        >
+          <ApiDetails
+            title="Request"
+            cors="*"
+            query={getWorldListQuerySchema}
+          />
+          <ApiDetails title="Response" body={placeListResponseSchema} />
         </ApiCard>
       </Container>
     </>
