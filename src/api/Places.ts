@@ -9,6 +9,7 @@ import {
 } from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
+import { WorldListOptions } from "../entities/World/types"
 
 export default class Places extends API {
   static Url = env(`PLACES_URL`, `https://places.decentraland.org/api`)
@@ -149,5 +150,23 @@ export default class Places extends API {
       only_highlighted: true,
       ...options,
     })
+  }
+
+  async getWorlds(options?: Partial<WorldListOptions>) {
+    const query = options ? API.searchParams(options).toString() : ""
+    const result = await super.fetch<{
+      ok: true
+      data: AggregatePlaceAttributes[]
+      total: number
+    }>(
+      `/worlds?${query}`,
+      this.options().authorization({ sign: true, optional: true })
+    )
+
+    return {
+      ...result,
+      data: result.data.map(Places.parsePlace),
+      total: Number(result.total),
+    }
   }
 }

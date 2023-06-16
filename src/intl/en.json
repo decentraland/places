@@ -54,6 +54,10 @@
     "place_featured": {
       "jump_in": "Jump In",
       "find_out_more": "find out more"
+    },
+    "world_description": {
+      "decentraland": "Decentraland",
+      "worlds": "Worlds"
     }
   },
   "pages": {

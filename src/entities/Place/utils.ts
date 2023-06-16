@@ -52,6 +52,17 @@ export function explorerPlaceUrl(
   return target.toString()
 }
 
+export function explorerWorldUrl(
+  place: Pick<PlaceAttributes, "world_name">
+): string {
+  const target = new URL("/", DECENTRALAND_URL)
+  if (place) {
+    target.searchParams.set("realm", place.world_name!)
+  }
+
+  return target.toString()
+}
+
 /** @deprecated */
 export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
   const positions = (deployment?.pointers || []).sort()

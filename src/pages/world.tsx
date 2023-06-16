@@ -14,20 +14,19 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
-import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
-import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
-import { usePlaceFromParams } from "../hooks/usePlaceFromParams"
+import WorldDescription from "../components/Place/WorldDescription/WorldDescription"
+import WorldDetails from "../components/Place/WorldDetails/WorldDetails"
 import usePlacesManager from "../hooks/usePlacesManager"
+import { useWorldFromParams } from "../hooks/useWorldFromParams"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
-import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
 export type EventPageState = {
   updating: Record<string, boolean>
 }
 
-export default function PlacePage() {
+export default function WorldPage() {
   const l = useFormatMessage()
   const track = useTrackContext()
   const [share] = useShareContext()
@@ -38,22 +37,18 @@ export default function PlacePage() {
     [location.search]
   )
 
-  const [placeRetrived, placeRetrivedState] = usePlaceFromParams(params)
+  const [worldRetrived, worldRetrivedState] = useWorldFromParams(params)
 
   const placeMemo = useMemo(
-    () => (!placeRetrived ? [[]] : [[placeRetrived]]),
-    [placeRetrived]
+    () => (!worldRetrived ? [[]] : [[worldRetrived]]),
+    [worldRetrived]
   )
 
   useEffect(() => {
-    if (
-      placeRetrived &&
-      toCanonicalPosition(placeRetrived.base_position) !==
-        params.get("position")
-    ) {
-      navigate(locations.place(placeRetrived.base_position), { replace: true })
+    if (worldRetrived && worldRetrived.world_name !== params.get("name")) {
+      navigate(locations.place(worldRetrived.world_name!), { replace: true })
     }
-  }, [placeRetrived, params.get("position")])
+  }, [worldRetrived, params.get("name")])
 
   const [
     [[place]],
@@ -93,9 +88,9 @@ export default function PlacePage() {
   }
 
   if (
-    placeRetrivedState.loaded &&
-    !placeRetrivedState.loading &&
-    !placeRetrived
+    worldRetrivedState.loaded &&
+    !worldRetrivedState.loading &&
+    !worldRetrived
   ) {
     return (
       <Container style={{ paddingTop: "75px" }}>
@@ -156,7 +151,7 @@ export default function PlacePage() {
       <Navigation />
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout>
-          <PlaceDescription
+          <WorldDescription
             place={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)
@@ -166,13 +161,13 @@ export default function PlacePage() {
             }
             onClickShare={async (e) => handleShare(e)}
             onClickFavorite={async () => handleFavorite(place?.id, place)}
-            loading={placeRetrivedState.loading}
+            loading={worldRetrivedState.loading}
             loadingFavorite={handlingFavorite.has(place?.id)}
             loadingLike={handlingLike.has(place?.id)}
             loadingDislike={handlingDislike.has(place?.id)}
             dataPlace={SegmentPlace.Place}
           />
-          <PlaceDetails place={place} loading={placeRetrivedState.loading} />
+          <WorldDetails place={place} loading={worldRetrivedState.loading} />
         </ItemLayout>
       </Container>
     </>
