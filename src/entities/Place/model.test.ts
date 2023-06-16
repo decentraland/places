@@ -2,14 +2,43 @@ import { userLikeTrue } from "../../__data__/entities"
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
-import { worldPlaceParalax } from "../../__data__/world"
+import {
+  worldPlaceParalax,
+  worldPlaceParalaxWithAggregated,
+  worldPlaceTemplegame,
+} from "../../__data__/world"
 import PlaceModel from "./model"
+import { PlaceAttributes } from "./types"
+
+const placesAttributes: Array<keyof PlaceAttributes> = [
+  "title",
+  "description",
+  "image",
+  "owner",
+  "tags",
+  "positions",
+  "base_position",
+  "contact_name",
+  "contact_email",
+  "content_rating",
+  "disabled",
+  "disabled_at",
+  "created_at",
+  "updated_at",
+  "deployed_at",
+  "categories",
+  "world",
+  "world_name",
+  "hidden",
+]
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
 const updateTo = jest.spyOn(PlaceModel, "updateTo")
+const namedRowCount = jest.spyOn(PlaceModel, "namedRowCount")
 
 beforeEach(() => {
   namedQuery.mockReset()
+  namedRowCount.mockReset()
 })
 
 describe(`findEnabledByPositions`, () => {
@@ -406,5 +435,242 @@ describe(`findWithHotScenes`, () => {
         .trim()
         .replace(/\s{2,}/gi, " ")
     )
+  })
+})
+
+describe(`insertPlace`, () => {
+  test(`should insert a place`, async () => {
+    namedQuery.mockResolvedValue([])
+    expect(
+      await PlaceModel.insertPlace(placeGenesisPlaza, placesAttributes)
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("insert_place")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updatePlace`, () => {
+  test(`should update a place`, async () => {
+    namedQuery.mockResolvedValue([])
+    expect(
+      await PlaceModel.updatePlace(placeGenesisPlaza, placesAttributes)
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("update_place")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
+      WHERE disabled is false AND world is false AND "base_position" IN 
+      ( 
+        SELECT DISTINCT("base_position") 
+        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
+      )
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`findWorlds`, () => {
+  test(`should return a list of worlds not hidden`, async () => {
+    namedQuery.mockResolvedValue([worldPlaceParalaxWithAggregated])
+    expect(await PlaceModel.findWorlds()).toEqual([
+      worldPlaceParalaxWithAggregated,
+    ])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_worlds")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT * FROM "places"
+        WHERE "world" is true and disabled is false
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updateWorldsShown`, () => {
+  test(`should not update a empty list`, async () => {
+    namedRowCount.mockResolvedValue(0)
+    expect(await PlaceModel.updateWorldsShown(["paralax.dcl.eth"])).toEqual(0)
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
+  test(`should update a list of world's names to be shown`, async () => {
+    namedRowCount.mockResolvedValue(1)
+    expect(await PlaceModel.updateWorldsShown(["paralax.dcl.eth"])).toEqual(1)
+    expect(namedRowCount.mock.calls.length).toBe(1)
+    const [name, sql] = namedRowCount.mock.calls[0]
+    expect(name).toBe("update_world_shown")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        UPDATE "places" SET hidden = false
+        WHERE hidden is true
+          AND world is true
+          AND world_name = ANY(ARRAY[$1])
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updateWorldsHidden`, () => {
+  test(`should not update a empty list`, async () => {
+    namedRowCount.mockResolvedValue(0)
+    expect(await PlaceModel.updateWorldsHidden(["templegame.dcl.eth"])).toEqual(
+      0
+    )
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
+  test(`should update a list of world's names to be hidden`, async () => {
+    namedRowCount.mockResolvedValue(1)
+    expect(await PlaceModel.updateWorldsHidden(["templegame.dcl.eth"])).toEqual(
+      1
+    )
+    expect(namedRowCount.mock.calls.length).toBe(1)
+    const [name, sql] = namedRowCount.mock.calls[0]
+    expect(name).toBe("update_world_hidden")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        UPDATE "places" SET hidden = true
+        WHERE hidden is false
+          AND world is true
+          AND world_name = ANY(ARRAY[$1])
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`findWorld`, () => {
+  test(`should return a list of worlds matching the parameters FindWorldWithAggregatesOptions without user`, async () => {
+    namedQuery.mockResolvedValue([worldPlaceTemplegame])
+    expect(
+      await PlaceModel.findWorld({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        order_by: "created_at",
+        order: "desc",
+      })
+    ).toEqual([worldPlaceTemplegame])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_worlds")
+    expect(sql.values).toEqual(["templegame.dcl.eth", 1, 0])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , false as user_favorite , false as user_like , false as user_dislike
+        FROM "places" p
+          WHERE
+            p.disabled is false
+            AND world is true
+            AND hidden is false
+            AND world_name = ANY(ARRAY[$1])
+          ORDER BY p.like_rate DESC
+            LIMIT $2
+            OFFSET $3
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+  test(`should return a list of worlds matching the parameters FindWithAggregatesOptions`, async () => {
+    namedQuery.mockResolvedValue([worldPlaceTemplegame])
+    expect(
+      await PlaceModel.findWorld({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+      })
+    ).toEqual([worldPlaceTemplegame])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_worlds")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "templegame.dcl.eth",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        WHERE
+          p.disabled is false
+          AND world is true
+          AND hidden is false
+          AND world_name = ANY(ARRAY[$3])
+        ORDER BY p.like_rate DESC
+          LIMIT $4
+          OFFSET $5
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`countWorlds`, () => {
+  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions without user`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countWorlds({
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_worlds")
+    expect(sql.values).toEqual(["templegame.dcl.eth"])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(*) as total
+        FROM "places" p
+        WHERE
+          p.disabled is false
+          AND p.world is true
+          AND p.hidden is false
+          AND p.world_name = ANY(ARRAY[$1])
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+  test(`should return the total number of worlds matching the parameters FindWithAggregatesOptions with wrong user address`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.countWorlds({
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        user: "ABC",
+      })
+    ).toEqual(0)
+    expect(namedQuery.mock.calls.length).toBe(0)
   })
 })

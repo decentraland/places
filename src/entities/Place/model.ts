@@ -472,11 +472,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       WHERE
         p.disabled is false
-        AND world is true
-        AND hidden is false
+        AND p.world is true
+        AND p.hidden is false
         ${conditional(
           options.names.length > 0,
-          SQL`AND world_name = ANY(ARRAY[${join(
+          SQL`AND p.world_name = ANY(ARRAY[${join(
             options.names.map((item) => SQL`${item}`)
           )}])`
         )}
