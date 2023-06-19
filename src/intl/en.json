@@ -11,8 +11,9 @@
   },
   "navigation": {
     "overview": "Overview",
-    "places": "All Places",
-    "my_places": "My Places",
+    "places": "Places",
+    "my_places": "Favorites",
+    "worlds": "Worlds",
     "faq": "FAQ",
     "faq_target": "https://docs.decentraland.org/creator/places/faq/"
   },
