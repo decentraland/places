@@ -14,26 +14,8 @@ export async function verifyWorldsIndexing(names: string[]) {
       }
     )
     const shouldIndex: ShouldIndexResponseProps = await shouldIndexFetch.json()
-    const shouldIndexNames = shouldIndex.data
-      .map((world) => world.shouldBeIndexed === true && world.dclName)
-      .filter((world) => !!world) as string[]
-
-    const shouldNotIndexNames = shouldIndex.data
-      .map((world) => world.shouldBeIndexed !== true && world.dclName)
-      .filter((world) => !!world) as string[]
-
-    return {
-      indexNames: shouldIndexNames,
-      hasIndexNames: shouldIndexNames.length > 0,
-      nonIndexNames: shouldNotIndexNames,
-      hasNonIndexNames: shouldNotIndexNames.length > 0,
-    }
+    return shouldIndex.data
   } catch (error) {
-    return {
-      indexNames: [],
-      hasIndexNames: false,
-      nonIndexNames: [],
-      hasNonIndexNames: false,
-    }
+    return []
   }
 }

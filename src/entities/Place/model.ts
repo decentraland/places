@@ -348,41 +348,34 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "world" is true and disabled is false
+      ORDER BY updated_at ASC LIMIT 500
     `
 
     return this.namedQuery("find_worlds", sql)
   }
 
-  static updateWorldsShown = (names: string[]) => {
-    if (names.length === 0) {
+  static updateIndexWorlds = (
+    worlds: {
+      dclName: string
+      shouldBeIndexed: boolean
+    }[]
+  ) => {
+    if (!worlds || worlds.length === 0) {
       return 0
     }
 
-    const sqlNames = SQL`${join(names.map((item) => SQL`${item}`))}`
+    const names = worlds.map((world) => world.dclName)
+    const namesVisible = worlds
+      .filter((world) => world.shouldBeIndexed)
+      .map((world) => world.dclName)
 
     const sql = SQL`
-      UPDATE ${table(this)} SET hidden = false
-      WHERE hidden is true
-        AND world is true
-        AND world_name = ANY(ARRAY[${sqlNames}])
+      UPDATE ${table(this)} SET hidden = (world_name not in ${values(
+      namesVisible
+    )}), updated_at = now()
+      WHERE world is true
+        AND world_name IN ${values(names)}
     `
-    return this.namedRowCount("update_world_shown", sql)
-  }
-
-  static updateWorldsHidden = (names: string[]) => {
-    if (names.length === 0) {
-      return 0
-    }
-
-    const sqlNames = SQL`${join(names.map((item) => SQL`${item}`))}`
-
-    const sql = SQL`
-        UPDATE ${table(this)} SET hidden = true
-        WHERE hidden is false
-        AND world is true
-        AND world_name = ANY(ARRAY[${sqlNames}])
-      `
-
-    return this.namedRowCount("update_world_hidden", sql)
+    return this.namedRowCount("update_index_world", sql)
   }
 }

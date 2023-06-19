@@ -15,21 +15,7 @@ export async function proceessWorldsIndexing(logger: Logger) {
 
   const worldsVerified = await verifyWorldsIndexing(worldNames)
 
-  loggerExtended.log(
-    `Should index ${worldsVerified.indexNames.length} - Should not index ${worldsVerified.nonIndexNames.length}`
-  )
+  const returnedData = await PlaceModel.updateIndexWorlds(worldsVerified)
 
-  if (worldsVerified.hasIndexNames) {
-    const updateWorlds = await PlaceModel.updateWorldsShown(
-      worldsVerified.indexNames
-    )
-    loggerExtended.log(`Worlds updated to show ${updateWorlds}`)
-  }
-
-  if (worldsVerified.hasNonIndexNames) {
-    const updateWorlds = await PlaceModel.updateWorldsHidden(
-      worldsVerified.nonIndexNames
-    )
-    loggerExtended.log(`Worlds updated to hide ${updateWorlds}`)
-  }
+  loggerExtended.log(`Worlds updated ${returnedData}`)
 }

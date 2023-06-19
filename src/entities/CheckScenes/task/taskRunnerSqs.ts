@@ -57,7 +57,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     if (!worlds.length) {
       placesToProcess = {
         new: createPlaceFromContentEntityScene(contentEntityScene, {
-          hidden: worldIndexing.hasNonIndexNames,
+          hidden: !worldIndexing[0].shouldBeIndexed,
         }),
         disabled: [],
       }
@@ -78,7 +78,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       placesToProcess = {
         update: createPlaceFromContentEntityScene(contentEntityScene, {
           ...worlds[0],
-          hidden: worldIndexing.hasNonIndexNames,
+          hidden: !worldIndexing[0].shouldBeIndexed,
         }),
         disabled: [],
       }
