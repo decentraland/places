@@ -44,7 +44,8 @@ export function processContentEntityScene(
 
 export function createPlaceFromContentEntityScene(
   contentEntityScene: ContentEntityScene,
-  data: Partial<Omit<PlaceAttributes, "id">> = {}
+  data: Partial<Omit<PlaceAttributes, "id">> = {},
+  options: { url?: string } = {}
 ) {
   const now = new Date()
   const title = contentEntityScene?.metadata?.display?.title || null
@@ -53,7 +54,10 @@ export function createPlaceFromContentEntityScene(
     .slice(0, 100)
     .map((tag) => tag.slice(0, 25))
 
-  const thumbnail = getThumbnailFromContentEntityScene(contentEntityScene)
+  const thumbnail = getThumbnailFromContentEntityScene(
+    contentEntityScene,
+    options
+  )
 
   let contact_name = contentEntityScene?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {

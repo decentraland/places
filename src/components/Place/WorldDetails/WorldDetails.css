@@ -1,0 +1,112 @@
+.world-details__container {
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08);
+  border-radius: 10px;
+  margin-top: 24.42px;
+}
+
+.world-details__container > .dcl.tabs {
+}
+
+.world-details__container .world-details__description-container {
+  margin: 20px;
+}
+
+.world-details__container.loading .world-details__description-container p,
+.world-details__container.loading
+  .world-details__description-container
+  .ui.label {
+  opacity: 0;
+  position: relative;
+}
+
+.world-details__container.loading .world-details__description-container > div {
+  position: relative;
+}
+
+.world-details__container.loading
+  .world-details__description-container
+  > div:after {
+  position: absolute;
+  content: "";
+  height: 20px;
+  width: 100px;
+  left: 0;
+  bottom: 0;
+  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+  background-size: 200% 100%;
+  animation: 1.5s loading linear infinite;
+  border-radius: 8px;
+}
+
+.world-details__container .world-details__description-container h3 {
+  text-transform: uppercase;
+  font-size: 14px;
+  color: var(--secondary-text);
+}
+
+.world-details__container
+  .world-details__description-container
+  h3:nth-child(3) {
+  margin-top: 30px;
+}
+
+.world-details__container .world-details__description-container p {
+  font-size: 15px;
+}
+
+.world-details__container .world-details__description-container .ui.label {
+  font-size: 13px;
+  color: var(--secondary-text);
+  margin: 0;
+}
+
+.world-details__container > .dcl.tabs .dcl.tabs-left {
+  display: flex;
+  margin-left: 8px;
+}
+
+.world-details__container > .dcl.tabs .dcl.tabs-left .dcl.tab {
+  color: rgba(115, 110, 125, 1);
+  display: block;
+  font-size: 17px;
+  padding: 0px 12px 0px;
+  margin: 8px 12px 8px 0;
+  border-bottom: none;
+}
+
+.world-details__container > .dcl.tabs .dcl.tabs-left .dcl.tab.active {
+  border-left: none;
+  font-weight: 500;
+  color: var(--text);
+}
+
+.world-details__container
+  > .dcl.tabs
+  .dcl.tabs-left
+  .dcl.tab.active
+  .active-bar {
+  bottom: -21px;
+  width: calc(100% - 24px);
+  left: 12px;
+}
+
+.world-details__container .place-realm-activity {
+  padding: 0 20px 20px;
+}
+
+@media (max-width: 768px) {
+  .world-details__container
+    > .dcl.tabs
+    .dcl.tabs-left
+    .dcl.tab.active
+    .active-bar {
+    right: 0px;
+    border-bottom: 3px solid var(--primary);
+    border-radius: 10px;
+    z-index: 10;
+    bottom: -10px;
+    display: block;
+    left: 12px;
+  }
+}

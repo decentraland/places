@@ -9,6 +9,7 @@ import { worldContentEntitySceneParalax } from "../../__data__/world"
 import {
   explorerPlaceUrl,
   explorerUrl,
+  explorerWorldUrl,
   getThumbnailFromContentDeployment,
   getThumbnailFromDeployment,
   placeUrl,
@@ -47,6 +48,13 @@ describe("explorerPlaceUrl", () => {
   test("should return a string with an URL of a places without the realm", () => {
     const url = explorerPlaceUrl({ base_position: "-9,-9" })
     expect(url).toBe("https://play.decentraland.org/?position=-9%2C-9")
+  })
+})
+
+describe("explorerWorldUrl", () => {
+  test("should return a string with an URL of a world", () => {
+    const url = explorerWorldUrl({ world_name: "paralax.dcl.eth" })
+    expect(url).toBe("https://play.decentraland.org/?realm=paralax.dcl.eth")
   })
 })
 
