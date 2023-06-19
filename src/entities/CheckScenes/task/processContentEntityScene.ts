@@ -1,12 +1,9 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import env from "decentraland-gatsby/dist/utils/env"
 import { v4 as uuid } from "uuid"
 
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
-
-const PLACES_URL = env("PLACES_URL", "https://places.decentraland.org")
 
 export type ProcessEntitySceneResult =
   | {

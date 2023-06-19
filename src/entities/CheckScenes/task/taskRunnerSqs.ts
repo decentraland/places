@@ -58,6 +58,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       placesToProcess = {
         new: createPlaceFromContentEntityScene(contentEntityScene, {
           hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
         }),
         disabled: [],
       }
@@ -79,6 +82,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         update: createPlaceFromContentEntityScene(contentEntityScene, {
           ...worlds[0],
           hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
         }),
         disabled: [],
       }
