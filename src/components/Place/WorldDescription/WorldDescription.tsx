@@ -66,13 +66,15 @@ export default React.memo(function WorldDescription(
         ></div>
         <div className="world-description__right-side-container">
           <div className="world-description__text-container">
-            <div className="world-label__container">
-              <img src={WorldsLogo} alt="Decentraland Worlds Logo" />
-              <h3>
-                {l("components.world_description.decentraland")}{" "}
-                <span>{l("components.world_description.worlds")}</span>
-              </h3>
-            </div>
+            {!loading && (
+              <div className="world-label__container">
+                <img src={WorldsLogo} alt="Decentraland Worlds Logo" />
+                <h3>
+                  {l("components.world_description.decentraland")}{" "}
+                  <span>{l("components.world_description.worlds")}</span>
+                </h3>
+              </div>
+            )}
             <h1>{place?.title}</h1>
             {place?.contact_name && (
               <p>
