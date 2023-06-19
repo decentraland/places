@@ -56,13 +56,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     if (!worlds.length) {
       placesToProcess = {
-        new: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            hidden: worldIndexing.hasNonIndexNames,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        new: createPlaceFromContentEntityScene(contentEntityScene, {
+          hidden: !worldIndexing[0].shouldBeIndexed,
+        }),
         disabled: [],
       }
     } else {
@@ -80,14 +76,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       }
 
       placesToProcess = {
-        update: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            ...worlds[0],
-            hidden: worldIndexing.hasNonIndexNames,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        update: createPlaceFromContentEntityScene(contentEntityScene, {
+          ...worlds[0],
+          hidden: !worldIndexing[0].shouldBeIndexed,
+        }),
         disabled: [],
       }
     }

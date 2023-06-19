@@ -7,11 +7,25 @@ describe("verifyWorldsIndexing", () => {
       "041.dcl.eth",
       "044.dcl.eth",
     ])
-    expect(worldsVerified).toEqual({
-      indexNames: worldsVerified.indexNames,
-      hasIndexNames: worldsVerified.hasIndexNames,
-      nonIndexNames: worldsVerified.nonIndexNames,
-      hasNonIndexNames: worldsVerified.hasNonIndexNames,
-    })
+    expect(worldsVerified).toEqual([
+      {
+        dclName: "024.dcl.eth",
+        shouldBeIndexed: worldsVerified.find(
+          (world) => world.dclName === "024.dcl.eth"
+        )?.shouldBeIndexed,
+      },
+      {
+        dclName: "041.dcl.eth",
+        shouldBeIndexed: worldsVerified.find(
+          (world) => world.dclName === "041.dcl.eth"
+        )?.shouldBeIndexed,
+      },
+      {
+        dclName: "044.dcl.eth",
+        shouldBeIndexed: worldsVerified.find(
+          (world) => world.dclName === "044.dcl.eth"
+        )?.shouldBeIndexed,
+      },
+    ])
   })
 })

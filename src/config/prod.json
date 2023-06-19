@@ -6,5 +6,6 @@
   "GATSBY_PROFILE_URL": "https://peer.decentraland.org",
   "GATSBY_INTERCOM_APP_ID": "z0h94kay",
   "GATSBY_ROLLBAR_TOKEN": "026f8cdbada742a9aad5eabbb932aca1",
-  "GATSBY_SEGMENT_KEY": "ArbvD4yfvg8hz6UwFHq38A9mQ6a4hHHC"
+  "GATSBY_SEGMENT_KEY": "ArbvD4yfvg8hz6UwFHq38A9mQ6a4hHHC",
+  "WORLDS_INDEX_API": "https://dcl-name-stats.decentraland.org/should-index"
 }

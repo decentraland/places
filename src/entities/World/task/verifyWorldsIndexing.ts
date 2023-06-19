@@ -1,3 +1,4 @@
+import env from "decentraland-gatsby/dist/utils/env"
 import fetch from "node-fetch"
 
 type ShouldIndexResponseProps = {
@@ -5,26 +6,20 @@ type ShouldIndexResponseProps = {
 }
 
 export async function verifyWorldsIndexing(names: string[]) {
-  const shouldIndexFetch = await fetch(
-    "https://dcl-name-stats.decentraland.org/should-index",
-    {
-      body: JSON.stringify({ dclNames: names }),
-      method: "POST",
-    }
-  )
-  const shouldIndex: ShouldIndexResponseProps = await shouldIndexFetch.json()
-  const shouldIndexNames = shouldIndex.data
-    .map((world) => world.shouldBeIndexed === true && world.dclName)
-    .filter((world) => !!world) as string[]
-
-  const shouldNotIndexNames = shouldIndex.data
-    .map((world) => world.shouldBeIndexed !== true && world.dclName)
-    .filter((world) => !!world) as string[]
-
-  return {
-    indexNames: shouldIndexNames,
-    hasIndexNames: shouldIndexNames.length > 0,
-    nonIndexNames: shouldNotIndexNames,
-    hasNonIndexNames: shouldNotIndexNames.length > 0,
+  try {
+    const shouldIndexFetch = await fetch(
+      env(
+        "WORLDS_INDEX_API",
+        "https://dcl-name-stats.decentraland.org/should-index"
+      ),
+      {
+        body: JSON.stringify({ dclNames: names }),
+        method: "POST",
+      }
+    )
+    const shouldIndex: ShouldIndexResponseProps = await shouldIndexFetch.json()
+    return shouldIndex.data
+  } catch (error) {
+    return []
   }
 }
