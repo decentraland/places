@@ -31,12 +31,11 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
       <Stats title={l("components.place_stats.favorites")}>
         <Header>{shorterNumber(place?.favorites || 0)}</Header>
       </Stats>
-      <Stats title={l("components.place_stats.visits")}>
-        <Header>{shorterNumber(place?.user_visits || 0)}</Header>
-      </Stats>
-      <Stats title={l("components.place_stats.added")}>
-        {Time.from(place?.created_at).format("D/MM/YYYY")}
-      </Stats>
+      {!place?.world && (
+        <Stats title={l("components.place_stats.visits")}>
+          <Header>{shorterNumber(place?.user_visits || 0)}</Header>
+        </Stats>
+      )}
       <Stats title={l("components.place_stats.updated")}>
         {Time.from(place?.deployed_at).format("D/MM/YYYY")}
       </Stats>
