@@ -33,14 +33,8 @@ export enum WorldDetailsTab {
 export default React.memo(function WorldDetails(props: WorldDetailsProps) {
   const { place, loading } = props
   const l = useFormatMessage()
-  const [pois] = useAsyncMemo(getPois)
   const [servers] = useAsyncMemo(getServers)
   const [activeTab, setActiveTab] = useState(WorldDetailsTab.About)
-
-  const isPoi = useMemo(
-    () => intersects(place?.positions || [], pois || []),
-    [place, pois]
-  )
 
   const placeRealmActivities: RealmActivity[] = useMemo(() => {
     if (place && servers) {
@@ -120,7 +114,7 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
             place={place}
             users={activitySum}
             loading={loading}
-            poi={isPoi}
+            poi={false}
           />
         </>
       )}
