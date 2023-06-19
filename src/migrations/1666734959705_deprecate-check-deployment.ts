@@ -54,7 +54,7 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
   })
 
   if (isURL(process.env.BOOSTRAP_CATALYST || "")) {
-    const servers = await Catalyst.from(
+    const servers = await Catalyst.getInstanceFrom(
       process.env.BOOSTRAP_CATALYST!
     ).getServers()
     if (servers.length) {
