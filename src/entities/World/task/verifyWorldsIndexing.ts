@@ -1,3 +1,4 @@
+import env from "decentraland-gatsby/dist/utils/env"
 import fetch from "node-fetch"
 
 type ShouldIndexResponseProps = {
@@ -7,7 +8,10 @@ type ShouldIndexResponseProps = {
 export async function verifyWorldsIndexing(names: string[]) {
   try {
     const shouldIndexFetch = await fetch(
-      "https://dcl-name-stats.decentraland.org/should-index",
+      env(
+        "WORLDS_INDEX_API",
+        "https://dcl-name-stats.decentraland.org/should-index"
+      ),
       {
         body: JSON.stringify({ dclNames: names }),
         method: "POST",
