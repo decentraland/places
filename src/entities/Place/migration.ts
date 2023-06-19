@@ -66,6 +66,7 @@ export function createPlaceFromEntityScene(
     categories: [],
     world: false,
     world_name: null,
+    hidden: false,
     ...data,
   }
 

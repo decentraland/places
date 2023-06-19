@@ -77,6 +77,7 @@ export function createPlaceFromContentEntityScene(
     world_name: contentEntityScene?.metadata?.worldConfiguration
       ? contentEntityScene?.metadata?.worldConfiguration.name
       : null,
+    hidden: !!contentEntityScene?.metadata?.worldConfiguration,
     ...data,
     title: title ? title.slice(0, 50) : "Untitled",
     description: contentEntityScene?.metadata?.display?.description || null,

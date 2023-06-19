@@ -3,6 +3,7 @@ import {
   SQL,
   columns,
   conditional,
+  join,
   limit,
   objectValues,
   offset,
@@ -341,5 +342,40 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )}`
 
     return this.namedQuery("update_place", sql)
+  }
+
+  static async findWorlds(): Promise<PlaceAttributes[]> {
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "world" is true and disabled is false
+      ORDER BY updated_at ASC LIMIT 500
+    `
+
+    return this.namedQuery("find_worlds", sql)
+  }
+
+  static updateIndexWorlds = (
+    worlds: {
+      dclName: string
+      shouldBeIndexed: boolean
+    }[]
+  ) => {
+    if (!worlds || worlds.length === 0) {
+      return 0
+    }
+
+    const names = worlds.map((world) => world.dclName)
+    const namesVisible = worlds
+      .filter((world) => world.shouldBeIndexed)
+      .map((world) => world.dclName)
+
+    const sql = SQL`
+      UPDATE ${table(this)} SET hidden = (world_name not in ${values(
+      namesVisible
+    )}), updated_at = now()
+      WHERE world is true
+        AND world_name IN ${values(names)}
+    `
+    return this.namedRowCount("update_index_world", sql)
   }
 }

@@ -4,12 +4,37 @@ import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { worldPlaceParalax } from "../../__data__/world"
 import PlaceModel from "./model"
+import { PlaceAttributes } from "./types"
+
+const placesAttributes: Array<keyof PlaceAttributes> = [
+  "title",
+  "description",
+  "image",
+  "owner",
+  "tags",
+  "positions",
+  "base_position",
+  "contact_name",
+  "contact_email",
+  "content_rating",
+  "disabled",
+  "disabled_at",
+  "created_at",
+  "updated_at",
+  "deployed_at",
+  "categories",
+  "world",
+  "world_name",
+  "hidden",
+]
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
 const updateTo = jest.spyOn(PlaceModel, "updateTo")
+const namedRowCount = jest.spyOn(PlaceModel, "namedRowCount")
 
 beforeEach(() => {
   namedQuery.mockReset()
+  namedRowCount.mockReset()
 })
 
 describe(`findEnabledByPositions`, () => {
@@ -402,6 +427,89 @@ describe(`findWithHotScenes`, () => {
         ORDER BY p.like_rate DESC
           LIMIT $2
           OFFSET $3
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`insertPlace`, () => {
+  test(`should insert a place`, async () => {
+    namedQuery.mockResolvedValue([])
+    expect(
+      await PlaceModel.insertPlace(placeGenesisPlaza, placesAttributes)
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("insert_place")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updatePlace`, () => {
+  test(`should update a place`, async () => {
+    namedQuery.mockResolvedValue([])
+    expect(
+      await PlaceModel.updatePlace(placeGenesisPlaza, placesAttributes)
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("update_place")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
+      WHERE disabled is false AND world is false AND "base_position" IN 
+      ( 
+        SELECT DISTINCT("base_position") 
+        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
+      )
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updateWorldsShown`, () => {
+  test(`should not update a empty list`, async () => {
+    namedRowCount.mockResolvedValue(0)
+    expect(
+      await PlaceModel.updateIndexWorlds([
+        {
+          dclName: "paralax.dcl.eth",
+          shouldBeIndexed: true,
+        },
+      ])
+    ).toEqual(0)
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
+  test(`should update a list of world's names`, async () => {
+    namedRowCount.mockResolvedValue(1)
+    expect(
+      await PlaceModel.updateIndexWorlds([
+        {
+          dclName: "paralax.dcl.eth",
+          shouldBeIndexed: true,
+        },
+      ])
+    ).toEqual(1)
+    expect(namedRowCount.mock.calls.length).toBe(1)
+    const [name, sql] = namedRowCount.mock.calls[0]
+    expect(name).toBe("update_index_world")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        UPDATE "places" SET hidden = (world_name not in ($1)), 
+          updated_at = now() 
+        WHERE world is true 
+          AND world_name IN ($2)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
