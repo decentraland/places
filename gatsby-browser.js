@@ -36,7 +36,7 @@ export const registerServiceWorker = () => true
 
 export const wrapRootElement = ({ element }) => (
   <AuthProvider>
-    <FeatureFlagProvider endpoint="https://feature-flags.decentraland.org/places.json">
+    <FeatureFlagProvider applicationName={["places", "dapps"]}>
       <ShareProvider>{element}</ShareProvider>
     </FeatureFlagProvider>
   </AuthProvider>
