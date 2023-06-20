@@ -11,7 +11,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import PlaceStats from "../PlaceStats/PlaceStats"
+import PlaceStats from "../../Place/PlaceStats/PlaceStats"
 
 import "./WorldDetails.css"
 

@@ -6,6 +6,7 @@ import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrack
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
+import { WorldListOrderBy } from "../../entities/World/types"
 import locations from "../../modules/locations"
 import { OpenBlank } from "../Icon/OpenBlank"
 
@@ -14,7 +15,8 @@ import "./Navigation.css"
 export enum NavigationTab {
   Overview = "overview",
   Places = "places",
-  MyPlaces = "my_places",
+  Worlds = "worlds",
+  MyPlaces = "favorites",
 }
 
 export type NavigationProps = {
@@ -45,10 +47,18 @@ export default function Navigation(props: NavigationProps) {
           >
             {l("navigation.places")}
           </NavigationMenu.Item>
+          <NavigationMenu.Item
+            active={props.activeTab === NavigationTab.Worlds}
+            href={locations.worlds({
+              order_by: WorldListOrderBy.MOST_ACTIVE,
+            })}
+          >
+            {l("navigation.worlds")}
+          </NavigationMenu.Item>
           {account && (
             <NavigationMenu.Item
               active={props.activeTab === NavigationTab.MyPlaces}
-              href={locations.my_places({})}
+              href={locations.favorites({})}
             >
               {l("navigation.my_places")}
             </NavigationMenu.Item>

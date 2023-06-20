@@ -1,7 +1,5 @@
 import React, { CSSProperties, useMemo } from "react"
 
-import { useMediaQuery } from "react-responsive"
-
 import Carousel2, {
   IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"

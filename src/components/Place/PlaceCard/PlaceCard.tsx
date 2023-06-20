@@ -2,13 +2,15 @@ import React, { useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
-import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { explorerPlaceUrl } from "../../../entities/Place/utils"
+import {
+  explorerPlaceUrl,
+  explorerWorldUrl,
+} from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import FavoriteButton from "../../Button/FavoriteButton"
@@ -44,12 +46,21 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     [place, onClickFavorite]
   )
 
-  const l = useFormatMessage()
-  const href = useMemo(
-    () => place && locations.place(place.base_position),
-    [place]
-  )
-  const placerUrl = place && explorerPlaceUrl(place)
+  const href = useMemo(() => {
+    if (place && !place.world) {
+      return locations.place(place.base_position)
+    } else if (place && place.world) {
+      return locations.world(place.world_name!)
+    }
+  }, [place])
+
+  const placerUrl = useMemo(() => {
+    if (place && !place.world) {
+      return explorerPlaceUrl(place)
+    } else if (place && place.world) {
+      return explorerWorldUrl(place)
+    }
+  }, [place])
 
   const handleJumpInTrack = useTrackLinkContext()
 

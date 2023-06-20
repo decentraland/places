@@ -528,7 +528,7 @@ describe(`findWorld`, () => {
             p.disabled is false
             AND world is true
             AND hidden is false
-            AND world_name = ANY(ARRAY[$1])
+            AND world_name IN ($1)
           ORDER BY p.like_rate DESC
             LIMIT $2
             OFFSET $3
@@ -570,7 +570,7 @@ describe(`findWorld`, () => {
           p.disabled is false
           AND world is true
           AND hidden is false
-          AND world_name = ANY(ARRAY[$3])
+          AND world_name IN ($3)
         ORDER BY p.like_rate DESC
           LIMIT $4
           OFFSET $5
@@ -603,7 +603,7 @@ describe(`countWorlds`, () => {
           p.disabled is false
           AND p.world is true
           AND p.hidden is false
-          AND p.world_name = ANY(ARRAY[$1])
+          AND p.world_name IN ($1)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
