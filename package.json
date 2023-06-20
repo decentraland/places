@@ -10,7 +10,7 @@
     "npm": "8.*"
   },
   "dependencies": {
-    "@dcl/schemas": "^4.15.0",
+    "@dcl/schemas": "^7.3.4",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.4.0",
@@ -90,6 +90,7 @@
     "prettier": "^2.6.2",
     "ts-jest": "^29.1.0",
     "ts-node": "^10.8.0",
+    "tsc-files": "^1.1.3",
     "typescript": "^4.7.2",
     "workbox-cli": "^6.5.2"
   },
