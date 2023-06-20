@@ -7,5 +7,6 @@
   "GATSBY_INTERCOM_APP_ID": "z0h94kay",
   "GATSBY_ROLLBAR_TOKEN": "026f8cdbada742a9aad5eabbb932aca1",
   "GATSBY_SEGMENT_KEY": "e7wld8fcDnqyiQjjDFJ6DCnV1S89G3tS",
-  "WORLDS_INDEX_API": "https://dcl-name-stats.decentraland.org/should-index"
+  "WORLDS_INDEX_API": "https://dcl-name-stats.decentraland.org/should-index",
+  "WORLDS_FIND_OUT_URL": "https://decentraland.org/blog/announcements/introducing-decentraland-worlds-beta-your-own-3d-space-in-the-metaverse"
 }

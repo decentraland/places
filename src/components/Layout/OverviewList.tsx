@@ -1,7 +1,5 @@
 import React from "react"
 
-import { useMediaQuery } from "react-responsive"
-
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"

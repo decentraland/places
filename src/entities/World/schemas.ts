@@ -31,8 +31,8 @@ export const getWorldListQuerySchema = schema({
     },
     order_by: {
       type: "string",
-      description: "Order places by",
-      enum: [WorldListOrderBy.HIGHEST_RATED, WorldListOrderBy.MOST_ACTIVE],
+      description: "Order worlds by",
+      enum: [WorldListOrderBy.MOST_ACTIVE, WorldListOrderBy.HIGHEST_RATED],
       nullable: true as any,
     },
     order: {
@@ -44,3 +44,144 @@ export const getWorldListQuerySchema = schema({
     },
   },
 })
+
+export const worldSchema = schema({
+  type: "object",
+  required: [],
+  properties: {
+    id: {
+      type: "string",
+      format: "uudi",
+      description: "world id",
+    },
+    title: {
+      type: "string",
+      minLength: 0,
+      maxLength: 50,
+      description: "The world name",
+    },
+    description: {
+      type: "string",
+      minLength: 0,
+      maxLength: 5000,
+      description: "The world description",
+    },
+    image: {
+      description: "Url to the world cover or image",
+      type: "string",
+      format: "uri",
+    },
+    owner: {
+      type: "string",
+      minLength: 0,
+      maxLength: 42,
+      description: "The owner's name",
+    },
+    tags: {
+      type: "array",
+      description: "A list of tags for the world",
+      items: {
+        type: "string",
+      },
+    },
+    positions: {
+      type: "array",
+      description: "A list of positions of the world",
+      items: {
+        type: "string",
+        pattern: "^-?\\d{1,3},-?\\d{1,3}$",
+      },
+    },
+    base_position: {
+      type: "string",
+      description: "The base position of the world",
+      pattern: "^-?\\d{1,3},-?\\d{1,3}$",
+    },
+    contact_name: {
+      type: "string",
+      minLength: 0,
+      maxLength: 5000,
+      description: "The contact name of the world",
+    },
+    contact_email: {
+      type: "string",
+      minLength: 0,
+      maxLength: 5000,
+      description: "The contact email on the world",
+    },
+    content_rating: {
+      type: "string",
+      minLength: 0,
+      maxLength: 5000,
+      description: "The content rating on the world",
+    },
+    likes: {
+      type: "number",
+      minimum: 0,
+      description: "The number of likes on the world",
+    },
+    dislikes: {
+      type: "number",
+      minimum: 0,
+      description: "The number of dislikes on the world",
+    },
+    favorites: {
+      type: "number",
+      minimum: 0,
+      description: "The number of favorites on the world",
+    },
+    disabled: {
+      type: "boolean",
+      description: "True if the world is disabled",
+    },
+    disabled_at: {
+      description: "The date when the world was disabled",
+      type: "string",
+      format: "date-time",
+    },
+    created_at: {
+      description: "the time the world was created",
+      type: "string",
+      format: "date-time",
+    },
+    updated_at: {
+      description: "The time the world was last updated",
+      type: "string",
+      format: "date-time",
+    },
+    deployed_at: {
+      description: "The time the world was last deployed",
+      type: "string",
+      format: "date-time",
+    },
+    hidden: {
+      type: "boolean",
+      description: "True if the world is hidden",
+    },
+    user_like: {
+      type: "boolean",
+      description: "True if user likes the world",
+    },
+    user_dislike: {
+      type: "boolean",
+      description: "True if user dislikes the world",
+    },
+    user_favorite: {
+      type: "boolean",
+      description: "True if user seletect as favorite the world",
+    },
+    user_count: {
+      type: "number",
+      minimum: 0,
+      description: "The number of users in the world",
+    },
+    user_visits: {
+      type: "number",
+      minimum: 0,
+      description:
+        "The number of users that had visited the world in the last 30 days",
+    },
+  },
+})
+
+export const worldListResponseSchema = schema.api(schema.array(worldSchema))

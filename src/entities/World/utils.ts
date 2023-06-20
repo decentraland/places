@@ -8,8 +8,8 @@ export function worldsWithUserCount(
   return worlds.map((world) => {
     const liveWorlds = worldLiveData.find(
       (liveData) =>
-        liveData.worldName.toLocaleLowerCase ===
-        world.world_name!.toLocaleLowerCase
+        liveData.worldName.toLocaleLowerCase() ===
+        world.world_name!.toLocaleLowerCase()
     )
 
     const worldWithAggregates = {

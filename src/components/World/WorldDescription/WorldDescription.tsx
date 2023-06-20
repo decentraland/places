@@ -6,13 +6,13 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerWorldUrl } from "../../../entities/Place/utils"
-import WorldsLogo from "../../../images/worlds-logo.svg"
 import { SegmentPlace } from "../../../modules/segment"
 import DislikeBox from "../../Button/DislikeBox"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import LikeBox from "../../Button/LikeBox"
 import ShareBox from "../../Button/ShareBox"
+import WorldLabel from "../WorldLabel/WorldLabel"
 
 import "./WorldDescription.css"
 
@@ -66,15 +66,7 @@ export default React.memo(function WorldDescription(
         ></div>
         <div className="world-description__right-side-container">
           <div className="world-description__text-container">
-            {!loading && (
-              <div className="world-label__container">
-                <img src={WorldsLogo} alt="Decentraland Worlds Logo" />
-                <h3>
-                  {l("components.world_description.decentraland")}{" "}
-                  <span>{l("components.world_description.worlds")}</span>
-                </h3>
-              </div>
-            )}
+            {!loading && <WorldLabel />}
             <h1>{place?.title}</h1>
             {place?.contact_name && (
               <p>

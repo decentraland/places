@@ -1,0 +1,16 @@
+.world-label__container {
+  display: flex;
+  align-items: center;
+  flex-direction: row;
+}
+
+.world-label__container h3 {
+  margin-top: 0;
+  margin-bottom: 0;
+  margin-left: 10px;
+  font-size: 16px;
+}
+
+.world-label__container h3 span {
+  font-weight: 400;
+}

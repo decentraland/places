@@ -19,7 +19,10 @@ import {
   updateUserLikeBodySchema,
   userLikeResponseSchema,
 } from "../entities/UserLikes/schema"
-import { getWorldListQuerySchema } from "../entities/World/schemas"
+import {
+  getWorldListQuerySchema,
+  worldListResponseSchema,
+} from "../entities/World/schemas"
 
 import "./index.css"
 
@@ -105,7 +108,7 @@ export default function DocsPage() {
             cors="*"
             query={getWorldListQuerySchema}
           />
-          <ApiDetails title="Response" body={placeListResponseSchema} />
+          <ApiDetails title="Response" body={worldListResponseSchema} />
         </ApiCard>
       </Container>
     </>

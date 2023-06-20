@@ -18,9 +18,12 @@ export enum SegmentPlace {
   MyPlaceChangePagination = "My Place Change Pagination",
   Place = "Place",
   Places = "Places",
+  Worlds = "Worlds",
   PlacesChangePagination = "Places Change Pagination",
   PlacesShowMore = "Places Show More",
   PlacesChangePois = "Places Change Pois",
   PlacesChangeFeatured = "Places Change Featured",
   PlacesChangeOrder = "Places Change Order",
+  WorldsShowMore = "Worlds Show More",
+  WorldsChangeOrder = "Worlds Change Order",
 }
