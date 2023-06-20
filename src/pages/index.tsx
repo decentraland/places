@@ -184,7 +184,7 @@ export default function OverviewPage() {
             <OverviewList
               places={myFavoritesList}
               title={l("pages.overview.my_favorites")}
-              href={locations.my_places({})}
+              href={locations.favorites({})}
               onClickFavorite={(e, place) =>
                 handleFavorite(place.id, place, {
                   place: e.currentTarget.dataset.place!,
@@ -198,24 +198,6 @@ export default function OverviewPage() {
               dataPlace={SegmentPlace.OverviewMyFavorites}
             />
           )}
-        {/* <OverviewList
-          places={lastUpdatesList}
-          title={l("pages.overview.recently_updated")}
-          href={locations.places({
-            order_by: PlaceListOrderBy.UPDATED_AT,
-          })}
-          onClickFavorite={(e, place) =>
-            handleFavorite(place.id, place, {
-              place: e.currentTarget.dataset.place!,
-            })
-          }
-          loading={
-            placeListLastUpdatesState.version === 0 ||
-            placeListLastUpdatesState.loading
-          }
-          loadingFavorites={handlingFavorite}
-          dataPlace={SegmentPlace.OverviewRecentlyUpdated}
-        /> */}
         <OverviewList
           places={poisList}
           title={l("pages.overview.points_of_interest")}

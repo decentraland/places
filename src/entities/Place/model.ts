@@ -3,7 +3,6 @@ import {
   SQL,
   columns,
   conditional,
-  join,
   limit,
   objectValues,
   offset,
@@ -431,15 +430,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         p.disabled is false AND world is true AND hidden is false
         ${conditional(
           options.names.length > 0,
-          SQL`AND world_name = ANY(ARRAY[${join(
-            options.names.map((item) => SQL`${item}`)
-          )}])`
+          SQL`AND world_name IN ${values(options.names)}`
         )}
       ORDER BY ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
-
     return await this.namedQuery("find_worlds", sql)
   }
 
@@ -469,9 +465,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND p.hidden is false
         ${conditional(
           options.names.length > 0,
-          SQL`AND p.world_name = ANY(ARRAY[${join(
-            options.names.map((item) => SQL`${item}`)
-          )}])`
+          SQL`AND p.world_name IN ${values(options.names)}`
         )}
     `
     const results: { total: number }[] = await this.namedQuery(

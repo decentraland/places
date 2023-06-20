@@ -26,11 +26,11 @@ import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
 
-import "./my_places.css"
+import "./favorites.css"
 
 const PAGE_SIZE = 24
 
-export default function PlacesPage() {
+export default function FavoritesPage() {
   const l = useFormatMessage()
   const isMobile = useMobileMediaQuery()
   const [account, accountState] = useAuthContext()
@@ -72,7 +72,7 @@ export default function PlacesPage() {
         filters: newParams,
         place: SegmentPlace.MyPlaceChangePagination,
       })
-      navigate(locations.my_places(newParams))
+      navigate(locations.favorites(newParams))
     },
     [params, track]
   )
@@ -132,7 +132,7 @@ export default function PlacesPage() {
             content={l("social.my_places.site") || ""}
           />
         </Helmet>
-        <Navigation activeTab={NavigationTab.MyPlaces} />
+        <Navigation activeTab={NavigationTab.Favorites} />
         <Container className="my-places-list__sign-in">
           <SignIn
             isConnecting={accountState.loading}
@@ -179,7 +179,7 @@ export default function PlacesPage() {
         />
         <meta name="twitter:site" content={l("social.my_places.site") || ""} />
       </Helmet>
-      <Navigation activeTab={NavigationTab.MyPlaces} />
+      <Navigation activeTab={NavigationTab.Favorites} />
       <Container className="my-places-list__container">
         <Header>{l("pages.my_places.favorites")}</Header>
         {!accountState.loading && myFavoritesList.length === 0 && (

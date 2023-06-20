@@ -10,9 +10,12 @@ import {
 
 import { getWorldsLiveData } from "../../../modules/worldsLiveData"
 import PlaceModel from "../../Place/model"
-import { PlaceListOrderBy } from "../../Place/types"
 import { getWorldListQuerySchema } from "../schemas"
-import { FindWorldWithAggregatesOptions, GetWorldListQuery } from "../types"
+import {
+  FindWorldWithAggregatesOptions,
+  GetWorldListQuery,
+  WorldListOrderBy,
+} from "../types"
 import { worldsWithUserCount } from "../utils"
 
 export const validateGetWorldListQuery = Router.validator<GetWorldListQuery>(
@@ -26,7 +29,7 @@ export const getWorldList = Router.memo(
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
-      order_by: PlaceListOrderBy.HIGHEST_RATED,
+      order_by: WorldListOrderBy.MOST_ACTIVE,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
     })
