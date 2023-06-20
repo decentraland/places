@@ -88,6 +88,10 @@
       "favorites": "My Favorites",
       "no_favorite_selected": "You haven’t saved any Places to your favorites. Find ",
       "go_to_overview": "the places you like most"
+    },
+    "worlds": {
+      "description": "Your own 3D Space in the Metaverse. A place for Decentraland citizens to build, experiment, and host events and even interactive experiences without owning LAND.",
+      "find_out_more": "Find Out More"
     }
   },
   "social": {
