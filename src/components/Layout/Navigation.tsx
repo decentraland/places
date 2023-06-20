@@ -16,7 +16,7 @@ export enum NavigationTab {
   Overview = "overview",
   Places = "places",
   Worlds = "worlds",
-  MyPlaces = "favorites",
+  Favorites = "favorites",
 }
 
 export type NavigationProps = {
@@ -57,7 +57,7 @@ export default function Navigation(props: NavigationProps) {
           </NavigationMenu.Item>
           {account && (
             <NavigationMenu.Item
-              active={props.activeTab === NavigationTab.MyPlaces}
+              active={props.activeTab === NavigationTab.Favorites}
               href={locations.favorites({})}
             >
               {l("navigation.my_places")}
