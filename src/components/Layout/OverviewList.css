@@ -1,5 +1,5 @@
 .ui.overview-list:not(:first-child) {
-  padding-top: 30px;
+  padding-top: 45px;
 }
 
 .ui.overview-list .dcl.header-menu .ui.header {

@@ -1,5 +1,30 @@
-.overview-container {
+.ui.container.full.overview-container {
   padding-top: 20px;
+  width: 100%;
+}
+.ui.container.full.overview-container .overview-list {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+
+.ui.container.full.overview-container .overview-list.overview-worlds {
+  background: rgba(236, 235, 237, 0.4);
+  padding-bottom: 10px;
+}
+
+.ui.container.full.overview-container
+  .overview-list.overview-worlds
+  .world-label__container
+  h3 {
+  font-size: 24px;
+}
+
+.ui.container.full.overview-container
+  .overview-list.overview-worlds
+  .world-label__container
+  img {
+  width: 45.833px;
+  height: 45.833px;
 }
 
 .overview__carousel2 {

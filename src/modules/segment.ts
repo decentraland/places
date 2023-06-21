@@ -11,6 +11,7 @@ export enum SegmentPlace {
   OverviewMostActive = "Overview Most Active",
   OverviewFeatured = "Overview Featured",
   OverviewHightRated = "Overview Hight Rated",
+  OverviewWorlds = "Overview Worlds",
   OverviewMyFavorites = "Overview My Favorites",
   OverviewRecentlyUpdated = "Overview Recently Updated",
   OverviewPointsOfInterest = "Overview Points Of Interest",
