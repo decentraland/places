@@ -80,7 +80,11 @@ export default function WorldsPage() {
   useEffect(() => {
     if (allWorlds.length === 0) {
       loadWorlds()
-    } else if (allWorlds.length > PAGE_SIZE) {
+    }
+  }, [params])
+
+  useEffect(() => {
+    if (allWorlds.length > PAGE_SIZE) {
       setTimeout(
         () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
         0

@@ -83,7 +83,11 @@ export default function IndexPage() {
   useEffect(() => {
     if (allPlaces.length === 0) {
       loadPlaces()
-    } else if (allPlaces.length > PAGE_SIZE) {
+    }
+  }, [params])
+
+  useEffect(() => {
+    if (allPlaces.length > PAGE_SIZE) {
       setTimeout(
         () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
         0
