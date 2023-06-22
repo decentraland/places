@@ -30,7 +30,7 @@ import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
 
-import "./favorites.css"
+import "./index.css"
 
 const PAGE_SIZE = 24
 
@@ -288,7 +288,6 @@ export default function FavoritesPage() {
                 <Link href={locations.worlds({})}>
                   {l("pages.favorites.go_to_worlds")}
                 </Link>
-                .
               </Paragraph>
             </Container>
           )}

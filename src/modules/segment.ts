@@ -20,6 +20,8 @@ export enum SegmentPlace {
   FavoritesPlaces = "Favorites Places",
   FavoritesWorlds = "Favorites Worlds",
   MyPlaceChangePagination = "My Place Change Pagination",
+  FavoritesPlacesChangePagination = "Favorite Place Change Pagination",
+  FavoritesWorldsChangePagination = "Favorite World Change Pagination",
   Place = "Place",
   Places = "Places",
   Worlds = "Worlds",
