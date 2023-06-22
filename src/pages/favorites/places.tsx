@@ -19,7 +19,7 @@ import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media
 import { Pagination } from "decentraland-ui/dist/components/Pagination/Pagination"
 import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
 
-import Navigation, { NavigationTab } from "../../components/Layout/Navigation"
+import Navigation from "../../components/Layout/Navigation"
 import PlaceList from "../../components/Place/PlaceList/PlaceList"
 import { usePlaceListMyFavorites } from "../../hooks/usePlaceListMyFavorites"
 import usePlacesManager from "../../hooks/usePlacesManager"
