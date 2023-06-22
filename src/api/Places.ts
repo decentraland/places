@@ -169,4 +169,8 @@ export default class Places extends API {
       total: Number(result.total),
     }
   }
+
+  async getWorldsMyFavorites(options?: { limit: number; offset: number }) {
+    return this.getWorlds({ only_favorites: true, ...options })
+  }
 }

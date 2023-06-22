@@ -63,9 +63,9 @@ export default function Navigation(props: NavigationProps) {
           {account && (
             <NavigationMenu.Item
               active={props.activeTab === NavigationTab.Favorites}
-              href={locations.favorites({})}
+              href={locations.favorites()}
             >
-              {l("navigation.my_places")}
+              {l("navigation.favorites")}
             </NavigationMenu.Item>
           )}
           <NavigationMenu.Item
