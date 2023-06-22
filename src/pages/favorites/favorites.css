@@ -31,6 +31,8 @@
 .ui.container.favorites-list__container {
   width: calc(100% - 96px);
   padding-top: 18px;
+  margin-left: auto !important;
+  margin-right: auto !important;
 }
 
 .favorites-list__place-list {
@@ -67,6 +69,7 @@
   }
 
   .favorites-list__place-list {
-    margin-right: -14px;
+    margin-right: 0px;
+    margin-left: 0px;
   }
 }
