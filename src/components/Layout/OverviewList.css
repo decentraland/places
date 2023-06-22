@@ -46,7 +46,7 @@
 }
 @media only screen and (max-width: 435px) {
   .place-list__container.overview-list__place-list .ui.card.place-card {
-    width: 82vw;
+    width: calc(100vw - 32px);
     margin: 5px;
   }
 
