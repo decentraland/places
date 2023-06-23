@@ -115,7 +115,7 @@ describe("getThumbnail", () => {
       { url: sqsMessageWorld.contentServerUrls![0] }
     )
     expect(url).toBe(
-      "https://api.decentraland.org/v2/map.png?height=1024&width=1024&selected=0%2C0&center=0%2C0&size=20"
+      "https://peer.decentraland.org/content/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
     )
   })
 })

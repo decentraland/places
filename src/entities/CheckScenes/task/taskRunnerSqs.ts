@@ -45,47 +45,64 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
-  if (contentEntityScene.metadata.worldConfiguration) {
-    const worlds = await PlaceModel.findEnabledWorldName(
-      contentEntityScene.metadata.worldConfiguration.name
+  if (
+    contentEntityScene.metadata.worldConfiguration &&
+    !(
+      contentEntityScene.metadata.worldConfiguration.name ||
+      contentEntityScene.metadata.worldConfiguration.dclName
     )
+  ) {
+    throw new Error("worldConfiguration without name")
+  }
 
-    const worldIndexing = await verifyWorldsIndexing([
-      contentEntityScene.metadata.worldConfiguration.name,
-    ])
+  if (contentEntityScene.metadata.worldConfiguration) {
+    const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
+      contentEntityScene.metadata.worldConfiguration.dclName) as string
+
+    const worlds = await PlaceModel.findEnabledWorldName(worldName)
+
+    const worldIndexing = await verifyWorldsIndexing([worldName])
 
     if (!worlds.length) {
       placesToProcess = {
-        new: createPlaceFromContentEntityScene(contentEntityScene, {
-          hidden: !worldIndexing[0].shouldBeIndexed,
-          disabled:
-            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-              ?.optOut,
-        }),
+        new: createPlaceFromContentEntityScene(
+          contentEntityScene,
+          {
+            hidden: !worldIndexing[0].shouldBeIndexed,
+            disabled:
+              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+                ?.optOut,
+          },
+          { url: job.contentServerUrls![0] }
+        ),
         disabled: [],
       }
     } else {
       const worldAbout = await getWorldAbout(
         job.contentServerUrls![0],
-        contentEntityScene.metadata.worldConfiguration.name
+        worldName
       )
 
       if (
         !worldAbout.configurations.scenesUrn[0].includes(job.entity.entityId)
       ) {
         throw new Error(
-          `The information obtained from the World \`${contentEntityScene.metadata.worldConfiguration.name}\` with the \`${job.entity.entityId}\` hash is not the same as the information obtained from About. scenesUrn: \`${worldAbout.configurations.scenesUrn[0]}\``
+          `The information obtained from the World \`${worldName}\` with the \`${job.entity.entityId}\` hash is not the same as the information obtained from About. scenesUrn: \`${worldAbout.configurations.scenesUrn[0]}\``
         )
       }
 
       placesToProcess = {
-        update: createPlaceFromContentEntityScene(contentEntityScene, {
-          ...worlds[0],
-          hidden: !worldIndexing[0].shouldBeIndexed,
-          disabled:
-            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-              ?.optOut,
-        }),
+        update: createPlaceFromContentEntityScene(
+          contentEntityScene,
+          {
+            ...worlds[0],
+            hidden: !worldIndexing[0].shouldBeIndexed,
+            disabled:
+              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+                ?.optOut,
+          },
+          { url: job.contentServerUrls![0] }
+        ),
         disabled: [],
       }
     }

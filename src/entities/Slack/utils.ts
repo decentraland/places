@@ -4,7 +4,7 @@ import fetch from "isomorphic-fetch"
 import isURL from "validator/lib/isURL"
 
 import { PlaceAttributes } from "../Place/types"
-import { placeUrl } from "../Place/utils"
+import { placeUrl, worldUrl } from "../Place/utils"
 
 const SLACK_WEBHOOK = env("SLACK_WEBHOOK", "")
 
@@ -20,9 +20,13 @@ export async function notifyNewPlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:tada: New ${place.world ? "world" : "place"} added: ${
+          text: `:tada: New ${
+            place.world ? `world ${place.hidden ? "(hidden)" : ""}` : "place"
+          } added: ${
             place.world
-              ? place.world_name
+              ? place.hidden
+                ? place.world_name
+                : `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },
@@ -52,10 +56,12 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         text: {
           type: "mrkdwn",
           text: `:white_check_mark: ${
-            place.world ? "World" : "Place"
+            place.world ? `world ${place.hidden ? "(hidden)" : ""}` : "Place"
           } updated: ${
             place.world
-              ? place.world_name
+              ? place.hidden
+                ? place.world_name
+                : `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },

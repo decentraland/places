@@ -61,6 +61,11 @@ export function createPlaceFromContentEntityScene(
     contact_name = null
   }
 
+  const worldName =
+    contentEntityScene?.metadata?.worldConfiguration?.name ||
+    contentEntityScene?.metadata?.worldConfiguration?.dclName ||
+    null
+
   const placeParsed = {
     id: uuid(),
     likes: 0,
@@ -75,9 +80,7 @@ export function createPlaceFromContentEntityScene(
     updated_at: now,
     categories: [],
     world: !!contentEntityScene?.metadata?.worldConfiguration,
-    world_name: contentEntityScene?.metadata?.worldConfiguration
-      ? contentEntityScene?.metadata?.worldConfiguration.name
-      : null,
+    world_name: worldName,
     hidden: !!contentEntityScene?.metadata?.worldConfiguration,
     ...data,
     title: title ? title.slice(0, 50) : "Untitled",
