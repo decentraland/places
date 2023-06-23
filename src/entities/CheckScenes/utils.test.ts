@@ -85,7 +85,7 @@ describe("getWorldAbout", () => {
   test("should return world about", async () => {
     const worldAbout = await getWorldAbout(
       sqsMessageWorld.contentServerUrls![0],
-      worldContentEntitySceneParalax.metadata.worldConfiguration!.name
+      worldContentEntitySceneParalax.metadata.worldConfiguration!.name!
     )
     expect(worldAbout).toEqual({
       ...worldAboutParalax,

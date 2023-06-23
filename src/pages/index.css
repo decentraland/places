@@ -1,5 +1,37 @@
-.overview-container {
+.ui.container.full.overview-container {
   padding-top: 20px;
+  width: 100%;
+}
+
+.ui.container.full.overview-container .overview-list {
+  padding-left: 24px;
+  padding-right: 24px;
+}
+.ui.container.full.overview-container
+  .overview-list
+  .dcl.header-menu
+  .dcl.header-menu-right {
+  min-width: 95px;
+}
+
+.ui.container.full.overview-container .overview-list.overview-worlds {
+  background: rgba(236, 235, 237, 0.4);
+  padding-bottom: 10px;
+}
+
+.ui.container.full.overview-container
+  .overview-list.overview-worlds
+  .world-label__container
+  h3 {
+  font-size: 24px;
+}
+
+.ui.container.full.overview-container
+  .overview-list.overview-worlds
+  .world-label__container
+  img {
+  width: 45.833px;
+  height: 45.833px;
 }
 
 .overview__carousel2 {
@@ -18,6 +50,13 @@
   .overview__carousel2 {
     margin-top: -22px;
   }
+  .overview-list .world-label__container h3 span {
+    display: block;
+  }
+
+  .ui.container.full.overview-container {
+    margin: 0px !important;
+  }
 }
 
 /* TODO: Check if we need this into carousel2 */
@@ -25,5 +64,9 @@
   .overview__carousel2 .swiper-button-prev,
   .overview__carousel2 .swiper-button-next {
     display: none;
+  }
+  .ui.container.full.overview-container .ui.overview-list {
+    padding-left: 0;
+    padding-right: 0;
   }
 }

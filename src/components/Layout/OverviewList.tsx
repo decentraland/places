@@ -18,7 +18,7 @@ import "./OverviewList.css"
 
 export type OverviewListProps = {
   places: AggregatePlaceAttributes[]
-  title: string
+  title: string | React.ReactNode
   href: string
   loading: boolean
   onClickFavorite: (

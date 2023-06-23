@@ -14,6 +14,7 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
+import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { PlaceListOrderBy } from "../entities/Place/types"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
@@ -21,8 +22,8 @@ import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
-/* import { usePlaceListRecentlyUpdates } from "../hooks/usePlaceListRecentlyUpdates" */
 import usePlacesManager from "../hooks/usePlacesManager"
+import { useWorldsList } from "../hooks/useWorldsList"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
@@ -40,8 +41,7 @@ export default function OverviewPage() {
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
-  /* const [placeListLastUpdates, placeListLastUpdatesState] =
-    usePlaceListRecentlyUpdates(overviewOptions) */
+  const [placeWorldsList, placeWorldsListState] = useWorldsList(overviewOptions)
   const [placeListHightRated, placeListHightRatedState] =
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
@@ -56,6 +56,7 @@ export default function OverviewPage() {
       placeListHightRated,
       placeListMyFavorites.data,
       placeListPois,
+      placeWorldsList,
     ],
     [
       placeListHighlighted,
@@ -64,6 +65,7 @@ export default function OverviewPage() {
       placeListHightRated,
       placeListMyFavorites,
       placeListPois,
+      placeWorldsList,
     ]
   )
 
@@ -75,6 +77,7 @@ export default function OverviewPage() {
       hightRatedList,
       myFavoritesList,
       poisList,
+      worldsList,
     ],
     { handleFavorite, handlingFavorite },
   ] = usePlacesManager(placesMemo)
@@ -158,6 +161,24 @@ export default function OverviewPage() {
             }
             loadingFavorites={handlingFavorite}
             dataPlace={SegmentPlace.OverviewFeatured}
+          />
+        )}
+        {!ff.flags[FeatureFlags.HideWorlds] && (
+          <OverviewList
+            className="overview-worlds"
+            places={worldsList}
+            title={<WorldLabel />}
+            href={locations.worlds({})}
+            onClickFavorite={(e, place) =>
+              handleFavorite(place.id, place, {
+                place: e.currentTarget.dataset.place!,
+              })
+            }
+            loading={
+              placeWorldsListState.version === 0 || placeWorldsListState.loading
+            }
+            loadingFavorites={handlingFavorite}
+            dataPlace={SegmentPlace.OverviewWorlds}
           />
         )}
         <OverviewList

@@ -31,6 +31,13 @@ export function placeUrl(place: PlaceAttributes) {
   return target
 }
 
+export function worldUrl(place: PlaceAttributes) {
+  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  target.searchParams.set("name", place.world_name!)
+  target.pathname = `/world/`
+  return target
+}
+
 export function siteUrl(pathname = "") {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.pathname = pathname
@@ -107,7 +114,10 @@ export function getThumbnailFromContentDeployment(
     }
   }
 
-  if (!thumbnail) {
+  if (!thumbnail && deployment?.metadata?.worldConfiguration) {
+    thumbnail =
+      "https://peer.decentraland.org/content/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
+  } else if (!thumbnail) {
     thumbnail = Land.getInstance().getMapImage({
       selected: positions,
     })
