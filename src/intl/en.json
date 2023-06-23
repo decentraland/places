@@ -12,7 +12,7 @@
   "navigation": {
     "overview": "Overview",
     "places": "Places",
-    "my_places": "Favorites",
+    "favorites": "Favorites",
     "worlds": "Worlds",
     "faq": "FAQ",
     "faq_target": "https://docs.decentraland.org/creator/places/faq/"
@@ -83,11 +83,17 @@
       "featured": "Featured",
       "show_more": "Show More"
     },
-    "my_places": {
-      "title": "My Places",
-      "favorites": "My Favorites",
-      "no_favorite_selected": "You haven’t saved any Places to your favorites. Find ",
-      "go_to_overview": "the places you like most"
+    "favorites": {
+      "title": "Favorites",
+      "title_places": "Favorites Places",
+      "title_worlds": "Favorites Worlds",
+      "places": "Places",
+      "worlds": "Worlds",
+      "no_favorite_selected": "You haven’t added any Places to your favorites",
+      "no_world_selected": "You haven’t saved any Worlds to your favorites",
+      "go_to_places": "Discover Places",
+      "go_to_worlds": "Discover Worlds",
+      "back": "Back"
     },
     "worlds": {
       "description": "Your own 3D Space in the Metaverse. A place for Decentraland citizens to build, experiment, and host events and even interactive experiences without owning LAND.",
@@ -111,8 +117,8 @@
       "card": "summary_large_image",
       "creator": "@decentraland"
     },
-    "my_places": {
-      "title": "My Places",
+    "favorites": {
+      "title": "Favorites",
       "description": "Decentraland is a virtual social platform built and governed by its users. Every day, users enter the world to meet up, play games, attend live events, trade in the marketplace, engage with brands, visit galleries and much more",
       "image": "https://places.decentraland.org/images/background-v3@1x.jpg",
       "site": "@decentraland",

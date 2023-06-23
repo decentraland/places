@@ -126,7 +126,10 @@ export default {
     API.url(GATSBY_BASE_URL, "/places/", fromPlacesOptions(options)),
   worlds: (options: Partial<WorldsPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/worlds/", fromWorldsOptions(options)),
-  favorites: (options: Partial<PlacesPageOptions>) =>
-    API.url(GATSBY_BASE_URL, "/favorites/", fromPlacesOptions(options)),
+  favorites: () => API.url(GATSBY_BASE_URL, "/favorites/"),
+  favoritesPlaces: (options: Partial<PlacesPageOptions>) =>
+    API.url(GATSBY_BASE_URL, "/favorites/places", fromPlacesOptions(options)),
+  favoritesWorlds: (options: Partial<PlacesPageOptions>) =>
+    API.url(GATSBY_BASE_URL, "/favorites/worlds", fromPlacesOptions(options)),
   docs: () => API.url("/docs/"),
 }

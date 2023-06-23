@@ -23,7 +23,7 @@ import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
 import usePlacesManager from "../hooks/usePlacesManager"
-import { useWorldsList } from "../hooks/useWorldsList"
+import { useWorldList } from "../hooks/useWorldList"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
@@ -41,7 +41,7 @@ export default function OverviewPage() {
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
-  const [placeWorldsList, placeWorldsListState] = useWorldsList(overviewOptions)
+  const [placeWorldsList, placeWorldsListState] = useWorldList(overviewOptions)
   const [placeListHightRated, placeListHightRatedState] =
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
@@ -205,7 +205,7 @@ export default function OverviewPage() {
             <OverviewList
               places={myFavoritesList}
               title={l("pages.overview.my_favorites")}
-              href={locations.favorites({})}
+              href={locations.favorites()}
               onClickFavorite={(e, place) =>
                 handleFavorite(place.id, place, {
                   place: e.currentTarget.dataset.place!,

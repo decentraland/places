@@ -1,0 +1,39 @@
+.favorites-list__empty.ui.container {
+  width: calc(100% - 48px);
+  height: 240px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #ecebed;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+}
+
+.favorites-list__empty.ui.container .dg.Paragraph {
+  width: fit-content;
+  text-align: center;
+}
+
+.favorites__carousel .ui.card,
+.favorites__carousel .ui.card:first-child {
+  margin: 1em;
+}
+
+.favorites__carousel .ui.card:only-child {
+  margin: 1em auto;
+}
+
+.favorites__item-container {
+  display: flex;
+}
+
+.favorites__list .ui.container.full .dcl.header-menu {
+  margin-left: 24px !important;
+}
+
+.favorites__list .ui.container.full .dcl.header-menu .ui.header {
+  font-size: 28px;
+  font-weight: 700;
+  line-height: 34px;
+  text-transform: capitalize;
+}
