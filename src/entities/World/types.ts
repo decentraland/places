@@ -8,8 +8,8 @@ export type GetWorldListQuery = {
 }
 
 export enum WorldListOrderBy {
-  MOST_ACTIVE = "most_active",
   HIGHEST_RATED = "like_rate",
+  MOST_ACTIVE = "most_active",
 }
 
 export type WorldListOptions = {
