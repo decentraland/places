@@ -17,17 +17,20 @@ export type PlaceStatsProps = {
   place?: AggregatePlaceAttributes
   poi?: boolean
   loading?: boolean
+  hideUserCount?: boolean
 }
 
 export default React.memo(function PlaceStats(props: PlaceStatsProps) {
-  const { place, loading, poi } = props
+  const { place, loading, poi, hideUserCount } = props
   const l = useFormatMessage()
 
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
-      <Stats title={l("components.place_stats.active")}>
-        <Header>{shorterNumber(place?.user_count || 0)}</Header>
-      </Stats>
+      {!hideUserCount && (
+        <Stats title={l("components.place_stats.active")}>
+          <Header>{shorterNumber(place?.user_count || 0)}</Header>
+        </Stats>
+      )}
       <Stats title={l("components.place_stats.favorites")}>
         <Header>{shorterNumber(place?.favorites || 0)}</Header>
       </Stats>
