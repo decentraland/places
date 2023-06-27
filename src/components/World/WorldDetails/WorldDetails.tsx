@@ -2,6 +2,7 @@ import React, { useState } from "react"
 
 import ReactMarkdown from "react-markdown"
 
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
@@ -11,6 +12,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { FeatureFlags } from "../../../modules/ff"
 import PlaceStats from "../../Place/PlaceStats/PlaceStats"
 
 import "./WorldDetails.css"
@@ -29,6 +31,8 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
   const { place, loading } = props
   const l = useFormatMessage()
   const [activeTab, setActiveTab] = useState(WorldDetailsTab.About)
+
+  const [ff] = useFeatureFlagContext()
 
   return (
     <div
@@ -69,7 +73,12 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
               </Label>
             </div>
           </div>
-          <PlaceStats place={place} loading={loading} poi={false} />
+          <PlaceStats
+            place={place}
+            loading={loading}
+            poi={false}
+            hideUserCount={!!ff.flags[FeatureFlags.HideWorldActiveUser]}
+          />
         </>
       )}
     </div>
