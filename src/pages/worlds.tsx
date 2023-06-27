@@ -30,6 +30,7 @@ import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { getWorldListQuerySchema } from "../entities/World/schemas"
 import { WorldListOptions, WorldListOrderBy } from "../entities/World/types"
 import usePlacesManager from "../hooks/usePlacesManager"
+import informationIcon from "../images/Information-icon.svg"
 import { FeatureFlags } from "../modules/ff"
 import locations, { toWorldsOptions } from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
@@ -247,6 +248,10 @@ export default function WorldsPage() {
                 </HeaderMenu>
               </div>
             )}
+            <div className="worlds-page__disclamer">
+              <img src={informationIcon} />
+              <span>{l("pages.worlds.disclamer")}</span>
+            </div>
             {allWorlds.length > 0 && (
               <PlaceList
                 places={places}
