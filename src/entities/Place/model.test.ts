@@ -160,6 +160,7 @@ describe(`findWithAggregates`, () => {
         positions: ["-9,-9"],
         order_by: "created_at",
         order: "desc",
+        search: "",
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -197,6 +198,7 @@ describe(`findWithAggregates`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
+        search: "",
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -240,6 +242,7 @@ describe(`findWithAggregates`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
+        search: "",
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -406,6 +409,7 @@ describe(`findWithHotScenes`, () => {
           positions: ["-9,-9"],
           order_by: "created_at",
           order: "desc",
+          search: "",
         },
         [hotSceneGenesisPlaza]
       )

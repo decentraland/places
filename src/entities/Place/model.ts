@@ -158,8 +158,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           UserLikesModel
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
+      ${conditional(
+        !!options.search,
+        SQL`ts_rank_cd(p.textsearch, to_tsquery('${options.search}')) as rank`
+      )}
       WHERE
         p."disabled" is false AND "world" is false
+        ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(

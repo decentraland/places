@@ -50,6 +50,7 @@ export const getPlaceList = Router.memo(
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
+      search: ctx.url.searchParams.get("search"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -68,6 +69,7 @@ export const getPlaceList = Router.memo(
       positions: query.positions,
       order_by: query.order_by,
       order: query.order,
+      search: query.search,
     }
 
     const [data, total, hotScenes, sceneStats] = await Promise.all([
@@ -77,14 +79,14 @@ export const getPlaceList = Router.memo(
       getSceneStats(),
     ])
 
-    return new ApiResponse(
-      placesWithUserVisits(
-        placesWithUserCount(data, hotScenes, {
-          withRealmsDetail: !!bool(query.with_realms_detail),
-        }),
-        sceneStats
-      ),
-      { total }
+    const response = placesWithUserVisits(
+      placesWithUserCount(data, hotScenes, {
+        withRealmsDetail: !!bool(query.with_realms_detail),
+      }),
+      sceneStats
     )
+    response.sort((a, b) => b.user_visits - a.user_visits)
+
+    return new ApiResponse(response, { total })
   }
 )
