@@ -13,10 +13,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.sql(`
     UPDATE "${PlaceModel.tableName}"
     SET "textsearch" = (
-      setweight(to_tsvector("title"), 'A') ||
-      setweight(to_tsvector("description"), 'B') || 
-      setweight(to_tsvector("owner"), 'C') || 
-      setweight(to_tsvector(concat("tags")), 'D')
+      setweight(to_tsvector(coalesce("title", '')), 'A') ||
+      setweight(to_tsvector(coalesce("description", '')), 'B') || 
+      setweight(to_tsvector(coalesce("owner", '')), 'C') || 
+      setweight(to_tsvector(coalesce(concat("tags"), '')), 'D')
     )`)
 
   pgm.createIndex(PlaceModel.tableName, ["textsearch"], { method: "gin" })

@@ -160,7 +160,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       ${conditional(
         !!options.search,
-        SQL`ts_rank_cd(p.textsearch, to_tsquery('${options.search}')) as rank`
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
       )}
       WHERE
         p."disabled" is false AND "world" is false
@@ -175,7 +175,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
-      ORDER BY ${order}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
@@ -192,6 +194,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "positions"
       | "only_featured"
       | "only_highlighted"
+      | "search"
     >
   ) {
     if (options.user && !isEthereumAddress(options.user)) {
@@ -207,6 +210,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
       )}
       WHERE
         p."disabled" is false

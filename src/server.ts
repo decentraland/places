@@ -34,19 +34,19 @@ import worldRoute from "./entities/World/routes"
 import { checkWorldsIndexingTask } from "./entities/World/task/checkWorldsIndexingTask"
 
 const tasks = tasksManager()
-tasks.use(
-  createSceneConsumerTask(
-    new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
-    {
-      AttributeNames: ["SentTimestamp"],
-      MaxNumberOfMessages: 10,
-      MessageAttributeNames: ["All"],
-      QueueUrl: env("QUEUE_URL")!,
-      WaitTimeSeconds: 15,
-      VisibilityTimeout: 3 * 3600, // 3 hours
-    }
-  )
-)
+// tasks.use(
+//   createSceneConsumerTask(
+//     new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
+//     {
+//       AttributeNames: ["SentTimestamp"],
+//       MaxNumberOfMessages: 10,
+//       MessageAttributeNames: ["All"],
+//       QueueUrl: env("QUEUE_URL")!,
+//       WaitTimeSeconds: 15,
+//       VisibilityTimeout: 3 * 3600, // 3 hours
+//     }
+//   )
+// )
 tasks.use(checkWorldsIndexingTask)
 
 const app = express()
