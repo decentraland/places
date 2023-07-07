@@ -1,5 +1,4 @@
-import { Type } from "decentraland-gatsby/dist/entities/Database/types"
-import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
+import { MigrationBuilder } from "node-pg-migrate"
 
 import PlaceModel from "../entities/Place/model"
 
