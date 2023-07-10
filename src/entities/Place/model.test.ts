@@ -284,6 +284,7 @@ describe(`countPlaces`, () => {
         only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
+        search: "",
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -315,6 +316,7 @@ describe(`countPlaces`, () => {
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
+        search: "",
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
