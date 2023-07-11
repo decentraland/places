@@ -520,6 +520,7 @@ describe(`findWorld`, () => {
         names: ["templegame.dcl.eth"],
         order_by: "created_at",
         order: "desc",
+        search: "",
       })
     ).toEqual([worldPlaceTemplegame])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -554,6 +555,7 @@ describe(`findWorld`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
+        search: "",
       })
     ).toEqual([worldPlaceTemplegame])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -594,6 +596,7 @@ describe(`countWorlds`, () => {
       await PlaceModel.countWorlds({
         only_favorites: false,
         names: ["templegame.dcl.eth"],
+        search: "",
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -622,6 +625,7 @@ describe(`countWorlds`, () => {
         only_favorites: false,
         names: ["templegame.dcl.eth"],
         user: "ABC",
+        search: "",
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)

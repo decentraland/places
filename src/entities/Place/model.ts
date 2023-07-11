@@ -421,6 +421,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(!options.user, SQL`, false as user_dislike`)}
       FROM ${table(this)} p
       ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
+      ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
@@ -444,7 +448,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.names.length > 0,
           SQL`AND world_name IN ${values(options.names)}`
         )}
-      ORDER BY ${order}
+        ${conditional(
+          !!options.search,
+          SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+        )}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
@@ -454,7 +464,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names"
+      "user" | "only_favorites" | "names" | "search"
     >
   ) {
     if (options.user && !isEthereumAddress(options.user)) {
@@ -465,6 +475,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT
         count(*) as total
       FROM ${table(this)} p
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
