@@ -85,7 +85,6 @@ export const getPlaceList = Router.memo(
       }),
       sceneStats
     )
-    response.sort((a, b) => b.user_visits - a.user_visits)
 
     return new ApiResponse(response, { total })
   }
