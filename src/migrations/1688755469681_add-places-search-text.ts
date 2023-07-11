@@ -24,4 +24,5 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
   pgm.dropColumns(PlaceModel.tableName, ["textsearch"])
+  pgm.dropIndex(PlaceModel.tableName, ["textsearch"])
 }
