@@ -206,14 +206,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) as "total"
       FROM ${table(this)} p
       ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
+      ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
       )}
       WHERE
         p."disabled" is false
@@ -228,6 +228,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_places",
@@ -448,16 +449,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.names.length > 0,
           SQL`AND world_name IN ${values(options.names)}`
         )}
-        ${conditional(
-          !!options.search,
-          SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
-        )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}
+      ${offset(options.offset)}      
     `
+
     return await this.namedQuery("find_worlds", sql)
   }
 
@@ -493,6 +492,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.names.length > 0,
           SQL`AND p.world_name IN ${values(options.names)}`
         )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_worlds",
