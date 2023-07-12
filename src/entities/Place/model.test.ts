@@ -309,6 +309,37 @@ describe(`countPlaces`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
+  test(`should return the total number of places matching the parameters FindWithAggregatesOptions with search`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countPlaces({
+        only_favorites: false,
+        only_featured: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        search: "decentraland",
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_places")
+    expect(sql.values).toEqual(["decentraland", "-9,-9"])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(*) as "total"
+        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+        WHERE
+          p."disabled" is false
+          AND "world" is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($2)
+          ) AND rank > 0
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
   test(`should return the total number of places matching the parameters FindWithAggregatesOptions with wrong user address`, async () => {
     namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
     expect(
