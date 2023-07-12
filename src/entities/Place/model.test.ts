@@ -242,13 +242,14 @@ describe(`findWithAggregates`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
-        search: "",
+        search: "decentraland",
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
     expect(sql.values).toEqual([
+      "decentraland",
       userLikeTrue.user,
       userLikeTrue.user,
       "-9,-9",
@@ -259,15 +260,16 @@ describe(`findWithAggregates`, () => {
       `
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
-        FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
-        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
-          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $2
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $3
+        WHERE p."disabled" is false AND "world" is false AND rank > 0 AND p.base_position IN (
+          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
-        ORDER BY p.like_rate DESC
-          LIMIT $4
-          OFFSET $5
+        ORDER BY rank DESC,
+          p.like_rate DESC
+          LIMIT $5
+          OFFSET $6
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
