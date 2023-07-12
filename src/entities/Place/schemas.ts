@@ -68,6 +68,12 @@ export const getPlaceListQuerySchema = schema({
       description: "Add the numbers of users in each Realm (experimental)",
       nullable: true as any,
     },
+    search: {
+      type: "string",
+      description:
+        "Filter places that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
+      nullable: true as any,
+    },
   },
 })
 

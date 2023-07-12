@@ -65,6 +65,7 @@ export const getPlaceMostActiveList = Router.memo(
         : hotScenesPositions,
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
+      search: query.search,
     }
 
     const { offset, limit, order, ...extraOptions } = options

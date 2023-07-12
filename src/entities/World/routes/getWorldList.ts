@@ -30,6 +30,7 @@ export const getWorldList = Router.memo(
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       order_by: WorldListOrderBy.MOST_ACTIVE,
+      search: ctx.url.searchParams.get("search"),
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
     })
@@ -48,6 +49,7 @@ export const getWorldList = Router.memo(
       names: query.names,
       order_by: query.order_by,
       order: query.order,
+      search: query.search,
     }
 
     const [data, total, liveData] = await Promise.all([
