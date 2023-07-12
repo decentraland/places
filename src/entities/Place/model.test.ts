@@ -588,13 +588,14 @@ describe(`findWorld`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
-        search: "",
+        search: "decentraland",
       })
     ).toEqual([worldPlaceTemplegame])
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_worlds")
     expect(sql.values).toEqual([
+      "decentraland",
       userLikeTrue.user,
       userLikeTrue.user,
       "templegame.dcl.eth",
@@ -604,17 +605,18 @@ describe(`findWorld`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
-        FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $2
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $3
         WHERE
           p.disabled is false
           AND world is true
           AND hidden is false
-          AND world_name IN ($3)
-        ORDER BY p.like_rate DESC
-          LIMIT $4
-          OFFSET $5
+          AND world_name IN ($4)
+          AND rank > 0
+        ORDER BY rank DESC, p.like_rate DESC
+          LIMIT $5
+          OFFSET $6
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -646,6 +648,35 @@ describe(`countWorlds`, () => {
           AND p.world is true
           AND p.hidden is false
           AND p.world_name IN ($1)
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions with search without user`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countWorlds({
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        search: "decentraland",
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_worlds")
+    expect(sql.values).toEqual(["decentraland", "templegame.dcl.eth"])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(*) as total
+        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+        WHERE
+          p.disabled is false
+          AND p.world is true
+          AND p.hidden is false
+          AND p.world_name IN ($2)
+          AND rank > 0
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
