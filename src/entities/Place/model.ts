@@ -117,6 +117,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWithAggregates(
     options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (searchIsEmpty) {
+      return []
+    }
+
     const orderBy = PlaceListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
@@ -197,7 +202,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "search"
     >
   ) {
-    if (options.user && !isEthereumAddress(options.user)) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 
@@ -398,6 +406,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWorld(
     options: FindWorldWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+
+    if (searchIsEmpty) {
+      return []
+    }
+
     const orderBy = WorldListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
@@ -466,7 +480,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       "user" | "only_favorites" | "names" | "search"
     >
   ) {
-    if (options.user && !isEthereumAddress(options.user)) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 

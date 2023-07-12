@@ -275,6 +275,25 @@ describe(`findWithAggregates`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
+
+  test(`should return an empty list of places when FindWithAggregatesOptions search isn't long enough`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithAggregates({
+        offset: 0,
+        limit: 1000,
+        only_favorites: false,
+        only_featured: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "de",
+      })
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
 })
 
 describe(`countPlaces`, () => {
@@ -349,10 +368,22 @@ describe(`countPlaces`, () => {
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
-        search: "",
+        search: "asdads",
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
+  })
+  test("should return 0 is the search is not long enough", async () => {
+    expect(
+      await PlaceModel.countPlaces({
+        only_favorites: false,
+        only_featured: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        user: "ABC",
+        search: "",
+      })
+    ).toEqual(0)
   })
 })
 
@@ -622,6 +653,22 @@ describe(`findWorld`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
+  test(`should return an empty list of worlds when search is empty`, async () => {
+    namedQuery.mockResolvedValue([worldPlaceTemplegame])
+    expect(
+      await PlaceModel.findWorld({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "de",
+      })
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
 })
 
 describe(`countWorlds`, () => {
@@ -682,14 +729,24 @@ describe(`countWorlds`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
-  test(`should return the total number of worlds matching the parameters FindWithAggregatesOptions with wrong user address`, async () => {
+  test("should return 0 is the search is not long enough", async () => {
+    expect(
+      await PlaceModel.countWorlds({
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        user: "ABC",
+        search: "a",
+      })
+    ).toEqual(0)
+  })
+  test(`should return 0 with wrong user address`, async () => {
     namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
     expect(
       await PlaceModel.countWorlds({
         only_favorites: false,
         names: ["templegame.dcl.eth"],
         user: "ABC",
-        search: "",
+        search: "asdkad",
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
