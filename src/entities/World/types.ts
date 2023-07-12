@@ -5,6 +5,7 @@ export type GetWorldListQuery = {
   only_favorites: string
   order_by: string
   order: string
+  search: string
 }
 
 export enum WorldListOrderBy {
@@ -19,6 +20,7 @@ export type WorldListOptions = {
   names: string[]
   order_by: string
   order: string
+  search: string
 }
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {

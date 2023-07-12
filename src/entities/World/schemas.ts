@@ -42,6 +42,12 @@ export const getWorldListQuerySchema = schema({
       enum: ["asc", "desc"],
       nullable: true as any,
     },
+    search: {
+      type: "string",
+      description:
+        "Filter worlds that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
+      nullable: true as any,
+    },
   },
 })
 

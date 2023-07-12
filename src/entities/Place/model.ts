@@ -117,6 +117,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWithAggregates(
     options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (searchIsEmpty) {
+      return []
+    }
+
     const orderBy = PlaceListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
@@ -141,6 +146,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
       FROM ${table(this)} p
       ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
+      ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
@@ -160,6 +169,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       WHERE
         p."disabled" is false AND "world" is false
+        ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
@@ -170,7 +180,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
-      ORDER BY ${order}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
@@ -187,9 +199,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "positions"
       | "only_featured"
       | "only_highlighted"
+      | "search"
     >
   ) {
-    if (options.user && !isEthereumAddress(options.user)) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 
@@ -197,6 +213,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT
         count(*) as "total"
       FROM ${table(this)} p
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
@@ -216,6 +236,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_places",
@@ -385,6 +406,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async findWorld(
     options: FindWorldWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+
+    if (searchIsEmpty) {
+      return []
+    }
+
     const orderBy = WorldListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
@@ -409,6 +436,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(!options.user, SQL`, false as user_dislike`)}
       FROM ${table(this)} p
       ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
+      ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
@@ -432,20 +463,27 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.names.length > 0,
           SQL`AND world_name IN ${values(options.names)}`
         )}
-      ORDER BY ${order}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
       ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}
+      ${offset(options.offset)}      
     `
+
     return await this.namedQuery("find_worlds", sql)
   }
 
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names"
+      "user" | "only_favorites" | "names" | "search"
     >
   ) {
-    if (options.user && !isEthereumAddress(options.user)) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 
@@ -453,6 +491,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SELECT
         count(*) as total
       FROM ${table(this)} p
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+      )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
@@ -467,6 +509,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.names.length > 0,
           SQL`AND p.world_name IN ${values(options.names)}`
         )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_worlds",
