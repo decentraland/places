@@ -8,6 +8,7 @@ import {
   offset,
   setColumns,
   table,
+  tsquery,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
@@ -147,7 +148,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       FROM ${table(this)} p
       ${conditional(
         !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       ${conditional(
         !!options.user && !options.only_favorites,
@@ -215,7 +218,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       FROM ${table(this)} p
       ${conditional(
         !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
@@ -437,7 +442,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       FROM ${table(this)} p
       ${conditional(
         !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       ${conditional(
         !!options.user && !options.only_favorites,
@@ -493,7 +500,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       FROM ${table(this)} p
       ${conditional(
         !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${options.search})) as rank`
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
