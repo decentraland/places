@@ -11,6 +11,7 @@ import { WorldListOrderBy } from "../../entities/World/types"
 import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
 import { OpenBlank } from "../Icon/OpenBlank"
+import SearchInput from "./SearchInput"
 
 import "./Navigation.css"
 
@@ -75,6 +76,11 @@ export default function Navigation(props: NavigationProps) {
           >
             {l("navigation.faq")} <OpenBlank />
           </NavigationMenu.Item>
+        </>
+      }
+      rightMenu={
+        <>
+          <SearchInput />
         </>
       }
     />

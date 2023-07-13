@@ -1,0 +1,11 @@
+.SearchInput {
+  padding: 8px 32px;
+  border: 1px rgba(115, 110, 125, 0.24) solid;
+  border-radius: 20px;
+  background: white no-repeat 8px center;
+  background-image: url("../../images/magnify.svg");
+}
+
+.SearchInput:focus {
+  outline: none;
+}
