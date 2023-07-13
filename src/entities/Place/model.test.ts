@@ -242,14 +242,14 @@ describe(`findWithAggregates`, () => {
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
-        search: "decentraland",
+        search: "decentraland atlas",
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
     expect(sql.values).toEqual([
-      "decentraland",
+      "decentraland:*&atlas:*",
       userLikeTrue.user,
       userLikeTrue.user,
       "-9,-9",
@@ -336,13 +336,13 @@ describe(`countPlaces`, () => {
         only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
-        search: "decentraland",
+        search: "decentraland atlas",
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual(["decentraland", "-9,-9"])
+    expect(sql.values).toEqual(["decentraland:*&atlas:*", "-9,-9"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -626,7 +626,7 @@ describe(`findWorld`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_worlds")
     expect(sql.values).toEqual([
-      "decentraland",
+      "decentraland:*",
       userLikeTrue.user,
       userLikeTrue.user,
       "templegame.dcl.eth",
@@ -712,7 +712,7 @@ describe(`countWorlds`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual(["decentraland", "templegame.dcl.eth"])
+    expect(sql.values).toEqual(["decentraland:*", "templegame.dcl.eth"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
