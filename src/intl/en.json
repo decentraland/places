@@ -15,7 +15,8 @@
     "favorites": "Favorites",
     "worlds": "Worlds",
     "faq": "FAQ",
-    "faq_target": "https://docs.decentraland.org/creator/places/faq/"
+    "faq_target": "https://docs.decentraland.org/creator/places/faq/",
+    "search": "Search"
   },
   "components": {
     "button": {
@@ -71,7 +72,9 @@
       "my_favorites": "My Favorites",
       "recently_updated": "Recently Added",
       "points_of_interest": "Points of Interest",
-      "view_all": "view all"
+      "view_all": "view all",
+      "worlds": "Worlds",
+      "places": "Places"
     },
     "places": {
       "title": "Places",
