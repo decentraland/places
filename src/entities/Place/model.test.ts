@@ -249,9 +249,9 @@ describe(`findWithAggregates`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
     expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
       "decentraland:*&atlas:*",
-      userLikeTrue.user,
-      userLikeTrue.user,
       "-9,-9",
       100,
       0,
@@ -260,9 +260,10 @@ describe(`findWithAggregates`, () => {
       `
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
-        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $2
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $3
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
         WHERE p."disabled" is false AND "world" is false AND rank > 0 AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
@@ -626,9 +627,9 @@ describe(`findWorld`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_worlds")
     expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
       "decentraland:*",
-      userLikeTrue.user,
-      userLikeTrue.user,
       "templegame.dcl.eth",
       1,
       0,
@@ -636,9 +637,10 @@ describe(`findWorld`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
-        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $2
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $3
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
         WHERE
           p.disabled is false
           AND world is true
