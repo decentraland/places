@@ -257,24 +257,24 @@ export default function OverviewPage() {
 
   const renderCarousel = () => (
     <>
-      {(placeListHighlightedState.loading || highlightedList.length > 0) &&
-        !isSearching && (
-          <Carousel2
-            className="overview__carousel2"
-            loading={placeListHighlightedState.loading}
-            isFullscreen
-            indicatorsType={IndicatorType.Dash}
-            items={highlightedList}
-            component={PlaceFeatured}
-          />
-        )}
+      {(placeListHighlightedState.loading || highlightedList.length > 0) && (
+        <Carousel2
+          className="overview__carousel2"
+          loading={placeListHighlightedState.loading}
+          isFullscreen
+          indicatorsType={IndicatorType.Dash}
+          items={highlightedList}
+          component={PlaceFeatured}
+        />
+      )}
     </>
   )
 
   const renderSearchResult = () => (
     <>
-      {isSearching && !hasValidSearch && <div>Please specify </div>}
-      {isSearching && !hasValidSearch && <div>{search}</div>}
+      <p className="search-results-header">
+        {l("pages.overview.search_results_title")} <b>"{search}"</b>
+      </p>
     </>
   )
 
@@ -307,11 +307,11 @@ export default function OverviewPage() {
         <meta name="twitter:site" content={l("social.home.site") || ""} />
       </Helmet>
       <Navigation activeTab={NavigationTab.Overview} />
-      {renderSearchResult()}
+      {!isSearching && renderCarousel()}
 
-      {renderCarousel()}
       <Container className="full overview-container">
         {!isSearching && renderOverviewListWithoutSearch()}
+        {isSearching && renderSearchResult()}
         {isSearching && renderOverviewListWithSearch()}
       </Container>
     </>

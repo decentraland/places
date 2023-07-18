@@ -57,6 +57,8 @@ export default function Navigation(props: NavigationProps) {
       debounceTrack(e.target.value)
       let target = location.pathname
       const search = newParams.toString()
+      // location
+      // navigate to /search+=?search=${search}
       if (search) {
         target += "?" + search
       }

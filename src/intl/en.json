@@ -74,7 +74,8 @@
       "points_of_interest": "Points of Interest",
       "view_all": "view all",
       "worlds": "Worlds",
-      "places": "Places"
+      "places": "Places",
+      "search_results_title": "Search results for"
     },
     "places": {
       "title": "Places",
@@ -84,7 +85,8 @@
       "sort_by": "Sort by",
       "pois": "Point of interest",
       "featured": "Featured",
-      "show_more": "Show More"
+      "show_more": "Show More",
+      "search_results_title": "Search results for"
     },
     "favorites": {
       "title": "Favorites",
@@ -96,12 +98,14 @@
       "no_world_selected": "You haven’t saved any Worlds to your favorites",
       "go_to_places": "Discover Places",
       "go_to_worlds": "Discover Worlds",
-      "back": "Back"
+      "back": "Back",
+      "search_results_title": "Search results for"
     },
     "worlds": {
       "description": "Your own 3D Space in the Metaverse. A place for Decentraland citizens to build, experiment, and host events and even interactive experiences without owning LAND.",
       "find_out_more": "Find Out More",
-      "disclamer": "Only Worlds belonging to LAND owners or renters appear here"
+      "disclamer": "Only Worlds belonging to LAND owners or renters appear here",
+      "search_results_title": "Search results for"
     }
   },
   "social": {

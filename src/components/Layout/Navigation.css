@@ -7,3 +7,13 @@
   margin-top: 0.2em;
   height: auto;
 }
+
+.dcl.tabs {
+  flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+  .dcl.dcl.tabs-right {
+    padding: 10px 15px;
+  }
+}
