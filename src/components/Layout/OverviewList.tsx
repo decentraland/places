@@ -28,6 +28,8 @@ export type OverviewListProps = {
   className?: string
   loadingFavorites: Set<string>
   dataPlace: SegmentPlace
+  search?: string
+  searchResultCount?: number
 }
 
 export default React.memo(function OverviewList(props: OverviewListProps) {
@@ -39,6 +41,8 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
     onClickFavorite,
     loadingFavorites,
     dataPlace,
+    searchResultCount,
+    search,
   } = props
   const l = useFormatMessage()
 
@@ -55,6 +59,13 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
         <HeaderMenu>
           <HeaderMenu.Left>
             <Header>{title}</Header>
+            {!!searchResultCount && (
+              <p className="overview-search-results">
+                {searchResultCount}{" "}
+                {l("components.overview_list.search_results_count")}
+                <b> "{search}"</b>
+              </p>
+            )}
           </HeaderMenu.Left>
           <HeaderMenu.Right>
             <Button

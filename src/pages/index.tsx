@@ -13,6 +13,7 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
+import SearchList from "../components/Layout/SearchList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { PlaceListOrderBy } from "../entities/Place/types"
@@ -41,8 +42,7 @@ export default function OverviewPage() {
     [location.search]
   )
 
-  const isSearching = !!params.get("search")
-  const hasValidSearch = isSearching && params.get("search")!.length > 3
+  const isSearching = !!params.get("search") && params.get("search")!.length > 2
   const search = (isSearching && params.get("search")) || ""
 
   const [account] = useAuthContext()
@@ -57,14 +57,17 @@ export default function OverviewPage() {
   const [placeListMyFavorites, placeListMyFavoritesState] =
     usePlaceListMyFavorites(overviewOptions)
   const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
-  const [placeListSearch, placeListSearchState] = usePlaceListSearch(
+  const [placeSearch, placeListSearchState] = usePlaceListSearch(
     overviewOptions,
     search
   )
-  const [worldListSearch, worldListSearchState] = useWorldListSearch(
+  const [worldSearch, worldListSearchState] = useWorldListSearch(
     overviewOptions,
     search
   )
+
+  const placeListSearch = placeSearch.data
+  const worldListSearch = worldSearch.data
 
   const placesMemo = useMemo(
     () => [
@@ -218,39 +221,20 @@ export default function OverviewPage() {
 
   const renderOverviewListWithSearch = () => (
     <>
-      <OverviewList
-        places={placeListSearch}
-        title={l("pages.overview.places")}
-        href={locations.places({
-          order_by: PlaceListOrderBy.MOST_ACTIVE,
-        })}
-        onClickFavorite={(e, place) =>
-          handleFavorite(place.id, place, {
-            place: e.currentTarget.dataset.place!,
-          })
-        }
-        loading={
+      <SearchList
+        handleFavorite={handleFavorite}
+        handlingFavorite={handlingFavorite}
+        isLoadingPlaces={
           placeListSearchState.version === 0 || placeListSearchState.loading
         }
-        loadingFavorites={handlingFavorite}
-        dataPlace={SegmentPlace.OverviewMostActive}
-      />
-      <OverviewList
-        places={worldListSearch}
-        title={l("pages.overview.worlds")}
-        href={locations.places({
-          order_by: PlaceListOrderBy.MOST_ACTIVE,
-        })}
-        onClickFavorite={(e, place) =>
-          handleFavorite(place.id, place, {
-            place: e.currentTarget.dataset.place!,
-          })
-        }
-        loading={
+        isLoadingWorlds={
           worldListSearchState.version === 0 || worldListSearchState.loading
         }
-        loadingFavorites={handlingFavorite}
-        dataPlace={SegmentPlace.OverviewMostActive}
+        placeResultList={placeListSearch}
+        placeTotalResults={placeSearch.total}
+        search={search}
+        worldResultList={worldListSearch}
+        worldTotalResults={worldSearch.total}
       />
     </>
   )
@@ -267,14 +251,6 @@ export default function OverviewPage() {
           component={PlaceFeatured}
         />
       )}
-    </>
-  )
-
-  const renderSearchResult = () => (
-    <>
-      <p className="search-results-header">
-        {l("pages.overview.search_results_title")} <b>"{search}"</b>
-      </p>
     </>
   )
 
@@ -311,7 +287,6 @@ export default function OverviewPage() {
 
       <Container className="full overview-container">
         {!isSearching && renderOverviewListWithoutSearch()}
-        {isSearching && renderSearchResult()}
         {isSearching && renderOverviewListWithSearch()}
       </Container>
     </>

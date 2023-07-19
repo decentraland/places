@@ -66,3 +66,14 @@
     display: block;
   }
 }
+
+.overview-search-results {
+  font-size: 18px;
+}
+
+.dcl.header-menu-left {
+  align-items: flex-start !important;
+  flex-direction: column;
+  font-size: 17px;
+  font-weight: 150;
+}

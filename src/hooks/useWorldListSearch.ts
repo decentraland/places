@@ -13,16 +13,16 @@ export function useWorldListSearch(
   return useAsyncMemo(
     async () => {
       if (search.length < 3) {
-        return []
+        return { data: [], total: 0 }
       }
 
       const result = await Places.get().getWorlds({
         ...options,
         search,
       })
-      return result.data
+      return { ...result }
     },
     [options, search],
-    { initialValue: [] as AggregatePlaceAttributes[] }
+    { initialValue: { data: [] as AggregatePlaceAttributes[], total: 0 } }
   )
 }

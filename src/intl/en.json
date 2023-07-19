@@ -45,7 +45,8 @@
       "players": "active"
     },
     "overview_list": {
-      "view_all": "view all"
+      "view_all": "view all",
+      "search_results_count": "results for"
     },
     "place_detail": {
       "about": "About",
@@ -60,6 +61,9 @@
     "world_description": {
       "decentraland": "Decentraland",
       "worlds": "Worlds"
+    },
+    "search": {
+      "no_results": "No results found for"
     }
   },
   "pages": {
