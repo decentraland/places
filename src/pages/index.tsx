@@ -220,23 +220,21 @@ export default function OverviewPage() {
   )
 
   const renderOverviewListWithSearch = () => (
-    <>
-      <SearchList
-        handleFavorite={handleFavorite}
-        handlingFavorite={handlingFavorite}
-        isLoadingPlaces={
-          placeListSearchState.version === 0 || placeListSearchState.loading
-        }
-        isLoadingWorlds={
-          worldListSearchState.version === 0 || worldListSearchState.loading
-        }
-        placeResultList={placeListSearch}
-        placeTotalResults={placeSearch.total}
-        search={search}
-        worldResultList={worldListSearch}
-        worldTotalResults={worldSearch.total}
-      />
-    </>
+    <SearchList
+      handleFavorite={handleFavorite}
+      handlingFavorite={handlingFavorite}
+      isLoadingPlaces={
+        placeListSearchState.version === 0 || placeListSearchState.loading
+      }
+      isLoadingWorlds={
+        worldListSearchState.version === 0 || worldListSearchState.loading
+      }
+      placeResultList={placeListSearch}
+      placeTotalResults={placeSearch.total}
+      search={search}
+      worldResultList={worldListSearch}
+      worldTotalResults={worldSearch.total}
+    />
   )
 
   const renderCarousel = () => (

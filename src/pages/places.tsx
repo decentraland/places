@@ -50,6 +50,10 @@ export default function IndexPage() {
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
   )
+  const [offset, setOffset] = useState(0)
+
+  const isSearching = !!params.search && params.search.length > 2
+  const search = (isSearching && params.search) || ""
 
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
@@ -70,21 +74,51 @@ export default function IndexPage() {
 
     const placesFetch = await Places.get().getPlaces({
       ...options,
-      offset: allPlaces.length,
+      offset: offset,
+      search: isSearching ? search : undefined,
     })
 
-    setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
+    if (isSearching) {
+      setAllPlaces(placesFetch.data)
+    } else {
+      setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
+    }
 
-    if (placesFetch.total) {
+    if (Number.isSafeInteger(placesFetch.total)) {
       setTotalPlaces(placesFetch.total)
     }
-  }, [params, track])
+  }, [params, track, offset])
 
   useEffect(() => {
     if (allPlaces.length === 0) {
       loadPlaces()
     }
-  }, [params])
+  }, [
+    params.only_favorites,
+    params.only_featured,
+    params.only_highlighted,
+    params.only_pois,
+    params.order,
+    params.order_by,
+  ])
+
+  useEffect(() => {
+    setAllPlaces([])
+    loadPlaces()
+  }, [isSearching, search])
+
+  useEffect(() => {
+    setOffset(0)
+  }, [
+    search,
+    isSearching,
+    params.only_favorites,
+    params.only_featured,
+    params.only_highlighted,
+    params.only_pois,
+    params.order,
+    params.order_by,
+  ])
 
   useEffect(() => {
     if (allPlaces.length > PAGE_SIZE) {
@@ -111,8 +145,9 @@ export default function IndexPage() {
         place: SegmentPlace.PlacesShowMore,
       })
       loadPlaces()
+      setOffset(offset + PAGE_SIZE)
     },
-    [params, track]
+    [params, track, offset]
   )
 
   const handleChangePois = useCallback(
