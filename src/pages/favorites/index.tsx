@@ -181,7 +181,11 @@ export default function FavoritesPage() {
               <Header>{l("pages.favorites.places")}</Header>
             </HeaderMenu.Left>
             <HeaderMenu.Right>
-              <Button basic as={Link} href={locations.favoritesPlaces({})}>
+              <Button
+                basic
+                as={Link}
+                href={locations.favoritesPlaces({ search })}
+              >
                 {l("components.overview_list.view_all")}
                 <Icon name="chevron right" />
               </Button>
@@ -299,7 +303,7 @@ export default function FavoritesPage() {
               <Paragraph secondary>
                 {l("pages.favorites.no_world_selected")}
                 <br />
-                <Link href={locations.worlds({})}>
+                <Link href={locations.worlds({ search })}>
                   {l("pages.favorites.go_to_worlds")}
                 </Link>
               </Paragraph>
