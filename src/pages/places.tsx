@@ -75,7 +75,7 @@ export default function IndexPage() {
 
     const placesFetch = await Places.get().getPlaces({
       ...options,
-      offset: offset,
+      offset,
       search: isSearching ? search : undefined,
     })
 

@@ -24,6 +24,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
+import NoResults from "../components/Layout/NoResults"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
@@ -53,6 +54,10 @@ export default function WorldsPage() {
     () => toWorldsOptions(new URLSearchParams(location.search)),
     [location.search]
   )
+  const [offset, setOffset] = useState(0)
+
+  const isSearching = !!params.search && params.search.length > 2
+  const search = (isSearching && params.search) || ""
 
   const [totalWorlds, setTotalWorlds] = useState(0)
   const [allWorlds, setAllWorlds] = useState<AggregatePlaceAttributes[]>([])
@@ -68,12 +73,17 @@ export default function WorldsPage() {
     })
     const placesFetch = await Places.get().getWorlds({
       ...options,
-      offset: allWorlds.length,
+      offset: offset,
+      search: isSearching ? search : undefined,
     })
 
-    setAllWorlds((allWorlds) => [...allWorlds, ...placesFetch.data])
+    if (isSearching) {
+      setAllWorlds(placesFetch.data)
+    } else {
+      setAllWorlds((allWorlds) => [...allWorlds, ...placesFetch.data])
+    }
 
-    if (placesFetch.total) {
+    if (Number.isSafeInteger(placesFetch.total)) {
       setTotalWorlds(placesFetch.total)
     }
   }, [params, track])
@@ -82,7 +92,22 @@ export default function WorldsPage() {
     if (allWorlds.length === 0) {
       loadWorlds()
     }
-  }, [params])
+  }, [params.only_favorites, params.order, params.order_by])
+
+  useEffect(() => {
+    setAllWorlds([])
+    loadWorlds()
+  }, [isSearching, search])
+
+  useEffect(() => {
+    setOffset(0)
+  }, [
+    search,
+    isSearching,
+    params.only_favorites,
+    params.order,
+    params.order_by,
+  ])
 
   useEffect(() => {
     if (allWorlds.length > PAGE_SIZE) {
@@ -109,8 +134,9 @@ export default function WorldsPage() {
         place: SegmentPlace.WorldsShowMore,
       })
       loadWorlds()
+      setOffset(offset + PAGE_SIZE)
     },
-    [params, track]
+    [params, track, offset]
   )
 
   const handleChangeOrder = useCallback(
@@ -276,6 +302,9 @@ export default function WorldsPage() {
                   {l("pages.places.show_more")}
                 </Button>
               </div>
+            )}
+            {!loading && isSearching && totalWorlds === 0 && (
+              <NoResults search={search} />
             )}
           </Grid.Column>
         </Grid.Row>
