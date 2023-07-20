@@ -1,16 +1,21 @@
-import React from "react"
+import React, { useCallback, useMemo } from "react"
 
+import { useLocation } from "@gatsbyjs/reach-router"
 import NavigationMenu from "decentraland-gatsby/dist/components/Layout/NavigationMenu"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
+import debounce from "decentraland-gatsby/dist/utils/function/debounce"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
 import { WorldListOrderBy } from "../../entities/World/types"
 import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
+import { SegmentPlace } from "../../modules/segment"
 import { OpenBlank } from "../Icon/OpenBlank"
+import SearchInput from "./SearchInput"
 
 import "./Navigation.css"
 
@@ -30,6 +35,43 @@ export default function Navigation(props: NavigationProps) {
   const [account] = useAuthContext()
   const track = useTrackLinkContext()
   const [ff] = useFeatureFlagContext()
+
+  const location = useLocation()
+
+  const params = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+
+  const debounceTrack = useCallback(
+    debounce((_search: string) => {
+      // track(SegmentPlace.FilterChange, { search: search })
+    }, 500),
+    [track]
+  )
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newParams = new URLSearchParams(params)
+      if (e.target.value) {
+        newParams.set("search", e.target.value)
+      } else {
+        newParams.delete("search")
+      }
+
+      debounceTrack(e.target.value)
+      let target = location.pathname
+      const search = newParams.toString()
+      // location
+      // navigate to /search+=?search=${search}
+      if (search) {
+        target += "?" + search
+      }
+
+      navigate(target)
+    },
+    [location.pathname, params, debounceTrack]
+  )
 
   return (
     <NavigationMenu
@@ -75,6 +117,15 @@ export default function Navigation(props: NavigationProps) {
           >
             {l("navigation.faq")} <OpenBlank />
           </NavigationMenu.Item>
+        </>
+      }
+      rightMenu={
+        <>
+          <SearchInput
+            placeholder={l("navigation.search")}
+            onChange={handleSearchChange}
+            defaultValue={params.get("search") || ""}
+          />
         </>
       }
     />

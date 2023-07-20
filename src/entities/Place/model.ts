@@ -126,7 +126,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const orderBy = PlaceListOrderBy.HIGHEST_RATED
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
-    const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)
+    const order = SQL.raw(
+      `p.${orderBy} ${orderDirection.toUpperCase()}, p."deployed_at" desc`
+    )
 
     const sql = SQL`
       SELECT p.*
@@ -146,12 +148,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
       FROM ${table(this)} p
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
+      
       ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
@@ -169,6 +166,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`LEFT JOIN ${table(
           UserLikesModel
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       WHERE
         p."disabled" is false AND "world" is false
@@ -217,16 +220,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) as "total"
       FROM ${table(this)} p
       ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-      ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       WHERE
         p."disabled" is false
@@ -441,12 +444,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(!options.user, SQL`, false as user_dislike`)}
       FROM ${table(this)} p
       ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-      ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
@@ -463,6 +460,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`LEFT JOIN ${table(
           UserLikesModel
         )} ul on p.id = ul.place_id AND ul.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       WHERE
         p.disabled is false AND world is true AND hidden is false
@@ -499,16 +502,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) as total
       FROM ${table(this)} p
       ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-      ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
       )}
       WHERE
         p.disabled is false
