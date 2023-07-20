@@ -68,7 +68,6 @@ export default React.memo(function SearchList(props: SearchListProps) {
           places={placeResultList!}
           title={l("pages.overview.places")}
           href={locations.places({
-            order_by: PlaceListOrderBy.MOST_ACTIVE,
             search,
           })}
           onClickFavorite={(e, place) =>
@@ -88,7 +87,6 @@ export default React.memo(function SearchList(props: SearchListProps) {
           places={worldResultList!}
           title={l("pages.overview.worlds")}
           href={locations.worlds({
-            order_by: WorldListOrderBy.MOST_ACTIVE,
             search,
           })}
           onClickFavorite={(e, place) =>
