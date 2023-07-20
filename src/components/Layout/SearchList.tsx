@@ -9,6 +9,7 @@ import {
 import watermelonIcon from "../../images/watermelon-icon.svg"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
+import NoResults from "./NoResults"
 import OverviewList from "./OverviewList"
 
 import "./SearchList.css"
@@ -52,27 +53,13 @@ export default React.memo(function SearchList(props: SearchListProps) {
     worldTotalResults === 0
 
   if (hasNoResults) {
-    return (
-      <>
-        <p className="search-results-header">
-          {l("pages.overview.search_results_title")} <b>"{search}"</b>
-        </p>
-        <div className="no-results-content">
-          <p>
-            <img src={watermelonIcon} />
-          </p>
-          <p>
-            {l("components.search.no_results") + " "} "{search}"
-          </p>
-        </div>
-      </>
-    )
+    return <NoResults search={search} />
   }
 
   return (
     <>
       <p className="search-results-header">
-        {l("pages.overview.search_results_title")} <b>"{search}"</b>
+        {l("components.search.search_results_title")} <b>"{search}"</b>
       </p>
 
       {((placeTotalResults && placeTotalResults > 0) || isLoadingPlaces) && (

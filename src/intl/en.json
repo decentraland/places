@@ -63,6 +63,7 @@
       "worlds": "Worlds"
     },
     "search": {
+      "search_results_title": "Search results for",
       "no_results": "No results found for"
     }
   },

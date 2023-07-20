@@ -24,6 +24,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
+import NoResults from "../components/Layout/NoResults"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
@@ -379,6 +380,9 @@ export default function IndexPage() {
                   {l("pages.places.show_more")}
                 </Button>
               </div>
+            )}
+            {!loading && isSearching && totalPlaces === 0 && (
+              <NoResults search={search} />
             )}
           </Grid.Column>
         </Grid.Row>

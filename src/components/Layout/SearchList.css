@@ -4,14 +4,3 @@
   padding-right: 48px;
   font-size: 24px;
 }
-
-.no-results-content {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  width: 100%;
-  align-items: center;
-  justify-content: center;
-  min-height: 55vh;
-  font-weight: 100;
-}
