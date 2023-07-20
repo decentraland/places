@@ -45,6 +45,7 @@ export default function Navigation(props: NavigationProps) {
     }, 500),
     [track]
   )
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newParams = new URLSearchParams(params)
