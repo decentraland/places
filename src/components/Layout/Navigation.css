@@ -8,7 +8,7 @@
   height: auto;
 }
 
-.dcl.tabs {
+.navigation-menu__parent .dcl.tabs {
   flex-wrap: wrap;
 }
 

@@ -16,10 +16,10 @@ export default function NoResults(props: NoResultsProps) {
 
   return (
     <>
-      <p className="search-results-header">
+      <p className="search-results__header">
         {l("components.search.search_results_title")} <b>"{search}"</b>
       </p>
-      <div className="no-results-content">
+      <div className="no-results__content">
         <p>
           <img src={watermelonIcon} />
         </p>

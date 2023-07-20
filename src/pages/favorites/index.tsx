@@ -2,6 +2,7 @@ import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
+import { useLocation } from "@gatsbyjs/reach-router"
 import Carousel2, {
   IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
@@ -36,14 +37,23 @@ const PAGE_SIZE = 24
 
 export default function FavoritesPage() {
   const l = useFormatMessage()
+  const location = useLocation()
+  const params = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+
+  const isSearching = !!params.get("search") && params.get("search")!.length > 2
+  const search = (isSearching && params.get("search")) || ""
+
   const [account, accountState] = useAuthContext()
 
   const options = useMemo(() => ({ limit: PAGE_SIZE, offset: 0 }), [])
 
   const [placeListMyFavorites, placeListMyFavoritesState] =
-    usePlaceListMyFavorites(options)
+    usePlaceListMyFavorites(options, search)
   const [worldListMyFavorites, worldListMyFavoritesState] =
-    useWorldListMyFavorites(options)
+    useWorldListMyFavorites(options, search)
 
   const placesMemo = useMemo(
     () => [placeListMyFavorites.data, worldListMyFavorites.data],

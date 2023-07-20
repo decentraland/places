@@ -57,7 +57,7 @@ export default function OverviewPage() {
   const [placeListHightRated, placeListHightRatedState] =
     usePlaceListHightRated(overviewOptions)
   const [placeListMyFavorites, placeListMyFavoritesState] =
-    usePlaceListMyFavorites(overviewOptions)
+    usePlaceListMyFavorites(overviewOptions, search)
   const [placeListPois, placeListPoisState] = usePlaceListPois(overviewOptions)
   const [placeSearch, placeListSearchState] = usePlaceListSearch(
     overviewOptions,
@@ -68,8 +68,10 @@ export default function OverviewPage() {
     search
   )
 
-  const placeListSearch = placeSearch.data
-  const worldListSearch = worldSearch.data
+  const [placeListSearch, worldListSearch] = useMemo(
+    () => [placeSearch.data, worldSearch.data],
+    [placeSearch.data, worldSearch.data]
+  )
 
   const placesMemo = useMemo(
     () => [

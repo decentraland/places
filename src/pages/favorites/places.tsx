@@ -53,8 +53,11 @@ export default function FavoritesPage() {
     ] as const
   }, [location.search, track])
 
+  const isSearching = !!params.search && params.search.length > 2
+  const search = (isSearching && params.search) || ""
+
   const [placeListMyFavorites, placeListMyFavoritesState] =
-    usePlaceListMyFavorites(options)
+    usePlaceListMyFavorites(options, search)
 
   const placesMemo = useMemo(
     () => [placeListMyFavorites.data],

@@ -76,6 +76,7 @@ export default function Navigation(props: NavigationProps) {
   return (
     <NavigationMenu
       isFullScreen={true}
+      className="navigation-menu__parent"
       leftMenu={
         <>
           <NavigationMenu.Item

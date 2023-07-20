@@ -10,10 +10,13 @@ const defaultResult = {
   total: 0,
 }
 
-export function useWorldListMyFavorites(options: {
-  limit: number
-  offset: number
-}) {
+export function useWorldListMyFavorites(
+  options: {
+    limit: number
+    offset: number
+  },
+  search: string
+) {
   const [account] = useAuthContext()
   return useAsyncMemo(
     async () => {
@@ -21,9 +24,9 @@ export function useWorldListMyFavorites(options: {
         return defaultResult
       }
 
-      return Places.get().getWorldsMyFavorites(options)
+      return Places.get().getWorldsMyFavorites({ ...options, search })
     },
-    [options, account],
+    [options, account, search],
     {
       callWithTruthyDeps: true,
       initialValue: defaultResult,

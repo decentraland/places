@@ -58,7 +58,7 @@ export default React.memo(function SearchList(props: SearchListProps) {
 
   return (
     <>
-      <p className="search-results-header">
+      <p className="search-results__header">
         {l("components.search.search_results_title")} <b>"{search}"</b>
       </p>
 
