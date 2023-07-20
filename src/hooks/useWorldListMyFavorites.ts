@@ -28,7 +28,7 @@ export function useWorldListMyFavorites(
     },
     [options, account, search],
     {
-      callWithTruthyDeps: true,
+      callWithTruthyDeps: false,
       initialValue: defaultResult,
     }
   )

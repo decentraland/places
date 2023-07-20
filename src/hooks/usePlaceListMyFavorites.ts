@@ -31,7 +31,7 @@ export function usePlaceListMyFavorites(
     },
     [options, account, search],
     {
-      callWithTruthyDeps: true,
+      callWithTruthyDeps: false,
       initialValue: defaultResult,
     }
   )
