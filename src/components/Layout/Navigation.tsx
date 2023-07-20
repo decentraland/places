@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from "react"
 
+import { useLocation } from "@gatsbyjs/reach-router"
 import NavigationMenu from "decentraland-gatsby/dist/components/Layout/NavigationMenu"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
@@ -35,10 +36,13 @@ export default function Navigation(props: NavigationProps) {
   const track = useTrackLinkContext()
   const [ff] = useFeatureFlagContext()
 
+  const location = useLocation()
+
   const params = useMemo(
     () => new URLSearchParams(location.search),
     [location.search]
   )
+
   const debounceTrack = useCallback(
     debounce((_search: string) => {
       // track(SegmentPlace.FilterChange, { search: search })
