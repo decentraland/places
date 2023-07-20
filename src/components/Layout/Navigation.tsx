@@ -123,7 +123,7 @@ export default function Navigation(props: NavigationProps) {
       rightMenu={
         <>
           <SearchInput
-            placeholder={l("navigation.search")}
+            placeholder={l(`navigation.search.${props.activeTab ?? "default"}`)}
             onChange={handleSearchChange}
             defaultValue={params.get("search") || ""}
           />

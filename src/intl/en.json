@@ -16,7 +16,13 @@
     "worlds": "Worlds",
     "faq": "FAQ",
     "faq_target": "https://docs.decentraland.org/creator/places/faq/",
-    "search": "Search"
+    "search": {
+      "overview": "Search Places and Worlds...",
+      "places": "Search Places...",
+      "worlds": "Search Worlds...",
+      "favorites": "Search Favorites...",
+      "default": "Search..."
+    }
   },
   "components": {
     "button": {
