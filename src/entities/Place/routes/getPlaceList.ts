@@ -53,8 +53,6 @@ export const getPlaceList = Router.memo(
       search: ctx.url.searchParams.get("search"),
     })
 
-    console.log("QUERY", query)
-
     const userAuth = await withAuthOptional(ctx)
 
     if (bool(query.only_favorites) && !userAuth?.address) {
