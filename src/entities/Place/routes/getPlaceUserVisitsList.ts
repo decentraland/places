@@ -25,6 +25,7 @@ export const getPlaceUserVisitsList = Router.memo(
       order_by: PlaceListOrderBy.USER_VISITS,
       order: ctx.url.searchParams.get("order") || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
+      search: ctx.url.searchParams.get("search"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([

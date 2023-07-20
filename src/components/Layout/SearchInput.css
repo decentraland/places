@@ -4,6 +4,8 @@
   border-radius: 20px;
   background: white no-repeat 8px center;
   background-image: url("../../images/magnify.svg");
+  min-width: 356px;
+  height: 40px;
 }
 
 .search__input:focus {
