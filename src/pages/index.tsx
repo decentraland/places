@@ -2,6 +2,7 @@ import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
+import { useLocation } from "@gatsbyjs/reach-router"
 import Carousel2, {
   IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
@@ -37,6 +38,7 @@ const overviewOptions = { limit: 24, offset: 0 }
 
 export default function OverviewPage() {
   const l = useFormatMessage()
+  const location = useLocation()
   const params = useMemo(
     () => new URLSearchParams(location.search),
     [location.search]
