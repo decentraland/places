@@ -11,7 +11,7 @@ export default function SearchInput(
     <input
       {...props}
       placeholder={props.placeholder || "Search..."}
-      className={TokenList.join(["SearchInput", props.className])}
+      className={TokenList.join(["search__input", props.className])}
     />
   )
 }

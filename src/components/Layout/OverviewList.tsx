@@ -60,7 +60,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           <HeaderMenu.Left>
             <Header>{title}</Header>
             {!!searchResultCount && (
-              <p className="overview-search-results">
+              <p className="overview-search__results">
                 {searchResultCount}{" "}
                 {l("components.overview_list.search_results_count")}
                 <b> "{search}"</b>

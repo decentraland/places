@@ -6,6 +6,7 @@ import {
   AggregatePlaceAttributes,
   PlaceListOrderBy,
 } from "../../entities/Place/types"
+import { WorldListOrderBy } from "../../entities/World/types"
 import watermelonIcon from "../../images/watermelon-icon.svg"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
@@ -58,7 +59,7 @@ export default React.memo(function SearchList(props: SearchListProps) {
 
   return (
     <>
-      <p className="search-results-header">
+      <p className="search-results__header">
         {l("components.search.search_results_title")} <b>"{search}"</b>
       </p>
 
@@ -68,6 +69,7 @@ export default React.memo(function SearchList(props: SearchListProps) {
           title={l("pages.overview.places")}
           href={locations.places({
             order_by: PlaceListOrderBy.MOST_ACTIVE,
+            search,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
@@ -85,8 +87,9 @@ export default React.memo(function SearchList(props: SearchListProps) {
         <OverviewList
           places={worldResultList!}
           title={l("pages.overview.worlds")}
-          href={locations.places({
-            order_by: PlaceListOrderBy.MOST_ACTIVE,
+          href={locations.worlds({
+            order_by: WorldListOrderBy.MOST_ACTIVE,
+            search,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {

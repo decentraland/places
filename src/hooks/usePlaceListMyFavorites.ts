@@ -10,10 +10,13 @@ const defaultResult = {
   total: 0,
 }
 
-export function usePlaceListMyFavorites(options: {
-  limit: number
-  offset: number
-}) {
+export function usePlaceListMyFavorites(
+  options: {
+    limit: number
+    offset: number
+  },
+  search: string
+) {
   const [account] = useAuthContext()
   return useAsyncMemo(
     async () => {
@@ -21,11 +24,14 @@ export function usePlaceListMyFavorites(options: {
         return defaultResult
       }
 
-      return Places.get().getPlacesMyFavorites(options)
+      return Places.get().getPlacesMyFavorites({
+        ...options,
+        search,
+      })
     },
-    [options, account],
+    [options, account, search],
     {
-      callWithTruthyDeps: true,
+      callWithTruthyDeps: false,
       initialValue: defaultResult,
     }
   )

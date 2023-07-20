@@ -126,7 +126,11 @@ export default class Places extends API {
     })
   }
 
-  async getPlacesMyFavorites(options?: { limit: number; offset: number }) {
+  async getPlacesMyFavorites(options?: {
+    limit: number
+    offset: number
+    search?: string
+  }) {
     return this.getPlaces({ only_favorites: true, ...options })
   }
 
@@ -170,7 +174,11 @@ export default class Places extends API {
     }
   }
 
-  async getWorldsMyFavorites(options?: { limit: number; offset: number }) {
+  async getWorldsMyFavorites(options?: {
+    limit: number
+    offset: number
+    search?: string
+  }) {
     return this.getWorlds({ only_favorites: true, ...options })
   }
 }

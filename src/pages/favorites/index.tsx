@@ -2,6 +2,7 @@ import React, { useMemo } from "react"
 
 import { Helmet } from "react-helmet"
 
+import { useLocation } from "@gatsbyjs/reach-router"
 import Carousel2, {
   IndicatorType,
 } from "decentraland-gatsby/dist/components/Carousel2/Carousel2"
@@ -36,14 +37,23 @@ const PAGE_SIZE = 24
 
 export default function FavoritesPage() {
   const l = useFormatMessage()
+  const location = useLocation()
+  const params = useMemo(
+    () => new URLSearchParams(location.search),
+    [location.search]
+  )
+
+  const isSearching = !!params.get("search") && params.get("search")!.length > 2
+  const search = (isSearching && params.get("search")) || ""
+
   const [account, accountState] = useAuthContext()
 
   const options = useMemo(() => ({ limit: PAGE_SIZE, offset: 0 }), [])
 
   const [placeListMyFavorites, placeListMyFavoritesState] =
-    usePlaceListMyFavorites(options)
+    usePlaceListMyFavorites(options, search)
   const [worldListMyFavorites, worldListMyFavoritesState] =
-    useWorldListMyFavorites(options)
+    useWorldListMyFavorites(options, search)
 
   const placesMemo = useMemo(
     () => [placeListMyFavorites.data, worldListMyFavorites.data],
@@ -171,7 +181,11 @@ export default function FavoritesPage() {
               <Header>{l("pages.favorites.places")}</Header>
             </HeaderMenu.Left>
             <HeaderMenu.Right>
-              <Button basic as={Link} href={locations.favoritesPlaces({})}>
+              <Button
+                basic
+                as={Link}
+                href={locations.favoritesPlaces({ search })}
+              >
                 {l("components.overview_list.view_all")}
                 <Icon name="chevron right" />
               </Button>
@@ -220,7 +234,7 @@ export default function FavoritesPage() {
             <Paragraph secondary>
               {l("pages.favorites.no_favorite_selected")}
               <br />
-              <Link href={locations.places({})}>
+              <Link href={locations.places({ search })}>
                 {l("pages.favorites.go_to_places")}
               </Link>
               .
@@ -236,7 +250,11 @@ export default function FavoritesPage() {
                 <Header>{l("pages.favorites.worlds")}</Header>
               </HeaderMenu.Left>
               <HeaderMenu.Right>
-                <Button basic as={Link} href={locations.favoritesWorlds({})}>
+                <Button
+                  basic
+                  as={Link}
+                  href={locations.favoritesWorlds({ search })}
+                >
                   {l("components.overview_list.view_all")}
                   <Icon name="chevron right" />
                 </Button>
@@ -285,7 +303,7 @@ export default function FavoritesPage() {
               <Paragraph secondary>
                 {l("pages.favorites.no_world_selected")}
                 <br />
-                <Link href={locations.worlds({})}>
+                <Link href={locations.worlds({ search })}>
                   {l("pages.favorites.go_to_worlds")}
                 </Link>
               </Paragraph>

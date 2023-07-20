@@ -76,6 +76,7 @@ export default function Navigation(props: NavigationProps) {
   return (
     <NavigationMenu
       isFullScreen={true}
+      className="navigation-menu__parent"
       leftMenu={
         <>
           <NavigationMenu.Item
@@ -122,7 +123,7 @@ export default function Navigation(props: NavigationProps) {
       rightMenu={
         <>
           <SearchInput
-            placeholder={l("navigation.search")}
+            placeholder={l(`navigation.search.${props.activeTab ?? "default"}`)}
             onChange={handleSearchChange}
             defaultValue={params.get("search") || ""}
           />

@@ -20,7 +20,7 @@ export function useWorldListSearch(
         ...options,
         search,
       })
-      return { ...result }
+      return result
     },
     [options, search],
     { initialValue: { data: [] as AggregatePlaceAttributes[], total: 0 } }
