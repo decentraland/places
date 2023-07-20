@@ -9,3 +9,9 @@
 .SearchInput:focus {
   outline: none;
 }
+
+@media (max-width: 768px) {
+  .SearchInput {
+    width: calc(100vw - 32px);
+  }
+}
