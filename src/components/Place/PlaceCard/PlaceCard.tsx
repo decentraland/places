@@ -69,7 +69,10 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
     if (props.search) {
-      track(SegmentPlace.PlaceCardClick, { place: place?.id })
+      track(SegmentPlace.PlaceCardClick, {
+        place: place?.id,
+        search: props.search,
+      })
     }
 
     href && navigate(href)

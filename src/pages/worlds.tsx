@@ -291,6 +291,7 @@ export default function WorldsPage() {
                 onClickFavorite={(_, place) => handleFavorite(place.id, place)}
                 loadingFavorites={handlingFavorite}
                 dataPlace={SegmentPlace.Places}
+                search={search}
               />
             )}
             {loading && (
@@ -301,7 +302,6 @@ export default function WorldsPage() {
                 loading={true}
                 size={PAGE_SIZE}
                 dataPlace={SegmentPlace.Places}
-                search={search}
               />
             )}
             {!loading && totalWorlds > places.length && (
