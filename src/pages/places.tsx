@@ -369,6 +369,7 @@ export default function IndexPage() {
                 onClickFavorite={(_, place) => handleFavorite(place.id, place)}
                 loadingFavorites={handlingFavorite}
                 dataPlace={SegmentPlace.Places}
+                search={search}
               />
             )}
             {loading && (

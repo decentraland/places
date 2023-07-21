@@ -36,4 +36,5 @@ export enum SegmentPlace {
   OverviewWorldsSearch = "Overview Worlds Search",
   PlacesSearch = "Places Search",
   WorldsSearch = "Worlds Search",
+  PlaceCardClick = "PlaceCard Open",
 }

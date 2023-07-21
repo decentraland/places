@@ -300,6 +300,7 @@ export default function WorldsPage() {
                 loading={true}
                 size={PAGE_SIZE}
                 dataPlace={SegmentPlace.Places}
+                search={search}
               />
             )}
             {!loading && totalWorlds > places.length && (
