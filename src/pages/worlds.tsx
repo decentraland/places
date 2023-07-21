@@ -78,6 +78,12 @@ export default function WorldsPage() {
     })
 
     if (isSearching) {
+      track(SegmentPlace.WorldsSearch, {
+        resultsCount: placesFetch.total,
+        top10: placesFetch.data.slice(0, 10),
+        search,
+        place: SegmentPlace.Worlds,
+      })
       setAllWorlds(placesFetch.data)
     } else {
       setAllWorlds((allWorlds) => [...allWorlds, ...placesFetch.data])
