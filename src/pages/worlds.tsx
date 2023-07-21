@@ -138,6 +138,7 @@ export default function WorldsPage() {
       track(SegmentPlace.FilterChange, {
         filters: params,
         place: SegmentPlace.WorldsShowMore,
+        search,
       })
       loadWorlds()
       setOffset(offset + PAGE_SIZE)

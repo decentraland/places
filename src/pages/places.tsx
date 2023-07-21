@@ -151,6 +151,7 @@ export default function IndexPage() {
       track(SegmentPlace.FilterChange, {
         filters: params,
         place: SegmentPlace.PlacesShowMore,
+        search,
       })
       loadPlaces()
       setOffset(offset + PAGE_SIZE)
