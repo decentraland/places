@@ -189,6 +189,12 @@ export const placeSchema = schema({
       minimum: 0,
       description: "The number of dislikes on the place",
     },
+    like_rate: {
+      type: "number",
+      minimum: 0,
+      description:
+        "The percentage of likes on the place expressed on decimal fraction",
+    },
     favorites: {
       type: "number",
       minimum: 0,
