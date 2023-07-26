@@ -13,7 +13,6 @@ import { PlaceListOrderBy } from "../../entities/Place/types"
 import { WorldListOrderBy } from "../../entities/World/types"
 import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
-import { SegmentPlace } from "../../modules/segment"
 import { OpenBlank } from "../Icon/OpenBlank"
 import SearchInput from "./SearchInput"
 

@@ -9,21 +9,20 @@ export default function SearchInput(
   props: React.InputHTMLAttributes<HTMLInputElement>
 ) {
   const { onChange } = props
+
   const handleChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      onChange!(e)
+      debounce(() => onChange!(e), 350)
     },
     [onChange]
   )
-
-  const debouncedHandleChange = useMemo(() => debounce(handleChange, 350), [])
 
   return (
     <input
       {...props}
       placeholder={props.placeholder || "Search..."}
       className={TokenList.join(["search__input", props.className])}
-      onChange={debouncedHandleChange}
+      onChange={handleChange}
     />
   )
 }
