@@ -3,6 +3,7 @@ import React, { useCallback, useMemo } from "react"
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import { Link } from "decentraland-gatsby/dist/plugins/intl"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
@@ -70,7 +71,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     e.preventDefault()
     if (props.search) {
       track(SegmentPlace.PlaceCardClick, {
-        place: place?.id,
+        placeId: place?.id,
         search: props.search,
       })
     }
@@ -89,7 +90,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         !loading && !place && "hidden",
       ])}
     >
-      <a className="place-card__cover" href={href} onClick={handleClickCard}>
+      <Link className="place-card__cover" href={href} onClick={handleClickCard}>
         <ImgFixed src={place?.image || ""} dimension="wide" />
         <div className="place-card__stats">
           <div className="place-card__stats-top">
@@ -106,7 +107,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             />
           </div>
         </div>
-      </a>
+      </Link>
       <Card.Content>
         <Card.Header as="a" href={href} onClick={handleClickCard}>
           {place?.title || " "}

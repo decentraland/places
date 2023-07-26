@@ -1,4 +1,4 @@
-import React, { useMemo } from "react"
+import React, { useCallback, useMemo } from "react"
 
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import debounce from "decentraland-gatsby/dist/utils/function/debounce"
@@ -9,9 +9,12 @@ export default function SearchInput(
   props: React.InputHTMLAttributes<HTMLInputElement>
 ) {
   const { onChange } = props
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    onChange!(e)
-  }
+  const handleChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      onChange!(e)
+    },
+    [onChange]
+  )
 
   const debouncedHandleChange = useMemo(() => debounce(handleChange, 350), [])
 
