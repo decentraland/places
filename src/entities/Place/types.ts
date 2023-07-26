@@ -1,3 +1,4 @@
+import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
 import { Realm } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 export type PlaceAttributes = {
@@ -29,6 +30,7 @@ export type PlaceAttributes = {
   world_name: string | null
   hidden: boolean
   deployed_at: Date
+  textsearch: SQLStatement | string | null | undefined
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {

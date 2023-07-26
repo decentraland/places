@@ -1,7 +1,9 @@
 import React, { useCallback, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import { Link } from "decentraland-gatsby/dist/plugins/intl"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
@@ -30,9 +32,12 @@ export type PlaceCardProps = {
   dataPlace?: SegmentPlace
   loading?: boolean
   loadingFavorites?: boolean
+  search?: string
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
+  const track = useTrackContext()
+
   const { place, loading, loadingFavorites, onClickFavorite, dataPlace } = props
 
   const handleClickFavorite = useCallback(
@@ -62,6 +67,18 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     }
   }, [place])
 
+  const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    if (props.search) {
+      track(SegmentPlace.PlaceCardClick, {
+        placeId: place?.id,
+        search: props.search,
+      })
+    }
+
+    href && navigate(href)
+  }
+
   const handleJumpInTrack = useTrackLinkContext()
 
   return (
@@ -73,14 +90,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         !loading && !place && "hidden",
       ])}
     >
-      <a
-        className="place-card__cover"
-        href={href}
-        onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-          e.preventDefault()
-          href && navigate(href)
-        }}
-      >
+      <Link className="place-card__cover" href={href} onClick={handleClickCard}>
         <ImgFixed src={place?.image || ""} dimension="wide" />
         <div className="place-card__stats">
           <div className="place-card__stats-top">
@@ -97,26 +107,12 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             />
           </div>
         </div>
-      </a>
+      </Link>
       <Card.Content>
-        <Card.Header
-          as="a"
-          href={href}
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.preventDefault()
-            href && navigate(href)
-          }}
-        >
+        <Card.Header as="a" href={href} onClick={handleClickCard}>
           {place?.title || " "}
         </Card.Header>
-        <Card.Meta
-          as="a"
-          href={href}
-          onClick={(e: React.MouseEvent<HTMLAnchorElement>) => {
-            e.preventDefault()
-            href && navigate(href)
-          }}
-        >
+        <Card.Meta as="a" href={href} onClick={handleClickCard}>
           {place?.contact_name || " "}
         </Card.Meta>
         {false && (

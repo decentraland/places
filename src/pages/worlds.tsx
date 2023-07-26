@@ -78,6 +78,12 @@ export default function WorldsPage() {
     })
 
     if (isSearching) {
+      track(SegmentPlace.WorldsSearch, {
+        resultsCount: placesFetch.total,
+        top10: placesFetch.data.slice(0, 10),
+        search,
+        place: SegmentPlace.Worlds,
+      })
       setAllWorlds(placesFetch.data)
     } else {
       setAllWorlds((allWorlds) => [...allWorlds, ...placesFetch.data])
@@ -132,6 +138,7 @@ export default function WorldsPage() {
       track(SegmentPlace.FilterChange, {
         filters: params,
         place: SegmentPlace.WorldsShowMore,
+        search,
       })
       loadWorlds()
       setOffset(offset + PAGE_SIZE)
@@ -284,6 +291,7 @@ export default function WorldsPage() {
                 onClickFavorite={(_, place) => handleFavorite(place.id, place)}
                 loadingFavorites={handlingFavorite}
                 dataPlace={SegmentPlace.Places}
+                search={search}
               />
             )}
             {loading && (

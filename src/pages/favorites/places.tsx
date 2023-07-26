@@ -215,6 +215,7 @@ export default function FavoritesPage() {
           className="favorites-list__place-list"
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.FavoritesPlaces}
+          search={search}
         />
         {!accountState.loading && myFavoritesList.length !== 0 && (
           <div className="places__pagination">

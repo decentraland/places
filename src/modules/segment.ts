@@ -32,4 +32,9 @@ export enum SegmentPlace {
   PlacesChangeOrder = "Places Change Order",
   WorldsShowMore = "Worlds Show More",
   WorldsChangeOrder = "Worlds Change Order",
+  OverviewPlacesSearch = "Overview Places Search",
+  OverviewWorldsSearch = "Overview Worlds Search",
+  PlacesSearch = "Places Search",
+  WorldsSearch = "Worlds Search",
+  PlaceCardClick = "PlaceCard Open",
 }

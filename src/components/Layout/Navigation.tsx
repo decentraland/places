@@ -13,7 +13,6 @@ import { PlaceListOrderBy } from "../../entities/Place/types"
 import { WorldListOrderBy } from "../../entities/World/types"
 import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
-import { SegmentPlace } from "../../modules/segment"
 import { OpenBlank } from "../Icon/OpenBlank"
 import SearchInput from "./SearchInput"
 
@@ -43,13 +42,6 @@ export default function Navigation(props: NavigationProps) {
     [location.search]
   )
 
-  const debounceTrack = useCallback(
-    debounce((_search: string) => {
-      // track(SegmentPlace.FilterChange, { search: search })
-    }, 500),
-    [track]
-  )
-
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newParams = new URLSearchParams(params)
@@ -59,7 +51,6 @@ export default function Navigation(props: NavigationProps) {
         newParams.delete("search")
       }
 
-      debounceTrack(e.target.value)
       let target = location.pathname
       const search = newParams.toString()
       // location
@@ -70,7 +61,7 @@ export default function Navigation(props: NavigationProps) {
 
       navigate(target)
     },
-    [location.pathname, params, debounceTrack]
+    [location.pathname, params]
   )
 
   return (

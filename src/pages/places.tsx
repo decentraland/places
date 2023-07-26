@@ -80,6 +80,13 @@ export default function IndexPage() {
     })
 
     if (isSearching) {
+      track(SegmentPlace.PlacesSearch, {
+        resultsCount: placesFetch.total,
+        top10: placesFetch.data.slice(0, 10),
+        search,
+        place: SegmentPlace.Places,
+      })
+
       setAllPlaces(placesFetch.data)
     } else {
       setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
@@ -144,6 +151,7 @@ export default function IndexPage() {
       track(SegmentPlace.FilterChange, {
         filters: params,
         place: SegmentPlace.PlacesShowMore,
+        search,
       })
       loadPlaces()
       setOffset(offset + PAGE_SIZE)
@@ -362,6 +370,7 @@ export default function IndexPage() {
                 onClickFavorite={(_, place) => handleFavorite(place.id, place)}
                 loadingFavorites={handlingFavorite}
                 dataPlace={SegmentPlace.Places}
+                search={search}
               />
             )}
             {loading && (

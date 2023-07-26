@@ -1,6 +1,7 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { v4 as uuid } from "uuid"
 
+import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
@@ -66,7 +67,7 @@ export function createPlaceFromContentEntityScene(
     contentEntityScene?.metadata?.worldConfiguration?.dclName ||
     null
 
-  const placeParsed = {
+  const placeParsed: PlaceAttributes = {
     id: uuid(),
     likes: 0,
     dislikes: 0,
@@ -97,7 +98,10 @@ export function createPlaceFromContentEntityScene(
     deployed_at: new Date(contentEntityScene.timestamp),
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
+    textsearch: undefined,
   }
+
+  placeParsed.textsearch = PlaceModel.textsearch(placeParsed)
 
   return placeParsed
 }
