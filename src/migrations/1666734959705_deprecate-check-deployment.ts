@@ -52,25 +52,4 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
       notNull: true,
     },
   })
-
-  if (isURL(process.env.BOOSTRAP_CATALYST || "")) {
-    const servers = await Catalyst.getInstanceFrom(
-      process.env.BOOSTRAP_CATALYST!
-    ).getServers()
-    if (servers.length) {
-      let sql = `INSERT INTO "${"deployment_tracks"}"
-          ("id", "base_url", "owner", "from", "limit", "disabled", "disabled_at", "created_at", "updated_at")
-        VALUES`
-
-      for (const server of servers) {
-        if (server !== servers[0]) {
-          sql += ",\n"
-        }
-
-        sql += `('${server.id}', '${server.baseUrl}', '${server.owner}', 0, 100, false, null, NOW(), NOW())`
-      }
-
-      pgm.sql(sql)
-    }
-  }
 }

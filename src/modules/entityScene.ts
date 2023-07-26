@@ -9,7 +9,7 @@ const loader = new DataLoader(
   async function (
     positions: readonly string[]
   ): Promise<(ContentEntityScene | null)[]> {
-    const entityScenes = await Catalyst.get().getEntityScenes(
+    const entityScenes = await Catalyst.getInstance().getEntityScenes(
       positions as string[]
     )
 

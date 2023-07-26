@@ -14,7 +14,7 @@ import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 /** @deprecated */
 export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
-  const contentDeploymentsResponse = await Catalyst.from(
+  const contentDeploymentsResponse = await Catalyst.getInstanceFrom(
     catalyst.base_url
   ).getContentDeployments({
     from: catalyst.from,
