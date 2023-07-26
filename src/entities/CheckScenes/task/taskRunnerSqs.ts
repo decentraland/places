@@ -38,6 +38,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world",
   "world_name",
   "hidden",
+  "textsearch",
 ]
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {

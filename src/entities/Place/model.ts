@@ -49,7 +49,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           place.description || ""
         )}), 'B')`,
         SQL`setweight(to_tsvector(coalesce(${place.owner}, '')), 'C')`,
-        SQL`setweight(to_tsvector(concat(${place.tags}), 'D'))`,
+        SQL`setweight(to_tsvector(concat(coalesce(${place.tags}, '{}'))), 'D')`,
       ],
       SQL` || `
     )})`
