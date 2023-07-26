@@ -1,3 +1,5 @@
+import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
+
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
 import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
 import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
@@ -17,6 +19,7 @@ describe("createPlaceFromContentEntityScene", () => {
       id: contentEntityDeployment.id,
       updated_at: contentEntityDeployment.updated_at,
       created_at: contentEntityDeployment.created_at,
+      textsearch: expect.any(SQLStatement),
     })
   })
 })

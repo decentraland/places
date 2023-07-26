@@ -29,4 +29,5 @@ export const placeRoad: PlaceAttributes = {
   disabled_at: null,
   deployed_at: new Date("2022-11-14T17:22:05.307Z"),
   hidden: false,
+  textsearch: undefined,
 }
