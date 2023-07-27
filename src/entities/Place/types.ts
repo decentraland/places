@@ -19,6 +19,7 @@ export type PlaceAttributes = {
   dislikes: number
   favorites: number
   like_rate: number
+  like_score: number
   highlighted: boolean
   featured: boolean
   disabled: boolean
