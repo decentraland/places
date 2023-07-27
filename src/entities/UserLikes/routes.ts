@@ -67,6 +67,8 @@ async function updateLike(
   if (body.like === null) {
     await UserLikesModel.delete(placeUserData)
   } else {
+    // TODO (bug): if the snapshot fetching fails, the like is stored as if the user doesn't have enough VP.
+    // this should be retried or turned into a SQL tx to be able to rollback  if this fails
     const user_activity = await fetchScore(userAuth.address)
     await UserLikesModel.like(placeUserData, { like: body.like, user_activity })
   }
