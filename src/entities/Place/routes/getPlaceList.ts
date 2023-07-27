@@ -44,9 +44,9 @@ export const getPlaceList = Router.memo(
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
         oneOf(ctx.url.searchParams.get("order_by"), [
-          PlaceListOrderBy.HIGHEST_RATED,
+          PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
           PlaceListOrderBy.UPDATED_AT,
-        ]) || PlaceListOrderBy.HIGHEST_RATED,
+        ]) || PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),

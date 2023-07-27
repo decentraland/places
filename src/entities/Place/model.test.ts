@@ -177,7 +177,7 @@ describe(`findWithAggregates`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_rate DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC, p."deployed_at" desc
           LIMIT $2
           OFFSET $3
       `
@@ -221,7 +221,7 @@ describe(`findWithAggregates`, () => {
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         )
-        ORDER BY p.like_rate DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC, p."deployed_at" desc
           LIMIT $4
           OFFSET $5
       `
@@ -268,7 +268,7 @@ describe(`findWithAggregates`, () => {
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
         ORDER BY rank DESC,
-          p.like_rate DESC, p."deployed_at" desc
+          p.like_score DESC, p."deployed_at" desc
           LIMIT $5
           OFFSET $6
       `
@@ -506,7 +506,7 @@ describe(`findWithHotScenes`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_rate DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC, p."deployed_at" desc
           LIMIT $2
           OFFSET $3
       `
