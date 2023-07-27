@@ -1,6 +1,7 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  SQLStatement,
   columns,
   conditional,
   createSearchableMatches,
@@ -8,6 +9,7 @@ import {
   limit,
   objectValues,
   offset,
+  raw,
   setColumns,
   table,
   tsquery,
@@ -302,7 +304,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) filter (where "like") as count_likes,
         count(*) filter (where not "like") as count_dislikes,
         count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total,
-        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes
+        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes,
+        count(*) filter (where not "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_dislikes
       FROM ${table(UserLikesModel)}
       WHERE "place_id" = ${placeId}
     )
@@ -312,7 +315,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         "dislikes" = c.count_dislikes,
         "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
                             ELSE c.count_active_likes / c.count_active_total::float
-                       END)
+                       END),
+        "like_score" = (${PlaceModel.calculateLikeScoreStatement(
+          "c",
+          "count_active_likes",
+          "count_active_dislikes"
+        )})
       FROM counted c
       WHERE "id" = ${placeId}
     `
@@ -547,5 +555,21 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
 
     return results[0].total
+  }
+
+  /**
+   * For reference: https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+   * We're calculating the lower bound of a 95% confidence interval
+   */
+  static calculateLikeScoreStatement(
+    tableAlias: string,
+    likesField: string,
+    dislikesField: string
+  ): SQLStatement {
+    return raw(`CASE WHEN (${tableAlias}.${likesField} + ${tableAlias}.${dislikesField} > 0) THEN ((${tableAlias}.${likesField} + 1.9208) 
+    / (${tableAlias}.${likesField} + ${tableAlias}.${dislikesField}) - 1.96 
+    * SQRT((${tableAlias}.${likesField} * ${tableAlias}.${dislikesField}) / (${tableAlias}.${likesField} + ${tableAlias}.${dislikesField}) + 0.9604) 
+    / (${tableAlias}.${likesField} + ${tableAlias}.${dislikesField})) 
+    / (1 + 3.8416 / (${tableAlias}.${likesField} + ${tableAlias}.${dislikesField})) ELSE 0 END`)
   }
 }

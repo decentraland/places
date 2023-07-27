@@ -432,6 +432,7 @@ describe(`updateLikes`, () => {
     expect(sql.values).toEqual([
       100,
       100,
+      100,
       placeGenesisPlaza.id,
       placeGenesisPlaza.id,
     ])
@@ -442,9 +443,10 @@ describe(`updateLikes`, () => {
             count(*) filter (where "like") as count_likes,
             count(*) filter (where not "like") as count_dislikes,
             count(*) filter (where "user_activity" >= $1) as count_active_total,
-            count(*) filter (where "like" and "user_activity" >= $2) as count_active_likes
+            count(*) filter (where "like" and "user_activity" >= $2) as count_active_likes,
+            count(*) filter (where not "like" and "user_activity" >= $3) as count_active_dislikes
           FROM "user_likes"
-          WHERE "place_id" = $3
+          WHERE "place_id" = $4
         )
         UPDATE "places"
           SET
@@ -452,9 +454,14 @@ describe(`updateLikes`, () => {
             "dislikes" = c.count_dislikes,
             "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
                                 ELSE c.count_active_likes / c.count_active_total::float
-                          END)
+                          END),
+          "like_score" = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN 
+            ((c.count_active_likes + 1.9208) / (c.count_active_likes + c.count_active_dislikes)
+             - 1.96 * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) / (c.count_active_likes + c.count_active_dislikes)) 
+            / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) 
+            ELSE 0 END)
           FROM counted c
-          WHERE "id" = $4
+          WHERE "id" = $5
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
