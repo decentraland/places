@@ -446,7 +446,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = WorldListOrderBy.HIGHEST_RATED
+    const orderBy = WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)

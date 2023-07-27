@@ -608,7 +608,7 @@ describe(`findWorld`, () => {
             AND world is true
             AND hidden is false
             AND world_name IN ($1)
-          ORDER BY p.like_rate DESC
+          ORDER BY p.like_score DESC
             LIMIT $2
             OFFSET $3
       `
@@ -654,7 +654,7 @@ describe(`findWorld`, () => {
           AND hidden is false
           AND world_name IN ($4)
           AND rank > 0
-        ORDER BY rank DESC, p.like_rate DESC
+        ORDER BY rank DESC, p.like_score DESC
           LIMIT $5
           OFFSET $6
       `
