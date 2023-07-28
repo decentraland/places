@@ -402,7 +402,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     favorites: 0,
     likes: 0,
     dislikes: 0,
-    like_rate: 0,
+    like_rate: 0.5,
     like_score: 0,
     highlighted: true,
     highlighted_image: "/images/places/genesis_plaza_banner.jpg",
