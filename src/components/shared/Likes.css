@@ -1,0 +1,33 @@
+.likes-container-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.likes-info-container {
+  display: flex;
+  align-items: center;
+}
+
+.likes-info-container p {
+  margin: 0;
+}
+
+.likes-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 85px;
+}
+
+.info-logo {
+  cursor: pointer;
+  margin: 3px;
+  width: 14px;
+  height: 14px;
+  background-image: url("../../../static/images/places/info.svg");
+  margin-left: 5px;
+}
+
+.ui.top.popup:before {
+  background-color: #716b7c;
+}
