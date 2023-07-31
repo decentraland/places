@@ -2,32 +2,37 @@ import React from "react"
 
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
-import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import shorterNumber from "../../utils/number/sortenNumber"
+import { ThumbDown } from "../Icon/ThumbDown"
 import { ThumbUp } from "../Icon/ThumbUp"
 
-import "./ButtonBox.css"
+import "./LikeButtonBox.css"
 
 export type LikeBoxProps = {
-  total: number
   onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   loading?: boolean
   active?: boolean
+  thumb: "up" | "down"
 }
 
 export default React.memo(function LikeBox(props: LikeBoxProps) {
-  const { onClick, loading, active, total } = props
+  const { onClick, loading, active, thumb } = props
   return (
     <Button
       onClick={onClick}
-      className={TokenList.join(["button-box", active && "button-box__active"])}
+      className={TokenList.join([
+        "like-button-box",
+        active && "button-box__active",
+      ])}
       target="_blank"
       loading={loading}
       disabled={loading}
     >
-      <ThumbUp active={!!active} />
-      <Label>{shorterNumber(total)}</Label>
+      {thumb == "up" ? (
+        <ThumbUp active={!!active} />
+      ) : (
+        <ThumbDown active={!!active} />
+      )}
     </Button>
   )
 })
