@@ -14,7 +14,7 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
-import WorldDescription from "../components/World/WorldDescription/WorldDescription"
+import LocationDescription from "../components/shared/LocationDescription"
 import WorldDetails from "../components/World/WorldDetails/WorldDetails"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { useWorldFromParams } from "../hooks/useWorldFromParams"
@@ -151,7 +151,8 @@ export default function WorldPage() {
       <Navigation />
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout>
-          <WorldDescription
+          <LocationDescription
+            type="world"
             place={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)

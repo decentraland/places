@@ -8,7 +8,13 @@
   margin-top: 0;
   margin-bottom: 0;
   margin-left: 10px;
-  font-size: 16px;
+  font-size: 12px;
+}
+
+.world-label__container img {
+  margin-top: 0;
+  margin-bottom: 0;
+  width: 20px;
 }
 
 .world-label__container h3 span {

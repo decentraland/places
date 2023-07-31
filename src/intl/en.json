@@ -43,7 +43,8 @@
       "added": "added"
     },
     "place_description": {
-      "created_by": "created by"
+      "created_by": "created by",
+      "like_percentage_explanation": "Like percentage is calculated from likes given by users with over 100VP"
     },
     "place_realm_activity": {
       "title": "realms",

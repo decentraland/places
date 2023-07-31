@@ -14,8 +14,8 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
-import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
+import LocationDescription from "../components/shared/LocationDescription"
 import { usePlaceFromParams } from "../hooks/usePlaceFromParams"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
@@ -156,7 +156,8 @@ export default function PlacePage() {
       <Navigation />
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout>
-          <PlaceDescription
+          <LocationDescription
+            type="place"
             place={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)

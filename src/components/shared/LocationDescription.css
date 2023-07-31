@@ -1,0 +1,167 @@
+.place-description {
+  display: flex;
+  flex-direction: column;
+}
+
+.place-description .place-description__top-container {
+  width: 100%;
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.place-description .place-description__cover {
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+}
+
+.place-description.loading .place-description__cover {
+  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+  background-size: 200% 100%;
+  animation: 1.5s loading linear infinite;
+  border-radius: 8px 0 0 8px;
+}
+
+.place-description .place-description__right-side-container {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin-left: 24px;
+}
+
+.place-description .place-description__text-container {
+  overflow: hidden;
+}
+
+.place-description .place-description__title-container .world-label__container {
+  margin-bottom: 10px;
+}
+
+.place-description.loading .place-description__text-container {
+  background: linear-gradient(110deg, #ececec 8%, #f5f5f5 18%, #ececec 33%);
+  background-size: 200% 100%;
+  animation: 1.5s loading linear infinite;
+  height: 70%;
+  border-radius: 8px;
+}
+
+.place-description.loading .place-description__text-container h1,
+.place-description.loading .place-description__text-container p {
+  opacity: 0;
+}
+
+.place-description .place-description__text-container h1 {
+  font-size: 26px;
+  margin-bottom: 10px;
+}
+
+.place-description .place-description__text-container p {
+  font-size: 15px;
+}
+
+.place-description .place-description__buttons-container {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 0;
+}
+
+.place-description
+  .place-description__buttons-container
+  .jump-in-position.button {
+  height: 46px;
+  font-size: 16px;
+}
+
+.place-description
+  .place-description__buttons-container
+  .likes-container-wrapper {
+  margin-bottom: 10px;
+}
+
+.place-description .place-description__box-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.place-description .place-description__box-wrapper .button:first-child {
+  margin-left: 0;
+}
+
+.place-description .place-description__box-wrapper .button:last-child {
+  margin-right: 0;
+}
+
+.place-description .place-description__box-wrapper .button {
+  margin: 15px 5px 0;
+}
+
+@media only screen and (min-width: 992px) {
+  .place-description__text-container {
+    width: 329px;
+  }
+
+  .place-description__cover {
+    width: 462px;
+  }
+
+  .place-description__cover,
+  .place-description__right-side-container {
+    height: 316px;
+  }
+}
+
+@media only screen and (min-width: 768px) and (max-width: 991px) {
+  .place-description__cover {
+    width: 388px;
+  }
+
+  .place-description .place-description__text-container h1 {
+    font-size: 26px;
+  }
+
+  .place-description__cover,
+  .place-description__right-side-container {
+    height: 279px;
+  }
+
+  .place-description .place-description__right-side-container {
+    margin-left: 20px;
+  }
+}
+
+@media only screen and (max-width: 767px) {
+  .place-description__cover {
+    width: 100%;
+    height: 50vw;
+    margin-bottom: 20px;
+  }
+
+  .place-description .place-description__top-container {
+    flex-direction: column;
+  }
+
+  .place-description__text-container {
+    margin-bottom: 20px;
+  }
+
+  .place-description .place-description__right-side-container {
+    height: auto;
+    width: 100%;
+    padding: 0;
+    margin-left: 0;
+  }
+
+  .place-description__box-wrapper {
+    justify-content: center;
+    width: 314px;
+  }
+}
+
+@media only screen and (max-width: 435px) {
+  .place-description__box-wrapper {
+    justify-content: space-between;
+  }
+}
