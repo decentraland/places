@@ -9,7 +9,12 @@
 }
 
 .likes-info-container p {
-  margin: 0;
+  margin: 0 0 0 5px;
+  color: #161418;
+}
+
+.likes-info-container p span {
+  color: #726d7c;
 }
 
 .likes-button-container {
@@ -30,4 +35,13 @@
 
 .ui.top.popup:before {
   background-color: #716b7c;
+}
+
+.ui.top.popup {
+  background-color: #716b7c;
+  height: 69px;
+  width: 181px;
+  padding: 12px 13px;
+  border: 2px none;
+  font-size: 12px;
 }

@@ -14,12 +14,12 @@ type LikesProps = {
   likesCount: number
   handlers: {
     like: {
-      fn: (e: React.MouseEvent<HTMLButtonElement>) => void
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
       active?: boolean
       loading?: boolean
     }
     dislike: {
-      fn: (e: React.MouseEvent<HTMLButtonElement>) => void
+      onClick: (e: React.MouseEvent<HTMLButtonElement>) => void
       active?: boolean
       loading?: boolean
     }
@@ -37,22 +37,21 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
         <div>
           <ThumbUpFilled />
         </div>
-        <p style={{ color: "#161418", marginLeft: "5px" }}>
-          {toPercent(likeRate)}%{" "}
-          <span style={{ color: "#726d7c" }}>({likesCount})</span>
+        <p>
+          {toPercent(likeRate)}% <span>({likesCount})</span>
         </p>
         <InfoButton />
       </div>
       <div className="likes-button-container">
         <LikeBox
           thumb="up"
-          onClick={handlers.like.fn}
+          onClick={handlers.like.onClick}
           active={handlers.like.active}
           loading={handlers.like.loading}
         />
         <LikeBox
           thumb="down"
-          onClick={handlers.dislike.fn}
+          onClick={handlers.dislike.onClick}
           active={handlers.dislike.active}
           loading={handlers.dislike.loading}
         />
@@ -68,14 +67,6 @@ const InfoButton = () => {
       content={l("components.place_description.like_percentage_explanation")}
       position="top center"
       trigger={<div className="info-logo" />}
-      style={{
-        backgroundColor: "#716B7C",
-        height: "69px",
-        width: "181px",
-        padding: "12px 13px",
-        border: "2px none",
-        fontSize: "12px",
-      }}
       on="hover"
     />
   )
