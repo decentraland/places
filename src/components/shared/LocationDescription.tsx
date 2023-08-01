@@ -15,9 +15,9 @@ import { Likes } from "./Likes"
 
 import "./LocationDescription.css"
 
-export type PlaceDescriptionProps = {
+export type LocationDescriptionProps = {
   type: "place" | "world"
-  place: AggregatePlaceAttributes
+  location: AggregatePlaceAttributes
   onClickFavorite: (e: React.MouseEvent<HTMLButtonElement>) => void
   onClickLike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickDislike: (e: React.MouseEvent<HTMLButtonElement>) => {}
@@ -29,12 +29,12 @@ export type PlaceDescriptionProps = {
   loadingFavorite?: boolean
 }
 
-export default React.memo(function PlaceDescription(
-  props: PlaceDescriptionProps
+export default React.memo(function LocationDescription(
+  props: LocationDescriptionProps
 ) {
   const {
     type,
-    place,
+    location,
     onClickLike,
     onClickDislike,
     onClickShare,
@@ -46,7 +46,7 @@ export default React.memo(function PlaceDescription(
     loadingFavorite,
   } = props
   const l = useFormatMessage()
-  const placerUrl = explorerPlaceUrl(place)
+  const placerUrl = explorerPlaceUrl(location)
 
   const handleJumpInTrack = useTrackLinkContext()
 
@@ -58,9 +58,9 @@ export default React.memo(function PlaceDescription(
         <div
           className="place-description__cover"
           style={
-            !loading && place?.image
+            !loading && location?.image
               ? {
-                  backgroundImage: `url(${place.image})`,
+                  backgroundImage: `url(${location.image})`,
                 }
               : {}
           }
@@ -69,28 +69,28 @@ export default React.memo(function PlaceDescription(
           <div className="place-description__title-container">
             {!loading && type == "world" && <WorldLabel />}
             <div className="place-description__text-container">
-              <h1>{place?.title}</h1>
-              {place?.contact_name && (
+              <h1>{location?.title}</h1>
+              {location?.contact_name && (
                 <p>
                   {l("components.place_description.created_by")}{" "}
-                  <strong>{place.contact_name}</strong>
+                  <strong>{location.contact_name}</strong>
                 </p>
               )}
             </div>
           </div>
           <div className="place-description__buttons-container">
             <Likes
-              likeRate={place?.like_rate}
-              likesCount={place?.likes}
+              likeRate={location?.like_rate}
+              likesCount={location?.likes}
               handlers={{
                 like: {
-                  fn: onClickLike,
-                  active: place?.user_like,
+                  onClick: onClickLike,
+                  active: location?.user_like,
                   loading: loading || loadingLike,
                 },
                 dislike: {
-                  fn: onClickDislike,
-                  active: place?.user_dislike,
+                  onClick: onClickDislike,
+                  active: location?.user_dislike,
                   loading: loading || loadingDislike,
                 },
               }}
@@ -100,7 +100,7 @@ export default React.memo(function PlaceDescription(
               loading={loading}
               onClick={handleJumpInTrack}
               data-event={SegmentPlace.JumpIn}
-              data-place-id={place?.id}
+              data-place-id={location?.id}
               data-place={dataPlace}
             />
             <div className="place-description__box-wrapper">
@@ -108,7 +108,7 @@ export default React.memo(function PlaceDescription(
               <FavoriteBox
                 onClick={onClickFavorite}
                 loading={loading || loadingFavorite}
-                active={place?.user_favorite}
+                active={location?.user_favorite}
                 dataPlace={dataPlace}
               />
             </div>

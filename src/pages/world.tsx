@@ -153,7 +153,7 @@ export default function WorldPage() {
         <ItemLayout>
           <LocationDescription
             type="world"
-            place={place}
+            location={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)
             }

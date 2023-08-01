@@ -158,7 +158,7 @@ export default function PlacePage() {
         <ItemLayout>
           <LocationDescription
             type="place"
-            place={place}
+            location={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)
             }
