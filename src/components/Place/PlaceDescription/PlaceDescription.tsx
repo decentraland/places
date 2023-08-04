@@ -4,20 +4,18 @@ import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrack
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
-import { explorerPlaceUrl } from "../../entities/Place/utils"
-import { SegmentPlace } from "../../modules/segment"
-import FavoriteBox from "../Button/FavoriteBox"
-import JumpInPositionButton from "../Button/JumpInPositionButton"
-import ShareBox from "../Button/ShareBox"
-import WorldLabel from "../World/WorldLabel/WorldLabel"
-import { Likes } from "./Likes"
+import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { explorerPlaceUrl } from "../../../entities/Place/utils"
+import { SegmentPlace } from "../../../modules/segment"
+import FavoriteBox from "../../Button/FavoriteBox"
+import JumpInPositionButton from "../../Button/JumpInPositionButton"
+import ShareBox from "../../Button/ShareBox"
+import { Likes } from "../../shared/Likes"
 
-import "./LocationDescription.css"
+import "./PlaceDescription.css"
 
 export type LocationDescriptionProps = {
-  type: "place" | "world"
-  location: AggregatePlaceAttributes
+  place: AggregatePlaceAttributes
   onClickFavorite: (e: React.MouseEvent<HTMLButtonElement>) => void
   onClickLike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickDislike: (e: React.MouseEvent<HTMLButtonElement>) => {}
@@ -33,8 +31,7 @@ export default React.memo(function LocationDescription(
   props: LocationDescriptionProps
 ) {
   const {
-    type,
-    location,
+    place,
     onClickLike,
     onClickDislike,
     onClickShare,
@@ -46,7 +43,7 @@ export default React.memo(function LocationDescription(
     loadingFavorite,
   } = props
   const l = useFormatMessage()
-  const placerUrl = explorerPlaceUrl(location)
+  const placerUrl = explorerPlaceUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()
 
@@ -58,39 +55,38 @@ export default React.memo(function LocationDescription(
         <div
           className="place-description__cover"
           style={
-            !loading && location?.image
+            !loading && place?.image
               ? {
-                  backgroundImage: `url(${location.image})`,
+                  backgroundImage: `url(${place.image})`,
                 }
               : {}
           }
         ></div>
         <div className="place-description__right-side-container">
           <div className="place-description__title-container">
-            {!loading && type == "world" && <WorldLabel />}
             <div className="place-description__text-container">
-              <h1>{location?.title}</h1>
-              {location?.contact_name && (
+              <h1>{place?.title}</h1>
+              {place?.contact_name && (
                 <p>
                   {l("components.place_description.created_by")}{" "}
-                  <strong>{location.contact_name}</strong>
+                  <strong>{place.contact_name}</strong>
                 </p>
               )}
             </div>
           </div>
           <div className="place-description__buttons-container">
             <Likes
-              likeRate={location?.like_rate}
-              likesCount={location?.likes}
+              likeRate={place?.like_rate}
+              likesCount={place?.likes}
               handlers={{
                 like: {
                   onClick: onClickLike,
-                  active: location?.user_like,
+                  active: place?.user_like,
                   loading: loading || loadingLike,
                 },
                 dislike: {
                   onClick: onClickDislike,
-                  active: location?.user_dislike,
+                  active: place?.user_dislike,
                   loading: loading || loadingDislike,
                 },
               }}
@@ -100,7 +96,7 @@ export default React.memo(function LocationDescription(
               loading={loading}
               onClick={handleJumpInTrack}
               data-event={SegmentPlace.JumpIn}
-              data-place-id={location?.id}
+              data-place-id={place?.id}
               data-place={dataPlace}
             />
             <div className="place-description__box-wrapper">
@@ -108,7 +104,7 @@ export default React.memo(function LocationDescription(
               <FavoriteBox
                 onClick={onClickFavorite}
                 loading={loading || loadingFavorite}
-                active={location?.user_favorite}
+                active={place?.user_favorite}
                 dataPlace={dataPlace}
               />
             </div>
