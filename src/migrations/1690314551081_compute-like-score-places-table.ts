@@ -12,11 +12,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     UPDATE ${table(PlaceModel)} 
       SET like_score = 
         (
-          SELECT ${PlaceModel.calculateLikeScoreStatement(
-            "c",
-            "count_active_likes",
-            "count_active_dislikes"
-          )}
+          SELECT ${PlaceModel.calculateLikeScoreStatement()}
           FROM (
             SELECT
               count(*) filter (where "like") as count_likes,
