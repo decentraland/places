@@ -23,25 +23,3 @@
   justify-content: space-between;
   width: 85px;
 }
-
-.info-logo {
-  cursor: pointer;
-  margin: 3px;
-  width: 14px;
-  height: 14px;
-  background-image: url("../../../static/images/places/info.svg");
-  margin-left: 5px;
-}
-
-.ui.top.popup:before {
-  background-color: #716b7c;
-}
-
-.ui.top.popup {
-  background-color: #716b7c;
-  height: 69px;
-  width: 181px;
-  padding: 12px 13px;
-  border: 2px none;
-  font-size: 12px;
-}

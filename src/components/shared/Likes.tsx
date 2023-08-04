@@ -1,11 +1,9 @@
 import React from "react"
 
-import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import Popup from "semantic-ui-react/dist/commonjs/modules/Popup"
-
 import { toPercent } from "../../modules/number"
 import DislikeBox from "../Button/DislikeBox"
 import LikeBox from "../Button/LikeBox"
+import { Info } from "../Icon/Info"
 import { ThumbUpFilled } from "../Icon/ThumbUp"
 
 import "./Likes.css"
@@ -41,7 +39,7 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
         <p>
           {toPercent(likeRate)}% <span>({likesCount})</span>
         </p>
-        <InfoButton />
+        <Info />
       </div>
       <div className="likes-button-container">
         <LikeBox
@@ -56,17 +54,5 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
         />
       </div>
     </div>
-  )
-}
-
-const InfoButton = () => {
-  const l = useFormatMessage()
-  return (
-    <Popup
-      content={l("components.place_description.like_percentage_explanation")}
-      position="top center"
-      trigger={<div className="info-logo" />}
-      on="hover"
-    />
   )
 }
