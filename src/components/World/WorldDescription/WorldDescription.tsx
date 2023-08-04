@@ -70,7 +70,7 @@ export default React.memo(function WorldDescription(
               <h1>{world?.title}</h1>
               {world?.contact_name && (
                 <p>
-                  {l("components.world_description.created_by")}{" "}
+                  {l("components.place_description.created_by")}{" "}
                   <strong>{world.contact_name}</strong>
                 </p>
               )}
