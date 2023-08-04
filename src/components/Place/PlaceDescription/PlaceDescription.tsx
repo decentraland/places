@@ -10,7 +10,7 @@ import { SegmentPlace } from "../../../modules/segment"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import ShareBox from "../../Button/ShareBox"
-import { Likes } from "../../shared/Likes"
+import { Likes } from "../../Label/Likes/Likes"
 
 import "./PlaceDescription.css"
 

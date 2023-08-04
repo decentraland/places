@@ -1,10 +1,10 @@
 import React from "react"
 
-import { toPercent } from "../../modules/number"
-import DislikeBox from "../Button/DislikeBox"
-import LikeBox from "../Button/LikeBox"
-import { Info } from "../Icon/Info"
-import { ThumbUpFilled } from "../Icon/ThumbUp"
+import { toPercent } from "../../../modules/number"
+import DislikeBox from "../../Button/DislikeBox"
+import LikeBox from "../../Button/LikeBox"
+import { Info } from "../../Icon/Info"
+import { ThumbUpFilled } from "../../Icon/ThumbUp"
 
 import "./Likes.css"
 
