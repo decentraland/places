@@ -4,6 +4,7 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import Popup from "semantic-ui-react/dist/commonjs/modules/Popup"
 
 import { toPercent } from "../../modules/number"
+import DislikeBox from "../Button/DislikeBox"
 import LikeBox from "../Button/LikeBox"
 import { ThumbUpFilled } from "../Icon/ThumbUp"
 
@@ -44,13 +45,11 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
       </div>
       <div className="likes-button-container">
         <LikeBox
-          thumb="up"
           onClick={handlers.like.onClick}
           active={handlers.like.active}
           loading={handlers.like.loading}
         />
-        <LikeBox
-          thumb="down"
+        <DislikeBox
           onClick={handlers.dislike.onClick}
           active={handlers.dislike.active}
           loading={handlers.dislike.loading}

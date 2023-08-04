@@ -3,7 +3,7 @@ import React from "react"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 
-import { ThumbUp } from "../Icon/ThumbUp"
+import { ThumbDown } from "../Icon/ThumbDown"
 
 import "./LikeButtonBox.css"
 
@@ -26,7 +26,7 @@ export default React.memo(function LikeBox(props: LikeBoxProps) {
       loading={loading}
       disabled={loading}
     >
-      <ThumbUp active={!!active} />
+      <ThumbDown active={!!active} />
     </Button>
   )
 })
