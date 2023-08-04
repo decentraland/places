@@ -45,11 +45,33 @@ export const getPlaceMostActiveList = Router.memo(
 
     const userAuth = await withAuthOptional(ctx)
 
-    if (
-      (bool(query.only_favorites) && !userAuth?.address) ||
-      numeric(query.offset) > hotScenes.length
-    ) {
+    if (bool(query.only_favorites) && !userAuth?.address) {
       return new ApiResponse([], { total: 0 })
+    }
+
+    if (numeric(query.offset) > hotScenes.length) {
+      const options: FindWithAggregatesOptions = {
+        user: userAuth?.address,
+        offset: numeric(query.offset, { min: 0 }),
+        limit: numeric(query.limit, { min: 0, max: 100 }),
+        only_favorites: !!bool(query.only_favorites),
+        only_featured: !!bool(query.only_featured),
+        only_highlighted: !!bool(query.only_highlighted),
+        positions: [],
+        order_by: PlaceListOrderBy.MOST_ACTIVE,
+        order: query.order,
+        search: query.search,
+      }
+      const extraPlaces = await PlaceModel.findWithAggregates({
+        not_in: query.positions.length
+          ? hotScenesPositions.filter((position) => positions.has(position))
+          : hotScenesPositions,
+        ...options,
+      })
+
+      return new ApiResponse(extraPlaces, {
+        total: extraPlaces.length,
+      })
     }
 
     const positions = new Set(query.positions)
@@ -89,11 +111,32 @@ export const getPlaceMostActiveList = Router.memo(
       !order || order === "desc"
     )
 
-    const total = hotScenePlaces.length
+    extraOptions.positions = []
+    if (limit - hotScenePlaces.length > limit) {
+      const extraPlaces = await PlaceModel.findWithAggregates({
+        offset: 0,
+        limit: 100 - hotScenePlaces.length,
+        not_in: query.positions.length
+          ? hotScenesPositions.filter((position) => positions.has(position))
+          : hotScenesPositions,
+        order,
+        ...extraOptions,
+      })
 
-    const from = numeric(offset || 0, { min: 0 })
-    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+      const total = hotScenePlaces.length + extraPlaces.length || 0
 
-    return new ApiResponse(hotScenePlaces.slice(from, to), { total })
+      return new ApiResponse([...hotScenePlaces, ...extraPlaces], {
+        total,
+      })
+    } else {
+      const from = numeric(offset || 0, { min: 0 })
+      const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+      const limitedScenes = hotScenePlaces.slice(from, to)
+      const total = limitedScenes.length || 0
+
+      return new ApiResponse(limitedScenes, {
+        total,
+      })
+    }
   }
 )

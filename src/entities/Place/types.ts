@@ -80,7 +80,7 @@ export type PlaceListOptions = {
 
 export type FindWithAggregatesOptions = PlaceListOptions & {
   user?: string
-}
+} & { not_in?: string[] }
 
 export const unwantedThumbnailHash = [
   "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",

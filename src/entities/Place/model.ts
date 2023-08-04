@@ -204,6 +204,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
+        ${conditional(
+          (options.not_in || []).length > 0,
+          SQL`AND p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position NOT IN ${values(options.not_in || [])}
+            )`
+        )}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
