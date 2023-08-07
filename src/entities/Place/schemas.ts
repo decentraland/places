@@ -52,7 +52,10 @@ export const getPlaceListQuerySchema = schema({
     order_by: {
       type: "string",
       description: "Order places by",
-      enum: [PlaceListOrderBy.HIGHEST_RATED, PlaceListOrderBy.MOST_ACTIVE],
+      enum: [
+        PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+        PlaceListOrderBy.MOST_ACTIVE,
+      ],
       nullable: true as any,
     },
     order: {
@@ -188,6 +191,18 @@ export const placeSchema = schema({
       type: "number",
       minimum: 0,
       description: "The number of dislikes on the place",
+    },
+    like_score: {
+      type: "number",
+      minimum: 0,
+      description:
+        "A calculated number to qualify a place based on its likes and dislikes only taking into account the users with enough VP",
+    },
+    like_rate: {
+      type: "number",
+      minimum: 0,
+      description:
+        "The percentage of likes on the place expressed on decimal fraction",
     },
     favorites: {
       type: "number",

@@ -9,7 +9,9 @@ export type GetWorldListQuery = {
 }
 
 export enum WorldListOrderBy {
+  // deprecated
   HIGHEST_RATED = "like_rate",
+  HIGHEST_RATED_LOWER_BOUND_SCORE = "like_score",
   MOST_ACTIVE = "most_active",
 }
 

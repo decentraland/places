@@ -1,6 +1,7 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  SQLStatement,
   columns,
   conditional,
   createSearchableMatches,
@@ -141,7 +142,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = PlaceListOrderBy.HIGHEST_RATED
+    const orderBy = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
@@ -302,7 +303,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         count(*) filter (where "like") as count_likes,
         count(*) filter (where not "like") as count_dislikes,
         count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total,
-        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes
+        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes,
+        count(*) filter (where not "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_dislikes
       FROM ${table(UserLikesModel)}
       WHERE "place_id" = ${placeId}
     )
@@ -312,7 +314,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         "dislikes" = c.count_dislikes,
         "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
                             ELSE c.count_active_likes / c.count_active_total::float
-                       END)
+                       END),
+        "like_score" = (${PlaceModel.calculateLikeScoreStatement()})
       FROM counted c
       WHERE "id" = ${placeId}
     `
@@ -438,7 +441,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = WorldListOrderBy.HIGHEST_RATED
+    const orderBy = WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)
@@ -547,5 +550,17 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
 
     return results[0].total
+  }
+
+  /**
+   * For reference: https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
+   * We're calculating the lower bound of a 95% confidence interval
+   */
+  static calculateLikeScoreStatement(): SQLStatement {
+    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208) 
+    / (c.count_active_likes + c.count_active_dislikes) - 1.96 
+    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) 
+    / (c.count_active_likes + c.count_active_dislikes)) 
+    / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE 0 END`
   }
 }
