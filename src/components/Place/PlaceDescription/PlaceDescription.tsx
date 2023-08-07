@@ -14,7 +14,7 @@ import { Likes } from "../../Label/Likes/Likes"
 
 import "./PlaceDescription.css"
 
-export type LocationDescriptionProps = {
+export type PlaceDescriptionProps = {
   place: AggregatePlaceAttributes
   onClickFavorite: (e: React.MouseEvent<HTMLButtonElement>) => void
   onClickLike: (e: React.MouseEvent<HTMLButtonElement>) => {}
@@ -27,8 +27,8 @@ export type LocationDescriptionProps = {
   loadingFavorite?: boolean
 }
 
-export default React.memo(function LocationDescription(
-  props: LocationDescriptionProps
+export default React.memo(function PlaceDescription(
+  props: PlaceDescriptionProps
 ) {
   const {
     place,
