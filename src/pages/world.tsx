@@ -152,7 +152,7 @@ export default function WorldPage() {
       <Container style={{ paddingTop: "75px" }}>
         <ItemLayout>
           <WorldDescription
-            place={place}
+            world={place}
             onClickLike={async () =>
               handleLike(place?.id, place.user_like ? null : true)
             }

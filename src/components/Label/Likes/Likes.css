@@ -1,0 +1,25 @@
+.likes-container-wrapper {
+  display: flex;
+  justify-content: space-between;
+}
+
+.likes-info-container {
+  display: flex;
+  align-items: center;
+}
+
+.likes-info-container p {
+  margin: 0 0 0 5px;
+  color: #161418;
+}
+
+.likes-info-container p span {
+  color: #726d7c;
+}
+
+.likes-button-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 85px;
+}

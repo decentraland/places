@@ -1,0 +1,31 @@
+.icon-thumb {
+  width: 19px;
+  height: 19px;
+  overflow: visible !important;
+}
+
+.icon-thumb path,
+.icon-thumb rect {
+  fill: transparent;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+:hover > .icon-thumb:not(.no-hover) path,
+:hover > .icon-thumb:not(.no-hover) rect {
+  fill: #d9d9d9;
+  stroke: #161518;
+  stroke-width: 2px;
+}
+
+.icon-thumb.active path,
+.icon-thumb.active rect {
+  fill: #ff2d55;
+  stroke: none;
+}
+
+:hover > .icon-thumb.active:not(.no-hover) path,
+:hover > .icon-thumb.active:not(.no-hover) rect {
+  fill: #c82443;
+  stroke: none;
+}

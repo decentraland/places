@@ -1,0 +1,17 @@
+.ui.button.like-button-box {
+  background-color: transparent;
+  border: 1px solid #cfcdd3;
+  box-sizing: border-box;
+  height: 40px;
+  width: 40px;
+  padding: 0;
+  min-width: 0;
+  border-radius: 100px;
+}
+
+.ui.button.like-button-box:not(.button-box__active):hover {
+  border-color: #d9d9d9;
+}
+.ui.button.like-button-box.button-box__active:hover {
+  border-color: #c82443;
+}

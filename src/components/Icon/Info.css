@@ -1,0 +1,26 @@
+.info-icon {
+  cursor: pointer;
+  margin: 3px;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
+}
+
+.info-icon path {
+  fill: #736e7d;
+  fill-rule: evenodd;
+  clip-rule: evenodd;
+}
+
+.ui.top.popup:before {
+  background-color: #716b7c;
+}
+
+.ui.top.popup {
+  background-color: #716b7c;
+  height: 69px;
+  width: 181px;
+  padding: 12px 13px;
+  border: 2px none;
+  font-size: 12px;
+}

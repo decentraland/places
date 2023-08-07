@@ -15,6 +15,7 @@
 .place-description .place-description__cover {
   background-size: cover;
   background-position: center;
+  border-radius: 10px;
 }
 
 .place-description.loading .place-description__cover {
@@ -28,12 +29,15 @@
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  margin-left: 20px;
+  margin-left: 24px;
 }
 
 .place-description .place-description__text-container {
-  max-height: 60%;
   overflow: hidden;
+}
+
+.place-description .place-description__title-container .world-label__container {
+  margin-bottom: 10px;
 }
 
 .place-description.loading .place-description__text-container {
@@ -50,7 +54,7 @@
 }
 
 .place-description .place-description__text-container h1 {
-  font-size: 34px;
+  font-size: 26px;
   margin-bottom: 10px;
 }
 
@@ -67,8 +71,14 @@
 .place-description
   .place-description__buttons-container
   .jump-in-position.button {
-  height: 60px;
+  height: 46px;
   font-size: 16px;
+}
+
+.place-description
+  .place-description__buttons-container
+  .likes-container-wrapper {
+  margin-bottom: 10px;
 }
 
 .place-description .place-description__box-wrapper {
@@ -95,7 +105,6 @@
 
   .place-description__cover {
     width: 462px;
-    border-radius: 10px;
   }
 
   .place-description__cover,

@@ -7,11 +7,10 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerPlaceUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
-import DislikeBox from "../../Button/DislikeBox"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
-import LikeBox from "../../Button/LikeBox"
 import ShareBox from "../../Button/ShareBox"
+import { Likes } from "../../Label/Likes/Likes"
 
 import "./PlaceDescription.css"
 
@@ -64,16 +63,34 @@ export default React.memo(function PlaceDescription(
           }
         ></div>
         <div className="place-description__right-side-container">
-          <div className="place-description__text-container">
-            <h1>{place?.title}</h1>
-            {place?.contact_name && (
-              <p>
-                {l("components.place_description.created_by")}{" "}
-                <strong>{place.contact_name}</strong>
-              </p>
-            )}
+          <div className="place-description__title-container">
+            <div className="place-description__text-container">
+              <h1>{place?.title}</h1>
+              {place?.contact_name && (
+                <p>
+                  {l("components.place_description.created_by")}{" "}
+                  <strong>{place.contact_name}</strong>
+                </p>
+              )}
+            </div>
           </div>
           <div className="place-description__buttons-container">
+            <Likes
+              likeRate={place?.like_rate}
+              likesCount={place?.likes}
+              handlers={{
+                like: {
+                  onClick: onClickLike,
+                  active: place?.user_like,
+                  loading: loading || loadingLike,
+                },
+                dislike: {
+                  onClick: onClickDislike,
+                  active: place?.user_dislike,
+                  loading: loading || loadingDislike,
+                },
+              }}
+            />
             <JumpInPositionButton
               href={placerUrl}
               loading={loading}
@@ -83,18 +100,6 @@ export default React.memo(function PlaceDescription(
               data-place={dataPlace}
             />
             <div className="place-description__box-wrapper">
-              <LikeBox
-                onClick={onClickLike}
-                loading={loading || loadingLike}
-                total={place?.likes}
-                active={place?.user_like}
-              />
-              <DislikeBox
-                onClick={onClickDislike}
-                loading={loading || loadingDislike}
-                total={place?.dislikes}
-                active={place?.user_dislike}
-              />
               <ShareBox onClick={onClickShare} loading={loading} />
               <FavoriteBox
                 onClick={onClickFavorite}
