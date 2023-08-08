@@ -79,7 +79,7 @@ export default React.memo(function WorldDescription(
           <div className="world-description__buttons-container">
             <Likes
               likeRate={world?.like_rate}
-              likesCount={world?.likes}
+              likesCount={(world?.likes || 0) + (world?.dislikes || 0)}
               handlers={{
                 like: {
                   onClick: onClickLike,

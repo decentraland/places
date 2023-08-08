@@ -77,7 +77,7 @@ export default React.memo(function PlaceDescription(
           <div className="place-description__buttons-container">
             <Likes
               likeRate={place?.like_rate}
-              likesCount={place?.likes}
+              likesCount={(place?.likes || 0) + (place?.dislikes || 0)}
               handlers={{
                 like: {
                   onClick: onClickLike,
