@@ -7,7 +7,6 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
-import debounce from "decentraland-gatsby/dist/utils/function/debounce"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
 import { WorldListOrderBy } from "../../entities/World/types"
@@ -79,7 +78,7 @@ export default function Navigation(props: NavigationProps) {
           <NavigationMenu.Item
             active={props.activeTab === NavigationTab.Places}
             href={locations.places({
-              order_by: PlaceListOrderBy.HIGHEST_RATED,
+              order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
             })}
           >
             {l("navigation.places")}
@@ -88,7 +87,7 @@ export default function Navigation(props: NavigationProps) {
             <NavigationMenu.Item
               active={props.activeTab === NavigationTab.Worlds}
               href={locations.worlds({
-                order_by: WorldListOrderBy.HIGHEST_RATED,
+                order_by: WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
               })}
             >
               {l("navigation.worlds")}

@@ -150,7 +150,7 @@ export default function WorldsPage() {
     (_: React.SyntheticEvent<any>, props: { value?: any }) => {
       const value =
         oneOf(props.value, getWorldListQuerySchema.properties.order_by.enum) ??
-        WorldListOrderBy.HIGHEST_RATED
+        WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
       const newParams = { ...params, order_by: value, page: 1 }
       setAllWorlds([])
       track(SegmentPlace.FilterChange, {
@@ -166,7 +166,7 @@ export default function WorldsPage() {
     track(SegmentPlace.FilterClear)
     navigate(
       locations.worlds({
-        order_by: WorldListOrderBy.HIGHEST_RATED,
+        order_by: WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
       })
     )
   }, [params, track])
