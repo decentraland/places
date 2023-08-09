@@ -1,7 +1,7 @@
 .ui.button.button-box {
   box-sizing: border-box;
   border-radius: 5px;
-  width: 144px;
+  width: 50%;
   height: 46px;
   min-width: 60px;
   border: 1px solid #cfcdd4;
