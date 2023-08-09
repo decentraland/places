@@ -4,7 +4,7 @@ import { memo } from "radash/dist/curry"
 
 const DCL_LIST_URL = env(
   `GATSBY_DCL_LIST_URL`,
-  `https://dcl-name-stats.decentraland.org`
+  `https://dcl-lists.decentraland.org`
 )
 
 export const getPois = memo(
