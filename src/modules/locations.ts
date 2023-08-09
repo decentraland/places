@@ -37,7 +37,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   only_pois: false,
   only_featured: false,
   only_highlighted: false,
-  order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+  order_by: PlaceListOrderBy.MOST_ACTIVE,
   order: "desc",
   page: 1,
   search: "",

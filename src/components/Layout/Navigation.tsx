@@ -78,7 +78,7 @@ export default function Navigation(props: NavigationProps) {
           <NavigationMenu.Item
             active={props.activeTab === NavigationTab.Places}
             href={locations.places({
-              order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+              order_by: PlaceListOrderBy.MOST_ACTIVE,
             })}
           >
             {l("navigation.places")}

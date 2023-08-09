@@ -168,6 +168,11 @@ export default function IndexPage() {
         only_featured: false,
         only_pois: !!props.value,
       }
+
+      if (newParams.order_by && newParams.only_pois) {
+        newParams.order_by = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+      }
+
       setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
@@ -187,6 +192,11 @@ export default function IndexPage() {
         only_pois: false,
         only_featured: !!props.value,
       }
+
+      if (newParams.order_by && newParams.only_featured) {
+        newParams.order_by = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+      }
+
       setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
