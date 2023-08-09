@@ -37,7 +37,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   only_pois: false,
   only_featured: false,
   only_highlighted: false,
-  order_by: PlaceListOrderBy.HIGHEST_RATED,
+  order_by: PlaceListOrderBy.MOST_ACTIVE,
   order: "desc",
   page: 1,
   search: "",
@@ -45,7 +45,7 @@ const pageOptionsDefault: PlacesPageOptions = {
 
 const pageWorldsOptionsDefault: WorldsPageOptions = {
   only_favorites: false,
-  order_by: WorldListOrderBy.HIGHEST_RATED,
+  order_by: WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
   order: "desc",
   page: 1,
   search: "",
@@ -81,7 +81,7 @@ export function toWorldsOptions(params: URLSearchParams): WorldsPageOptions {
       oneOf(
         params.get("order_by"),
         getWorldListQuerySchema.properties.order_by.enum
-      ) ?? WorldListOrderBy.HIGHEST_RATED,
+      ) ?? WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
     order:
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,

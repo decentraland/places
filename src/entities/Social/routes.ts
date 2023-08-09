@@ -48,7 +48,7 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
         only_favorites: false,
         only_featured: false,
         only_highlighted: false,
-        order_by: PlaceListOrderBy.HIGHEST_RATED,
+        order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
         order: "asc",
         search: "",
       })

@@ -168,6 +168,11 @@ export default function IndexPage() {
         only_featured: false,
         only_pois: !!props.value,
       }
+
+      if (newParams.order_by && newParams.only_pois) {
+        newParams.order_by = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+      }
+
       setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
@@ -187,6 +192,11 @@ export default function IndexPage() {
         only_pois: false,
         only_featured: !!props.value,
       }
+
+      if (newParams.order_by && newParams.only_featured) {
+        newParams.order_by = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+      }
+
       setAllPlaces([])
       track(SegmentPlace.FilterChange, {
         filters: newParams,
@@ -201,7 +211,7 @@ export default function IndexPage() {
     (_: React.SyntheticEvent<any>, props: { value?: any }) => {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
-        PlaceListOrderBy.HIGHEST_RATED
+        PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
       const newParams = { ...params, order_by: value, page: 1 }
       setAllPlaces([])
       track(SegmentPlace.FilterChange, {
@@ -217,7 +227,7 @@ export default function IndexPage() {
     track(SegmentPlace.FilterClear)
     navigate(
       locations.places({
-        order_by: PlaceListOrderBy.HIGHEST_RATED,
+        order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
       })
     )
   }, [params, track])
