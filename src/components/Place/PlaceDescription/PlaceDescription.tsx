@@ -75,22 +75,24 @@ export default React.memo(function PlaceDescription(
             </div>
           </div>
           <div className="place-description__buttons-container">
-            <Likes
-              likeRate={place?.like_rate}
-              likesCount={(place?.likes || 0) + (place?.dislikes || 0)}
-              handlers={{
-                like: {
-                  onClick: onClickLike,
-                  active: place?.user_like,
-                  loading: loading || loadingLike,
-                },
-                dislike: {
-                  onClick: onClickDislike,
-                  active: place?.user_dislike,
-                  loading: loading || loadingDislike,
-                },
-              }}
-            />
+            {!loading && (
+              <Likes
+                likeRate={place?.like_rate || 0}
+                likesCount={(place?.likes || 0) + (place?.dislikes || 0)}
+                handlers={{
+                  like: {
+                    onClick: onClickLike,
+                    active: place?.user_like,
+                    loading: loadingLike,
+                  },
+                  dislike: {
+                    onClick: onClickDislike,
+                    active: place?.user_dislike,
+                    loading: loadingDislike,
+                  },
+                }}
+              />
+            )}
             <JumpInPositionButton
               href={placerUrl}
               loading={loading}

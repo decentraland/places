@@ -77,22 +77,24 @@ export default React.memo(function WorldDescription(
             </div>
           </div>
           <div className="world-description__buttons-container">
-            <Likes
-              likeRate={world?.like_rate}
-              likesCount={(world?.likes || 0) + (world?.dislikes || 0)}
-              handlers={{
-                like: {
-                  onClick: onClickLike,
-                  active: world?.user_like,
-                  loading: loading || loadingLike,
-                },
-                dislike: {
-                  onClick: onClickDislike,
-                  active: world?.user_dislike,
-                  loading: loading || loadingDislike,
-                },
-              }}
-            />
+            {!loading && (
+              <Likes
+                likeRate={world?.like_rate || 0}
+                likesCount={(world?.likes || 0) + (world?.dislikes || 0)}
+                handlers={{
+                  like: {
+                    onClick: onClickLike,
+                    active: world?.user_like,
+                    loading: loadingLike,
+                  },
+                  dislike: {
+                    onClick: onClickDislike,
+                    active: world?.user_dislike,
+                    loading: loadingDislike,
+                  },
+                }}
+              />
+            )}
             <JumpInPositionButton
               href={placerUrl}
               loading={loading}
