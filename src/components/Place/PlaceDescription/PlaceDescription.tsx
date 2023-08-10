@@ -83,12 +83,12 @@ export default React.memo(function PlaceDescription(
                   like: {
                     onClick: onClickLike,
                     active: place?.user_like,
-                    loading: loading || loadingLike,
+                    loading: loadingLike,
                   },
                   dislike: {
                     onClick: onClickDislike,
                     active: place?.user_dislike,
-                    loading: loading || loadingDislike,
+                    loading: loadingDislike,
                   },
                 }}
               />

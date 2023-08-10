@@ -85,12 +85,12 @@ export default React.memo(function WorldDescription(
                   like: {
                     onClick: onClickLike,
                     active: world?.user_like,
-                    loading: loading || loadingLike,
+                    loading: loadingLike,
                   },
                   dislike: {
                     onClick: onClickDislike,
                     active: world?.user_dislike,
-                    loading: loading || loadingDislike,
+                    loading: loadingDislike,
                   },
                 }}
               />
