@@ -93,7 +93,7 @@ export default function WorldPage() {
     !worldRetrived
   ) {
     return (
-      <Container style={{ paddingTop: "75px" }}>
+      <Container style={{ marginTop: "39px" }}>
         <ItemLayout full>
           <NotFound />
         </ItemLayout>
@@ -149,7 +149,7 @@ export default function WorldPage() {
         <meta name="twitter:site" content={l("social.place.site") || ""} />
       </Helmet>
       <Navigation />
-      <Container style={{ paddingTop: "75px" }}>
+      <Container style={{ marginTop: "39px" }}>
         <ItemLayout>
           <WorldDescription
             world={place}
