@@ -195,6 +195,8 @@ export const placeSchema = schema({
     like_score: {
       type: "number",
       minimum: 0,
+      maximum: 1,
+      default: null,
       description:
         "A calculated number to qualify a place based on its likes and dislikes only taking into account the users with enough VP",
     },

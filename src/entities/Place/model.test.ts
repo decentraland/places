@@ -177,7 +177,7 @@ describe(`findWithAggregates`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_score DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
           LIMIT $2
           OFFSET $3
       `
@@ -221,7 +221,7 @@ describe(`findWithAggregates`, () => {
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         )
-        ORDER BY p.like_score DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
           LIMIT $4
           OFFSET $5
       `
@@ -268,7 +268,7 @@ describe(`findWithAggregates`, () => {
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
         ORDER BY rank DESC,
-          p.like_score DESC, p."deployed_at" desc
+          p.like_score DESC NULLS LAST, p."deployed_at" desc
           LIMIT $5
           OFFSET $6
       `
@@ -459,7 +459,7 @@ describe(`updateLikes`, () => {
             ((c.count_active_likes + 1.9208) / (c.count_active_likes + c.count_active_dislikes)
              - 1.96 * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) / (c.count_active_likes + c.count_active_dislikes)) 
             / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) 
-            ELSE 0 END)
+            ELSE NULL END)
           FROM counted c
           WHERE "id" = $5
       `
@@ -506,7 +506,7 @@ describe(`findWithHotScenes`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_score DESC, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
           LIMIT $2
           OFFSET $3
       `
@@ -608,7 +608,7 @@ describe(`findWorld`, () => {
             AND world is true
             AND hidden is false
             AND world_name IN ($1)
-          ORDER BY p.like_score DESC
+          ORDER BY p.like_score DESC NULLS LAST
             LIMIT $2
             OFFSET $3
       `
@@ -654,7 +654,7 @@ describe(`findWorld`, () => {
           AND hidden is false
           AND world_name IN ($4)
           AND rank > 0
-        ORDER BY rank DESC, p.like_score DESC
+        ORDER BY rank DESC, p.like_score DESC NULLS LAST
           LIMIT $5
           OFFSET $6
       `
