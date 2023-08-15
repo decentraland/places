@@ -37,7 +37,8 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
           <ThumbUpFilled />
         </div>
         <p>
-          {toPercent(likeRate)}% <span>({likesCount})</span>
+          {likeRate === -1 ? "-" : toPercent(likeRate)}%{" "}
+          <span>({likesCount})</span>
         </p>
         <Info />
       </div>

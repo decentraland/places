@@ -29,7 +29,7 @@ export default React.memo(function UserLikePercentage(
       ])}
     >
       <ThumbUp nohover active />
-      {!loading && `${toPercent(value)}%`}
+      {!loading && `${value === -1 ? "-" : toPercent(value)}%`}
     </Label>
   )
 })
