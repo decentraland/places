@@ -80,7 +80,7 @@ export default React.memo(function WorldDescription(
             {!loading && (
               <Likes
                 likeRate={
-                  world.like_score === null ? -1 : world.like_score || 0
+                  world?.like_score === null ? -1 : world?.like_score || 0
                 }
                 likesCount={(world?.likes || 0) + (world?.dislikes || 0)}
                 handlers={{
