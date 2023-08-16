@@ -11,7 +11,7 @@ import { ThumbUp } from "../../Icon/ThumbUp"
 import "./UserLikePercentage.css"
 
 export type UserLikePercentageProps = LabelProps & {
-  value: number
+  value: number | null
   loading?: boolean
 }
 
@@ -29,7 +29,7 @@ export default React.memo(function UserLikePercentage(
       ])}
     >
       <ThumbUp nohover active />
-      {!loading && `${value === -1 ? "-" : toPercent(value)}%`}
+      {!loading && `${value === null ? "-" : toPercent(value)}%`}
     </Label>
   )
 })

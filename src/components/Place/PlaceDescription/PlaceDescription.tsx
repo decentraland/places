@@ -78,7 +78,7 @@ export default React.memo(function PlaceDescription(
             {!loading && (
               <Likes
                 likeRate={
-                  place?.like_score === null ? -1 : place?.like_rate || 0
+                  place?.like_score === null ? null : place?.like_rate || 0
                 }
                 likesCount={(place?.likes || 0) + (place?.dislikes || 0)}
                 handlers={{

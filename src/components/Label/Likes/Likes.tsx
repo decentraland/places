@@ -9,7 +9,7 @@ import { ThumbUpFilled } from "../../Icon/ThumbUp"
 import "./Likes.css"
 
 type LikesProps = {
-  likeRate: number
+  likeRate: number | null
   likesCount: number
   handlers: {
     like: {
@@ -37,7 +37,7 @@ export const Likes: React.FunctionComponent<LikesProps> = ({
           <ThumbUpFilled />
         </div>
         <p>
-          {likeRate === -1 ? "-" : toPercent(likeRate)}%{" "}
+          {likeRate === null ? "-" : toPercent(likeRate)}%{" "}
           <span>({likesCount})</span>
         </p>
         <Info />
