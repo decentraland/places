@@ -63,8 +63,6 @@ export default function Navigation(props: NavigationProps) {
     [location.pathname, params]
   )
 
-  const isInPlaceOrWorld = location
-
   return (
     <NavigationMenu
       isFullScreen={true}
