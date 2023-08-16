@@ -8,7 +8,7 @@ import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { explorerPlaceUrl } from "../../../entities/Place/utils"
+import { explorerUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import UserCount from "../../Label/UserCount/UserCount"
@@ -24,7 +24,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   const { item, loading } = props
 
   const l = useFormatMessage()
-  const placeJumpInUrl = item && explorerPlaceUrl(item)
+  const placeJumpInUrl = item && explorerUrl(item)
   const placeDetailUrl = useMemo(
     () => item && locations.place(item.base_position),
     [item]
