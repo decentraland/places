@@ -39,21 +39,21 @@ export function siteUrl(pathname = "") {
 }
 
 export function explorerUrl(
-  place: Pick<PlaceAttributes, "base_position" | "world_name">,
+  place?: Pick<PlaceAttributes, "base_position" | "world_name">,
   realm?: string
 ) {
-  return place.world_name
+  return place?.world_name
     ? explorerWorldUrl(place)
     : explorerPlaceUrl(place, realm)
 }
 
 /** @private */
 function explorerPlaceUrl(
-  place: Pick<PlaceAttributes, "base_position">,
+  place?: Pick<PlaceAttributes, "base_position">,
   realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
-  if (place) {
+  if (place?.base_position) {
     target.searchParams.set("position", place.base_position)
   }
   if (realm) {
