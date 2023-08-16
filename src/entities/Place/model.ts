@@ -146,7 +146,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
-      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" desc`
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
     )
 
     const sql = SQL`
@@ -445,7 +445,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
-      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST`
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
     )
 
     const sql = SQL`
@@ -498,8 +498,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
       ORDER BY 
-      ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
+      ${conditional(!!options.search, SQL`, rank DESC`)}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}      
     `

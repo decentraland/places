@@ -11,7 +11,9 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     default: null,
   })
 
-  pgm.createIndex(PlaceModel.tableName, "like_score")
+  pgm.createIndex(PlaceModel.tableName, ["like_score", "deployed_at"], {
+    where: "disabled is false",
+  })
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
@@ -20,5 +22,5 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     default: 0,
   })
 
-  pgm.dropIndex(PlaceModel.tableName, "like_score")
+  pgm.dropIndex(PlaceModel.tableName, ["like_score", "deployed_at"])
 }

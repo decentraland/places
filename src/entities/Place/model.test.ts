@@ -177,7 +177,7 @@ describe(`findWithAggregates`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $2
           OFFSET $3
       `
@@ -221,7 +221,7 @@ describe(`findWithAggregates`, () => {
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         )
-        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $4
           OFFSET $5
       `
@@ -268,7 +268,7 @@ describe(`findWithAggregates`, () => {
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
         ORDER BY rank DESC,
-          p.like_score DESC NULLS LAST, p."deployed_at" desc
+          p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
           OFFSET $6
       `
@@ -506,7 +506,7 @@ describe(`findWithHotScenes`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" desc
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $2
           OFFSET $3
       `
@@ -608,7 +608,7 @@ describe(`findWorld`, () => {
             AND world is true
             AND hidden is false
             AND world_name IN ($1)
-          ORDER BY p.like_score DESC NULLS LAST
+          ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
             LIMIT $2
             OFFSET $3
       `
@@ -654,7 +654,7 @@ describe(`findWorld`, () => {
           AND hidden is false
           AND world_name IN ($4)
           AND rank > 0
-        ORDER BY rank DESC, p.like_score DESC NULLS LAST
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC , rank DESC
           LIMIT $5
           OFFSET $6
       `
