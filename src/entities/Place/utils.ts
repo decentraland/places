@@ -18,12 +18,6 @@ const DECENTRALAND_URL =
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
 
-export function explorerUrl(pathname = "") {
-  const target = new URL(DECENTRALAND_URL)
-  target.pathname = pathname
-  return target
-}
-
 export function placeUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
@@ -44,12 +38,22 @@ export function siteUrl(pathname = "") {
   return target
 }
 
-export function explorerPlaceUrl(
-  place: Pick<PlaceAttributes, "base_position">,
+export function explorerUrl(
+  place?: Pick<PlaceAttributes, "base_position" | "world_name">,
+  realm?: string
+) {
+  return place?.world_name
+    ? explorerWorldUrl(place)
+    : explorerPlaceUrl(place, realm)
+}
+
+/** @private */
+function explorerPlaceUrl(
+  place?: Pick<PlaceAttributes, "base_position">,
   realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
-  if (place) {
+  if (place?.base_position) {
     target.searchParams.set("position", place.base_position)
   }
   if (realm) {
@@ -59,9 +63,8 @@ export function explorerPlaceUrl(
   return target.toString()
 }
 
-export function explorerWorldUrl(
-  place: Pick<PlaceAttributes, "world_name">
-): string {
+/** @private */
+function explorerWorldUrl(place: Pick<PlaceAttributes, "world_name">): string {
   const target = new URL("/", DECENTRALAND_URL)
   if (place) {
     target.searchParams.set("realm", place.world_name!)

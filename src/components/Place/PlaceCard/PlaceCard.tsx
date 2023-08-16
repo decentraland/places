@@ -9,10 +9,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import {
-  explorerPlaceUrl,
-  explorerWorldUrl,
-} from "../../../entities/Place/utils"
+import { explorerUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import FavoriteButton from "../../Button/FavoriteButton"
@@ -59,13 +56,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
     }
   }, [place])
 
-  const placerUrl = useMemo(() => {
-    if (place && !place.world) {
-      return explorerPlaceUrl(place)
-    } else if (place && place.world) {
-      return explorerWorldUrl(place)
-    }
-  }, [place])
+  const placerUrl = useMemo(() => place && explorerUrl(place), [place])
 
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()

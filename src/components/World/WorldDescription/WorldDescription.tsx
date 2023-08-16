@@ -5,7 +5,7 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { explorerPlaceUrl } from "../../../entities/Place/utils"
+import { explorerUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
@@ -44,7 +44,7 @@ export default React.memo(function WorldDescription(
     loadingFavorite,
   } = props
   const l = useFormatMessage()
-  const placerUrl = explorerPlaceUrl(world)
+  const placerUrl = explorerUrl(world)
 
   const handleJumpInTrack = useTrackLinkContext()
 
