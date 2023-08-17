@@ -103,7 +103,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
             />
             <UserLikePercentage
               loading={loading}
-              value={place?.like_rate || null}
+              value={place?.like_rate ?? null}
             />
           </div>
         </div>
