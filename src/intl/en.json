@@ -5,7 +5,6 @@
     "order_by": {
       "updated_at": "Recently Updated",
       "like_rate": "Highest Rated",
-      "like_score": "Highest Rated",
       "most_active": "Most Active"
     },
     "place_share": "Look at this place I found in Decentraland: "

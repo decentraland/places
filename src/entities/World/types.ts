@@ -9,7 +9,7 @@ export type GetWorldListQuery = {
 }
 
 export enum WorldListOrderBy {
-  HIGHEST_RATED_LOWER_BOUND_SCORE = "like_score",
+  HIGHEST_RATED_LOWER_BOUND_SCORE = "like_rate",
   MOST_ACTIVE = "most_active",
 }
 
