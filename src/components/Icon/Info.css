@@ -15,6 +15,7 @@
 .ui.top.center.popup:before {
   background-color: #716b7c;
   margin-left: -5px;
+  bottom: -0.3em;
 }
 
 .ui.top.popup {

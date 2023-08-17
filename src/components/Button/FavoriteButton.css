@@ -12,6 +12,8 @@
   background-color: transparent;
   margin-left: 10px;
   background-color: transparent;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 .ui.button.heart-button.primary:hover,

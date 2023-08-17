@@ -173,9 +173,9 @@ export default function OverviewPage() {
       )}
       <OverviewList
         places={hightRatedList}
-        title={l("pages.overview.highest_rated")}
+        title={l("pages.overview.best")}
         href={locations.places({
-          order_by: PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+          order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         })}
         onClickFavorite={(e, place) =>
           handleFavorite(place.id, place, {
