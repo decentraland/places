@@ -177,7 +177,7 @@ describe(`findWithAggregates`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_rate DESC NULLS LAST, p."deployed_at" DESC
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $2
           OFFSET $3
       `
@@ -221,7 +221,7 @@ describe(`findWithAggregates`, () => {
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         )
-        ORDER BY p.like_rate DESC NULLS LAST, p."deployed_at" DESC
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $4
           OFFSET $5
       `
@@ -268,7 +268,7 @@ describe(`findWithAggregates`, () => {
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
         )
         ORDER BY rank DESC,
-          p.like_rate DESC NULLS LAST, p."deployed_at" DESC
+          p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
           OFFSET $6
       `
@@ -452,7 +452,10 @@ describe(`updateLikes`, () => {
           SET
             "likes" = c.count_likes,
             "dislikes" = c.count_dislikes,
-          "like_rate" = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN 
+            "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
+                                ELSE c.count_active_likes / c.count_active_total::float
+                          END),
+          "like_score" = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN 
             ((c.count_active_likes + 1.9208) / (c.count_active_likes + c.count_active_dislikes)
              - 1.96 * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) / (c.count_active_likes + c.count_active_dislikes)) 
             / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) 
@@ -503,7 +506,7 @@ describe(`findWithHotScenes`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-        ORDER BY p.like_rate DESC NULLS LAST, p."deployed_at" DESC
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $2
           OFFSET $3
       `
@@ -605,7 +608,7 @@ describe(`findWorld`, () => {
             AND world is true
             AND hidden is false
             AND world_name IN ($1)
-          ORDER BY p.like_rate DESC NULLS LAST, p."deployed_at" DESC
+          ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC
             LIMIT $2
             OFFSET $3
       `
@@ -651,7 +654,7 @@ describe(`findWorld`, () => {
           AND hidden is false
           AND world_name IN ($4)
           AND rank > 0
-        ORDER BY p.like_rate DESC NULLS LAST, p."deployed_at" DESC , rank DESC
+        ORDER BY p.like_score DESC NULLS LAST, p."deployed_at" DESC , rank DESC
           LIMIT $5
           OFFSET $6
       `

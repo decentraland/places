@@ -192,13 +192,19 @@ export const placeSchema = schema({
       minimum: 0,
       description: "The number of dislikes on the place",
     },
-    like_rate: {
+    like_score: {
       type: "number",
       minimum: 0,
       maximum: 1,
       default: null,
       description:
-        "A calculated decimal number to qualify a place based on its likes and dislikes only taking into account the users with enough VP",
+        "A calculated number to qualify a place based on its likes and dislikes only taking into account the users with enough VP",
+    },
+    like_rate: {
+      type: "number",
+      minimum: 0,
+      description:
+        "The percentage of likes on the place expressed on decimal fraction",
     },
     favorites: {
       type: "number",
