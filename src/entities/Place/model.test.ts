@@ -452,7 +452,7 @@ describe(`updateLikes`, () => {
           SET
             "likes" = c.count_likes,
             "dislikes" = c.count_dislikes,
-            "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
+            "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
                                 ELSE c.count_active_likes / c.count_active_total::float
                           END),
           "like_score" = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN 

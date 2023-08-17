@@ -142,7 +142,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+    const orderBy = PlaceListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
@@ -312,7 +312,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SET
         "likes" = c.count_likes,
         "dislikes" = c.count_dislikes,
-        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
+        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
                             ELSE c.count_active_likes / c.count_active_total::float
                        END),
         "like_score" = (${PlaceModel.calculateLikeScoreStatement()})
@@ -441,7 +441,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+    const orderBy = WorldListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(

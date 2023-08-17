@@ -11,6 +11,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     default: null,
   })
 
+  pgm.alterColumn(PlaceModel.tableName, "like_rate", {
+    notNull: false,
+    default: null,
+  })
+
   pgm.createIndex(PlaceModel.tableName, ["like_score", "deployed_at"], {
     where: "disabled is false",
   })
@@ -18,6 +23,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
   pgm.alterColumn(PlaceModel.tableName, "like_score", {
+    notNull: true,
+    default: 0,
+  })
+
+  pgm.alterColumn(PlaceModel.tableName, "like_rate", {
     notNull: true,
     default: 0,
   })
