@@ -4,8 +4,7 @@
     "count_places": "{count} {count, plural, one {place} other {places}}",
     "order_by": {
       "updated_at": "Recently Updated",
-      "like_rate": "Highest Rated",
-      "like_score": "Highest Rated",
+      "like_score": "Best",
       "most_active": "Most Active"
     },
     "place_share": "Look at this place I found in Decentraland: "
@@ -80,6 +79,7 @@
       "title": "Places",
       "search_the_metaverse": "Search the Metaverse",
       "highest_rated": "Highest Rated",
+      "best": "Best",
       "featured": "Featured",
       "most_active": "Most Active",
       "my_favorites": "My Favorites",

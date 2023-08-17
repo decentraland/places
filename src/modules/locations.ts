@@ -45,7 +45,7 @@ const pageOptionsDefault: PlacesPageOptions = {
 
 const pageWorldsOptionsDefault: WorldsPageOptions = {
   only_favorites: false,
-  order_by: WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+  order_by: WorldListOrderBy.LIKE_SCORE_BEST,
   order: "desc",
   page: 1,
   search: "",
@@ -81,7 +81,7 @@ export function toWorldsOptions(params: URLSearchParams): WorldsPageOptions {
       oneOf(
         params.get("order_by"),
         getWorldListQuerySchema.properties.order_by.enum
-      ) ?? WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
+      ) ?? WorldListOrderBy.LIKE_SCORE_BEST,
     order:
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
