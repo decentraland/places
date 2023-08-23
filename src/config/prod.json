@@ -9,5 +9,6 @@
   "GATSBY_SEGMENT_KEY": "ArbvD4yfvg8hz6UwFHq38A9mQ6a4hHHC",
   "WORLDS_INDEX_API": "https://dcl-name-stats.decentraland.org/should-index",
   "WORLDS_FIND_OUT_URL": "https://decentraland.org/blog/announcements/introducing-decentraland-worlds-beta-your-own-3d-space-in-the-metaverse",
-  "GATSBY_DCL_LIST_URL": "https://dcl-lists.decentraland.org"
+  "GATSBY_DCL_LIST_URL": "https://dcl-lists.decentraland.org",
+  "GATSBY_SSO_URL": "https://id.decentraland.org"
 }
