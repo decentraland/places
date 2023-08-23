@@ -35,8 +35,10 @@ import UserMenu from "./src/components/Layout/UserMenu"
 
 export const registerServiceWorker = () => true
 
+const ssoUrl = env("SSO_URL")
+
 export const wrapRootElement = ({ element }) => (
-  <AuthProvider sso={env("SSO_URL")}>
+  <AuthProvider sso={ssoUrl}>
     <FeatureFlagProvider applicationName={["places", "dapps"]}>
       <ShareProvider>{element}</ShareProvider>
     </FeatureFlagProvider>
