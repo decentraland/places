@@ -5,7 +5,7 @@
   "GATSBY_PLACES_URL": "/api",
   "GATSBY_PROFILE_URL": "https://peer.decentraland.org",
   "GATSBY_INTERCOM_APP_ID": "z0h94kay",
-  "GATSBY_SENTRY_DSN": "https://754dd59c4f095acc767129835143622e@o4504361728212992.ingest.sentry.io/4505748390346753",
+  "GATSBY_SENTRY_SRC": "https://js.sentry-cdn.com/5c3e35e40a55fb32038b2ca7b25b4f38.min.js",
   "GATSBY_SEGMENT_KEY": "e7wld8fcDnqyiQjjDFJ6DCnV1S89G3tS",
   "WORLDS_INDEX_API": "https://dcl-name-stats.decentraland.org/should-index",
   "WORLDS_FIND_OUT_URL": "https://decentraland.org/blog/announcements/introducing-decentraland-worlds-beta-your-own-3d-space-in-the-metaverse",
