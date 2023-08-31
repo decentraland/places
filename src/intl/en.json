@@ -11,14 +11,14 @@
   },
   "navigation": {
     "overview": "Overview",
-    "places": "Places",
+    "places": "Genesis City",
     "favorites": "Favorites",
     "worlds": "Worlds",
     "faq": "FAQ",
     "faq_target": "https://docs.decentraland.org/creator/places/faq/",
     "search": {
-      "overview": "Search Places and Worlds...",
-      "places": "Search Places...",
+      "overview": "Search Genesis City and Worlds...",
+      "places": "Search Genesis City...",
       "worlds": "Search Worlds...",
       "favorites": "Search Favorites...",
       "default": "Search..."
@@ -76,7 +76,7 @@
   },
   "pages": {
     "overview": {
-      "title": "Places",
+      "title": "Genesis City",
       "search_the_metaverse": "Search the Metaverse",
       "highest_rated": "Highest Rated",
       "best": "Best",
@@ -87,11 +87,11 @@
       "points_of_interest": "Points of Interest",
       "view_all": "view all",
       "worlds": "Worlds",
-      "places": "Places",
+      "places": "Genesis City",
       "search_results_title": "Search results for"
     },
     "places": {
-      "title": "Places",
+      "title": "Genesis City",
       "filters_title": "Sort and filter",
       "filters_places": "Filters",
       "filter": "Filter",
@@ -103,9 +103,9 @@
     },
     "favorites": {
       "title": "Favorites",
-      "title_places": "Favorites Places",
+      "title_places": "Favorites Genesis City",
       "title_worlds": "Favorites Worlds",
-      "places": "Places",
+      "places": "Genesis City",
       "worlds": "Worlds",
       "no_favorite_selected": "You haven’t added any Places to your favorites",
       "no_world_selected": "You haven’t saved any Worlds to your favorites",
