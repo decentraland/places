@@ -7,9 +7,7 @@ import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
 import { sqsMessageWorld } from "../../__data__/sqs"
 import { worldContentEntitySceneParalax } from "../../__data__/world"
 import {
-  explorerPlaceUrl,
   explorerUrl,
-  explorerWorldUrl,
   getThumbnailFromContentDeployment,
   getThumbnailFromDeployment,
   placeUrl,
@@ -19,12 +17,6 @@ import {
 } from "./utils"
 
 describe("Instance of URL", () => {
-  test("should return an URL instance of play decentraland", () => {
-    const url = explorerUrl("/")
-    expect(url).toBeInstanceOf(URL)
-    expect(url.toString()).toBe("https://play.decentraland.org/")
-  })
-
   test("should return an URL instance of a place in places", () => {
     const url = placeUrl(placeGenesisPlaza)
     expect(url).toBeInstanceOf(URL)
@@ -40,20 +32,20 @@ describe("Instance of URL", () => {
   })
 })
 
-describe("explorerPlaceUrl", () => {
+describe("explorerUrl", () => {
   test("should return a string with an URL of a places with the realm", () => {
-    const url = explorerPlaceUrl({ base_position: "-9,-9" }, "dg")
+    const url = explorerUrl({ base_position: "-9,-9", world_name: null }, "dg")
     expect(url).toBe("https://play.decentraland.org/?position=-9%2C-9&realm=dg")
   })
   test("should return a string with an URL of a places without the realm", () => {
-    const url = explorerPlaceUrl({ base_position: "-9,-9" })
+    const url = explorerUrl({ base_position: "-9,-9", world_name: null })
     expect(url).toBe("https://play.decentraland.org/?position=-9%2C-9")
   })
-})
-
-describe("explorerWorldUrl", () => {
   test("should return a string with an URL of a world", () => {
-    const url = explorerWorldUrl({ world_name: "paralax.dcl.eth" })
+    const url = explorerUrl({
+      world_name: "paralax.dcl.eth",
+      base_position: "-9,-9",
+    })
     expect(url).toBe("https://play.decentraland.org/?realm=paralax.dcl.eth")
   })
 })

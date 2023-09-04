@@ -4,23 +4,15 @@ import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
-import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
-import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { Link, navigate } from "decentraland-gatsby/dist/plugins/intl"
+import { Link } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import env from "decentraland-gatsby/dist/utils/env"
-import { Box } from "decentraland-ui/dist/components/Box/Box"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
-import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
-import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
-import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
-import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
@@ -28,12 +20,11 @@ import NoResults from "../components/Layout/NoResults"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
-import { getWorldListQuerySchema } from "../entities/World/schemas"
-import { WorldListOptions, WorldListOrderBy } from "../entities/World/types"
+import { WorldListOptions } from "../entities/World/types"
 import usePlacesManager from "../hooks/usePlacesManager"
 import informationIcon from "../images/Information-icon.svg"
 import { FeatureFlags } from "../modules/ff"
-import locations, { toWorldsOptions } from "../modules/locations"
+import { toWorldsOptions } from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
 
 import "./worlds.css"
@@ -47,7 +38,6 @@ const WORLDS_FIND_OUT_URL = env(
 
 export default function WorldsPage() {
   const l = useFormatMessage()
-  const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
   const params = useMemo(
@@ -146,31 +136,6 @@ export default function WorldsPage() {
     [params, track, offset]
   )
 
-  const handleChangeOrder = useCallback(
-    (_: React.SyntheticEvent<any>, props: { value?: any }) => {
-      const value =
-        oneOf(props.value, getWorldListQuerySchema.properties.order_by.enum) ??
-        WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
-      const newParams = { ...params, order_by: value, page: 1 }
-      setAllWorlds([])
-      track(SegmentPlace.FilterChange, {
-        filters: newParams,
-        place: SegmentPlace.WorldsChangeOrder,
-      })
-      navigate(locations.worlds(newParams))
-    },
-    [params, track]
-  )
-
-  const handleClearFilter = useCallback(() => {
-    track(SegmentPlace.FilterClear)
-    navigate(
-      locations.worlds({
-        order_by: WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
-      })
-    )
-  }, [params, track])
-
   const [ff] = useFeatureFlagContext()
 
   if (ff.flags[FeatureFlags.Maintenance]) {
@@ -223,64 +188,7 @@ export default function WorldsPage() {
           </Grid.Column>
         </Grid.Row>
         <Grid.Row>
-          {isMobile && (
-            <Grid.Column tablet={4} className="worlds-page__filters">
-              <FilterContainerModal
-                title="Filters"
-                action={
-                  <>
-                    <Icon name="filter" /> {l("pages.places.filters_title")}
-                  </>
-                }
-                onClear={handleClearFilter}
-              >
-                <Box header={l("pages.places.sort_by")} borderless>
-                  <Select
-                    value={params.order_by}
-                    text={l(`general.order_by.${params.order_by}`)}
-                    onChange={handleChangeOrder}
-                    options={getWorldListQuerySchema.properties.order_by.enum.map(
-                      (orderBy) => {
-                        return {
-                          key: orderBy,
-                          value: orderBy,
-                          text: l(`general.order_by.${orderBy}`),
-                        }
-                      }
-                    )}
-                  />
-                </Box>
-              </FilterContainerModal>
-            </Grid.Column>
-          )}
           <Grid.Column tablet={16} className="worlds-page__list">
-            {!isMobile && (
-              <div>
-                <HeaderMenu stackable>
-                  <HeaderMenu.Left>{}</HeaderMenu.Left>
-                  <HeaderMenu.Right>
-                    <Dropdown
-                      text={l(`general.order_by.${params.order_by}`)}
-                      direction="left"
-                    >
-                      <Dropdown.Menu>
-                        {getWorldListQuerySchema.properties.order_by.enum.map(
-                          (orderBy) => {
-                            return (
-                              <Dropdown.Item
-                                value={orderBy}
-                                text={l(`general.order_by.${orderBy}`)}
-                                onClick={handleChangeOrder}
-                              />
-                            )
-                          }
-                        )}
-                      </Dropdown.Menu>
-                    </Dropdown>
-                  </HeaderMenu.Right>
-                </HeaderMenu>
-              </div>
-            )}
             <div className="worlds-page__disclamer">
               <img src={informationIcon} />
               <span>{l("pages.worlds.disclamer")}</span>

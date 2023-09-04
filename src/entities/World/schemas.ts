@@ -32,10 +32,7 @@ export const getWorldListQuerySchema = schema({
     order_by: {
       type: "string",
       description: "Order worlds by",
-      enum: [
-        WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE,
-        WorldListOrderBy.MOST_ACTIVE,
-      ],
+      enum: [WorldListOrderBy.LIKE_SCORE_BEST, WorldListOrderBy.MOST_ACTIVE],
       nullable: true as any,
     },
     order: {
@@ -133,6 +130,22 @@ export const worldSchema = schema({
       type: "number",
       minimum: 0,
       description: "The number of dislikes on the world",
+    },
+    like_score: {
+      type: "number",
+      minimum: 0,
+      maximum: 1,
+      default: null,
+      description:
+        "A calculated number to qualify a place based on its likes and dislikes only taking into account the users with enough VP",
+    },
+    like_rate: {
+      type: "number",
+      minimum: 0,
+      maximum: 1,
+      default: null,
+      description:
+        "The percentage of likes on the place expressed on decimal fraction",
     },
     favorites: {
       type: "number",

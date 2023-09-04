@@ -142,11 +142,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = PlaceListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+    const orderBy = PlaceListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
-      `p.${orderBy} ${orderDirection.toUpperCase()}, p."deployed_at" desc`
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
     )
 
     const sql = SQL`
@@ -312,7 +312,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SET
         "likes" = c.count_likes,
         "dislikes" = c.count_dislikes,
-        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN 0
+        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
                             ELSE c.count_active_likes / c.count_active_total::float
                        END),
         "like_score" = (${PlaceModel.calculateLikeScoreStatement()})
@@ -441,10 +441,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = WorldListOrderBy.HIGHEST_RATED_LOWER_BOUND_SCORE
+    const orderBy = WorldListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
-    const order = SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()}`)
+    const order = SQL.raw(
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
+    )
 
     const sql = SQL`
       SELECT p.*
@@ -561,6 +563,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     / (c.count_active_likes + c.count_active_dislikes) - 1.96 
     * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) 
     / (c.count_active_likes + c.count_active_dislikes)) 
-    / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE 0 END`
+    / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE NULL END`
   }
 }

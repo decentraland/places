@@ -7,7 +7,7 @@
   border: 1px solid #cfcdd4;
   display: flex;
   align-items: center;
-  justify-content: space-evenly;
+  justify-content: center;
   background-color: transparent;
   padding: 0;
 }
@@ -20,11 +20,12 @@
 }
 
 .ui.button.button-box .ui.label {
-  margin: 0;
+  margin: 0 0 0 5px;
   background-color: transparent;
   text-transform: uppercase;
   color: black;
   font-weight: 700;
+  padding: 0;
 }
 
 .ui.button.button-box.loading .ui.label,
