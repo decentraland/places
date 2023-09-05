@@ -97,6 +97,7 @@ app.use(
         "https://widget.intercom.io",
         "https://js.intercomcdn.com",
         "https://verify.walletconnect.com",
+        "https://js.sentry-cdn.com",
       ].join(" "),
     },
   })
