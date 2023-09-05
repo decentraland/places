@@ -97,7 +97,11 @@ app.use(
         "https://widget.intercom.io",
         "https://js.intercomcdn.com",
         "https://verify.walletconnect.com",
+        "https://js.sentry-cdn.com",
+        "https://browser.sentry-cdn.com",
       ].join(" "),
+      connectSrc: ["https:", "*.sentry.io"].join(" "),
+      workerSrc: ["'self'", "blob:"].join(" "),
     },
   })
 )
