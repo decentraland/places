@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@dcl/schemas": "^7.3.4",
+    "@sentry/browser": "^7.66.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.4.0",
@@ -18,7 +19,7 @@
     "caniuse-lite": "^1.0.30001470",
     "core-js": "^3.22.2",
     "cssnano": "^5.0.10",
-    "decentraland-gatsby": "^5.75.1",
+    "decentraland-gatsby": "^5.77.1",
     "es6-shim": "^0.35.6",
     "express-fileupload": "^1.2.1",
     "gatsby": "4.23.0",
