@@ -28,7 +28,7 @@ jobs:
           cache: 'npm'
 
       - name: installing
-        run: npm ci
+        run: npm install
 
       - name: linters
         uses: wearerequired/lint-action@v1
