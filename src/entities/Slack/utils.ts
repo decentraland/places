@@ -1,6 +1,5 @@
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch from "isomorphic-fetch"
 import isURL from "validator/lib/isURL"
 
 import { PlaceAttributes } from "../Place/types"
