@@ -46,7 +46,7 @@
     "rehype-raw": "^6.1.1",
     "rehype-sanitize": "^5.0.1",
     "rrule": "^2.6.8",
-    "sharp": "^0.29.3",
+    "sharp": "^0.32.5",
     "uuid": "^8.3.2",
     "web-push": "^3.4.5",
     "xml": "^1.0.1"
