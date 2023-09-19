@@ -271,3 +271,18 @@ export const placeSchema = schema({
 
 export const placeResponseSchema = schema.api(placeSchema)
 export const placeListResponseSchema = schema.api(schema.array(placeSchema))
+
+export const updateRatingBodySchema = schema({
+  type: "object",
+  description: "content rating body needed",
+  additionalProperties: false,
+  required: ["content_rating"],
+  properties: {
+    content_rating: {
+      type: "string",
+      description: "Rating for the place",
+      // TODO: verify rating categories
+      enum: ["E", "T", "A", "R"],
+    },
+  },
+})

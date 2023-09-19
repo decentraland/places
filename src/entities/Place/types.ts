@@ -87,3 +87,15 @@ export const unwantedThumbnailHash = [
   "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
   "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
 ]
+
+// TODO: verify rating categories
+export enum PlaceRating {
+  EVERYONE = "E",
+  TEEN = "T",
+  ADULT = "A",
+  RESTRICTED = "R",
+}
+
+export type UpdateRatingBody = {
+  content_rating: PlaceRating
+}
