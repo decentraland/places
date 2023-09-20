@@ -5,9 +5,12 @@ import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
-import getContentRating from "../../utils/rating/getContentRating"
+import getContentRating, {
+  isDowngradingRating,
+} from "../../utils/rating/contentRating"
+import { notifyDowngradeRating } from "../Slack/utils"
 import PlaceModel from "./model"
-import { PlaceAttributes } from "./types"
+import { PlaceAttributes, PlaceRating } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
 
 export type PlacesStatic = {
@@ -38,6 +41,19 @@ export function createPlaceFromEntityScene(
     contact_name = null
   }
 
+  const contentEntitySceneRating =
+    (entityScene?.metadata?.policy?.contentRating as PlaceRating) ||
+    PlaceRating.RATING_PENDING
+  if (
+    data.content_rating &&
+    isDowngradingRating(
+      contentEntitySceneRating,
+      data.content_rating as PlaceRating
+    )
+  ) {
+    notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)
+  }
+
   const placeParsed = {
     id: uuid(),
     owner: entityScene?.metadata?.owner || null,
@@ -54,7 +70,7 @@ export function createPlaceFromEntityScene(
     base_position: entityScene?.metadata?.scene?.base || positions[0],
     contact_name,
     contact_email: entityScene?.metadata?.contact?.email || null,
-    content_rating: getContentRating(entityScene),
+    content_rating: getContentRating(entityScene, data),
     highlighted: false,
     highlighted_image: null,
     featured: false,
