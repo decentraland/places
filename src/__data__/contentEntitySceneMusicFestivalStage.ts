@@ -2474,5 +2474,12 @@ export const contentEntitySceneMusicFestivalStage: ContentEntityScene = {
       "ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE",
       "ALLOW_TO_TRIGGER_AVATAR_EMOTE",
     ],
+    policy: {
+      contentRating: "M",
+      fly: true,
+      voiceEnabled: true,
+      blacklist: [],
+      teleportPosition: "0,0",
+    },
   },
 }

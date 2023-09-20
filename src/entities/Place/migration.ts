@@ -5,6 +5,7 @@ import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
+import getContentRating from "../../utils/rating/getContentRating"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
@@ -53,7 +54,7 @@ export function createPlaceFromEntityScene(
     base_position: entityScene?.metadata?.scene?.base || positions[0],
     contact_name,
     contact_email: entityScene?.metadata?.contact?.email || null,
-    content_rating: entityScene?.metadata?.policy?.contentRating || null,
+    content_rating: getContentRating(entityScene),
     highlighted: false,
     highlighted_image: null,
     featured: false,

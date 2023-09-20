@@ -1,8 +1,9 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { v4 as uuid } from "uuid"
 
+import getContentRating from "../../../utils/rating/getContentRating"
 import PlaceModel from "../../Place/model"
-import { PlaceAttributes } from "../../Place/types"
+import { PlaceAttributes, PlaceRating } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
 
@@ -94,7 +95,7 @@ export function createPlaceFromContentEntityScene(
     positions,
     contact_name,
     contact_email: contentEntityScene?.metadata?.contact?.email || null,
-    content_rating: contentEntityScene?.metadata?.policy?.contentRating || null,
+    content_rating: getContentRating(contentEntityScene),
     created_at: now,
     deployed_at: new Date(contentEntityScene.timestamp),
     disabled_at:

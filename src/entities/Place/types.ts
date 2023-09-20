@@ -88,8 +88,8 @@ export const unwantedThumbnailHash = [
   "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
 ]
 
-// TODO: verify rating categories
 export enum PlaceRating {
+  RATING_PENDING = "RP",
   EVERYONE = "E",
   TEEN = "T",
   ADULT = "A",

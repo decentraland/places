@@ -176,7 +176,7 @@ export const placeSchema = schema({
     content_rating: {
       type: "string",
       minLength: 0,
-      maxLength: 5000,
+      maxLength: 1,
       description: "The content rating on the place",
     },
     likes: {
