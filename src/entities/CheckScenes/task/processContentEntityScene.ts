@@ -1,11 +1,14 @@
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { v4 as uuid } from "uuid"
 
 import getContentRating, {
   isDowngradingRating,
 } from "../../../utils/rating/contentRating"
 import PlaceModel from "../../Place/model"
-import { PlaceAttributes, PlaceRating } from "../../Place/types"
+import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
 import { notifyDowngradeRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
@@ -72,13 +75,13 @@ export function createPlaceFromContentEntityScene(
     null
 
   const contentEntitySceneRating =
-    (contentEntityScene?.metadata?.policy?.contentRating as PlaceRating) ||
-    PlaceRating.RATING_PENDING
+    contentEntityScene?.metadata?.policy?.contentRating ||
+    SceneContentRating.RATING_PENDING
   if (
     data.content_rating &&
     isDowngradingRating(
       contentEntitySceneRating,
-      data.content_rating as PlaceRating
+      data.content_rating as SceneContentRating
     )
   ) {
     notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)

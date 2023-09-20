@@ -1,8 +1,9 @@
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 import isURL from "validator/lib/isURL"
 
-import { PlaceAttributes, PlaceRating } from "../Place/types"
+import { PlaceAttributes } from "../Place/types"
 import { placeUrl, worldUrl } from "../Place/utils"
 
 const SLACK_WEBHOOK = env("SLACK_WEBHOOK", "")
@@ -178,7 +179,7 @@ async function sendToSlack(body: {}) {
 
 export async function notifyDowngradeRating(
   place: PlaceAttributes,
-  ratingProposed: PlaceRating
+  ratingProposed: SceneContentRating
 ) {
   logger.log(
     `sending downgrade rating "${place.title}" to content moderation slack`

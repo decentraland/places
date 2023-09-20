@@ -1,6 +1,7 @@
 import Catalyst, {
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
@@ -10,7 +11,7 @@ import getContentRating, {
 } from "../../utils/rating/contentRating"
 import { notifyDowngradeRating } from "../Slack/utils"
 import PlaceModel from "./model"
-import { PlaceAttributes, PlaceRating } from "./types"
+import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
 
 export type PlacesStatic = {
@@ -42,13 +43,13 @@ export function createPlaceFromEntityScene(
   }
 
   const contentEntitySceneRating =
-    (entityScene?.metadata?.policy?.contentRating as PlaceRating) ||
-    PlaceRating.RATING_PENDING
+    entityScene?.metadata?.policy?.contentRating ||
+    SceneContentRating.RATING_PENDING
   if (
     data.content_rating &&
     isDowngradingRating(
       contentEntitySceneRating,
-      data.content_rating as PlaceRating
+      data.content_rating as SceneContentRating
     )
   ) {
     notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)

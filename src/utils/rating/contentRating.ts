@@ -1,12 +1,15 @@
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
-import { PlaceAttributes, PlaceRating } from "../../entities/Place/types"
+import { PlaceAttributes } from "../../entities/Place/types"
 
 export default function getContentRating(
   contentEntityScene: ContentEntityScene,
   originalPlace?: Partial<PlaceAttributes>
 ) {
-  const placeRatings = new Set(Object.values(PlaceRating) as string[])
+  const placeRatings = new Set(Object.values(SceneContentRating) as string[])
 
   const contentEntitySceneRating =
     contentEntityScene?.metadata?.policy?.contentRating
@@ -14,41 +17,45 @@ export default function getContentRating(
   if (
     !contentEntitySceneRating ||
     (!placeRatings.has(contentEntitySceneRating) &&
-      contentEntitySceneRating !== "M")
+      (contentEntitySceneRating as string) !== "M")
   ) {
-    return PlaceRating.RATING_PENDING
+    return SceneContentRating.RATING_PENDING
   }
 
-  if (contentEntitySceneRating === "M") {
-    return PlaceRating.ADULT
+  if ((contentEntitySceneRating as string) === "M") {
+    return SceneContentRating.ADULT
   }
 
   if (!originalPlace) {
-    return contentEntitySceneRating as PlaceRating
+    return contentEntitySceneRating as SceneContentRating
   }
 
   const originalRating =
-    (originalPlace.content_rating as PlaceRating) || PlaceRating.RATING_PENDING
+    (originalPlace.content_rating as SceneContentRating) ||
+    SceneContentRating.RATING_PENDING
 
   if (
-    isDowngradingRating(contentEntitySceneRating as PlaceRating, originalRating)
+    isDowngradingRating(
+      contentEntitySceneRating as SceneContentRating,
+      originalRating
+    )
   ) {
     return originalRating
   }
 
-  return contentEntitySceneRating as PlaceRating
+  return contentEntitySceneRating as SceneContentRating
 }
 
 export function isDowngradingRating(
-  rating: PlaceRating,
-  originalRating: PlaceRating
+  rating: SceneContentRating,
+  originalRating: SceneContentRating
 ) {
   const ratingScale = [
-    PlaceRating.RATING_PENDING,
-    PlaceRating.EVERYONE,
-    PlaceRating.TEEN,
-    PlaceRating.ADULT,
-    PlaceRating.RESTRICTED,
+    SceneContentRating.RATING_PENDING,
+    SceneContentRating.EVERYONE,
+    SceneContentRating.TEEN,
+    SceneContentRating.ADULT,
+    SceneContentRating.RESTRICTED,
   ]
 
   const originalIndex = ratingScale.indexOf(originalRating)
