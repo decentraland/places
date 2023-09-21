@@ -281,8 +281,11 @@ export const updateRatingBodySchema = schema({
     content_rating: {
       type: "string",
       description: "Rating for the place",
-      // TODO: verify rating categories
-      enum: ["E", "T", "A", "R"],
+      enum: ["PR", "E", "T", "A", "R"],
+    },
+    comment: {
+      type: "string",
+      description: "A comment for the rating",
     },
   },
 })

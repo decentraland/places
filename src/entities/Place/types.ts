@@ -93,4 +93,5 @@ export const unwantedThumbnailHash = [
 
 export type UpdateRatingBody = {
   content_rating: SceneContentRating
+  comment?: string
 }

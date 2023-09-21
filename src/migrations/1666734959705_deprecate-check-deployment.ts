@@ -1,7 +1,5 @@
 import { Type } from "decentraland-gatsby/dist/entities/Database/types"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import { MigrationBuilder } from "node-pg-migrate"
-import isURL from "validator/lib/isURL"
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.dropTable("deployment_tracks", { cascade: true })
