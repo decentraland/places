@@ -13,9 +13,18 @@ describe("Validate rating", () => {
     )
   })
   test(`With M rating return A`, () => {
-    expect(getContentRating(contentEntitySceneMusicFestivalStage)).toBe(
-      SceneContentRating.ADULT
-    )
+    expect(
+      getContentRating({
+        ...contentEntitySceneMusicFestivalStage,
+        metadata: {
+          ...contentEntitySceneMusicFestivalStage.metadata,
+          policy: {
+            ...contentEntitySceneMusicFestivalStage.metadata.policy!,
+            contentRating: "M" as SceneContentRating,
+          },
+        },
+      })
+    ).toBe(SceneContentRating.ADULT)
   })
   test(`With E rating return E`, () => {
     expect(getContentRating(contentEntitySceneSteamPunkDCQuest)).toBe(

@@ -1,5 +1,8 @@
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 export const contentEntitySceneMusicFestivalStage: ContentEntityScene = {
   version: "v3",
@@ -2475,7 +2478,7 @@ export const contentEntitySceneMusicFestivalStage: ContentEntityScene = {
       "ALLOW_TO_TRIGGER_AVATAR_EMOTE",
     ],
     policy: {
-      contentRating: "M",
+      contentRating: SceneContentRating.ADULT,
       fly: true,
       voiceEnabled: true,
       blacklist: [],
