@@ -46,20 +46,30 @@ export default function getContentRating(
   return contentEntitySceneRating as SceneContentRating
 }
 
+const ratingScale = [
+  SceneContentRating.RATING_PENDING,
+  SceneContentRating.EVERYONE,
+  SceneContentRating.TEEN,
+  SceneContentRating.ADULT,
+  SceneContentRating.RESTRICTED,
+]
+
 export function isDowngradingRating(
   rating: SceneContentRating,
   originalRating: SceneContentRating
 ) {
-  const ratingScale = [
-    SceneContentRating.RATING_PENDING,
-    SceneContentRating.EVERYONE,
-    SceneContentRating.TEEN,
-    SceneContentRating.ADULT,
-    SceneContentRating.RESTRICTED,
-  ]
-
   const originalIndex = ratingScale.indexOf(originalRating)
   const contentEntityIndex = ratingScale.indexOf(rating)
 
   return originalIndex > contentEntityIndex
+}
+
+export function isUpgradingRating(
+  rating: SceneContentRating,
+  originalRating: SceneContentRating
+) {
+  const originalIndex = ratingScale.indexOf(originalRating)
+  const contentEntityIndex = ratingScale.indexOf(rating)
+
+  return originalIndex < contentEntityIndex
 }

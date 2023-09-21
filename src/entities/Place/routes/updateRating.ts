@@ -6,9 +6,12 @@ import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/Ap
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { v4 as uuid } from "uuid"
 
+import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
+import { notifyUpgradingRating } from "../../Slack/utils"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema, updateRatingBodySchema } from "../schemas"
 import {
@@ -66,6 +69,16 @@ export async function updateRating(
         created_at: new Date(),
       }),
     ])
+
+    if (
+      place.content_rating &&
+      isUpgradingRating(
+        body.content_rating,
+        place.content_rating as SceneContentRating
+      )
+    ) {
+      notifyUpgradingRating(place, "Content Moderator")
+    }
 
     return new ApiResponse(
       await PlaceModel.findByIdWithAggregates(ctx.params.place_id, {

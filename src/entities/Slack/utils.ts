@@ -212,6 +212,41 @@ export async function notifyDowngradeRating(
   })
 }
 
+export async function notifyUpgradingRating(
+  place: PlaceAttributes,
+  updatedBy: "Content Moderator" | "Content Creator"
+) {
+  logger.log(
+    `sending upgrading rating "${place.title}" to content moderation slack`
+  )
+  await sendToContentModeratorSlack({
+    blocks: [
+      {
+        type: "section",
+        text: {
+          type: "mrkdwn",
+          text: `:white_check_mark: The ${
+            place.world ? "world" : "place"
+          } upgrade rating: ${
+            place.world
+              ? place.hidden
+                ? place.world_name
+                : `<${worldUrl(place)}|${place.world_name}>`
+              : `<${placeUrl(place)}|${place.base_position}>`
+          }`,
+        },
+      },
+      {
+        type: "section",
+        text: {
+          type: "plain_text",
+          text: `The rating was upgraded by ${updatedBy}`,
+        },
+      },
+    ],
+  })
+}
+
 async function sendToContentModeratorSlack(body: {}) {
   if (!isURL(CONTENT_MODERATION_SLACK_WEBHOOK)) {
     return

@@ -6,11 +6,12 @@ import { v4 as uuid } from "uuid"
 
 import getContentRating, {
   isDowngradingRating,
+  isUpgradingRating,
 } from "../../../utils/rating/contentRating"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
-import { notifyDowngradeRating } from "../../Slack/utils"
+import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
 
 export type ProcessEntitySceneResult =
@@ -85,6 +86,14 @@ export function createPlaceFromContentEntityScene(
     )
   ) {
     notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)
+  } else if (
+    data.content_rating &&
+    isUpgradingRating(
+      contentEntitySceneRating,
+      data.content_rating as SceneContentRating
+    )
+  ) {
+    notifyUpgradingRating(data as PlaceAttributes, "Content Creator")
   }
 
   const placeParsed: PlaceAttributes = {
