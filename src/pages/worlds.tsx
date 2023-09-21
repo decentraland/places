@@ -22,7 +22,6 @@ import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { WorldListOptions } from "../entities/World/types"
 import usePlacesManager from "../hooks/usePlacesManager"
-import informationIcon from "../images/Information-icon.svg"
 import { FeatureFlags } from "../modules/ff"
 import { toWorldsOptions } from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
@@ -189,10 +188,6 @@ export default function WorldsPage() {
         </Grid.Row>
         <Grid.Row>
           <Grid.Column tablet={16} className="worlds-page__list">
-            <div className="worlds-page__disclamer">
-              <img src={informationIcon} />
-              <span>{l("pages.worlds.disclamer")}</span>
-            </div>
             {allWorlds.length > 0 && (
               <PlaceList
                 places={places}
