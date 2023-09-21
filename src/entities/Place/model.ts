@@ -491,7 +491,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )})) as rank`
       )}
       WHERE
-        p.disabled is false AND world is true AND hidden is false
+        p.disabled is false AND world is true
         ${conditional(
           options.names.length > 0,
           SQL`AND world_name IN ${values(options.names)}`
@@ -539,7 +539,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         p.disabled is false
         AND p.world is true
-        AND p.hidden is false
         ${conditional(
           options.names.length > 0,
           SQL`AND p.world_name IN ${values(options.names)}`
