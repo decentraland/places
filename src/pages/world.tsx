@@ -46,7 +46,7 @@ export default function WorldPage() {
 
   useEffect(() => {
     if (worldRetrived && worldRetrived.world_name !== params.get("name")) {
-      navigate(locations.place(worldRetrived.world_name!), { replace: true })
+      navigate(locations.world(worldRetrived.world_name!), { replace: true })
     }
   }, [worldRetrived, params.get("name")])
 
