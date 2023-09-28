@@ -17,7 +17,7 @@ const s3 = new AWS.S3({
 })
 
 export default routes((router) => {
-  router.post("/reportSignedUrl", getSignedUrl)
+  router.post("/report", getSignedUrl)
 })
 
 export async function getSignedUrl(
