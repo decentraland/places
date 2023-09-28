@@ -176,7 +176,7 @@ export const placeSchema = schema({
     content_rating: {
       type: "string",
       minLength: 0,
-      maxLength: 5000,
+      maxLength: 1,
       description: "The content rating on the place",
     },
     likes: {
@@ -271,3 +271,21 @@ export const placeSchema = schema({
 
 export const placeResponseSchema = schema.api(placeSchema)
 export const placeListResponseSchema = schema.api(schema.array(placeSchema))
+
+export const updateRatingBodySchema = schema({
+  type: "object",
+  description: "content rating body needed",
+  additionalProperties: false,
+  required: ["content_rating"],
+  properties: {
+    content_rating: {
+      type: "string",
+      description: "Rating for the place",
+      enum: ["PR", "E", "T", "A", "R"],
+    },
+    comment: {
+      type: "string",
+      description: "A comment for the rating",
+    },
+  },
+})

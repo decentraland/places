@@ -96,13 +96,11 @@ export class SQSConsumer {
             loggerExtended.log(`Processed job`)
             finalReturn.push({ result, message })
           } catch (err: any) {
-            if (!err.message.includes("The scene is a road")) {
-              notifyError([
-                err.toString(),
-                `<${body.contentServerUrls}contents/${body.entity.entityId}|${body.entity.entityId}>`,
-              ])
-              loggerExtended.error(err.toString())
-            }
+            notifyError([
+              err.toString(),
+              `<${body.contentServerUrls}contents/${body.entity.entityId}|${body.entity.entityId}>`,
+            ])
+            loggerExtended.error(err.toString())
 
             finalReturn.push({ result: undefined, message })
           } finally {

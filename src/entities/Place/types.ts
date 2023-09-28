@@ -1,5 +1,8 @@
 import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
-import { Realm } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  Realm,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 export type PlaceAttributes = {
   id: string
@@ -87,3 +90,8 @@ export const unwantedThumbnailHash = [
   "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
   "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
 ]
+
+export type UpdateRatingBody = {
+  content_rating: SceneContentRating
+  comment?: string
+}

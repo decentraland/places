@@ -19,9 +19,7 @@ export async function processEntityId(job: DeploymentToSqs) {
   }
 
   if (contentDeployment.type !== EntityType.SCENE) {
-    throw new Error(
-      `Entity type is not an scene. Type: ${contentDeployment.type}`
-    )
+    return null
   }
 
   return contentDeployment
