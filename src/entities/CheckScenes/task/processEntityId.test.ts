@@ -36,10 +36,6 @@ test("should throw an error when there is no contentServerUrls", async () => {
 })
 
 test("should throw an error when is not an escene", async () => {
-  contentEntityScene.mockResolvedValueOnce(
-    Promise.resolve(exampleContentEntityProfile)
-  )
-  await expect(async () =>
-    processEntityId(sqsMessageProfile)
-  ).rejects.toThrowError()
+  const profileEntity = await processEntityId(sqsMessageProfile)
+  expect(profileEntity).toBeNull()
 })

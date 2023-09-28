@@ -1,17 +1,14 @@
 import AWS from "aws-sdk"
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
-import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
-import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { signedUrlBodySchema } from "./schema"
 import { extension } from "./util"
 
-const ACCESS_KEY = env("AWS_ACCESS_KEY", "")
-const ACCESS_SECRET = env("AWS_ACCESS_SECRET", "")
+const ACCESS_KEY = env("AWS_ACCESS_KEY")
+const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
 const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
 
 const s3 = new AWS.S3({
@@ -23,16 +20,12 @@ export default routes((router) => {
   router.post("/reportSignedUrl", getSignedUrl)
 })
 
-const validateUpdateRatingBody = createValidator<{ mimetype: string }>(
-  signedUrlBodySchema as AjvObjectSchema
-)
-
 export async function getSignedUrl(
-  ctx: Context<{}, "request" | "body" | "params">
+  ctx: Context<{}, "request" | "params">
 ): Promise<ApiResponse<{ filename: string; signedUrl: string }>> {
   const initial = Date.now()
   const userAuth = await withAuth(ctx)
-  const { mimetype } = validateUpdateRatingBody(ctx.body)
+  const mimetype = "application/json"
   const ext = extension(mimetype)
 
   const timeHash = Math.floor(initial / 1000)
@@ -50,6 +43,10 @@ export async function getSignedUrl(
     ContentType: mimetype,
     ACL: "public-read",
     CacheControl: "public, max-age=31536000, immutable",
+    Metadata: {
+      ...userAuth.metadata,
+      address: userAuth.address,
+    },
   })
 
   return new ApiResponse({

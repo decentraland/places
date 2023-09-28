@@ -53,42 +53,29 @@ export async function updateRating(
     )
   }
 
-  try {
-    Promise.all([
-      PlaceModel.updatePlace(
-        { ...place, content_rating: body.content_rating },
-        ["content_rating"]
-      ),
-      PlaceContentRatingModel.create({
-        id: uuid(),
-        place_id: place.id,
-        original_rating: place.content_rating,
-        update_rating: body.content_rating,
-        moderator: userAuth.address,
-        comment: body.comment || null,
-        created_at: new Date(),
-      }),
-    ])
+  const newPlace = { ...place, content_rating: body.content_rating }
+  Promise.all([
+    PlaceModel.updatePlace(newPlace, ["content_rating"]),
+    PlaceContentRatingModel.create({
+      id: uuid(),
+      place_id: place.id,
+      original_rating: place.content_rating,
+      update_rating: body.content_rating,
+      moderator: userAuth.address,
+      comment: body.comment || null,
+      created_at: new Date(),
+    }),
+  ])
 
-    if (
-      place.content_rating &&
-      isUpgradingRating(
-        body.content_rating,
-        place.content_rating as SceneContentRating
-      )
-    ) {
-      notifyUpgradingRating(place, "Content Moderator")
-    }
-
-    return new ApiResponse(
-      await PlaceModel.findByIdWithAggregates(ctx.params.place_id, {
-        user: userAuth.address,
-      })
+  if (
+    place.content_rating &&
+    isUpgradingRating(
+      body.content_rating,
+      place.content_rating as SceneContentRating
     )
-  } catch (error: any) {
-    throw new ErrorResponse(
-      Response.InternalServerError,
-      error.message || error
-    )
+  ) {
+    notifyUpgradingRating(place, "Content Moderator")
   }
+
+  return new ApiResponse(newPlace)
 }

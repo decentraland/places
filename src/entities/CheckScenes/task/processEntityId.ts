@@ -18,11 +18,8 @@ export async function processEntityId(job: DeploymentToSqs) {
     )
   }
 
-  // TODO: do not throw an error when it's not an scene, because it's sending a message to slack
   if (contentDeployment.type !== EntityType.SCENE) {
-    throw new Error(
-      `Entity type is not an scene. Type: ${contentDeployment.type}`
-    )
+    return null
   }
 
   return contentDeployment
