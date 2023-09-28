@@ -41,7 +41,7 @@ export async function getSignedUrl(
     Key: `${filename}`,
     Expires: signedUrlExpireSeconds,
     ContentType: mimetype,
-    ACL: "public-read",
+    ACL: "private",
     CacheControl: "public, max-age=31536000, immutable",
     Metadata: {
       ...userAuth.metadata,
