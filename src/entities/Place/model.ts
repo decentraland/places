@@ -18,6 +18,7 @@ import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { diff, unique } from "radash/dist/array"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
+import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
@@ -187,6 +188,15 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
           options.search || ""
@@ -195,8 +205,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         p."disabled" is false AND "world" is false
         ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
           SQL`AND p.base_position IN (
@@ -225,18 +233,20 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_featured"
       | "only_highlighted"
       | "search"
+      | "categories"
     >
   ) {
     const isMissingEthereumAddress =
       options.user && !isEthereumAddress(options.user)
     const searchIsEmpty = options.search && options.search.length < 3
+
     if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 
     const query = SQL`
       SELECT
-        count(*) as "total"
+        count(DISTINCT p.id) as "total"
       FROM ${table(this)} p
       ${conditional(
         !!options.user && options.only_favorites,
@@ -245,16 +255,22 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
           options.search || ""
         )})) as rank`
       )}
       WHERE
-        p."disabled" is false
-        AND "world" is false
-        ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        p."disabled" is false AND "world" is false
         ${conditional(
           options.positions?.length > 0,
           SQL`AND p.base_position IN (
@@ -552,6 +568,21 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
 
     return results[0].total
+  }
+
+  static async findEnabledByCategory(
+    category: string
+  ): Promise<AggregatePlaceAttributes[]> {
+    const sql = SQL`
+      SELECT p.*
+      FROM ${table(this)} p
+      ${SQL`INNER JOIN ${table(
+        PlaceCategories
+      )} pc ON p.id = pc.place_id AND pc.category_id = ${SQL`${category}`}`}
+      WHERE
+        p."disabled" is false AND "world" is false
+    `
+    return await this.namedQuery("find_enabled_by_category", sql)
   }
 
   /**

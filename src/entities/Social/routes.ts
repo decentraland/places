@@ -51,6 +51,7 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
         order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         order: "asc",
         search: "",
+        categories: [],
       })
     )[0]
   }

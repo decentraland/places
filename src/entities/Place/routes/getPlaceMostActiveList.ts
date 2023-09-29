@@ -30,6 +30,7 @@ export const getPlaceMostActiveList = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
+      categories: ctx.url.searchParams.getAll("categories"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([
@@ -67,6 +68,7 @@ export const getPlaceMostActiveList = Router.memo(
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
       search: query.search,
+      categories: ctx.url.searchParams.getAll("categories"),
     }
 
     const { offset, limit, order, ...extraOptions } = options
