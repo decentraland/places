@@ -1,0 +1,40 @@
+.categories-section__box {
+  background-color: var(--secondary-on-modal-hover);
+  width: 100%;
+  padding: 35px;
+}
+
+.categories-section__title {
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+}
+
+.categories-section__title > p {
+  color: var(--secondary-text);
+  letter-spacing: 1px;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0 16px 0 0;
+  text-transform: uppercase;
+}
+
+.categories-section__title > .ui.label {
+  font-weight: 700;
+  font-size: 8px;
+  background-color: var(--primary);
+  line-height: normal;
+  padding: 2px 5px;
+  border-radius: 3px;
+  color: var(--text-on-primary);
+}
+
+.categories-section__slider {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.categories-section__slider > .category-btn {
+  margin: 0 12px 12px 0;
+}
