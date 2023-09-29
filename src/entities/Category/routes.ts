@@ -10,5 +10,10 @@ export default routes((router) => {
 export async function getCategoryList() {
   const categories = await CategoryModel.findCategoriesWithPlaces()
 
-  return new ApiResponse(categories)
+  return new ApiResponse(
+    categories.map((category) => ({
+      ...category,
+      count: Number(category.count),
+    }))
+  )
 }
