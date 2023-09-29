@@ -192,4 +192,13 @@ export default class Places extends API {
       this.options({ method: "PUT" }).json(params).authorization({ sign: true })
     )
   }
+
+  async getCategories() {
+    const result = await super.fetch<{
+      ok: boolean
+      data: { name: string; count: number }[]
+    }>("/categories")
+
+    return result.data
+  }
 }
