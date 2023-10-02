@@ -132,7 +132,10 @@
       "pois": "Point of interest",
       "featured": "Featured",
       "show_more": "Show More",
-      "search_results_title": "Search results for"
+      "search_results_title": "Search results for",
+      "clear_all": "Clear All",
+      "category_filter_title": "Categories",
+      "categories_selected": "Selected"
     },
     "favorites": {
       "title": "Favorites",
@@ -190,5 +193,13 @@
   },
   "user_menu": {
     "api": "API"
+  },
+  "categories": {
+    "poi": "📍Point of Interest",
+    "featured": "✨ Featured",
+    "club": "🎉 Club",
+    "shop": "🛍️ Shop",
+    "social": "💬 Social",
+    "quests": "🗺 Quests"
   }
 }

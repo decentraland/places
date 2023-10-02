@@ -12,12 +12,14 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
+import { CategoriesSection } from "../components/Categories/CategoriesSection"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import SearchList from "../components/Layout/SearchList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { PlaceListOrderBy } from "../entities/Place/types"
+import usePlaceCategories from "../hooks/usePlaceCategories"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
@@ -67,6 +69,7 @@ export default function OverviewPage() {
     overviewOptions,
     search
   )
+  const categories = usePlaceCategories()
 
   const [placeListSearch, worldListSearch] = useMemo(
     () => [placeSearch.data, worldSearch.data],
@@ -244,14 +247,17 @@ export default function OverviewPage() {
   const renderCarousel = () => (
     <>
       {(placeListHighlightedState.loading || highlightedList.length > 0) && (
-        <Carousel2
-          className="overview__carousel2"
-          loading={placeListHighlightedState.loading}
-          isFullscreen
-          indicatorsType={IndicatorType.Dash}
-          items={highlightedList}
-          component={PlaceFeatured}
-        />
+        <>
+          <Carousel2
+            className="overview__carousel2"
+            loading={placeListHighlightedState.loading}
+            isFullscreen
+            indicatorsType={IndicatorType.Dash}
+            items={highlightedList}
+            component={PlaceFeatured}
+          />
+          <CategoriesSection categories={categories.map(({ name }) => name)} />
+        </>
       )}
     </>
   )

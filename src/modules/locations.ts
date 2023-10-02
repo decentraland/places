@@ -22,6 +22,7 @@ export type PlacesPageOptions = {
   order: "asc" | "desc"
   page: number
   search: string
+  categories: string[]
 }
 
 export type WorldsPageOptions = {
@@ -41,6 +42,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   order: "desc",
   page: 1,
   search: "",
+  categories: [],
 }
 
 const pageWorldsOptionsDefault: WorldsPageOptions = {
@@ -70,6 +72,7 @@ export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
+    categories: params.getAll("categories") ?? [],
   }
 }
 
