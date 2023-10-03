@@ -1,0 +1,94 @@
+.rating-button {
+  border: solid;
+  color: #cfcdd4;
+  border-width: 1px;
+  width: 196px;
+  height: 112px;
+  border-width: 1px 1px 2px 1px;
+  border-style: solid;
+  border-color: #cfcdd4;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: border 0.35s;
+}
+
+.rating-button:not(:last-child) {
+  margin-right: 16px;
+}
+
+.rating-button.current::after {
+  content: "CURRENT RATE";
+  color: #a09ba8;
+  position: absolute;
+  bottom: -10px;
+  width: 196px;
+  text-align: center;
+}
+
+.rating-button.rating-t {
+  border-bottom-color: #36d41d;
+}
+
+.rating-button.rating-t.current h1.rating-label,
+.rating-button.rating-t.current label.rating-label {
+  color: #36d41d;
+}
+
+.rating-button.rating-t.selected {
+  border-color: #36d41d;
+  background-color: #35d41d07;
+  border-bottom-width: 8px;
+}
+
+.rating-button.rating-a {
+  border-bottom-color: #ffa25a;
+}
+
+.rating-button.rating-a.current h1.rating-label,
+.rating-button.rating-a.current label.rating-label {
+  color: #ffa25a;
+}
+
+.rating-button.rating-a.selected {
+  border-color: #ffa25a;
+  background-color: #fffaf7;
+  border-bottom-width: 8px;
+}
+
+.rating-button.rating-r {
+  border-bottom-color: #f00;
+}
+
+.rating-button.rating-r.current h1.rating-label,
+.rating-button.rating-r.current label.rating-label {
+  color: #f00;
+}
+
+.rating-button.rating-r.selected {
+  border-color: #f00;
+  background-color: #fff2f2;
+  border-bottom-width: 8px;
+}
+
+.rating-button h1.rating-label {
+  text-align: center;
+  font-size: 32px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  margin-bottom: 5px;
+  color: #161518;
+}
+
+.rating-button label.rating-label {
+  text-align: center;
+  font-size: 13px;
+  font-style: normal;
+  font-weight: 700;
+  line-height: normal;
+  text-transform: uppercase;
+  margin-top: 0px;
+  color: #161518;
+}
