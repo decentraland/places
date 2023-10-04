@@ -41,7 +41,6 @@ export type PlaceAttributes = {
   disabled_at: Date | null
   created_at: Date
   updated_at: Date
-  categories: string[]
   world: boolean
   world_name: string | null
   hidden: boolean
@@ -56,6 +55,7 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_count?: number
   user_visits?: number
   realms_detail?: Realm[]
+  category_id: string
 }
 
 export type GetPlaceParams = {

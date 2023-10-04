@@ -11,10 +11,9 @@ export default class CategoryModel extends Model<CategoryAttributes> {
   static findCategoriesWithPlaces = async () => {
     const query = SQL`
       SELECT c.name, count(pc.place_id) FROM ${table(CategoryModel)} c
-      INNER JOIN ${table(PlaceCategories)} ON pc pc.category_id = c.name
+      LEFT JOIN ${table(PlaceCategories)} pc ON pc.category_id = c.name
       WHERE c.active IS true  
-      GROUP BY pc.category_id
-      ORDER BY c.name ASC`
+      GROUP BY c.name`
 
     const categoriesFound =
       await CategoryModel.namedQuery<CategoryWithPlaceCount>(

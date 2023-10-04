@@ -142,7 +142,6 @@ export function createPlaceFromContentEntityScene(
     featured_image: null,
     disabled: false,
     updated_at: now,
-    categories: [],
     world: !!contentEntityScene?.metadata?.worldConfiguration,
     world_name: worldName,
     hidden: !!contentEntityScene?.metadata?.worldConfiguration,

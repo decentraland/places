@@ -26,7 +26,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "deployed_at",
-  "categories",
   "world",
   "world_name",
   "hidden",
@@ -536,8 +535,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -556,11 +555,11 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "hidden" = $17 
       WHERE disabled is false AND world is false AND "base_position" IN 
       ( 
         SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
+        FROM "place_positions" "pp" WHERE "pp"."position" = $18
       )
       `
         .trim()
@@ -782,8 +781,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -802,11 +801,11 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "hidden" = $17 
       WHERE disabled is false AND world is false AND "base_position" IN 
       ( 
         SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
+        FROM "place_positions" "pp" WHERE "pp"."position" = $18
       )
       `
         .trim()

@@ -15,7 +15,6 @@ export const placeRoad: PlaceAttributes = {
   featured_image: null,
   disabled: false,
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
-  categories: [],
   world: false,
   world_name: null,
   title: "Road at -89,11 (open road OpenRoad_C)",

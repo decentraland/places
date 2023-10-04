@@ -152,6 +152,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const sql = SQL`
       SELECT p.*
+      ${conditional(!!options.categories.length, SQL`, pc.category_id`)}
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
