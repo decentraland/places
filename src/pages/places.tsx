@@ -4,7 +4,6 @@ import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
-import FilterContainerModal from "decentraland-gatsby/dist/components/Modal/FilterContainerModal"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
@@ -12,18 +11,20 @@ import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
-import { Box } from "decentraland-ui/dist/components/Box/Box"
+import { Back } from "decentraland-ui/dist/components/Back/Back"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
+import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
-import Select from "semantic-ui-react/dist/commonjs/addons/Select"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
-import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Places from "../api/Places"
 import { CategoriesList } from "../components/Categories/CategoriesList"
+import { CategoriesModal } from "../components/Categories/CategoriesModal"
 import { CategoryFilter } from "../components/Categories/CategoryFilter"
+import { Filter as FilterIcon } from "../components/Icon/Filter"
+import { RedArrow } from "../components/Icon/RedArrow"
 import { Trash } from "../components/Icon/Trash"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
@@ -60,8 +61,14 @@ export default function IndexPage() {
   const isSearching = !!params.search && params.search.length > 2
   const search = (isSearching && params.search) || ""
 
+  const [isCategoriesModalVisible, setIsCategoriesModalVisible] =
+    useState(false)
+
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
+
+  const isFilteringByCategory = params.categories.length > 0
+
   const categories = usePlaceCategories()
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
@@ -81,6 +88,9 @@ export default function IndexPage() {
     const placesFetch = await Places.get().getPlaces({
       ...options,
       offset,
+      categories: params.only_view_category
+        ? [params.only_view_category]
+        : extra.categories,
       search: isSearching ? search : undefined,
     })
 
@@ -94,13 +104,17 @@ export default function IndexPage() {
 
       setAllPlaces(placesFetch.data)
     } else {
-      const places: AggregatePlaceAttributes[] = [...allPlaces]
-      for (const newPlace of placesFetch.data) {
-        if (!places.find((place) => place.id == newPlace.id)) {
-          places.push(newPlace)
+      if (isFilteringByCategory) {
+        setAllPlaces(placesFetch.data)
+      } else {
+        const places: AggregatePlaceAttributes[] = [...allPlaces]
+        for (const newPlace of placesFetch.data) {
+          if (!places.find((place) => place.id == newPlace.id)) {
+            places.push(newPlace)
+          }
         }
+        setAllPlaces(places)
       }
-      setAllPlaces(places)
     }
 
     if (Number.isSafeInteger(placesFetch.total)) {
@@ -188,15 +202,6 @@ export default function IndexPage() {
     [params, track]
   )
 
-  const handleClearFilter = useCallback(() => {
-    track(SegmentPlace.FilterClear)
-    navigate(
-      locations.places({
-        order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
-      })
-    )
-  }, [params, track])
-
   const searchParams = useMemo(
     () => new URLSearchParams(location.search),
     [location.search]
@@ -234,7 +239,11 @@ export default function IndexPage() {
     const newParams = new URLSearchParams(searchParams)
     let currentCategories = newParams.getAll("categories") || []
     if (action === "add") {
-      currentCategories.push(categoryId!)
+      if (!currentCategories.includes(categoryId!)) {
+        currentCategories.push(categoryId!)
+      } else {
+        return
+      }
     }
 
     if (action === "remove") {
@@ -259,6 +268,20 @@ export default function IndexPage() {
   }
 
   const [ff] = useFeatureFlagContext()
+
+  const toggleViewAllCategory = (categoryId?: string) => {
+    const newParams = new URLSearchParams(searchParams)
+    if (newParams.has("only_view_category")) {
+      newParams.delete("only_view_category")
+    } else {
+      newParams.set("only_view_category", categoryId!)
+    }
+
+    let target = location.pathname
+    const params = newParams.toString()
+    target += params ? "?" + params : ""
+    navigate(target)
+  }
 
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
@@ -297,75 +320,16 @@ export default function IndexPage() {
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>
-          {isMobile && (
-            <Grid.Column tablet={4} className="places-page__filters">
-              <FilterContainerModal
-                title="Filters"
-                action={
-                  <>
-                    <Icon name="filter" /> {l("pages.places.filters_title")}
-                  </>
-                }
-                onClear={handleClearFilter}
-              >
-                <Box header={l("pages.places.sort_by")} borderless>
-                  <Select
-                    value={params.order_by}
-                    text={l(`general.order_by.${params.order_by}`)}
-                    onChange={handleChangeOrder}
-                    options={getPlaceListQuerySchema.properties.order_by.enum.map(
-                      (orderBy) => {
-                        return {
-                          key: orderBy,
-                          value: orderBy,
-                          text: l(`general.order_by.${orderBy}`),
-                        }
-                      }
-                    )}
-                  />
-                </Box>
-                <Box
-                  header={
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <span>{l("pages.places.category_filter_title")}</span>
-                      <span>
-                        {l("pages.places.categories_selected")}{" "}
-                        {params.categories.length}
-                      </span>
-                    </div>
-                  }
-                  borderless
-                  collapsible
-                  defaultCollapsed={true}
-                  className="places-page__category-filters_box--mobile"
-                >
-                  {categories.map(({ name }) => (
-                    <CategoryFilter
-                      notActive={!params.categories.includes(name)}
-                      category={name}
-                      onAddFilter={
-                        !params.categories.includes(name)
-                          ? () => handleCategorySelection("add", name)
-                          : undefined
-                      }
-                    />
-                  ))}
-                </Box>
-              </FilterContainerModal>
-            </Grid.Column>
-          )}
           {!isMobile && (
             <Grid.Column tablet={4}>
               <CategoriesList
                 onSelect={(categoryId) =>
                   handleCategorySelection("add", categoryId)
                 }
-                categories={categories.map(({ name }) => name)}
+                categories={categories.map(({ name }) => ({
+                  categoryId: name,
+                  active: params.categories.includes(name),
+                }))}
               />
             </Grid.Column>
           )}
@@ -415,42 +379,123 @@ export default function IndexPage() {
                 <p>
                   {totalPlaces} {l("social.places.title")}
                 </p>
-                {params.categories && params.categories.length > 0 && (
-                  <Button
-                    size="tiny"
-                    className="clear-all-btn"
-                    onClick={() => handleCategorySelection("clear")}
-                    content={
-                      <div style={{ display: "flex", alignItems: "center" }}>
-                        <Trash width="24" height="24" />{" "}
-                        {l("pages.places.clear_all")}
-                      </div>
-                    }
-                  />
+                {isMobile && (
+                  <div>
+                    <Dropdown
+                      text={l(`general.order_by.${params.order_by}`)}
+                      direction="left"
+                    >
+                      <Dropdown.Menu>
+                        {getPlaceListQuerySchema.properties.order_by.enum.map(
+                          (orderBy) => {
+                            return (
+                              <Dropdown.Item
+                                value={orderBy}
+                                text={l(`general.order_by.${orderBy}`)}
+                                onClick={handleChangeOrder}
+                              />
+                            )
+                          }
+                        )}
+                      </Dropdown.Menu>
+                    </Dropdown>
+                    <Button
+                      content={<FilterIcon width="20" height="18" />}
+                      size="tiny"
+                      basic
+                      onClick={() => setIsCategoriesModalVisible(true)}
+                    />
+                  </div>
                 )}
               </div>
-              {params.categories && params.categories.length > 0 && (
-                <div>
+              {isFilteringByCategory && !params.only_view_category && (
+                <div className="places-page__category-filters__filters-box">
                   {params.categories.map((category) => (
                     <CategoryFilter
                       category={category}
+                      active
                       onRemoveFilter={() =>
                         handleCategorySelection("remove", category)
                       }
                     />
                   ))}
+                  <span
+                    className="clear-all-filter-btn"
+                    onClick={() => handleCategorySelection("clear")}
+                  >
+                    <Filter>
+                      <Trash width="24" height="24" />{" "}
+                      <p>{l("pages.places.clear_all")}</p>
+                    </Filter>
+                  </span>
+                </div>
+              )}
+              {params.only_view_category && (
+                <div className="only-view-category-navbar__box">
+                  <Back onClick={() => toggleViewAllCategory()} />
+                  <div>
+                    <CategoryFilter
+                      category={params.only_view_category}
+                      onRemoveFilter={() =>
+                        toggleViewAllCategory(params.only_view_category)
+                      }
+                    />
+                  </div>
                 </div>
               )}
             </div>
-            {allPlaces.length > 0 && (
-              <PlaceList
-                places={places}
-                onClickFavorite={(_, place) => handleFavorite(place.id, place)}
-                loadingFavorites={handlingFavorite}
-                dataPlace={SegmentPlace.Places}
-                search={search}
-              />
-            )}
+            {allPlaces.length > 0 &&
+              (!isFilteringByCategory || params.only_view_category) && (
+                <PlaceList
+                  places={places}
+                  onClickFavorite={(_, place) =>
+                    handleFavorite(place.id, place)
+                  }
+                  loadingFavorites={handlingFavorite}
+                  dataPlace={SegmentPlace.Places}
+                  search={search}
+                />
+              )}
+            {isFilteringByCategory &&
+              !params.only_view_category &&
+              params.categories.map((c) => (
+                <div className="places-page__category-breakdown__box">
+                  <div className="places-page__category-breakdown__title">
+                    <p>
+                      {l(`categories.${c}`)}{" "}
+                      <span>
+                        {
+                          categories.find((category) => category.name == c)
+                            ?.count
+                        }
+                      </span>
+                    </p>
+                    <Button
+                      content={
+                        <div>
+                          <p>{l("pages.overview.view_all")}</p>
+                          <span>
+                            <RedArrow width="15" height="26" />
+                          </span>
+                        </div>
+                      }
+                      basic
+                      onClick={() => toggleViewAllCategory(c)}
+                    />
+                  </div>
+                  <PlaceList
+                    places={places
+                      .filter((place) => place.category_id == c)
+                      .slice(0, 4)}
+                    onClickFavorite={(_, place) =>
+                      handleFavorite(place.id, place)
+                    }
+                    loadingFavorites={handlingFavorite}
+                    dataPlace={SegmentPlace.Places}
+                    search={search}
+                  />
+                </div>
+              ))}
             {loading && (
               <PlaceList
                 className="places-page__list-loading"
@@ -461,18 +506,38 @@ export default function IndexPage() {
                 dataPlace={SegmentPlace.Places}
               />
             )}
-            {!loading && totalPlaces > places.length && (
-              <div className="places__pagination">
-                <Button primary inverted onClick={handleShowMore}>
-                  {l("pages.places.show_more")}
-                </Button>
-              </div>
-            )}
+            {!loading &&
+              totalPlaces > places.length &&
+              (!isFilteringByCategory || params.only_view_category) && (
+                <div className="places__pagination">
+                  <Button primary inverted onClick={handleShowMore}>
+                    {l("pages.places.show_more")}
+                  </Button>
+                </div>
+              )}
             {!loading && isSearching && totalPlaces === 0 && (
               <NoResults search={search} />
             )}
           </Grid.Column>
         </Grid.Row>
+        {isMobile && isCategoriesModalVisible && (
+          <CategoriesModal
+            categories={categories.map((category) => ({
+              categoryId: category.name,
+              active: params.categories.includes(category.name),
+            }))}
+            onClose={() => setIsCategoriesModalVisible(false)}
+            onClearAll={() => {
+              handleCategorySelection("clear")
+              setIsCategoriesModalVisible(false)
+            }}
+            onApplySelection={(categoryIds) => {
+              for (const category of categoryIds) {
+                handleCategorySelection("add", category)
+              }
+            }}
+          />
+        )}
       </Grid>
     </>
   )
