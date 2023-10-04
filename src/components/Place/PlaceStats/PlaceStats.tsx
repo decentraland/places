@@ -1,6 +1,8 @@
-import React from "react"
+import React, { useMemo } from "react"
 
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Header } from "decentraland-ui/dist/components/Header/Header"
@@ -9,6 +11,7 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { FeatureFlags } from "../../../modules/ff"
 import shorterNumber from "../../../utils/number/sortenNumber"
 
 import "./PlaceStats.css"
@@ -23,9 +26,27 @@ export type PlaceStatsProps = {
 export default React.memo(function PlaceStats(props: PlaceStatsProps) {
   const { place, loading, poi, hideUserCount } = props
   const l = useFormatMessage()
+  const [ff] = useFeatureFlagContext()
+  const rating = useMemo(() => {
+    if (
+      !place ||
+      (place.content_rating !== SceneContentRating.ADULT &&
+        place.content_rating !== SceneContentRating.RESTRICTED)
+    ) {
+      return SceneContentRating.TEEN.toLocaleLowerCase()
+    }
+    return place.content_rating.toLocaleLowerCase()
+  }, [place])
 
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
+      {!ff.flags[FeatureFlags.HideRating] && (
+        <Stats title={l("components.place_stats.age_rating_label")}>
+          <Header className="place-stats__rating">
+            {l(`components.place_stats.age_rating_${rating}`)}
+          </Header>
+        </Stats>
+      )}
       {!hideUserCount && (
         <Stats title={l("components.place_stats.active")}>
           <Header>{shorterNumber(place?.user_count || 0)}</Header>

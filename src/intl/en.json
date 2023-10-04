@@ -40,7 +40,11 @@
       "updated": "updated",
       "point_of_interest": "point of interest",
       "favorite": "favorite",
-      "added": "added"
+      "added": "added",
+      "age_rating_label": "age rating",
+      "age_rating_t": "TEEN",
+      "age_rating_a": "ADULT",
+      "age_rating_r": "RESTRICTED"
     },
     "place_description": {
       "created_by": "created by",
@@ -59,7 +63,17 @@
       "about": "About",
       "realms": "Realms",
       "description": "description",
-      "location": "location"
+      "location": "location",
+      "content_moderation": "Content Moderation",
+      "rate_label": "Please rate this scene"
+    },
+    "rating_button": {
+      "rating_t": "T",
+      "rating_t_label": "PG 13+",
+      "rating_a": "A",
+      "rating_a_label": "PG 18+",
+      "rating_r": "R",
+      "rating_r_label": "RESTRICTED"
     },
     "place_featured": {
       "jump_in": "Jump In",
@@ -72,6 +86,25 @@
     "search": {
       "search_results_title": "Search results for",
       "no_results": "No results found for"
+    },
+    "modal": {
+      "content_moderation": {
+        "you_are_about_title_t": "You're about to change {place_name}'s rating to Teen (PG 13+)",
+        "you_are_about_description_t": "This means that everyone will be able to see the scene's content without a warning.",
+        "you_are_about_title_a": "Confirm Adult (PG 18+) Content",
+        "you_are_about_description_a": "This scene has been flagged by the community for potentially containing adult content that may be inappropriate for some users.",
+        "you_are_about_title_r": "You're about to Restrict {place_name}",
+        "you_are_about_description_r": "This means that nobody will be able to see this scene's content.",
+        "proceed": "Confirm Rating",
+        "cancel": "Cancel"
+      },
+      "confirmed_rating": {
+        "title": "Updated {scene_name} has been rated as {rating}",
+        "description_t": "The rating for {scene_name} has been successfully changed to 'Teens PG13+.'This content is now available to every users aged 13 and above.",
+        "description_a": "The rating for {scene_name} has been successfully changed to 'Adult'. This content is now only available to users aged 18 and above.",
+        "description_r": "The rating for {scene_name} has been successfully changed to 'Restringed'. This content is non longer available.",
+        "button_label": "OK"
+      }
     }
   },
   "pages": {

@@ -1,0 +1,16 @@
+.moderation-modal .header,
+.moderation-modal .content {
+  text-align: center;
+}
+
+.moderation-modal .content h2.dg.Title {
+  color: #161518;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.moderation-modal .content p.dg.paragraph {
+  color: #43404a;
+  font-size: 18px;
+  font-weight: 400;
+}
