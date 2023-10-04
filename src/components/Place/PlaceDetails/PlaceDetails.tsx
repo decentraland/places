@@ -4,7 +4,6 @@ import ReactMarkdown from "react-markdown"
 
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
-import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -214,6 +213,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
         <ConfirmRatingModal
           open={openConfirmModal}
           selectedRate={selectedRate}
+          sceneName={place.title!}
           onConfirmRating={handleConfirmRating}
         />
       )}
