@@ -200,6 +200,13 @@
     "club": "🎉 Club",
     "shop": "🛍️ Shop",
     "social": "💬 Social",
-    "quests": "🗺 Quests"
+    "quests": "🗺 Quests",
+    "modal": {
+      "one_or_more": "Select one or more Categories",
+      "category_selected": "Category Selected"
+    },
+    "title": "Categories",
+    "new_label": "NEW",
+    "explore": "Explore Categories"
   }
 }

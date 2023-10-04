@@ -8,7 +8,7 @@
 }
 
 .category-filter__box--not-active .dcl.filter .filter-background {
-  background-color: var(--secondary-on-modal-hover);
+  background-color: var(--background);
 }
 
 .category-filter__box .dcl.filter > span {
@@ -21,16 +21,10 @@
   color: var(--text);
 }
 
-.ui.button.category-filter__remove-btn {
-  background-color: transparent;
-  min-width: 0;
-  line-height: normal;
-  padding: 0;
-  height: 24px;
-}
-
-.ui.modal .ui.button.category-filter__remove-btn {
-  background-color: transparent;
+.category-filter__remove-btn {
+  width: 20px;
+  height: 20px;
+  margin-left: 2px;
 }
 
 .category-filter__box > .dcl.filter {

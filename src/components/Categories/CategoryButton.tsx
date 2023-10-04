@@ -9,33 +9,18 @@ import {
 import "./CategoryButton.css"
 
 type CategoryButtonProps = ButtonProps & {
-  onClick?: () => void
-  rounded?: boolean
-  active?: boolean
-  disabled?: boolean
+  onClick: () => void
   category: string
 }
 
-export const CategoryButton = ({
-  category,
-  rounded,
-  active,
-  disabled,
-  ...rest
-}: CategoryButtonProps) => {
+export const CategoryButton = ({ category, onClick }: CategoryButtonProps) => {
   const l = useFormatMessage()
 
   return (
     <Button
-      className={`category-btn ${rounded ? "category-btn--rounded" : ""} ${
-        active
-          ? "category-btn--active"
-          : disabled
-          ? "category-btn--disabled"
-          : ""
-      }`}
+      className="category-btn"
       content={l(`categories.${category}`)}
-      {...rest}
+      onClick={onClick}
     />
   )
 }

@@ -35,6 +35,6 @@
   flex-direction: column;
 }
 
-.categories-list__listing > .category-btn {
+.categories-list__listing > .category-filter__box {
   margin-bottom: 8px;
 }

@@ -1,44 +1,50 @@
 import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 
+import { Check } from "../Icon/Check"
 import { Close } from "../Icon/Close"
 
 import "./CategoryFilter.css"
 
 type CategoryFilterProps = {
   category: string
-  notActive?: boolean
+  active?: boolean
   onRemoveFilter?: () => void
   onAddFilter?: () => void
+  useCheck?: boolean
 }
 
 export const CategoryFilter = ({
   category,
   onRemoveFilter,
   onAddFilter,
-  notActive,
+  active,
+  useCheck,
 }: CategoryFilterProps) => {
   const l = useFormatMessage()
 
   return (
     <span
       className={`category-filter__box ${
-        notActive ? "category-filter__box--not-active" : ""
+        !active ? "category-filter__box--not-active" : ""
       }`}
       onClick={() => onAddFilter && onAddFilter()}
     >
       <Filter>
         {l(`categories.${category}`)}
-        {onRemoveFilter && (
-          <Button
-            size="tiny"
-            content={<Close width="24" height="24" />}
+        {active && (
+          <span
             className="category-filter__remove-btn"
-            onClick={() => onRemoveFilter()}
-          />
+            onClick={onRemoveFilter ? () => onRemoveFilter() : undefined}
+          >
+            {useCheck ? (
+              <Check width="20" height="20" />
+            ) : (
+              <Close width="20" height="20" />
+            )}
+          </span>
         )}
       </Filter>
     </span>
