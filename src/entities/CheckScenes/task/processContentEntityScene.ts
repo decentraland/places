@@ -89,9 +89,6 @@ export function createPlaceFromContentEntityScene(
   const now = new Date()
   const title = contentEntityScene?.metadata?.display?.title || null
   const positions = (contentEntityScene?.pointers || []).sort()
-  const tags = (contentEntityScene?.metadata?.tags || [])
-    .slice(0, 100)
-    .map((tag) => tag.slice(0, 25))
 
   const thumbnail = getThumbnailFromContentEntityScene(
     contentEntityScene,
@@ -138,8 +135,6 @@ export function createPlaceFromContentEntityScene(
     like_score: 0,
     highlighted: false,
     highlighted_image: null,
-    featured: false,
-    featured_image: null,
     disabled: false,
     updated_at: now,
     world: !!contentEntityScene?.metadata?.worldConfiguration,
@@ -150,7 +145,6 @@ export function createPlaceFromContentEntityScene(
     description: contentEntityScene?.metadata?.display?.description || null,
     owner: contentEntityScene?.metadata?.owner || null,
     image: thumbnail,
-    tags,
     base_position: contentEntityScene?.metadata?.scene?.base || positions[0],
     positions,
     contact_name,
