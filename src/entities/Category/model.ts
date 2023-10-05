@@ -8,6 +8,17 @@ export default class CategoryModel extends Model<CategoryAttributes> {
   static tableName = "categories"
   static primaryKey = "name"
 
+  static findActiveCategories = async () => {
+    const query = SQL`
+      SELECT c.name FROM ${table(CategoryModel)} WHERE c.active IS true
+    `
+
+    return await CategoryModel.namedQuery<{ name: string }>(
+      "find_active_categories",
+      query
+    )
+  }
+
   static findCategoriesWithPlaces = async () => {
     const query = SQL`
       SELECT c.name, count(pc.place_id) FROM ${table(CategoryModel)} c
@@ -15,12 +26,9 @@ export default class CategoryModel extends Model<CategoryAttributes> {
       WHERE c.active IS true  
       GROUP BY c.name`
 
-    const categoriesFound =
-      await CategoryModel.namedQuery<CategoryWithPlaceCount>(
-        "find_categories_with_places_count",
-        query
-      )
-
-    return categoriesFound
+    return await CategoryModel.namedQuery<CategoryWithPlaceCount>(
+      "find_categories_with_places_count",
+      query
+    )
   }
 }

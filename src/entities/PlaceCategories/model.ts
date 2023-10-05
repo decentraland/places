@@ -52,6 +52,14 @@ export default class PlaceCategories extends Model<PlaceCategoriesAttributes> {
     await PlaceCategories.namedQuery("add_categories_to_places", query)
   }
 
+  static async cleanPlaceCategories(placeId: string) {
+    const query = SQL`DELETE FROM ${table(
+      PlaceCategories
+    )} WHERE place_id = ${placeId}`
+
+    await PlaceCategories.namedQuery("clean_place_categories", query)
+  }
+
   static async findCategoriesByPlaceId(placeId: string) {
     const query = SQL`SELECT category_id FROM ${table(
       PlaceCategories

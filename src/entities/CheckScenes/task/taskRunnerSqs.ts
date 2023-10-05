@@ -1,7 +1,9 @@
 import { v4 as uuid } from "uuid"
 
+import CategoryModel from "../../Category/model"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
+import PlaceCategories from "../../PlaceCategories/model"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
 import {
@@ -26,7 +28,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "owner",
-  "tags",
   "positions",
   "base_position",
   "contact_name",
@@ -37,7 +38,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "deployed_at",
-  "categories",
   "world",
   "world_name",
   "hidden",
@@ -53,17 +53,16 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
-  if (
-    contentEntityScene.metadata.worldConfiguration &&
-    !(
-      contentEntityScene.metadata.worldConfiguration.name ||
-      contentEntityScene.metadata.worldConfiguration.dclName
-    )
-  ) {
-    throw new Error("worldConfiguration without name")
-  }
-
   if (contentEntityScene.metadata.worldConfiguration) {
+    if (
+      !(
+        contentEntityScene.metadata.worldConfiguration.name ||
+        contentEntityScene.metadata.worldConfiguration.dclName
+      )
+    ) {
+      throw new Error("worldConfiguration without name")
+    }
+
     const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
       contentEntityScene.metadata.worldConfiguration.dclName) as string
 
@@ -145,10 +144,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const places = await PlaceModel.findEnabledByPositions(
       contentEntityScene.pointers
     )
-    placesToProcess = await processContentEntityScene(
-      contentEntityScene,
-      places
-    )
+    placesToProcess = processContentEntityScene(contentEntityScene, places)
   }
 
   if (!placesToProcess) {
@@ -167,6 +163,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.new))
 
+    await overridePlaceCategories(
+      placesToProcess.new.id,
+      contentEntityScene.metadata.tags || []
+    )
+
     notifyNewPlace(placesToProcess.new)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -182,6 +183,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.update))
+
+    await overridePlaceCategories(
+      placesToProcess.update.id,
+      contentEntityScene.metadata.tags || []
+    )
 
     notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
@@ -226,4 +232,32 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     CheckScenesModel.createMany(placesToDisable)
   }
+}
+
+async function getValidCategories(creatorTags: string[]) {
+  const availableCategories = await CategoryModel.findActiveCategories()
+
+  const validCategories = []
+
+  for (const tag of creatorTags) {
+    if (availableCategories.find(({ name }) => name === tag)) {
+      validCategories.push(tag)
+    }
+  }
+
+  return validCategories
+}
+
+async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
+  if (!creatorTags.length) return
+
+  const validCategories = await getValidCategories(creatorTags)
+
+  if (!validCategories.length) return
+
+  await PlaceCategories.cleanPlaceCategories(placeId)
+
+  await PlaceCategories.addCategoriesToPlaces(
+    validCategories.map((category) => [placeId, category])
+  )
 }
