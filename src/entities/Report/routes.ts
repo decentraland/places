@@ -4,6 +4,7 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
+import { retry } from "radash/dist/async"
 
 import { extension } from "./util"
 
@@ -37,17 +38,28 @@ export async function getSignedUrl(
 
   const signedUrlExpireSeconds = 60 * 1000
 
-  const signedUrl = s3.getSignedUrl("putObject", {
-    Bucket: BUCKET_NAME,
-    Key: `${filename}`,
-    Expires: signedUrlExpireSeconds,
-    ContentType: mimetype,
-    ACL: "private",
-    CacheControl: "public, max-age=31536000, immutable",
-    Metadata: {
-      ...userAuth.metadata,
-      address: userAuth.address,
-    },
+  const signedUrl = await retry({}, async () => {
+    const responseUrl = await Promise.resolve(
+      s3.getSignedUrl("putObject", {
+        Bucket: BUCKET_NAME,
+        Key: `${filename}`,
+        Expires: signedUrlExpireSeconds,
+        ContentType: mimetype,
+        ACL: "private",
+        CacheControl: "public, max-age=31536000, immutable",
+        Metadata: {
+          ...userAuth.metadata,
+          address: userAuth.address,
+        },
+      })
+    )
+
+    const url = new URL(responseUrl)
+    if (url.searchParams.size === 0) {
+      throw new Error("Invalid AWS response")
+    }
+
+    return responseUrl
   })
 
   const topLevelDomain = ENV === "prod" ? ".org" : ".zone"
