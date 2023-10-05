@@ -39,20 +39,18 @@ export async function getSignedUrl(
   const signedUrlExpireSeconds = 60 * 1000
 
   const signedUrl = await retry({}, async () => {
-    const responseUrl = await Promise.resolve(
-      s3.getSignedUrl("putObject", {
-        Bucket: BUCKET_NAME,
-        Key: `${filename}`,
-        Expires: signedUrlExpireSeconds,
-        ContentType: mimetype,
-        ACL: "private",
-        CacheControl: "public, max-age=31536000, immutable",
-        Metadata: {
-          ...userAuth.metadata,
-          address: userAuth.address,
-        },
-      })
-    )
+    const responseUrl = s3.getSignedUrl("putObject", {
+      Bucket: BUCKET_NAME,
+      Key: `${filename}`,
+      Expires: signedUrlExpireSeconds,
+      ContentType: mimetype,
+      ACL: "private",
+      CacheControl: "public, max-age=31536000, immutable",
+      Metadata: {
+        ...userAuth.metadata,
+        address: userAuth.address,
+      },
+    })
 
     const url = new URL(responseUrl)
     if (url.searchParams.size === 0) {
