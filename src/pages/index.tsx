@@ -141,7 +141,7 @@ export default function OverviewPage() {
           places={featuredList}
           title={l("pages.overview.featured")}
           href={locations.places({
-            only_featured: true,
+            categories: ["featured"],
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
@@ -213,7 +213,7 @@ export default function OverviewPage() {
       <OverviewList
         places={poisList}
         title={l("pages.overview.points_of_interest")}
-        href={locations.places({ only_pois: true })}
+        href={locations.places({ categories: ["poi"] })}
         onClickFavorite={(e, place) =>
           handleFavorite(place.id, place, {
             place: e.currentTarget.dataset.place!,

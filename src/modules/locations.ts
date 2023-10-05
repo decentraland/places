@@ -14,9 +14,7 @@ import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 
 export type PlacesPageOptions = {
-  only_pois: boolean
   only_favorites: boolean
-  only_featured: boolean
   only_highlighted: boolean
   order_by: PlaceListOrderBy
   order: "asc" | "desc"
@@ -36,8 +34,6 @@ export type WorldsPageOptions = {
 
 const pageOptionsDefault: PlacesPageOptions = {
   only_favorites: false,
-  only_pois: false,
-  only_featured: false,
   only_highlighted: false,
   order_by: PlaceListOrderBy.MOST_ACTIVE,
   order: "desc",
@@ -57,9 +53,6 @@ const pageWorldsOptionsDefault: WorldsPageOptions = {
 
 export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
   return {
-    only_pois: bool(params.get("only_pois")) ?? pageOptionsDefault.only_pois,
-    only_featured:
-      bool(params.get("only_featured")) ?? pageOptionsDefault.only_featured,
     only_highlighted:
       bool(params.get("only_highlighted")) ??
       pageOptionsDefault.only_highlighted,

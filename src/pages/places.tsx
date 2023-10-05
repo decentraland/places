@@ -33,14 +33,12 @@ import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
-  PlaceListOptions,
   PlaceListOrderBy,
 } from "../entities/Place/types"
 import usePlaceCategories from "../hooks/usePlaceCategories"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, { toPlacesOptions } from "../modules/locations"
-import { getPois } from "../modules/pois"
 import { SegmentPlace } from "../modules/segment"
 
 import "./places.css"
@@ -72,14 +70,10 @@ export default function IndexPage() {
   const categories = usePlaceCategories()
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
-    const { only_pois, ...extra } = API.fromPagination(params, {
+    const options = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
     })
-    const options: Partial<PlaceListOptions> = extra
-    if (only_pois) {
-      const pois = await getPois()
-      options.positions = pois
-    }
+
     track(SegmentPlace.FilterChange, {
       filters: options,
       place: SegmentPlace.Places,
@@ -90,7 +84,7 @@ export default function IndexPage() {
       offset,
       categories: params.only_view_category
         ? [params.only_view_category]
-        : extra.categories,
+        : options.categories,
       search: isSearching ? search : undefined,
     })
 
@@ -118,9 +112,7 @@ export default function IndexPage() {
     }
   }, [
     params.only_favorites,
-    params.only_featured,
     params.only_highlighted,
-    params.only_pois,
     params.order,
     params.order_by,
     params.categories,
@@ -137,9 +129,7 @@ export default function IndexPage() {
     search,
     isSearching,
     params.only_favorites,
-    params.only_featured,
     params.only_highlighted,
-    params.only_pois,
     params.order,
     params.order_by,
     params.categories,
