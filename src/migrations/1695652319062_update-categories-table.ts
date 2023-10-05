@@ -9,10 +9,17 @@ export const shorthands: ColumnDefinitions | undefined = undefined
 const INITIAL_CATEGORIES = [
   "poi",
   "featured",
-  "shop",
+  "gaming",
+  "gambling",
   "social",
-  "quests",
-  "club",
+  "music",
+  "art",
+  "fashion",
+  "crypto",
+  "education",
+  "commercial",
+  "sport",
+  "ads",
 ]
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
