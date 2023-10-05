@@ -24,7 +24,14 @@ export function usePlaceFromParams(params: URLSearchParams) {
           offset: 0,
           limit: 1,
         })
-        return places.data[0]
+
+        const place = places.data[0]
+
+        const { categories } = await Places.get().getPlaceCategories(place.id)
+
+        place.category_ids = categories
+
+        return place
       }
 
       return null

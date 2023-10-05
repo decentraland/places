@@ -201,4 +201,13 @@ export default class Places extends API {
 
     return result.data
   }
+
+  async getPlaceCategories(placeId: string) {
+    const result = await super.fetch<{
+      ok: boolean
+      data: { categories: string[] }
+    }>(`/places/${placeId}/categories`)
+
+    return result.data
+  }
 }

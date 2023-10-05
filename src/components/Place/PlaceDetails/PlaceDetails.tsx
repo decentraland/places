@@ -21,6 +21,7 @@ import { FeatureFlags } from "../../../modules/ff"
 import { getPois } from "../../../modules/pois"
 import { getRating } from "../../../modules/rating"
 import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
+import { CategoryFilter } from "../../Categories/CategoryFilter"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
@@ -103,6 +104,14 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
               </Label>
             </div>
           </div>
+          {(place?.category_ids || []).length > 0 && (
+            <div className="place-details__categories-container">
+              <h3>{l("components.place_detail.appears_on")}</h3>
+              {place.category_ids!.map((id) => (
+                <CategoryFilter category={id} />
+              ))}
+            </div>
+          )}
           <PlaceStats place={place} loading={loading} poi={isPoi} />
         </>
       )}

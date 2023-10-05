@@ -22,9 +22,7 @@ export type PlaceAttributes = {
   description: string | null
   image: string | null
   highlighted_image: string | null
-  featured_image: string | null
   owner: string | null
-  tags: string[]
   positions: string[]
   base_position: string
   contact_name: string | null
@@ -36,7 +34,6 @@ export type PlaceAttributes = {
   like_rate: number | null
   like_score: number | null
   highlighted: boolean
-  featured: boolean
   disabled: boolean
   disabled_at: Date | null
   created_at: Date
@@ -55,7 +52,8 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_count?: number
   user_visits?: number
   realms_detail?: Realm[]
-  category_id: string
+  category_id?: string
+  category_ids?: string[]
 }
 
 export type GetPlaceParams = {

@@ -77,7 +77,7 @@ export const getPlaceListQuerySchema = schema({
     categories: {
       type: "array",
       items: { type: "string" },
-      description: "Filter places by their category",
+      description: "Filter places by available categories",
       nullable: true as any,
     },
   },
@@ -146,13 +146,6 @@ export const placeSchema = schema({
       minLength: 0,
       maxLength: 42,
       description: "The owner's name",
-    },
-    tags: {
-      type: "array",
-      description: "A list of tags for the place",
-      items: {
-        type: "string",
-      },
     },
     positions: {
       type: "array",

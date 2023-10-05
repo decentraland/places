@@ -9,5 +9,3 @@ export type CategoryWithPlaceCount = {
   name: string
   count: string
 }
-
-export const ALL_PLACE_CATEGORY = "all"
