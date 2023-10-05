@@ -188,10 +188,8 @@ export default class Places extends API {
     params: { content_rating: SceneContentRating; comment?: string }
   ) {
     return this.fetch<UpdateUserFavoriteResponse>(
-      `/places/${placeId}/update_rating`,
-      this.options({ method: "PATCH" })
-        .json(params)
-        .authorization({ sign: true })
+      `/places/${placeId}/rating`,
+      this.options({ method: "PUT" }).json(params).authorization({ sign: true })
     )
   }
 }

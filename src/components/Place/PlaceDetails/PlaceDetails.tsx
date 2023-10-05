@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react"
+import React, { useMemo, useState } from "react"
 
 import ReactMarkdown from "react-markdown"
 
@@ -7,7 +7,6 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
@@ -17,19 +16,17 @@ import remarkGfm from "remark-gfm"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import Places from "../../../api/Places"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { FeatureFlags } from "../../../modules/ff"
-import locations from "../../../modules/locations"
 import { getPois } from "../../../modules/pois"
+import { getRating } from "../../../modules/rating"
 import RatingButton from "../../Button/RatingButton"
-import ConfirmRatingModal from "../../Modal/ConfirmRatingModal"
-import ContentModerationModal from "../../Modal/ContentModerationModal"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
 
 export type PlaceDetailsProps = {
+  onChangeRating: (e: React.MouseEvent<any>, rating: SceneContentRating) => void
   place: AggregatePlaceAttributes
   loading: boolean
 }
@@ -40,72 +37,23 @@ export enum PlaceDetailsTab {
 }
 
 export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
-  const { place, loading } = props
+  const { onChangeRating, place, loading } = props
   const l = useFormatMessage()
   const [pois] = useAsyncMemo(getPois)
   const [activeTab, setActiveTab] = useState(PlaceDetailsTab.About)
-  const [openContentModerationModal, setOpenContentModerationModal] =
-    useState(false)
-  const [openConfirmModal, setOpenConfirmModal] = useState(false)
-  const [selectedRate, setSelectedRate] = useState<
-    SceneContentRating | boolean
-  >(false)
 
   const [ff] = useFeatureFlagContext()
   const [account] = useAuthContext()
   const admin = isAdmin(account)
 
   const rating = useMemo(
-    () => place?.content_rating?.toLocaleUpperCase() || SceneContentRating.TEEN,
+    () => getRating(place?.content_rating, SceneContentRating.RATING_PENDING),
     [place]
   )
 
   const isPoi = useMemo(
     () => intersects(place?.positions || [], pois || []),
     [place, pois]
-  )
-
-  const handleRatingButton = useCallback(
-    (e: React.MouseEvent<any>, rating: SceneContentRating) => {
-      e.stopPropagation()
-      e.preventDefault()
-      setSelectedRate(rating)
-      const data = new Set(Object.values(SceneContentRating))
-      const placeRating = data.has(place.content_rating)
-        ? place.content_rating
-        : SceneContentRating.TEEN
-      if (placeRating !== rating) {
-        setOpenContentModerationModal(true)
-      }
-    },
-    [place, setSelectedRate, setOpenContentModerationModal]
-  )
-
-  const handleChangeRating = useCallback(
-    async (e: React.MouseEvent<any>) => {
-      e.stopPropagation()
-      e.preventDefault()
-      if (typeof selectedRate === "boolean") return
-
-      setOpenContentModerationModal(false)
-
-      await Places.get().updateRating(place.id, {
-        content_rating: selectedRate as SceneContentRating,
-      })
-
-      setOpenConfirmModal(true)
-    },
-    [place, selectedRate, setOpenContentModerationModal, setOpenConfirmModal]
-  )
-
-  const handleConfirmRating = useCallback(
-    (e: React.MouseEvent<any>) => {
-      e.stopPropagation()
-      e.preventDefault()
-
-      navigate(locations.place(place.id))
-    },
-    [place]
   )
 
   return (
@@ -165,57 +113,21 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
           <div className="place-details__rating-box-container">
             <RatingButton
               rating={SceneContentRating.TEEN}
-              current={
-                rating !== SceneContentRating.ADULT &&
-                rating !== SceneContentRating.RESTRICTED
-              }
-              active={
-                (!selectedRate &&
-                  rating !== SceneContentRating.ADULT &&
-                  rating !== SceneContentRating.RESTRICTED) ||
-                selectedRate === SceneContentRating.TEEN
-              }
-              onClick={(e) => handleRatingButton(e, SceneContentRating.TEEN)}
+              active={rating === SceneContentRating.TEEN}
+              onClick={(e) => onChangeRating(e, SceneContentRating.TEEN)}
             />
             <RatingButton
               rating={SceneContentRating.ADULT}
-              current={rating === SceneContentRating.ADULT}
-              active={
-                (!selectedRate && rating === SceneContentRating.ADULT) ||
-                selectedRate === SceneContentRating.ADULT
-              }
-              onClick={(e) => handleRatingButton(e, SceneContentRating.ADULT)}
+              active={rating === SceneContentRating.ADULT}
+              onClick={(e) => onChangeRating(e, SceneContentRating.ADULT)}
             />
             <RatingButton
               rating={SceneContentRating.RESTRICTED}
-              current={rating === SceneContentRating.RESTRICTED}
-              active={
-                (!selectedRate && rating === SceneContentRating.RESTRICTED) ||
-                selectedRate === SceneContentRating.RESTRICTED
-              }
-              onClick={(e) =>
-                handleRatingButton(e, SceneContentRating.RESTRICTED)
-              }
+              active={rating === SceneContentRating.RESTRICTED}
+              onClick={(e) => onChangeRating(e, SceneContentRating.RESTRICTED)}
             />
           </div>
         </div>
-      )}
-      {admin && selectedRate && typeof selectedRate !== "boolean" && (
-        <ContentModerationModal
-          onClickOpen={(e, action) => setOpenContentModerationModal(action)}
-          place={place}
-          open={openContentModerationModal}
-          selectedRate={selectedRate}
-          onChangeRating={handleChangeRating}
-        />
-      )}
-      {admin && selectedRate && typeof selectedRate !== "boolean" && (
-        <ConfirmRatingModal
-          open={openConfirmModal}
-          selectedRate={selectedRate}
-          sceneName={place.title!}
-          onConfirmRating={handleConfirmRating}
-        />
       )}
     </div>
   )

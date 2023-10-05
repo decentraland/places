@@ -10,11 +10,10 @@ export type RatingButtonProps = {
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void
   rating: SceneContentRating
   active: boolean
-  current: boolean
 }
 
 export default React.memo(function RatingButton(props: RatingButtonProps) {
-  const { onClick, current, active } = props
+  const { onClick, active } = props
   const l = useFormatMessage()
   const rating = props.rating.toLowerCase()
   return (
@@ -22,7 +21,6 @@ export default React.memo(function RatingButton(props: RatingButtonProps) {
       className={TokenList.join([
         "rating-button",
         `rating-${rating}`,
-        current && "current",
         active && "selected",
       ])}
       onClick={onClick}

@@ -1,25 +1,31 @@
-import React, { useCallback, useEffect, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
+import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
+import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
+import ConfirmRatingModal from "../components/Modal/ConfirmRatingModal"
+import ContentModerationModal from "../components/Modal/ContentModerationModal"
 import WorldDescription from "../components/World/WorldDescription/WorldDescription"
 import WorldDetails from "../components/World/WorldDetails/WorldDetails"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { useWorldFromParams } from "../hooks/useWorldFromParams"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
+import { getRating } from "../modules/rating"
 import { SegmentPlace } from "../modules/segment"
 
 export type EventPageState = {
@@ -31,6 +37,11 @@ export default function WorldPage() {
   const track = useTrackContext()
   const [share] = useShareContext()
   const location = useLocation()
+  const [account] = useAuthContext()
+  const admin = isAdmin(account)
+  const [openContentModerationModal, setOpenContentModerationModal] =
+    useState(false)
+  const [openConfirmModal, setOpenConfirmModal] = useState(false)
 
   const params = useMemo(
     () => new URLSearchParams(location.search),
@@ -59,8 +70,13 @@ export default function WorldPage() {
       handlingLike,
       handleDislike,
       handlingDislike,
+      handleRating,
     },
   ] = usePlacesManager(placeMemo)
+
+  const [selectedRate, setSelectedRate] = useState<SceneContentRating>(
+    getRating(place?.content_rating)
+  )
 
   const handleShare = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -82,6 +98,35 @@ export default function WorldPage() {
   )
 
   const [ff] = useFeatureFlagContext()
+
+  const handleChangeRating = useCallback(
+    async (e: React.MouseEvent<any>) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (selectedRate === place.content_rating) return
+
+      setOpenContentModerationModal(false)
+
+      await handleRating(place.id, selectedRate as SceneContentRating)
+
+      setOpenConfirmModal(true)
+    },
+    [place, selectedRate, setOpenContentModerationModal, setOpenConfirmModal]
+  )
+
+  const handleRatingButton = useCallback(
+    (e: React.MouseEvent<any>, rating: SceneContentRating) => {
+      setSelectedRate(rating)
+      const placeRating = getRating(
+        place.content_rating,
+        SceneContentRating.RATING_PENDING
+      )
+      if (placeRating !== rating) {
+        setOpenContentModerationModal(true)
+      }
+    },
+    [place, setSelectedRate, setOpenContentModerationModal]
+  )
 
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
@@ -167,9 +212,31 @@ export default function WorldPage() {
             loadingDislike={handlingDislike.has(place?.id)}
             dataPlace={SegmentPlace.Place}
           />
-          <WorldDetails place={place} loading={worldRetrivedState.loading} />
+          <WorldDetails
+            place={place}
+            loading={worldRetrivedState.loading}
+            onChangeRating={handleRatingButton}
+          />
         </ItemLayout>
       </Container>
+
+      {admin && place && (
+        <ContentModerationModal
+          onClickOpen={(e, action) => setOpenContentModerationModal(action)}
+          place={place}
+          open={openContentModerationModal}
+          selectedRate={selectedRate}
+          onChangeRating={handleChangeRating}
+        />
+      )}
+      {admin && place && (
+        <ConfirmRatingModal
+          open={openConfirmModal}
+          selectedRate={selectedRate}
+          sceneName={place.title!}
+          onConfirmRating={() => setOpenConfirmModal(false)}
+        />
+      )}
     </>
   )
 }

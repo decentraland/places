@@ -27,5 +27,5 @@ export default routes((router) => {
   )
   router.get("/places/:place_id", getPlace)
   router.get("/places", getPlaceList)
-  router.patch("/places/:place_id/update_rating", updateRating)
+  router.put("/places/:place_id/rating", updateRating)
 }, {})

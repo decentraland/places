@@ -10,8 +10,8 @@ import { extension } from "./util"
 
 const ACCESS_KEY = env("AWS_ACCESS_KEY")
 const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
+const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
 const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
-const ENV = env("DCL_DEFAULT_ENV", "")
 
 const s3 = new AWS.S3({
   accessKeyId: ACCESS_KEY,
@@ -24,7 +24,7 @@ export default routes((router) => {
 
 export async function getSignedUrl(
   ctx: Context<{}, "request" | "params">
-): Promise<ApiResponse<{ signedUrl: string }>> {
+): Promise<ApiResponse<{ signed_url: string }>> {
   const initial = Date.now()
   const userAuth = await withAuth(ctx)
   const mimetype = "application/json"
@@ -57,15 +57,14 @@ export async function getSignedUrl(
       throw new Error("Invalid AWS response")
     }
 
-    return responseUrl
+    if (BUCKET_HOSTNAME) {
+      url.hostname = BUCKET_HOSTNAME
+    }
+
+    return url.toString()
   })
 
-  const topLevelDomain = ENV === "prod" ? ".org" : ".zone"
-
-  const url = new URL(signedUrl)
-  url.hostname = `${BUCKET_NAME}.decentraland${topLevelDomain}`
-
   return new ApiResponse({
-    signedUrl: url.toString(),
+    signed_url: signedUrl,
   })
 }
