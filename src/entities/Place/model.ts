@@ -230,7 +230,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "user"
       | "only_favorites"
       | "positions"
-      | "only_featured"
       | "only_highlighted"
       | "search"
       | "categories"

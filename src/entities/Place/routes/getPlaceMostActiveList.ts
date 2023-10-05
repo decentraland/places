@@ -60,7 +60,6 @@ export const getPlaceMostActiveList = Router.memo(
       offset: numeric(query.offset, { min: 0 }),
       limit: numeric(query.limit, { min: 0, max: 100 }),
       only_favorites: !!bool(query.only_favorites),
-      only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions.length
         ? hotScenesPositions.filter((position) => positions.has(position))

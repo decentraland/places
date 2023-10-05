@@ -153,7 +153,6 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1,
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
@@ -191,7 +190,6 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1,
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
@@ -236,7 +234,6 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1000,
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
@@ -285,7 +282,6 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1000,
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
@@ -305,7 +301,6 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "",
@@ -337,7 +332,6 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "decentraland atlas",
@@ -369,7 +363,6 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
@@ -383,7 +376,6 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
-        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
@@ -484,7 +476,7 @@ describe(`findWithHotScenes`, () => {
           offset: 0,
           limit: 1,
           only_favorites: false,
-          only_featured: false,
+
           only_highlighted: false,
           positions: ["-9,-9"],
           order_by: "created_at",

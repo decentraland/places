@@ -37,12 +37,6 @@ export const getPlaceListQuerySchema = schema({
       description: "True if shows only favorite places",
       nullable: true as any,
     },
-    only_featured: {
-      type: "string",
-      format: "boolean",
-      description: "True if shows only featured places",
-      nullable: true as any,
-    },
     only_highlighted: {
       type: "string",
       format: "boolean",
