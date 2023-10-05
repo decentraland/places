@@ -65,7 +65,8 @@
       "description": "description",
       "location": "location",
       "content_moderation": "Content Moderation",
-      "rate_label": "Please rate this scene"
+      "rate_label": "Please rate this scene",
+      "appears_on": "Appears On"
     },
     "rating_button": {
       "rating_t": "T",
