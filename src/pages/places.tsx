@@ -104,17 +104,7 @@ export default function IndexPage() {
 
       setAllPlaces(placesFetch.data)
     } else {
-      if (isFilteringByCategory) {
-        setAllPlaces(placesFetch.data)
-      } else {
-        const places: AggregatePlaceAttributes[] = [...allPlaces]
-        for (const newPlace of placesFetch.data) {
-          if (!places.find((place) => place.id == newPlace.id)) {
-            places.push(newPlace)
-          }
-        }
-        setAllPlaces(places)
-      }
+      setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
     }
 
     if (Number.isSafeInteger(placesFetch.total)) {
@@ -424,7 +414,7 @@ export default function IndexPage() {
                     onClick={() => handleCategorySelection("clear")}
                   >
                     <Filter>
-                      <Trash width="24" height="24" />{" "}
+                      <Trash width="20" height="20" />{" "}
                       <p>{l("pages.places.clear_all")}</p>
                     </Filter>
                   </span>
@@ -436,6 +426,7 @@ export default function IndexPage() {
                   <div>
                     <CategoryFilter
                       category={params.only_view_category}
+                      active
                       onRemoveFilter={() =>
                         toggleViewAllCategory(params.only_view_category)
                       }
