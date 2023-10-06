@@ -1,9 +1,17 @@
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { v4 as uuid } from "uuid"
 
+import getContentRating, {
+  isDowngradingRating,
+  isUpgradingRating,
+} from "../../../utils/rating/contentRating"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
+import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
 
 export type ProcessEntitySceneResult =
@@ -67,6 +75,27 @@ export function createPlaceFromContentEntityScene(
     contentEntityScene?.metadata?.worldConfiguration?.dclName ||
     null
 
+  const contentEntitySceneRating =
+    contentEntityScene?.metadata?.policy?.contentRating ||
+    SceneContentRating.RATING_PENDING
+  if (
+    data.content_rating &&
+    isDowngradingRating(
+      contentEntitySceneRating,
+      data.content_rating as SceneContentRating
+    )
+  ) {
+    notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)
+  } else if (
+    data.content_rating &&
+    isUpgradingRating(
+      contentEntitySceneRating,
+      data.content_rating as SceneContentRating
+    )
+  ) {
+    notifyUpgradingRating(data as PlaceAttributes, "Content Creator")
+  }
+
   const placeParsed: PlaceAttributes = {
     id: uuid(),
     likes: 0,
@@ -94,7 +123,7 @@ export function createPlaceFromContentEntityScene(
     positions,
     contact_name,
     contact_email: contentEntityScene?.metadata?.contact?.email || null,
-    content_rating: contentEntityScene?.metadata?.policy?.contentRating || null,
+    content_rating: getContentRating(contentEntityScene, data),
     created_at: now,
     deployed_at: new Date(contentEntityScene.timestamp),
     disabled_at:

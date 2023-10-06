@@ -44,6 +44,10 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
 export async function taskRunnerSqs(job: DeploymentToSqs) {
   const contentEntityScene = await processEntityId(job)
 
+  if (!contentEntityScene) {
+    return null
+  }
+
   let placesToProcess: ProcessEntitySceneResult | null = null
 
   if (
@@ -177,15 +181,15 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       (await PlacePositionModel.removePositions([...positions]))
 
     notifyDisablePlaces(placesToProcess.disabled)
-    placesToProcess.disabled.forEach((place) => {
-      // TODO: use createMany instead of createOne
-      CheckScenesModel.createOne({
-        entity_id: job.entity.entityId,
-        content_server_url: job.contentServerUrls![0],
-        base_position: place.base_position,
-        positions: place.positions,
-        action: CheckSceneLogsTypes.DISABLED,
-      })
-    })
+
+    const placesToDisable = placesToProcess.disabled.map((place) => ({
+      entity_id: job.entity.entityId,
+      content_server_url: job.contentServerUrls![0],
+      base_position: place.base_position,
+      positions: place.positions,
+      action: CheckSceneLogsTypes.DISABLED,
+    }))
+
+    CheckScenesModel.createMany(placesToDisable)
   }
 }

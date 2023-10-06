@@ -15,7 +15,7 @@ export function createSceneConsumerTask(
   const consumer = new SQSConsumer(sqs, params)
   return new Task({
     name: "scenes_consumer",
-    repeat: Task.Repeat.Each10Seconds, // TODO: CHANGE TO Each10Minutes
+    repeat: Task.Repeat.Each10Seconds,
     task: async (ctx) => {
       const logger = ctx.logger
       logger.log("Start scenes_consumer")

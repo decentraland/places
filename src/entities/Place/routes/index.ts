@@ -4,6 +4,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 
 import { getPlace } from "./getPlace"
 import { getPlaceList } from "./getPlaceList"
+import { updateRating } from "./updateRating"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
@@ -26,4 +27,5 @@ export default routes((router) => {
   )
   router.get("/places/:place_id", getPlace)
   router.get("/places", getPlaceList)
+  router.patch("/places/:place_id/update_rating", updateRating)
 }, {})
