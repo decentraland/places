@@ -17,13 +17,12 @@ import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { FeatureFlags } from "../../../modules/ff"
 import { getRating } from "../../../modules/rating"
-import RatingButton from "../../Button/RatingButton"
+import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
 import PlaceStats from "../../Place/PlaceStats/PlaceStats"
 
 import "./WorldDetails.css"
 
-export type WorldDetailsProps = {
-  onChangeRating: (e: React.MouseEvent<any>, rating: SceneContentRating) => void
+export type WorldDetailsProps = Pick<RatingButtonProps, "onChangeRating"> & {
   place: AggregatePlaceAttributes
   loading: boolean
 }
@@ -110,17 +109,17 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
             <RatingButton
               rating={SceneContentRating.TEEN}
               active={rating === SceneContentRating.TEEN}
-              onClick={(e) => onChangeRating(e, SceneContentRating.TEEN)}
+              onChangeRating={onChangeRating}
             />
             <RatingButton
               rating={SceneContentRating.ADULT}
               active={rating === SceneContentRating.ADULT}
-              onClick={(e) => onChangeRating(e, SceneContentRating.ADULT)}
+              onChangeRating={onChangeRating}
             />
             <RatingButton
               rating={SceneContentRating.RESTRICTED}
               active={rating === SceneContentRating.RESTRICTED}
-              onClick={(e) => onChangeRating(e, SceneContentRating.RESTRICTED)}
+              onChangeRating={onChangeRating}
             />
           </div>
         </div>

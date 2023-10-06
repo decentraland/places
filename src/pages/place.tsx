@@ -10,11 +10,13 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
+import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
+import { RatingButtonProps } from "../components/Button/RatingButton"
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
 import ConfirmRatingModal from "../components/Modal/ConfirmRatingModal"
@@ -108,7 +110,7 @@ export default function PlacePage() {
     [place, track]
   )
 
-  const handleChangeRating = useCallback(
+  const [handlingChangeRating, handleChangeRating] = useAsyncTask(
     async (e: React.MouseEvent<any>) => {
       e.stopPropagation()
       e.preventDefault()
@@ -124,13 +126,13 @@ export default function PlacePage() {
   )
 
   const handleRatingButton = useCallback(
-    (e: React.MouseEvent<any>, rating: SceneContentRating) => {
-      setSelectedRate(rating)
+    (e: React.MouseEvent<any>, ratingProps: RatingButtonProps) => {
+      setSelectedRate(ratingProps.rating)
       const placeRating = getRating(
         place.content_rating,
         SceneContentRating.RATING_PENDING
       )
-      if (placeRating !== rating) {
+      if (placeRating !== ratingProps.rating) {
         setOpenContentModerationModal(true)
       }
     },
@@ -232,11 +234,12 @@ export default function PlacePage() {
       </Container>
       {admin && place && (
         <ContentModerationModal
-          onClickOpen={(e, action) => setOpenContentModerationModal(action)}
-          place={place}
+          onOpen={() => setOpenContentModerationModal(true)}
+          onClose={() => setOpenContentModerationModal(false)}
           open={openContentModerationModal}
+          place={place}
           selectedRate={selectedRate}
-          onChangeRating={handleChangeRating}
+          onActionClick={handleChangeRating}
         />
       )}
       {admin && place && (
@@ -244,7 +247,8 @@ export default function PlacePage() {
           open={openConfirmModal}
           selectedRate={selectedRate}
           sceneName={place.title!}
-          onConfirmRating={() => setOpenConfirmModal(false)}
+          onClose={() => setOpenConfirmModal(false)}
+          loading={handlingChangeRating}
         />
       )}
     </>
