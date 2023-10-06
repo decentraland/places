@@ -6,7 +6,8 @@ const attributes: Array<keyof PlaceAttributes> = [
   "base_position",
   "highlighted_image",
   "highlighted",
-
+  "featured",
+  "featured_image",
   "world_name",
 ]
 

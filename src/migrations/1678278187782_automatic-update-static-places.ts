@@ -7,16 +7,16 @@ const attributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "highlighted_image",
-
+  "featured_image",
   "owner",
-
+  "tags",
   "positions",
   "base_position",
   "contact_name",
   "contact_email",
   "content_rating",
   "highlighted",
-
+  "featured",
   "disabled",
   "disabled_at",
 ]
