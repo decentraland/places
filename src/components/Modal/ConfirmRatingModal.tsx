@@ -30,8 +30,6 @@ export default React.memo(function ConfirmRatingModal(
     [onClose]
   )
 
-  console.log("loading", loading)
-
   return (
     <Modal
       onClose={onClose}
