@@ -1,5 +1,8 @@
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { WorldAbout } from "../entities/CheckScenes/types"
 import {
@@ -19,7 +22,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   base_position: "0,0",
   contact_name: "paralax",
   contact_email: null,
-  content_rating: null,
+  content_rating: SceneContentRating.RATING_PENDING,
   disabled: false,
   disabled_at: null,
   created_at: new Date("2023-03-28T13:05:45.437Z"),
@@ -53,7 +56,7 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   base_position: "0,0",
   contact_name: "paralax",
   contact_email: null,
-  content_rating: null,
+  content_rating: SceneContentRating.RATING_PENDING,
   disabled: false,
   disabled_at: null,
   created_at: new Date("2023-03-28T13:05:45.437Z"),
@@ -262,7 +265,7 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   base_position: "-9,0",
   contact_name: "Temple",
   contact_email: null,
-  content_rating: "E",
+  content_rating: SceneContentRating.EVERYONE,
   disabled: false,
   disabled_at: null,
   created_at: new Date("2023-05-22T16:11:51.759Z"),

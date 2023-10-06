@@ -1,12 +1,13 @@
 .world-details__container {
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
   margin-top: 24.42px;
 }
 
 .world-details__container .world-details__description-container {
   margin: 20px;
+}
+
+.world-details__container > .dcl.tabs {
+  border-bottom: none;
 }
 
 .world-details__container.loading .world-details__description-container p,

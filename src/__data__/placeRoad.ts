@@ -1,3 +1,5 @@
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import { PlaceAttributes } from "../entities/Place/types"
 
 export const placeRoad: PlaceAttributes = {
@@ -25,7 +27,7 @@ export const placeRoad: PlaceAttributes = {
   positions: ["-89,11"],
   contact_name: "Decentraland Foundation",
   contact_email: null,
-  content_rating: null,
+  content_rating: SceneContentRating.RATING_PENDING,
   created_at: new Date("2023-03-28T18:37:39.918Z"),
   disabled_at: null,
   deployed_at: new Date("2022-11-14T17:22:05.307Z"),

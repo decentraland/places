@@ -17,9 +17,14 @@ export default function getContentRating(
   if (
     !contentEntitySceneRating ||
     (!placeRatings.has(contentEntitySceneRating) &&
-      (contentEntitySceneRating as string) !== "M")
+      (contentEntitySceneRating as string) !== "M" &&
+      (contentEntitySceneRating as string) !== "E")
   ) {
     return SceneContentRating.RATING_PENDING
+  }
+
+  if ((contentEntitySceneRating as string) === "E") {
+    return SceneContentRating.TEEN
   }
 
   if ((contentEntitySceneRating as string) === "M") {
@@ -48,7 +53,6 @@ export default function getContentRating(
 
 const ratingScale = [
   SceneContentRating.RATING_PENDING,
-  SceneContentRating.EVERYONE,
   SceneContentRating.TEEN,
   SceneContentRating.ADULT,
   SceneContentRating.RESTRICTED,

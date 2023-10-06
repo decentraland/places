@@ -1,25 +1,33 @@
-import React, { useCallback, useEffect, useMemo } from "react"
+import React, { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import NotFound from "decentraland-gatsby/dist/components/Layout/NotFound"
+import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useShareContext from "decentraland-gatsby/dist/context/Share/useShareContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
+import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
+import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
+import { RatingButtonProps } from "../components/Button/RatingButton"
 import ItemLayout from "../components/Layout/ItemLayout"
 import Navigation from "../components/Layout/Navigation"
+import ConfirmRatingModal from "../components/Modal/ConfirmRatingModal"
+import ContentModerationModal from "../components/Modal/ContentModerationModal"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
 import { usePlaceFromParams } from "../hooks/usePlaceFromParams"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
+import { getRating } from "../modules/rating"
 import { SegmentPlace } from "../modules/segment"
 import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
@@ -32,6 +40,11 @@ export default function PlacePage() {
   const track = useTrackContext()
   const [share] = useShareContext()
   const location = useLocation()
+  const [account] = useAuthContext()
+  const admin = isAdmin(account)
+  const [openContentModerationModal, setOpenContentModerationModal] =
+    useState(false)
+  const [openConfirmModal, setOpenConfirmModal] = useState(false)
 
   const params = useMemo(
     () => new URLSearchParams(location.search),
@@ -64,8 +77,19 @@ export default function PlacePage() {
       handlingLike,
       handleDislike,
       handlingDislike,
+      handleRating,
     },
   ] = usePlacesManager(placeMemo)
+
+  useEffect(() => {
+    if (place) {
+      setSelectedRate(getRating(place.content_rating))
+    }
+  }, [place])
+
+  const [selectedRate, setSelectedRate] = useState<SceneContentRating>(
+    getRating(place?.content_rating)
+  )
 
   const handleShare = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -84,6 +108,35 @@ export default function PlacePage() {
       }
     },
     [place, track]
+  )
+
+  const [handlingChangeRating, handleChangeRating] = useAsyncTask(
+    async (e: React.MouseEvent<any>) => {
+      e.stopPropagation()
+      e.preventDefault()
+      if (selectedRate === place.content_rating) return
+
+      setOpenContentModerationModal(false)
+
+      await handleRating(place.id, selectedRate as SceneContentRating)
+
+      setOpenConfirmModal(true)
+    },
+    [place, selectedRate, setOpenContentModerationModal, setOpenConfirmModal]
+  )
+
+  const handleRatingButton = useCallback(
+    (e: React.MouseEvent<any>, ratingProps: RatingButtonProps) => {
+      setSelectedRate(ratingProps.rating)
+      const placeRating = getRating(
+        place.content_rating,
+        SceneContentRating.RATING_PENDING
+      )
+      if (placeRating !== ratingProps.rating) {
+        setOpenContentModerationModal(true)
+      }
+    },
+    [place, setSelectedRate, setOpenContentModerationModal]
   )
 
   const [ff] = useFeatureFlagContext()
@@ -172,9 +225,32 @@ export default function PlacePage() {
             loadingDislike={handlingDislike.has(place?.id)}
             dataPlace={SegmentPlace.Place}
           />
-          <PlaceDetails place={place} loading={placeRetrivedState.loading} />
+          <PlaceDetails
+            place={place}
+            loading={placeRetrivedState.loading}
+            onChangeRating={handleRatingButton}
+          />
         </ItemLayout>
       </Container>
+      {admin && place && (
+        <ContentModerationModal
+          onOpen={() => setOpenContentModerationModal(true)}
+          onClose={() => setOpenContentModerationModal(false)}
+          open={openContentModerationModal}
+          place={place}
+          selectedRate={selectedRate}
+          onActionClick={handleChangeRating}
+        />
+      )}
+      {admin && place && (
+        <ConfirmRatingModal
+          open={openConfirmModal}
+          selectedRate={selectedRate}
+          sceneName={place.title!}
+          onClose={() => setOpenConfirmModal(false)}
+          loading={handlingChangeRating}
+        />
+      )}
     </>
   )
 }

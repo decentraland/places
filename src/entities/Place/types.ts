@@ -17,7 +17,7 @@ export type PlaceAttributes = {
   base_position: string
   contact_name: string | null
   contact_email: string | null
-  content_rating: string | null
+  content_rating: SceneContentRating
   likes: number
   dislikes: number
   favorites: number

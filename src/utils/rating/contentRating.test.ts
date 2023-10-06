@@ -4,7 +4,10 @@ import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntityScen
 import { contentEntitySceneMusicFestivalStage } from "../../__data__/contentEntitySceneMusicFestivalStage"
 import { contentEntitySceneSteamPunkDCQuest } from "../../__data__/contentEntitySceneSteamPunkDCQuest"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
-import getContentRating, { isDowngradingRating } from "./contentRating"
+import getContentRating, {
+  isDowngradingRating,
+  isUpgradingRating,
+} from "./contentRating"
 
 describe("Validate rating", () => {
   test(`Without a rating in the list of ratings return RP`, () => {
@@ -28,10 +31,10 @@ describe("Validate rating", () => {
   })
   test(`With E rating return E`, () => {
     expect(getContentRating(contentEntitySceneSteamPunkDCQuest)).toBe(
-      SceneContentRating.EVERYONE
+      SceneContentRating.TEEN
     )
   })
-  test(`With E rating and trying to downgrade from original R return R`, () => {
+  test(`With T rating and trying to downgrade from original R return R`, () => {
     expect(
       getContentRating(
         {
@@ -39,7 +42,7 @@ describe("Validate rating", () => {
           metadata: {
             ...contentEntitySceneGenesisPlaza.metadata,
             policy: {
-              contentRating: SceneContentRating.EVERYONE,
+              contentRating: SceneContentRating.TEEN,
               fly: true,
               voiceEnabled: true,
               blacklist: [],
@@ -67,9 +70,9 @@ describe("Validate downgrading", () => {
       isDowngradingRating(SceneContentRating.TEEN, SceneContentRating.TEEN)
     ).toBeFalsy()
   })
-  test(`Should return false if it's upgrading rating from E to A`, () => {
+  test(`Should return false if it's upgrading rating from A to T`, () => {
     expect(
-      isDowngradingRating(SceneContentRating.ADULT, SceneContentRating.EVERYONE)
+      isUpgradingRating(SceneContentRating.TEEN, SceneContentRating.ADULT)
     ).toBeFalsy()
   })
 })

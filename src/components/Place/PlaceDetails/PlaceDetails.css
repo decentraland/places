@@ -1,11 +1,9 @@
 .place-details__container {
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.08);
-  border-radius: 10px;
   margin-top: 24.42px;
 }
 
 .place-details__container > .dcl.tabs {
+  border-bottom: none;
 }
 
 .place-details__container .place-details__description-container {
@@ -93,6 +91,11 @@
 
 .place-details__container .place-realm-activity {
   padding: 0 20px 20px;
+}
+
+.place-details__rating-box-container {
+  display: flex;
+  justify-content: flex-start;
 }
 
 @media (max-width: 768px) {

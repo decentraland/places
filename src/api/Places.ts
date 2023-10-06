@@ -1,4 +1,5 @@
 import API from "decentraland-gatsby/dist/utils/api/API"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
@@ -180,5 +181,15 @@ export default class Places extends API {
     search?: string
   }) {
     return this.getWorlds({ only_favorites: true, ...options })
+  }
+
+  async updateRating(
+    placeId: string,
+    params: { content_rating: SceneContentRating; comment?: string }
+  ) {
+    return this.fetch<UpdateUserFavoriteResponse>(
+      `/places/${placeId}/rating`,
+      this.options({ method: "PUT" }).json(params).authorization({ sign: true })
+    )
   }
 }
