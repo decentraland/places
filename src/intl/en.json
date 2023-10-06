@@ -99,10 +99,10 @@
         "cancel": "Cancel"
       },
       "confirmed_rating": {
-        "title": "Updated {scene_name} has been rated as {rating}",
-        "description_t": "The rating for {scene_name} has been successfully changed to 'Teens PG13+.'This content is now available to every users aged 13 and above.",
-        "description_a": "The rating for {scene_name} has been successfully changed to 'Adult'. This content is now only available to users aged 18 and above.",
-        "description_r": "The rating for {scene_name} has been successfully changed to 'Restringed'. This content is non longer available.",
+        "title": "{scene_name} has been rated {rating}",
+        "description_t": "The rating for {scene_name} has been successful changed to Teen (PG 13+). This content is now available to all users aged 13 and above.",
+        "description_a": "The rating for {scene_name} has been successful changed to Adult (PG 18+). This content is now only available to users aged 18 and above.",
+        "description_r": "The rating for {scene_name} has been successful changed to Restricted. This content is now no longer visible in Decentraland.",
         "button_label": "OK"
       }
     }
