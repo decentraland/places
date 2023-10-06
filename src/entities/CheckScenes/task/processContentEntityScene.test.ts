@@ -37,6 +37,7 @@ describe("processContentEntityScene", () => {
         created_at: processEntitySceneResult!.new!.created_at,
         updated_at: processEntitySceneResult!.new!.updated_at,
       },
+      rating: processEntitySceneResult?.rating,
       disabled: [],
     })
   })
@@ -61,6 +62,7 @@ describe("processContentEntityScene", () => {
         created_at: processEntitySceneResult!.update!.created_at,
         updated_at: processEntitySceneResult!.update!.updated_at,
       },
+      rating: processEntitySceneResult?.rating,
       disabled: [],
     })
   })
@@ -80,6 +82,7 @@ describe("processContentEntityScene", () => {
         created_at: processEntitySceneResult!.new!.created_at,
         updated_at: processEntitySceneResult!.new!.updated_at,
       },
+      rating: processEntitySceneResult?.rating,
       disabled: [placeGenesisPlazaWithAggregatedAttributes],
     })
   })
@@ -107,6 +110,7 @@ describe("processContentEntityScene", () => {
         created_at: processEntitySceneResult!.update!.created_at,
         updated_at: processEntitySceneResult!.update!.updated_at,
       },
+      rating: processEntitySceneResult?.rating,
       disabled: [placeGenesisPlazaWithAggregatedAttributes],
     })
   })
