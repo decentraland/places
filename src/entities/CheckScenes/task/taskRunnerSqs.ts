@@ -235,14 +235,20 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 }
 
 async function getValidCategories(creatorTags: string[]) {
+  const forbidden = ["poi", "featured"]
+
   const availableCategories = await CategoryModel.findActiveCategories()
 
   const validCategories = []
 
   for (const tag of creatorTags) {
+    if (forbidden.includes(tag)) continue
+
     if (availableCategories.find(({ name }) => name === tag)) {
       validCategories.push(tag)
     }
+
+    if (validCategories.length === 3) break
   }
 
   return validCategories
