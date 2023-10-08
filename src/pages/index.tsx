@@ -69,7 +69,7 @@ export default function OverviewPage() {
     overviewOptions,
     search
   )
-  const categories = usePlaceCategories()
+  const categories = usePlaceCategories([])
 
   const [placeListSearch, worldListSearch] = useMemo(
     () => [placeSearch.data, worldSearch.data],
@@ -141,7 +141,7 @@ export default function OverviewPage() {
           places={featuredList}
           title={l("pages.overview.featured")}
           href={locations.places({
-            categories: ["featured"],
+            category_ids: ["featured"],
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
@@ -213,7 +213,7 @@ export default function OverviewPage() {
       <OverviewList
         places={poisList}
         title={l("pages.overview.points_of_interest")}
-        href={locations.places({ categories: ["poi"] })}
+        href={locations.places({ category_ids: ["poi"] })}
         onClickFavorite={(e, place) =>
           handleFavorite(place.id, place, {
             place: e.currentTarget.dataset.place!,
