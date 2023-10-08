@@ -151,7 +151,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const sql = SQL`
       SELECT p.*
-      ${conditional(!!options.categories.length, SQL`, pc.category_id`)}
+      ${conditional(!!options.category_ids.length, SQL`, pc.category_id`)}
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
@@ -188,11 +188,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
-        !!options.categories.length,
+        !!options.category_ids.length,
         SQL`INNER JOIN ${table(
           PlaceCategories
         )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
+          options.category_ids
         )}`
       )}
 
@@ -220,7 +220,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${offset(options.offset)}
     `
 
-    const queryResult = await this.namedQuery("find_with_agregates", sql)
+    const queryResult = await this.namedQuery<
+      AggregatePlaceAttributes & { category_id?: string }
+    >("find_with_agregates", sql)
     return queryResult
   }
 
@@ -232,7 +234,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "positions"
       | "only_highlighted"
       | "search"
-      | "categories"
+      | "category_ids"
     >
   ) {
     const isMissingEthereumAddress =
@@ -254,11 +256,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
-        !!options.categories.length,
+        !!options.category_ids.length,
         SQL`INNER JOIN ${table(
           PlaceCategories
         )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
+          options.category_ids
         )}`
       )}
 
@@ -280,12 +282,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
-    const results: { total: number }[] = await this.namedQuery(
+    const results: { total: string }[] = await this.namedQuery(
       "count_places",
       query
     )
 
-    return results[0].total
+    return Number(results[0].total)
   }
 
   static async disablePlaces(placesIds: string[]) {
