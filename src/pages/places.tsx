@@ -20,9 +20,11 @@ import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
 import Places from "../api/Places"
+import { CategoriesFilters } from "../components/Categories/CategoriesFilters"
 import { CategoriesList } from "../components/Categories/CategoriesList"
 import { CategoriesModal } from "../components/Categories/CategoriesModal"
 import { CategoryFilter } from "../components/Categories/CategoryFilter"
+import { Close } from "../components/Icon/Close"
 import { Filter as FilterIcon } from "../components/Icon/Filter"
 import { RedArrow } from "../components/Icon/RedArrow"
 import { Trash } from "../components/Icon/Trash"
@@ -38,7 +40,10 @@ import {
 import usePlaceCategories from "../hooks/usePlaceCategories"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
-import locations, { toPlacesOptions } from "../modules/locations"
+import locations, {
+  PlacesPageOptions,
+  toPlacesOptions,
+} from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
 
 import "./places.css"
@@ -65,9 +70,9 @@ export default function IndexPage() {
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
 
-  const isFilteringByCategory = params.categories.length > 0
+  const isFilteringByCategory = params.category_ids.length > 0
 
-  const categories = usePlaceCategories()
+  const categories = usePlaceCategories(params.category_ids)
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -82,9 +87,9 @@ export default function IndexPage() {
     const placesFetch = await Places.get().getPlaces({
       ...options,
       offset,
-      categories: params.only_view_category
+      category_ids: params.only_view_category
         ? [params.only_view_category]
-        : options.categories,
+        : options.category_ids,
       search: isSearching ? search : undefined,
     })
 
@@ -115,7 +120,7 @@ export default function IndexPage() {
     params.only_highlighted,
     params.order,
     params.order_by,
-    params.categories,
+    params.category_ids,
   ])
 
   useEffect(() => {
@@ -132,7 +137,7 @@ export default function IndexPage() {
     params.only_highlighted,
     params.order,
     params.order_by,
-    params.categories,
+    params.category_ids,
   ])
 
   useEffect(() => {
@@ -209,58 +214,37 @@ export default function IndexPage() {
     [location.pathname, params]
   )
 
-  function handleCategorySelection(action: "add", categoryId: string): void
-  function handleCategorySelection(action: "remove", categoryId: string): void
-  function handleCategorySelection(action: "clear"): void
-  function handleCategorySelection(
-    action: "add" | "remove" | "clear",
-    categoryId?: string
-  ): void {
-    const newParams = new URLSearchParams(searchParams)
-    let currentCategories = newParams.getAll("categories") || []
-    if (action === "add") {
-      if (!currentCategories.includes(categoryId!)) {
-        currentCategories.push(categoryId!)
-      } else {
-        return
-      }
+  function onCategoriesFilterChange(newCategories: string[]): void {
+    // change sorting when filter by categories
+    const newParams: PlacesPageOptions = {
+      ...params,
+      category_ids: newCategories,
     }
-
-    if (action === "remove") {
-      currentCategories = currentCategories.filter((id) => id !== categoryId)
-    }
-
-    if (action === "clear") {
-      currentCategories = []
-    }
-
-    newParams.delete("categories")
-
-    for (const category of currentCategories) {
-      newParams.append("categories", category)
+    if (
+      (!newParams.order_by ||
+        newParams.order_by !== PlaceListOrderBy.LIKE_SCORE_BEST) &&
+      newCategories.length > 0
+    ) {
+      newParams.order_by = PlaceListOrderBy.LIKE_SCORE_BEST
+    } else if (!newCategories.length) {
+      newParams.order_by = PlaceListOrderBy.MOST_ACTIVE
     }
 
     setAllPlaces([])
-    let target = location.pathname
-    const params = newParams.toString()
-    target += params ? "?" + params : ""
-    navigate(target)
+    navigate(locations.places(newParams))
   }
 
   const [ff] = useFeatureFlagContext()
 
   const toggleViewAllCategory = (categoryId?: string) => {
-    const newParams = new URLSearchParams(searchParams)
-    if (newParams.has("only_view_category")) {
-      newParams.delete("only_view_category")
+    const newParams = { ...params }
+    if (params.only_view_category) {
+      newParams.only_view_category = ""
     } else {
-      newParams.set("only_view_category", categoryId!)
+      newParams.only_view_category = categoryId!
     }
 
-    let target = location.pathname
-    const params = newParams.toString()
-    target += params ? "?" + params : ""
-    navigate(target)
+    navigate(locations.places(newParams))
   }
 
   if (ff.flags[FeatureFlags.Maintenance]) {
@@ -303,13 +287,14 @@ export default function IndexPage() {
           {!isMobile && (
             <Grid.Column tablet={4}>
               <CategoriesList
-                onSelect={(categoryId) =>
-                  handleCategorySelection("add", categoryId)
+                onChange={(newCategories) =>
+                  onCategoriesFilterChange(
+                    newCategories
+                      .filter(({ active }) => active)
+                      .map(({ name }) => name)
+                  )
                 }
-                categories={categories.map(({ name }) => ({
-                  categoryId: name,
-                  active: params.categories.includes(name),
-                }))}
+                categories={categories}
               />
             </Grid.Column>
           )}
@@ -342,6 +327,7 @@ export default function IndexPage() {
                         (orderBy) => {
                           return (
                             <Dropdown.Item
+                              key={orderBy}
                               value={orderBy}
                               text={l(`general.order_by.${orderBy}`)}
                               onClick={handleChangeOrder}
@@ -370,6 +356,7 @@ export default function IndexPage() {
                           (orderBy) => {
                             return (
                               <Dropdown.Item
+                                key={orderBy}
                                 value={orderBy}
                                 text={l(`general.order_by.${orderBy}`)}
                                 onClick={handleChangeOrder}
@@ -390,18 +377,23 @@ export default function IndexPage() {
               </div>
               {isFilteringByCategory && !params.only_view_category && (
                 <div className="places-page__category-filters__filters-box">
-                  {params.categories.map((category) => (
-                    <CategoryFilter
-                      category={category}
-                      active
-                      onRemoveFilter={() =>
-                        handleCategorySelection("remove", category)
+                  {
+                    <CategoriesFilters
+                      categories={categories}
+                      onlyActives
+                      onChange={(newCategories) =>
+                        onCategoriesFilterChange(
+                          newCategories
+                            .filter(({ active }) => active)
+                            .map(({ name }) => name)
+                        )
                       }
+                      filtersIcon={<Close width="20" height="20" />}
                     />
-                  ))}
+                  }
                   <span
                     className="clear-all-filter-btn"
-                    onClick={() => handleCategorySelection("clear")}
+                    onClick={() => onCategoriesFilterChange([])}
                   >
                     <Filter>
                       <Trash width="20" height="20" />{" "}
@@ -417,9 +409,8 @@ export default function IndexPage() {
                     <CategoryFilter
                       category={params.only_view_category}
                       active
-                      onRemoveFilter={() =>
-                        toggleViewAllCategory(params.only_view_category)
-                      }
+                      onChange={() => toggleViewAllCategory()}
+                      actionIcon={<Close width="20" height="20" />}
                     />
                   </div>
                 </div>
@@ -439,44 +430,40 @@ export default function IndexPage() {
               )}
             {isFilteringByCategory &&
               !params.only_view_category &&
-              params.categories.map((c) => (
-                <div className="places-page__category-breakdown__box">
-                  <div className="places-page__category-breakdown__title">
-                    <p>
-                      {l(`categories.${c}`)}{" "}
-                      <span>
-                        {
-                          categories.find((category) => category.name == c)
-                            ?.count
+              categories
+                .filter(({ active }) => active)
+                .map((c) => (
+                  <div className="places-page__category-breakdown__box">
+                    <div className="places-page__category-breakdown__title">
+                      <p>
+                        {l(`categories.${c.name}`)} <span>{c.count}</span>
+                      </p>
+                      <Button
+                        content={
+                          <div>
+                            <p>{l("pages.overview.view_all")}</p>
+                            <span>
+                              <RedArrow width="15" height="26" />
+                            </span>
+                          </div>
                         }
-                      </span>
-                    </p>
-                    <Button
-                      content={
-                        <div>
-                          <p>{l("pages.overview.view_all")}</p>
-                          <span>
-                            <RedArrow width="15" height="26" />
-                          </span>
-                        </div>
+                        basic
+                        onClick={() => toggleViewAllCategory(c.name)}
+                      />
+                    </div>
+                    <PlaceList
+                      places={places
+                        .filter((place) => place.category_id == c.name)
+                        .slice(0, 4)}
+                      onClickFavorite={(_, place) =>
+                        handleFavorite(place.id, place)
                       }
-                      basic
-                      onClick={() => toggleViewAllCategory(c)}
+                      loadingFavorites={handlingFavorite}
+                      dataPlace={SegmentPlace.Places}
+                      search={search}
                     />
                   </div>
-                  <PlaceList
-                    places={places
-                      .filter((place) => place.category_id == c)
-                      .slice(0, 4)}
-                    onClickFavorite={(_, place) =>
-                      handleFavorite(place.id, place)
-                    }
-                    loadingFavorites={handlingFavorite}
-                    dataPlace={SegmentPlace.Places}
-                    search={search}
-                  />
-                </div>
-              ))}
+                ))}
             {loading && (
               <PlaceList
                 className="places-page__list-loading"
@@ -501,21 +488,18 @@ export default function IndexPage() {
             )}
           </Grid.Column>
         </Grid.Row>
-        {isMobile && isCategoriesModalVisible && (
+        {isMobile && (
           <CategoriesModal
-            categories={categories.map((category) => ({
-              categoryId: category.name,
-              active: params.categories.includes(category.name),
-            }))}
+            open={isCategoriesModalVisible}
+            categories={[...categories]}
             onClose={() => setIsCategoriesModalVisible(false)}
             onClearAll={() => {
-              handleCategorySelection("clear")
               setIsCategoriesModalVisible(false)
+              onCategoriesFilterChange([])
             }}
-            onApplySelection={(categoryIds) => {
-              for (const category of categoryIds) {
-                handleCategorySelection("add", category)
-              }
+            onApplySelection={(_e, categoryIds) => {
+              setIsCategoriesModalVisible(false)
+              onCategoriesFilterChange(categoryIds)
             }}
           />
         )}
