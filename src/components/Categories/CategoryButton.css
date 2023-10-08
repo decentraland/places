@@ -1,18 +1,5 @@
-.ui.button.category-btn {
+.dg.Link.ui.button.category-btn {
   background-color: var(--text-on-primary);
   font-weight: normal;
-}
-
-.ui.button.category-btn.category-btn--rounded {
-  border-radius: 24px;
-}
-
-.ui.button.category-btn.category-btn--active {
-  background-color: var(--primary);
-  color: var(--text-on-primary);
-}
-
-.ui.button.category-btn.category-btn--disabled {
-  cursor: default;
-  background-color: var(--secondary-on-modal-hover);
+  color: var(--text-on-secondary);
 }

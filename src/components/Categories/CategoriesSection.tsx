@@ -1,9 +1,10 @@
 import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { navigate } from "decentraland-gatsby/dist/plugins/intl"
+import { Link } from "decentraland-gatsby/dist/plugins/intl"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
+import { PlaceListOrderBy } from "../../entities/Place/types"
 import locations from "../../modules/locations"
 import { CategoryButton } from "./CategoryButton"
 
@@ -25,10 +26,13 @@ export const CategoriesSection = ({ categories }: CategoriesProps) => {
       <div className="categories-section__slider">
         {categories.map((category) => (
           <CategoryButton
+            as={Link}
+            key={category}
             category={category}
-            onClick={() =>
-              navigate(locations.places({ categories: [category] }))
-            }
+            href={locations.places({
+              category_ids: [category],
+              order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
+            })}
           />
         ))}
       </div>

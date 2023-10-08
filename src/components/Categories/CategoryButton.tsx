@@ -9,15 +9,20 @@ import {
 import "./CategoryButton.css"
 
 type CategoryButtonProps = ButtonProps & {
-  onClick: () => void
+  onClick?: () => void
   category: string
 }
 
-export const CategoryButton = ({ category, onClick }: CategoryButtonProps) => {
+export const CategoryButton = ({
+  category,
+  onClick,
+  ...props
+}: CategoryButtonProps) => {
   const l = useFormatMessage()
 
   return (
     <Button
+      {...props}
       className="category-btn"
       content={l(`categories.${category}`)}
       onClick={onClick}
