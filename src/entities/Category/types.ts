@@ -7,5 +7,5 @@ export type CategoryAttributes = {
 
 export type CategoryWithPlaceCount = {
   name: string
-  count: string
+  count: number
 }

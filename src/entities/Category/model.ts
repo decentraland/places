@@ -19,16 +19,23 @@ export default class CategoryModel extends Model<CategoryAttributes> {
     )
   }
 
-  static findCategoriesWithPlaces = async () => {
+  static async findActiveCategoriesWithPlaces(): Promise<
+    CategoryWithPlaceCount[]
+  > {
     const query = SQL`
-      SELECT c.name, count(pc.place_id) FROM ${table(CategoryModel)} c
+      SELECT c.name, count(pc.place_id) as count FROM ${table(CategoryModel)} c
       LEFT JOIN ${table(PlaceCategories)} pc ON pc.category_id = c.name
       WHERE c.active IS true  
       GROUP BY c.name`
 
-    return await CategoryModel.namedQuery<CategoryWithPlaceCount>(
-      "find_categories_with_places_count",
-      query
-    )
+    const categories = await CategoryModel.namedQuery<{
+      name: string
+      count: string
+    }>("find_active_categories_with_places_count", query)
+
+    return categories.map((category) => ({
+      ...category,
+      count: Number(category.count),
+    }))
   }
 }

@@ -8,12 +8,7 @@ export default routes((router) => {
 })
 
 export async function getCategoryList() {
-  const categories = await CategoryModel.findCategoriesWithPlaces()
+  const categories = await CategoryModel.findActiveCategoriesWithPlaces()
 
-  return new ApiResponse(
-    categories.map((category) => ({
-      ...category,
-      count: Number(category.count),
-    }))
-  )
+  return new ApiResponse(categories)
 }
