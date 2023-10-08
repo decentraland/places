@@ -2,7 +2,7 @@ import React from "react"
 
 export type FilterProps = React.SVGAttributes<SVGElement>
 
-export const Filter = (props: FilterProps) => (
+export const Filter = React.memo((props: FilterProps) => (
   <svg {...props} viewBox="0 0 20 18" fill="none">
     <g id="Group 3216">
       <g id="Vector">
@@ -33,4 +33,4 @@ export const Filter = (props: FilterProps) => (
       </g>
     </g>
   </svg>
-)
+))

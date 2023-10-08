@@ -1,6 +1,6 @@
 import React from "react"
 
-export const Trash = (props: React.SVGAttributes<SVGElement>) => (
+export const Trash = React.memo((props: React.SVGAttributes<SVGElement>) => (
   <svg {...props} viewBox="0 0 24 24" fill="none">
     <g id="Icn/Delete">
       <path
@@ -12,4 +12,4 @@ export const Trash = (props: React.SVGAttributes<SVGElement>) => (
       />
     </g>
   </svg>
-)
+))

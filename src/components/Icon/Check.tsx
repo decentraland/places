@@ -2,7 +2,7 @@ import React from "react"
 
 export type CheckIconProps = React.SVGAttributes<SVGElement>
 
-export const Check = (props: CheckIconProps) => (
+export const Check = React.memo((props: CheckIconProps) => (
   <svg {...props} viewBox="0 0 17 16" fill="none">
     <g id="Icn/Check">
       <path
@@ -19,4 +19,4 @@ export const Check = (props: CheckIconProps) => (
       />
     </g>
   </svg>
-)
+))

@@ -2,7 +2,7 @@ import React from "react"
 
 export type RedArrowProps = React.SVGAttributes<SVGElement>
 
-export const RedArrow = (props: RedArrowProps) => (
+export const RedArrow = React.memo((props: RedArrowProps) => (
   <svg {...props} viewBox="0 0 15 26" fill="none">
     <g id="RedArrow">
       <path
@@ -12,4 +12,4 @@ export const RedArrow = (props: RedArrowProps) => (
       />
     </g>
   </svg>
-)
+))
