@@ -21,7 +21,7 @@
   color: var(--text);
 }
 
-.category-filter__remove-btn {
+.category-filter__icon {
   width: 20px;
   height: 20px;
   margin-left: 2px;
