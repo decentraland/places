@@ -19,7 +19,7 @@ const INITIAL_CATEGORIES = [
   "education",
   "commercial",
   "sport",
-  "ads",
+  "business",
 ]
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
