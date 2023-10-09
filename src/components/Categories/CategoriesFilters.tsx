@@ -9,6 +9,7 @@ type CategoriesFiltersProps = {
   ) => void
   onlyActives?: boolean
   filtersIcon?: JSX.Element
+  unremovableFilters?: boolean
 }
 
 export const CategoriesFilters = ({
@@ -16,6 +17,7 @@ export const CategoriesFilters = ({
   onChange,
   filtersIcon,
   onlyActives,
+  unremovableFilters,
 }: CategoriesFiltersProps) => {
   function handleCategorySelection(
     action: "add" | "remove",
@@ -58,10 +60,15 @@ export const CategoriesFilters = ({
             active={category.active}
             onChange={(_e, { active, category }) => {
               const newOnes = handleCategorySelection(
-                active ? "add" : "remove",
+                active ? "add" : !unremovableFilters ? "remove" : "add",
                 category
               )
-              onChange(newOnes)
+              if (
+                categories.filter(({ active }) => active).length !=
+                newOnes.length
+              ) {
+                onChange(newOnes)
+              }
             }}
             actionIcon={filtersIcon}
           />

@@ -31,6 +31,7 @@ export const CategoriesList = React.memo(
               categories={categories}
               onChange={onChange}
               filtersIcon={<Check />}
+              unremovableFilters
             />
           }
         </div>
