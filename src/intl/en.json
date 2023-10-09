@@ -198,10 +198,17 @@
   "categories": {
     "poi": "📍Point of Interest",
     "featured": "✨ Featured",
-    "club": "🎉 Club",
-    "shop": "🛍️ Shop",
-    "social": "💬 Social",
-    "quests": "🗺 Quests",
+    "art": "🎨 Art",
+    "gaming": "🕹️ Game",
+    "gambling": "🃏 Casino",
+    "social": "👥 Social",
+    "music": "🎶 Music",
+    "fashion": "👠 Fashion",
+    "crypto": "🪙 Crypto",
+    "education": "📚 Education",
+    "commercial": "🛍️ Shop",
+    "business": "🏢 Business",
+    "sport": "🏅 Sports",
     "modal": {
       "one_or_more": "Select one or more Categories",
       "category_selected": "Category Selected"
