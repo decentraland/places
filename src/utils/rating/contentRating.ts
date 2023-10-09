@@ -11,7 +11,7 @@ export default function getContentRating(
 ) {
   const placeRatings = new Set(Object.values(SceneContentRating) as string[])
 
-  const contentEntitySceneRating =
+  let contentEntitySceneRating =
     contentEntityScene?.metadata?.policy?.contentRating
 
   if (
@@ -20,35 +20,29 @@ export default function getContentRating(
       (contentEntitySceneRating as string) !== "M" &&
       (contentEntitySceneRating as string) !== "E")
   ) {
-    return SceneContentRating.RATING_PENDING
+    contentEntitySceneRating = SceneContentRating.RATING_PENDING
   }
 
   if ((contentEntitySceneRating as string) === "E") {
-    return SceneContentRating.TEEN
+    contentEntitySceneRating = SceneContentRating.TEEN
   }
 
   if ((contentEntitySceneRating as string) === "M") {
-    return SceneContentRating.ADULT
+    contentEntitySceneRating = SceneContentRating.ADULT
   }
 
   if (!originalPlace) {
-    return contentEntitySceneRating as SceneContentRating
+    return contentEntitySceneRating
   }
 
   const originalRating =
     (originalPlace.content_rating as SceneContentRating) ||
     SceneContentRating.RATING_PENDING
-
-  if (
-    isDowngradingRating(
-      contentEntitySceneRating as SceneContentRating,
-      originalRating
-    )
-  ) {
+  if (isDowngradingRating(contentEntitySceneRating, originalRating)) {
     return originalRating
   }
 
-  return contentEntitySceneRating as SceneContentRating
+  return contentEntitySceneRating
 }
 
 const ratingScale = [
