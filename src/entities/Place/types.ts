@@ -52,7 +52,6 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_count?: number
   user_visits?: number
   realms_detail?: Realm[]
-  category_id?: string
   category_ids?: string[]
 }
 

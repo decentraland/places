@@ -410,7 +410,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     user_favorite: false,
     user_like: false,
     user_dislike: false,
-    category_id: "",
+    category_ids: [],
     world: false,
     world_name: null,
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),

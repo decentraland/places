@@ -151,7 +151,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const sql = SQL`
       SELECT p.*
-      ${conditional(!!options.category_ids.length, SQL`, pc.category_id`)}
+      ${conditional(
+        !!options.category_ids.length,
+        SQL`, array_agg(pc.category_id) as category_ids`
+      )}
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
