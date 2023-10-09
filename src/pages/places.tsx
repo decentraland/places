@@ -84,30 +84,73 @@ export default function IndexPage() {
       place: SegmentPlace.Places,
     })
 
-    const placesFetch = await Places.get().getPlaces({
-      ...options,
-      offset,
-      category_ids: params.only_view_category
-        ? [params.only_view_category]
-        : options.category_ids,
-      search: isSearching ? search : undefined,
-    })
+    const only_view_places: AggregatePlaceAttributes[] = []
+
+    if (params.only_view_category) {
+      const placesFetch = await Places.get().getPlaces({
+        ...options,
+        offset,
+        category_ids: [params.only_view_category],
+        search: isSearching ? search : undefined,
+      })
+      only_view_places.push(...placesFetch.data)
+    }
+
+    let response = {
+      total: 0,
+      data: [] as AggregatePlaceAttributes[],
+      ok: false,
+    }
+    if (params.category_ids.length) {
+      const categoriesFetch = []
+      for (const category of params.category_ids) {
+        const placesFetch = Places.get().getPlaces({
+          ...options,
+          offset,
+          limit: 4,
+          category_ids: [category],
+          search: isSearching ? search : undefined,
+        })
+        categoriesFetch.push(placesFetch)
+      }
+      const responses = await Promise.all(categoriesFetch)
+
+      for (const res of responses) {
+        response.total += res.total
+        response.data.push(...res.data)
+      }
+    } else {
+      const placesFetch = await Places.get().getPlaces({
+        ...options,
+        offset,
+        search: isSearching ? search : undefined,
+      })
+      response = placesFetch
+    }
 
     if (isSearching) {
       track(SegmentPlace.PlacesSearch, {
-        resultsCount: placesFetch.total,
-        top10: placesFetch.data.slice(0, 10),
+        resultsCount: response.total,
+        top10: response.data.slice(0, 10),
         search,
         place: SegmentPlace.Places,
       })
 
-      setAllPlaces(placesFetch.data)
+      if (params.only_view_category) {
+        setAllPlaces(only_view_places)
+      } else {
+        setAllPlaces(response.data)
+      }
     } else {
-      setAllPlaces((allPlaces) => [...allPlaces, ...placesFetch.data])
+      setAllPlaces((allPlaces) => [
+        ...allPlaces,
+        ...only_view_places,
+        ...response.data,
+      ])
     }
 
-    if (Number.isSafeInteger(placesFetch.total)) {
-      setTotalPlaces(placesFetch.total)
+    if (Number.isSafeInteger(response.total)) {
+      setTotalPlaces(response.total)
     }
   }, [params, track, offset])
 
@@ -244,6 +287,7 @@ export default function IndexPage() {
       newParams.only_view_category = categoryId!
     }
 
+    setAllPlaces([])
     navigate(locations.places(newParams))
   }
 
@@ -287,13 +331,13 @@ export default function IndexPage() {
           {!isMobile && (
             <Grid.Column tablet={4}>
               <CategoriesList
-                onChange={(newCategories) =>
+                onChange={(newCategories) => {
                   onCategoriesFilterChange(
                     newCategories
                       .filter(({ active }) => active)
                       .map(({ name }) => name)
                   )
-                }
+                }}
                 categories={categories}
               />
             </Grid.Column>
@@ -381,13 +425,13 @@ export default function IndexPage() {
                     <CategoriesFilters
                       categories={categories}
                       onlyActives
-                      onChange={(newCategories) =>
+                      onChange={(newCategories) => {
                         onCategoriesFilterChange(
                           newCategories
                             .filter(({ active }) => active)
                             .map(({ name }) => name)
                         )
-                      }
+                      }}
                       filtersIcon={<Close width="20" height="20" />}
                     />
                   }
@@ -453,7 +497,7 @@ export default function IndexPage() {
                     </div>
                     <PlaceList
                       places={places
-                        .filter((place) => place.category_id == c.name)
+                        .filter((place) => place.category_ids?.includes(c.name))
                         .slice(0, 4)}
                       onClickFavorite={(_, place) =>
                         handleFavorite(place.id, place)
