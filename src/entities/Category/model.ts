@@ -26,7 +26,9 @@ export default class CategoryModel extends Model<CategoryAttributes> {
       SELECT c.name, count(pc.place_id) as count FROM ${table(CategoryModel)} c
       LEFT JOIN ${table(PlaceCategories)} pc ON pc.category_id = c.name
       WHERE c.active IS true  
-      GROUP BY c.name`
+      GROUP BY c.name
+      ORDER BY count DESC
+      `
 
     const categories = await CategoryModel.namedQuery<{
       name: string
