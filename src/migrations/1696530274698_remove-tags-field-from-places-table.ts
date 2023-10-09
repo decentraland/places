@@ -12,7 +12,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   SET "textsearch" = (
     setweight(to_tsvector(coalesce("title", '')), 'A') ||
     setweight(to_tsvector(coalesce("description", '')), 'B') || 
-    setweight(to_tsvector(coalesce("owner", '')), 'C') || 
+    setweight(to_tsvector(coalesce("owner", '')), 'C')
   )`)
 
   pgm.dropColumn(PlaceModel.tableName, "tags")
