@@ -6,13 +6,22 @@ import PlaceCategories from "../entities/PlaceCategories/model"
 
 export const shorthands: ColumnDefinitions | undefined = undefined
 
+const MAPPED: Record<string, string> = {
+  gaming: "game",
+  gambling: "casino",
+  commercial: "shop",
+  sport: "sports",
+}
+
 export async function up(pgm: MigrationBuilder): Promise<void> {
   const { content } = await import("../seed/base_categorized_content.json")
 
   let tmpRows = []
   for (const row of content) {
     if (row.category_id === "ads") continue
-    tmpRows.push(`('${row.place_id}', '${row.category_id}')`)
+    tmpRows.push(
+      `('${row.place_id}', '${MAPPED[row.category_id] || row.category_id}')`
+    )
 
     if (tmpRows.length === 100) {
       pgm.sql(
