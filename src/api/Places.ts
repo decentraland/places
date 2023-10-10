@@ -7,6 +7,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 import {
   AggregatePlaceAttributes,
   PlaceListOptions,
+  PlaceListOrderBy,
 } from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
@@ -121,7 +122,7 @@ export default class Places extends API {
 
   async getPlacesHightRated(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      order_by: "like_rate",
+      order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
       order: "desc",
       ...options,
     })
@@ -137,7 +138,7 @@ export default class Places extends API {
 
   async getPlacesMostActive(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      order_by: "most_active",
+      order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: "desc",
       ...options,
     })
