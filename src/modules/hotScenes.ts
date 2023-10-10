@@ -1,8 +1,9 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { memo } from "radash/dist/curry"
+import { HotScene } from "../entities/Place/types"
 
 export const getHotScenes = memo(
-  async () => {
+  async (): Promise<HotScene[]> => {
     try {
       const hotScenesFetch = await fetch(
         "https://realm-provider.decentraland.org/hot-scenes"
