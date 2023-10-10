@@ -4,7 +4,7 @@ import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 
 import Places from "../api/Places"
 
-export default function usePlaceCategories(activeCategories: string[]) {
+export default function usePlaceCategories(activeCategories?: string[]) {
   const [categories, setCategories] = useState<
     { name: string; count: number; active: boolean }[]
   >([])
@@ -15,14 +15,17 @@ export default function usePlaceCategories(activeCategories: string[]) {
     setCategories([
       ...categories.map((c) => ({
         ...c,
-        active: activeCategories.includes(c.name),
+        active: activeCategories ? activeCategories.includes(c.name) : false,
       })),
     ])
   }, [])
 
-  useEffect(() => {
-    getCategories()
-  }, [activeCategories])
+  useEffect(
+    () => {
+      getCategories()
+    },
+    activeCategories ? [activeCategories] : []
+  )
 
   return categories
 }
