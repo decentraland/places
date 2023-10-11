@@ -7,18 +7,18 @@ import PlaceCategories from "../entities/PlaceCategories/model"
 export const shorthands: ColumnDefinitions | undefined = undefined
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-  pgm.createTable(PlaceCategories.tableName, {
-    place_id: {
-      type: Type.UUID,
-      notNull: true,
+  pgm.createTable(
+    PlaceCategories.tableName,
+    {
+      place_id: {
+        type: Type.UUID,
+      },
+      category_id: {
+        type: Type.Varchar(50),
+      },
     },
-    category_id: {
-      type: Type.Varchar(50),
-      notNull: true,
-    },
-  })
-
-  pgm.createIndex(PlaceCategories.tableName, ["place_id", "category_id"])
+    { constraints: { primaryKey: ["category_id", "place_id"] } }
+  )
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
