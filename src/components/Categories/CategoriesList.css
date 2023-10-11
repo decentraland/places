@@ -32,9 +32,10 @@
 
 .categories-list__listing {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
 }
 
 .categories-list__listing > .category-filter__box {
   margin-bottom: 8px;
+  margin-right: 8px;
 }
