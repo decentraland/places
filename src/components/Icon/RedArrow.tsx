@@ -3,7 +3,7 @@ import React from "react"
 export type RedArrowProps = React.SVGAttributes<SVGElement>
 
 export const RedArrow = React.memo((props: RedArrowProps) => (
-  <svg {...props} viewBox="0 0 15 26" fill="none">
+  <svg viewBox="0 0 15 26" fill="none" {...props}>
     <g id="RedArrow">
       <path
         id="Vector"

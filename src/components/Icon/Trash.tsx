@@ -1,7 +1,7 @@
 import React from "react"
 
 export const Trash = React.memo((props: React.SVGAttributes<SVGElement>) => (
-  <svg {...props} viewBox="0 0 24 24" fill="none">
+  <svg viewBox="0 0 24 24" fill="none" {...props}>
     <g id="Icn/Delete">
       <path
         id="Subtract"
