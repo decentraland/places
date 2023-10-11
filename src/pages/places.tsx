@@ -70,9 +70,9 @@ export default function IndexPage() {
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
 
-  const isFilteringByCategory = params.category_ids.length > 0
+  const isFilteringByCategory = params.categories.length > 0
 
-  const categories = usePlaceCategories(params.category_ids)
+  const categories = usePlaceCategories(params.categories)
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -90,7 +90,7 @@ export default function IndexPage() {
       const placesFetch = await Places.get().getPlaces({
         ...options,
         offset,
-        category_ids: [params.only_view_category],
+        categories: [params.only_view_category],
         search: isSearching ? search : undefined,
       })
       only_view_places.push(...placesFetch.data)
@@ -101,14 +101,14 @@ export default function IndexPage() {
       data: [] as AggregatePlaceAttributes[],
       ok: false,
     }
-    if (params.category_ids.length) {
+    if (params.categories.length) {
       const categoriesFetch = []
-      for (const category of params.category_ids) {
+      for (const category of params.categories) {
         const placesFetch = Places.get().getPlaces({
           ...options,
           offset,
           limit: 4,
-          category_ids: [category],
+          categories: [category],
           search: isSearching ? search : undefined,
         })
         categoriesFetch.push(placesFetch)
@@ -163,7 +163,7 @@ export default function IndexPage() {
     params.only_highlighted,
     params.order,
     params.order_by,
-    params.category_ids,
+    params.categories,
   ])
 
   useEffect(() => {
@@ -180,7 +180,7 @@ export default function IndexPage() {
     params.only_highlighted,
     params.order,
     params.order_by,
-    params.category_ids,
+    params.categories,
   ])
 
   useEffect(() => {
@@ -261,7 +261,7 @@ export default function IndexPage() {
     // change sorting when filter by categories
     const newParams: PlacesPageOptions = {
       ...params,
-      category_ids: newCategories,
+      categories: newCategories,
     }
     if (
       (!newParams.order_by ||
@@ -474,7 +474,8 @@ export default function IndexPage() {
               )}
             {isFilteringByCategory &&
               !params.only_view_category &&
-              categories
+              [...categories]
+                .reverse()
                 .filter(({ active }) => active)
                 .map((c) => (
                   <div className="places-page__category-breakdown__box">
@@ -497,7 +498,7 @@ export default function IndexPage() {
                     </div>
                     <PlaceList
                       places={places
-                        .filter((place) => place.category_ids?.includes(c.name))
+                        .filter((place) => place.categories.includes(c.name))
                         .slice(0, 4)}
                       onClickFavorite={(_, place) =>
                         handleFavorite(place.id, place)

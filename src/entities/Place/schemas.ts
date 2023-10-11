@@ -68,7 +68,7 @@ export const getPlaceListQuerySchema = schema({
         "Filter places that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
       nullable: true as any,
     },
-    category_ids: {
+    categories: {
       type: "array",
       items: { type: "string" },
       description: "Filter places by available categories",
@@ -258,6 +258,11 @@ export const placeSchema = schema({
       minimum: 0,
       description:
         "The number of users that had visited the place in the last 30 days",
+    },
+    categories: {
+      type: "array",
+      description: "A list of the Place's categories",
+      items: { type: "string" },
     },
   },
 })

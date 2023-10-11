@@ -15,13 +15,13 @@ export const checkPoisForCategoryUpdate = new Task({
 })
 
 const processNewPois = async (pois: string[], logger: Logger) => {
+  logger.log("> Processing new PoIs")
   const categorizedPlaces = await PlaceModel.findEnabledByCategory("poi")
   logger.log(
-    "> Processing new Pois > categorized places",
-    categorizedPlaces.length as any
+    `> Processing new PoIs > categorized places ${categorizedPlaces.length}`
   )
   const poiPlaces = await PlaceModel.findEnabledByPositions(pois)
-  logger.log("> Processing new Pois > poi Places", poiPlaces.length as any)
+  logger.log(`> Processing new PoIs > poi Places ${poiPlaces.length}`)
 
   // Places to be removed from POI category
   const toBeRemoved = []
@@ -31,8 +31,6 @@ const processNewPois = async (pois: string[], logger: Logger) => {
     }
   }
 
-  logger.log("> Processing new Pois > to be removed", toBeRemoved.length as any)
-
   // Places to be added to POI Category
   const toBeAdded = []
   for (const poiPlace of poiPlaces) {
@@ -41,14 +39,35 @@ const processNewPois = async (pois: string[], logger: Logger) => {
     }
   }
 
-  logger.log("> Processing new Pois > to be added", toBeAdded.length as any)
+  logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
 
   for (const removable of toBeRemoved) {
-    logger.log("> Processing new Pois > removing: ", removable.id as any)
+    logger.log(`> Processing new PoIs > removing: ${removable.id}`)
     await PlaceCategories.removeCategoryFromPlace(removable.id, "poi")
+    const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
+      removable.id
+    )
+    await PlaceModel.overrideCategories(
+      removable.id,
+      currentCategories.map(({ category_id }) => category_id)
+    )
   }
 
-  await PlaceCategories.addCategoriesToPlaces(toBeAdded)
+  logger.log(`> Processing new PoIs > to be added ${toBeAdded.length}`)
 
-  logger.log("> Processing new Pois > processed succesffully!")
+  if (toBeAdded.length) {
+    await PlaceCategories.addCategoriesToPlaces(toBeAdded)
+    for (const [placeId] of toBeAdded) {
+      const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
+        placeId
+      )
+
+      await PlaceModel.overrideCategories(
+        placeId,
+        currentCategories.map(({ category_id }) => category_id)
+      )
+    }
+  }
+
+  logger.log("> Processing new PoIs > processed succesffully!")
 }

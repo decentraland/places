@@ -2,28 +2,26 @@
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
 import CategoryModel from "../entities/Category/model"
-import PlaceModel from "../entities/Place/model"
 
 export const shorthands: ColumnDefinitions | undefined = undefined
 
 const INITIAL_CATEGORIES = [
   "poi",
   "featured",
-  "gaming",
-  "gambling",
+  "game", // gaming
+  "casino", // gambling
   "social",
   "music",
   "art",
   "fashion",
   "crypto",
   "education",
-  "commercial",
-  "sport",
+  "shop", // commercial
+  "sports", // sport
   "business",
 ]
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropColumn(PlaceModel.tableName, "categories")
   pgm.dropColumn(CategoryModel.tableName, "places_counter")
 
   for (const category of INITIAL_CATEGORIES) {
@@ -34,14 +32,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.addColumn(PlaceModel.tableName, {
-    categories: {
-      type: "VARCHAR(50)[]",
-      notNull: true,
-      default: "{}",
-    },
-  })
-
   pgm.addColumn(CategoryModel.tableName, {
     places_counter: {
       type: "INTEGER",

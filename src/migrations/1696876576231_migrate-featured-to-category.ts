@@ -13,13 +13,23 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     `SELECT id FROM ${PlaceModel.tableName} WHERE featured IS TRUE`
   )
 
+  const ids = currentFeaturedPlaces.map(({ id }) => `'${id}'`).join(",")
+
   const featuredPlaces = currentFeaturedPlaces
     .map(({ id }) => `('${id}', 'featured')`)
     .join(",")
 
-  pgm.sql(
-    `INSERT INTO ${PlaceCategories.tableName} (place_id, category_id) VALUES ${featuredPlaces}`
-  )
+  if (featuredPlaces.length) {
+    pgm.sql(
+      `INSERT INTO ${PlaceCategories.tableName} (place_id, category_id) VALUES ${featuredPlaces}`
+    )
+  }
+
+  if (ids.length) {
+    pgm.sql(
+      `UPDATE ${PlaceModel.tableName} SET categories = array_append(categories, 'featured') WHERE id IN (${ids})`
+    )
+  }
 
   pgm.dropColumns(PlaceModel.tableName, ["featured", "featured_image"])
 }
@@ -45,11 +55,17 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
     .map(({ id }) => `'${id}'`)
     .join(",")
 
+  if (currentFeaturedPlaces.length) {
+    pgm.sql(
+      `UPDATE ${PlaceModel.tableName} SET featured = true WHERE id IN (${currentFeaturedPlaces})`
+    )
+  }
+
   pgm.sql(
-    `UPDATE ${PlaceModel.tableName} SET featured = true WHERE id IN (${currentFeaturedPlaces})`
+    `DELETE FROM ${PlaceCategories.tableName} WHERE category_id = 'featured'`
   )
 
   pgm.sql(
-    `DELETE FROM ${PlaceCategories.tableName} WHERE place_id IN (${currentFeaturedPlaces}) AND category_id = 'featured'`
+    `UPDATE ${PlaceModel.tableName} SET categories = array_remove(categories, 'featured')`
   )
 }

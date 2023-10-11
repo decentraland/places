@@ -142,7 +142,7 @@ export default function OverviewPage() {
           places={featuredList}
           title={l("pages.overview.featured")}
           href={locations.places({
-            category_ids: ["featured"],
+            categories: ["featured"],
             order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
           })}
           onClickFavorite={(e, place) =>
@@ -216,7 +216,7 @@ export default function OverviewPage() {
         places={poisList}
         title={l("pages.overview.points_of_interest")}
         href={locations.places({
-          category_ids: ["poi"],
+          categories: ["poi"],
           order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         })}
         onClickFavorite={(e, place) =>

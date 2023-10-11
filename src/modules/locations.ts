@@ -20,7 +20,7 @@ export type PlacesPageOptions = {
   order: "asc" | "desc"
   page: number
   search: string
-  category_ids: string[]
+  categories: string[]
   only_view_category: string
 }
 
@@ -39,7 +39,7 @@ const pageOptionsDefault: PlacesPageOptions = {
   order: "desc",
   page: 1,
   search: "",
-  category_ids: [],
+  categories: [],
   only_view_category: "",
 }
 
@@ -67,7 +67,7 @@ export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
-    category_ids: [...new Set(params.getAll("category_ids"))] ?? [],
+    categories: [...new Set(params.getAll("categories"))] ?? [],
     only_view_category: params.get("only_view_category") ?? "",
   }
 }

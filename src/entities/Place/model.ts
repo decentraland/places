@@ -152,10 +152,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`
       SELECT p.*
       ${conditional(
-        !!options.category_ids.length,
-        SQL`, array_agg(pc.category_id) as category_ids`
-      )}
-      ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
       )}
@@ -191,11 +187,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
-        !!options.category_ids.length,
+        !!options.categories.length,
         SQL`INNER JOIN ${table(
           PlaceCategories
         )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.category_ids
+          options.categories
         )}`
       )}
 
@@ -205,6 +201,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.search || ""
         )})) as rank`
       )}
+
       WHERE
         p."disabled" is false AND "world" is false
         ${conditional(!!options.search, SQL`AND rank > 0`)}
@@ -216,7 +213,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
-      ORDER BY
+      ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
@@ -237,7 +234,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "positions"
       | "only_highlighted"
       | "search"
-      | "category_ids"
+      | "categories"
     >
   ) {
     const isMissingEthereumAddress =
@@ -259,11 +256,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
-        !!options.category_ids.length,
+        !!options.categories.length,
         SQL`INNER JOIN ${table(
           PlaceCategories
         )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.category_ids
+          options.categories
         )}`
       )}
 
@@ -273,6 +270,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.search || ""
         )})) as rank`
       )}
+
       WHERE
         p."disabled" is false AND "world" is false
         ${conditional(
@@ -415,6 +413,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )}`
 
     return this.namedQuery("update_place", sql)
+  }
+
+  static overrideCategories(placeId: string, newCategories: string[]) {
+    const categories = newCategories
+      .map((category) => `'${category}'`)
+      .join(",")
+
+    const sql = SQL`UPDATE ${table(
+      this
+    )} SET categories = ARRAY [${categories}] WHERE id = ${placeId}`
+
+    return this.namedQuery("override_categories", sql)
   }
 
   static async findWorlds(): Promise<PlaceAttributes[]> {

@@ -30,7 +30,7 @@ export const CategoriesSection = ({ categories }: CategoriesProps) => {
             key={category}
             category={category}
             href={locations.places({
-              category_ids: [category],
+              categories: [category],
               order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
             })}
           />

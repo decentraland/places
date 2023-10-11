@@ -43,6 +43,7 @@ export type PlaceAttributes = {
   hidden: boolean
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
+  categories: string[]
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {
@@ -52,7 +53,6 @@ export type AggregatePlaceAttributes = PlaceAttributes & {
   user_count?: number
   user_visits?: number
   realms_detail?: Realm[]
-  category_ids?: string[]
 }
 
 export type GetPlaceParams = {
@@ -76,7 +76,7 @@ export type GetPlaceListQuery = {
   order: string
   with_realms_detail: string
   search: string
-  category_ids: string[]
+  categories: string[]
 }
 
 export type PlaceListOptions = {
@@ -88,7 +88,7 @@ export type PlaceListOptions = {
   order_by: string
   order: string
   search: string
-  category_ids: string[]
+  categories: string[]
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {

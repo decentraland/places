@@ -158,7 +158,7 @@ describe(`findWithAggregates`, () => {
         order_by: "created_at",
         order: "desc",
         search: "",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -196,7 +196,7 @@ describe(`findWithAggregates`, () => {
         order: "desc",
         user: userLikeTrue.user,
         search: "",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -240,7 +240,7 @@ describe(`findWithAggregates`, () => {
         order: "desc",
         user: userLikeTrue.user,
         search: "decentraland atlas",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -288,7 +288,7 @@ describe(`findWithAggregates`, () => {
         order: "desc",
         user: userLikeTrue.user,
         search: "de",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual([])
     expect(namedQuery.mock.calls.length).toBe(0)
@@ -304,7 +304,7 @@ describe(`countPlaces`, () => {
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -335,7 +335,7 @@ describe(`countPlaces`, () => {
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "decentraland atlas",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -367,7 +367,7 @@ describe(`countPlaces`, () => {
         positions: ["-9,-9"],
         user: "ABC",
         search: "asdads",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
@@ -380,7 +380,7 @@ describe(`countPlaces`, () => {
         positions: ["-9,-9"],
         user: "ABC",
         search: "",
-        category_ids: [],
+        categories: [],
       })
     ).toEqual(0)
   })
@@ -482,7 +482,7 @@ describe(`findWithHotScenes`, () => {
           order_by: "created_at",
           order: "desc",
           search: "",
-          category_ids: [],
+          categories: [],
         },
         [hotSceneGenesisPlaza]
       )

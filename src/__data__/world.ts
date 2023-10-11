@@ -38,6 +38,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
   hidden: false,
   textsearch: undefined,
+  categories: [],
 }
 
 export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
@@ -71,6 +72,7 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   user_like: false,
   user_dislike: false,
   textsearch: undefined,
+  categories: [],
 }
 
 export const worldContentEntitySceneParalax: ContentEntityScene = {
@@ -277,4 +279,5 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   user_dislike: false,
   user_count: 3,
   textsearch: undefined,
+  categories: [],
 }

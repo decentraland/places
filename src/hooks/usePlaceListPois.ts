@@ -9,7 +9,7 @@ export function usePlaceListPois(options: { limit: number; offset: number }) {
     async () => {
       const result = await Places.get().getPlaces({
         ...options,
-        category_ids: ["poi"],
+        categories: ["poi"],
       })
       return shuffle(result.data).filter(
         (place) => !place.image?.startsWith("https://api.decentraland.org")

@@ -147,7 +147,7 @@ export default class Places extends API {
   async getPlacesFeatured(options?: { limit: number; offset: number }) {
     return this.getPlaces({
       ...options,
-      category_ids: ["featured"],
+      categories: ["featured"],
     })
   }
 

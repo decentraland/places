@@ -261,7 +261,20 @@ async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
 
   if (!validCategories.length) return
 
+  const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
+    placeId
+  )
+
+  if (currentCategories.find(({ category_id }) => category_id === "poi")) {
+    validCategories.push("poi")
+  }
+
+  if (currentCategories.find(({ category_id }) => category_id === "featured")) {
+    validCategories.push("featured")
+  }
+
   await PlaceCategories.cleanPlaceCategories(placeId)
+  await PlaceModel.overrideCategories(placeId, validCategories)
 
   await PlaceCategories.addCategoriesToPlaces(
     validCategories.map((category) => [placeId, category])

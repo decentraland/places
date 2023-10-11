@@ -155,6 +155,7 @@ export function createPlaceFromContentEntityScene(
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     textsearch: undefined,
+    categories: [],
   }
 
   placeParsed.textsearch = PlaceModel.textsearch(placeParsed)

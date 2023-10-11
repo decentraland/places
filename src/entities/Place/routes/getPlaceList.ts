@@ -51,7 +51,7 @@ export const getPlaceList = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
-      category_ids: ctx.url.searchParams.getAll("category_ids"),
+      categories: ctx.url.searchParams.getAll("categories"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -70,7 +70,7 @@ export const getPlaceList = Router.memo(
       order_by: query.order_by,
       order: query.order,
       search: query.search,
-      category_ids: query.category_ids,
+      categories: query.categories,
     }
 
     const [data, total, hotScenes, sceneStats] = await Promise.all([

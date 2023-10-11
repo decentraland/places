@@ -8,7 +8,6 @@ import { bool } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
-import PlaceCategories from "../../PlaceCategories/model"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
@@ -34,11 +33,6 @@ export const getPlace = Router.memo(
         `Not found place "${params.place_id}"`
       )
     }
-
-    const categories = await PlaceCategories.findCategoriesByPlaceId(
-      params.place_id
-    )
-    place.category_ids = categories.map(({ category_id }) => category_id)
 
     const hotScenes = await getHotScenes()
     const sceneStats = await getSceneStats()
