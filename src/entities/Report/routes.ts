@@ -38,7 +38,7 @@ export async function getSignedUrl(
 
   const signedUrlExpireSeconds = 60 * 1000
 
-  const signedUrl = await retry({}, async () => {
+  const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
     const responseUrl = s3.getSignedUrl("putObject", {
       Bucket: BUCKET_NAME,
       Key: `${filename}`,
