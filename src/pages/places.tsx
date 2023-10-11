@@ -254,7 +254,7 @@ export default function IndexPage() {
 
       navigate(target)
     },
-    [location.pathname, params]
+    [location.pathname, params, location.search]
   )
 
   function onCategoriesFilterChange(newCategories: string[]): void {
