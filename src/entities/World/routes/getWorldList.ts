@@ -43,8 +43,8 @@ export const getWorldList = Router.memo(
 
     const options: FindWorldWithAggregatesOptions = {
       user: userAuth?.address,
-      offset: numeric(query.offset, { min: 0 }),
-      limit: numeric(query.limit, { min: 0, max: 100 }),
+      offset: numeric(query.offset, { min: 0 }) ?? 0,
+      limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       names: query.names,
       order_by: query.order_by,

@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid"
+import { randomUUID } from "crypto"
 
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
@@ -86,7 +86,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       placesToProcess = {
         new: placefromContentEntity,
         rating: {
-          id: uuid(),
+          id: randomUUID(),
           place_id: placefromContentEntity.id,
           original_rating: null,
           update_rating: placefromContentEntity.content_rating,
@@ -126,7 +126,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
       if (placefromContentEntity.content_rating !== worlds[0].content_rating) {
         rating = {
-          id: uuid(),
+          id: randomUUID(),
           place_id: worlds[0].id,
           original_rating: worlds[0].content_rating,
           update_rating: placefromContentEntity.content_rating,
