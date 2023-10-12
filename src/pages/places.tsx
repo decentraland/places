@@ -72,7 +72,7 @@ export default function IndexPage() {
 
   const isFilteringByCategory = params.categories.length > 0
 
-  const categories = usePlaceCategories(params.categories)
+  const [categories] = usePlaceCategories(params.categories)
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -542,9 +542,9 @@ export default function IndexPage() {
               setIsCategoriesModalVisible(false)
               onCategoriesFilterChange([])
             }}
-            onApplySelection={(_e, categoryIds) => {
+            onActionClick={(_e, _props, newCategories) => {
               setIsCategoriesModalVisible(false)
-              onCategoriesFilterChange(categoryIds)
+              onCategoriesFilterChange(newCategories.map(({ name }) => name))
             }}
           />
         )}

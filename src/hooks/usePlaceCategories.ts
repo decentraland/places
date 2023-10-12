@@ -1,31 +1,18 @@
-import { useEffect, useState } from "react"
-
-import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
+import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
 import Places from "../api/Places"
+import { Categories } from "../components/Categories/types"
 
 export default function usePlaceCategories(activeCategories?: string[]) {
-  const [categories, setCategories] = useState<
-    { name: string; count: number; active: boolean }[]
-  >([])
-
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [_, getCategories] = useAsyncTask(async () => {
-    const categories = await Places.get().getCategories()
-    setCategories([
-      ...categories.map((c) => ({
+  return useAsyncMemo(
+    async () => {
+      const categories = await Places.get().getCategories()
+      return categories.map((c) => ({
         ...c,
         active: activeCategories ? activeCategories.includes(c.name) : false,
-      })),
-    ])
-  }, [])
-
-  useEffect(
-    () => {
-      getCategories()
+      })) as Categories
     },
-    activeCategories ? [activeCategories] : []
+    activeCategories ? [activeCategories] : [],
+    { initialValue: [] as Categories }
   )
-
-  return categories
 }
