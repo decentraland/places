@@ -1,5 +1,6 @@
 import { Logger } from "decentraland-gatsby/dist/entities/Development/logger"
 import { Task } from "decentraland-gatsby/dist/entities/Task"
+import { diff } from "radash"
 
 import { getPois } from "../../../modules/pois"
 import PlaceModel from "../../Place/model"
@@ -24,20 +25,13 @@ const processNewPois = async (pois: string[], logger: Logger) => {
   logger.log(`> Processing new PoIs > poi Places ${poiPlaces.length}`)
 
   // Places to be removed from POI category
-  const toBeRemoved = []
-  for (const categorizedPlace of categorizedPlaces) {
-    if (!poiPlaces.find((place) => place.id === categorizedPlace.id)) {
-      toBeRemoved.push(categorizedPlace)
-    }
-  }
+  const toBeRemoved = diff(categorizedPlaces, poiPlaces)
 
   // Places to be added to POI Category
-  const toBeAdded = []
-  for (const poiPlace of poiPlaces) {
-    if (!categorizedPlaces.find((place) => place.id === poiPlace.id)) {
-      toBeAdded.push([poiPlace.id, "poi"])
-    }
-  }
+  const toBeAdded = diff(poiPlaces, categorizedPlaces).map((poiPlace) => [
+    poiPlace.id,
+    "poi",
+  ])
 
   logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
 
