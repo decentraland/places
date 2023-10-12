@@ -20,7 +20,7 @@ export const CategoriesSection = ({ categories }: CategoriesProps) => {
   return (
     <div className="categories-section__box">
       <NewLabel
-        title={l("categories.explorre")}
+        title={l("categories.explore")}
         className="categories-section__title"
       />
       <div className="categories-section__slider">
