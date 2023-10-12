@@ -1,6 +1,7 @@
 import { v4 as uuid } from "uuid"
 
 import CategoryModel from "../../Category/model"
+import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import PlaceCategories from "../../PlaceCategories/model"
@@ -235,20 +236,23 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 }
 
 async function getValidCategories(creatorTags: string[]) {
-  const forbidden = ["poi", "featured"]
+  const forbidden = [
+    DecentralandCategories.POI,
+    DecentralandCategories.FEATURED,
+  ] as string[]
 
   const availableCategories = await CategoryModel.findActiveCategories()
 
-  const validCategories = []
+  const validCategories = new Set<string>()
 
   for (const tag of creatorTags) {
     if (forbidden.includes(tag)) continue
 
     if (availableCategories.find(({ name }) => name === tag)) {
-      validCategories.push(tag)
+      validCategories.add(tag)
     }
 
-    if (validCategories.length === 3) break
+    if (validCategories.size === 3) break
   }
 
   return validCategories
@@ -259,24 +263,26 @@ async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
 
   const validCategories = await getValidCategories(creatorTags)
 
-  if (!validCategories.length) return
+  if (!validCategories.size) return
 
-  const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
-    placeId
+  const currentCategories = new Set(
+    ...(await PlaceCategories.findCategoriesByPlaceId(placeId)).map(
+      ({ category_id }) => category_id
+    )
   )
 
-  if (currentCategories.find(({ category_id }) => category_id === "poi")) {
-    validCategories.push("poi")
+  if (currentCategories.has(DecentralandCategories.POI)) {
+    validCategories.add(DecentralandCategories.POI)
   }
 
-  if (currentCategories.find(({ category_id }) => category_id === "featured")) {
-    validCategories.push("featured")
+  if (currentCategories.has(DecentralandCategories.FEATURED)) {
+    validCategories.add(DecentralandCategories.FEATURED)
   }
 
   await PlaceCategories.cleanPlaceCategories(placeId)
-  await PlaceModel.overrideCategories(placeId, validCategories)
+  await PlaceModel.overrideCategories(placeId, [...validCategories])
 
   await PlaceCategories.addCategoriesToPlaces(
-    validCategories.map((category) => [placeId, category])
+    [...validCategories].map((category) => [placeId, category])
   )
 }

@@ -4,6 +4,7 @@ import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { DecentralandCategories } from "../entities/Category/types"
 import {
   AggregatePlaceAttributes,
   PlaceListOptions,
@@ -147,7 +148,7 @@ export default class Places extends API {
   async getPlacesFeatured(options?: { limit: number; offset: number }) {
     return this.getPlaces({
       ...options,
-      categories: ["featured"],
+      categories: [DecentralandCategories.FEATURED],
     })
   }
 

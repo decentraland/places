@@ -9,3 +9,8 @@ export type CategoryWithPlaceCount = {
   name: string
   count: number
 }
+
+export enum DecentralandCategories {
+  POI = "poi",
+  FEATURED = "featured",
+}

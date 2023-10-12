@@ -18,6 +18,7 @@ import OverviewList from "../components/Layout/OverviewList"
 import SearchList from "../components/Layout/SearchList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
+import { DecentralandCategories } from "../entities/Category/types"
 import { PlaceListOrderBy } from "../entities/Place/types"
 import usePlaceCategories from "../hooks/usePlaceCategories"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
@@ -70,7 +71,7 @@ export default function OverviewPage() {
     search
   )
 
-  const categories = usePlaceCategories()
+  const [categories] = usePlaceCategories()
 
   const [placeListSearch, worldListSearch] = useMemo(
     () => [placeSearch.data, worldSearch.data],
@@ -142,7 +143,7 @@ export default function OverviewPage() {
           places={featuredList}
           title={l("pages.overview.featured")}
           href={locations.places({
-            categories: ["featured"],
+            categories: [DecentralandCategories.FEATURED],
             order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
           })}
           onClickFavorite={(e, place) =>
@@ -216,7 +217,7 @@ export default function OverviewPage() {
         places={poisList}
         title={l("pages.overview.points_of_interest")}
         href={locations.places({
-          categories: ["poi"],
+          categories: [DecentralandCategories.POI],
           order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         })}
         onClickFavorite={(e, place) =>

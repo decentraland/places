@@ -3,6 +3,7 @@ import { Task } from "decentraland-gatsby/dist/entities/Task"
 import { diff } from "radash"
 
 import { getPois } from "../../../modules/pois"
+import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import PlaceCategories from "../model"
 
@@ -17,7 +18,9 @@ export const checkPoisForCategoryUpdate = new Task({
 
 const processNewPois = async (pois: string[], logger: Logger) => {
   logger.log("> Processing new PoIs")
-  const categorizedPlaces = await PlaceModel.findEnabledByCategory("poi")
+  const categorizedPlaces = await PlaceModel.findEnabledByCategory(
+    DecentralandCategories.POI
+  )
   logger.log(
     `> Processing new PoIs > categorized places ${categorizedPlaces.length}`
   )
@@ -30,14 +33,17 @@ const processNewPois = async (pois: string[], logger: Logger) => {
   // Places to be added to POI Category
   const toBeAdded = diff(poiPlaces, categorizedPlaces).map((poiPlace) => [
     poiPlace.id,
-    "poi",
+    DecentralandCategories.POI,
   ])
 
   logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
 
   for (const removable of toBeRemoved) {
     logger.log(`> Processing new PoIs > removing: ${removable.id}`)
-    await PlaceCategories.removeCategoryFromPlace(removable.id, "poi")
+    await PlaceCategories.removeCategoryFromPlace(
+      removable.id,
+      DecentralandCategories.POI
+    )
     const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
       removable.id
     )
