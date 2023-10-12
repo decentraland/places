@@ -1,15 +1,15 @@
 import React from "react"
 
 import { CategoryFilter } from "./CategoryFilter"
+import { Categories } from "./types"
 
 type CategoriesFiltersProps = {
-  categories: { name: string; active: boolean; count: number }[]
-  onChange: (
-    newCategories: { name: string; active: boolean; count: number }[]
-  ) => void
+  categories: Categories
+  onChange: (newCategories: Categories) => void
   onlyActives?: boolean
-  filtersIcon?: JSX.Element
+  filtersIcon?: React.ReactNode
   unremovableFilters?: boolean
+  className?: string
 }
 
 export const CategoriesFilters = ({
@@ -18,11 +18,12 @@ export const CategoriesFilters = ({
   filtersIcon,
   onlyActives,
   unremovableFilters,
+  className,
 }: CategoriesFiltersProps) => {
   function handleCategorySelection(
     action: "add" | "remove",
     categoryId: string
-  ): { name: string; active: boolean; count: number }[] {
+  ): Categories {
     let currentCategories = categories.filter(({ active }) => active)
     if (action === "add") {
       if (!currentCategories.find(({ name }) => name === categoryId)) {
@@ -44,7 +45,7 @@ export const CategoriesFilters = ({
   }
 
   return (
-    <>
+    <div className={className}>
       {categories
         .filter(({ active }) => {
           if (onlyActives) {
@@ -73,6 +74,6 @@ export const CategoriesFilters = ({
             actionIcon={filtersIcon}
           />
         ))}
-    </>
+    </div>
   )
 }

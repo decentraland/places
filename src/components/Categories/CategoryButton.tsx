@@ -9,7 +9,6 @@ import {
 import "./CategoryButton.css"
 
 type CategoryButtonProps = ButtonProps & {
-  onClick?: () => void
   category: string
 }
 

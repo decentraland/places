@@ -7,25 +7,27 @@ import { Modal, ModalProps } from "decentraland-ui/dist/components/Modal/Modal"
 import { Check } from "../Icon/Check"
 import { Close } from "../Icon/Close"
 import { CategoriesFilters } from "./CategoriesFilters"
+import { Categories } from "./types"
 
 import "./CategoriesModal.css"
 
-type CategoriesModalProps = ModalProps & {
-  categories: { name: string; active: boolean; count: number }[]
-  onClose: () => void
-  onClearAll: () => void
-  onApplySelection: (
-    e: React.MouseEvent<HTMLButtonElement, MouseEvent>,
-    names: string[]
-  ) => void
-}
+type CategoriesModalProps = Omit<ModalProps, "onActionClick"> &
+  Required<Pick<ModalProps, "onClose">> & {
+    categories: Categories
+    onClearAll: () => void
+    onActionClick: (
+      event: React.MouseEvent<HTMLElement>,
+      data: ModalProps,
+      selectedCategories: Categories
+    ) => void
+  }
 
 export const CategoriesModal = React.memo(
   ({
     categories,
     onClearAll,
     onClose,
-    onApplySelection,
+    onActionClick,
     ...rest
   }: CategoriesModalProps) => {
     const l = useFormatMessage()
@@ -44,20 +46,17 @@ export const CategoriesModal = React.memo(
       })
     }, [categories])
 
-    const onFilterChange = useCallback(
-      (categories: { active: boolean; name: string }[]) => {
-        const newSet = new Set(selectedCategories)
-        for (const category of categories) {
-          if (category.active) {
-            newSet.add(category.name)
-          } else {
-            newSet.delete(category.name)
-          }
+    const onFilterChange = useCallback((categories: Categories) => {
+      const newSet = new Set(selectedCategories)
+      for (const category of categories) {
+        if (category.active) {
+          newSet.add(category.name)
+        } else {
+          newSet.delete(category.name)
         }
-        setSelectedCategories(newSet)
-      },
-      []
-    )
+      }
+      setSelectedCategories(newSet)
+    }, [])
 
     return (
       <Modal {...rest} className="categories-modal__box">
@@ -84,7 +83,7 @@ export const CategoriesModal = React.memo(
             className="close-btn"
             basic
             content={<Close width="24" height="24" type="secondary" />}
-            onClick={onClose}
+            onClick={(e) => onClose(e, rest)}
           />
         </Modal.Header>
         <Modal.Content className="categories-modal__content">
@@ -107,7 +106,15 @@ export const CategoriesModal = React.memo(
             primary
             size="medium"
             content="Apply Selection"
-            onClick={(e) => onApplySelection(e, [...selectedCategories])}
+            onClick={(e) =>
+              onActionClick(
+                e,
+                { ...rest },
+                [...categories].filter(({ name }) =>
+                  selectedCategories.has(name)
+                )
+              )
+            }
             disabled={selectedCategories.size === 0}
           />
         </Modal.Actions>

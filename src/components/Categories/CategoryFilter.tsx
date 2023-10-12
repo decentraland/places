@@ -12,7 +12,7 @@ type CategoryFilterProps = {
     props: { active: boolean; category: string }
   ) => void
   active?: boolean
-  actionIcon?: JSX.Element
+  actionIcon?: React.ReactNode
 }
 
 export const CategoryFilter = ({

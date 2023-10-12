@@ -2,11 +2,11 @@ import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Link } from "decentraland-gatsby/dist/plugins/intl"
-import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
 import locations from "../../modules/locations"
 import { CategoryButton } from "./CategoryButton"
+import { NewLabel } from "./NewLabel"
 
 import "./CategoriesSection.css"
 
@@ -19,10 +19,10 @@ export const CategoriesSection = ({ categories }: CategoriesProps) => {
 
   return (
     <div className="categories-section__box">
-      <div className="categories-section__title">
-        <p>{l("categories.explore")}</p>
-        <Label>{l("categories.new_label")}</Label>
-      </div>
+      <NewLabel
+        title={l("categories.explorre")}
+        className="categories-section__title"
+      />
       <div className="categories-section__slider">
         {categories.map((category) => (
           <CategoryButton
