@@ -9,7 +9,7 @@ import { getPois } from "../modules/pois"
 export const shorthands: ColumnDefinitions | undefined = undefined
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-  const pois = (await getPois()).map((p) => `'${p}'`).join(",")
+  const pois = (await getPois()).map((poi) => `'${poi}'`).join(",")
 
   const findEnabledByPositionsSQL = `
   SELECT id FROM ${PlaceModel.tableName}
