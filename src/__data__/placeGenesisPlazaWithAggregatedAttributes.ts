@@ -1,3 +1,5 @@
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 
 export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes =
@@ -8,7 +10,6 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
       "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
     image: "https://localhost:8000/images/places/genesis_plaza.jpg",
     owner: null,
-    tags: [],
     positions: [
       "-1,-1",
       "-1,-2",
@@ -394,7 +395,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     base_position: "-9,-9",
     contact_name: "Decentraland Foundation",
     contact_email: null,
-    content_rating: null,
+    content_rating: SceneContentRating.RATING_PENDING,
     disabled: false,
     disabled_at: null,
     created_at: new Date("2022-11-11T04:53:07.000Z"),
@@ -406,8 +407,6 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     like_score: 0,
     highlighted: true,
     highlighted_image: "/images/places/genesis_plaza_banner.jpg",
-    featured: false,
-    featured_image: null,
     user_favorite: false,
     user_like: false,
     user_dislike: false,

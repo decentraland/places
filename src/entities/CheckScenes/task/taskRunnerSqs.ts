@@ -1,5 +1,11 @@
+import { v4 as uuid } from "uuid"
+
+import CategoryModel from "../../Category/model"
+import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
+import PlaceCategories from "../../PlaceCategories/model"
+import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
 import {
   notifyDisablePlaces,
@@ -23,7 +29,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "owner",
-  "tags",
   "positions",
   "base_position",
   "contact_name",
@@ -34,7 +39,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "deployed_at",
-  "categories",
   "world",
   "world_name",
   "hidden",
@@ -43,6 +47,10 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
   const contentEntityScene = await processEntityId(job)
+
+  if (!contentEntityScene) {
+    return null
+  }
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
@@ -65,17 +73,27 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const worldIndexing = await verifyWorldsIndexing([worldName])
 
     if (!worlds.length) {
+      const placefromContentEntity = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {
+          hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
+        },
+        { url: job.contentServerUrls![0] }
+      )
       placesToProcess = {
-        new: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            hidden: !worldIndexing[0].shouldBeIndexed,
-            disabled:
-              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-                ?.optOut,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        new: placefromContentEntity,
+        rating: {
+          id: uuid(),
+          place_id: placefromContentEntity.id,
+          original_rating: null,
+          update_rating: placefromContentEntity.content_rating,
+          moderator: null,
+          comment: null,
+          created_at: new Date(),
+        },
         disabled: [],
       }
     } else {
@@ -92,18 +110,35 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         )
       }
 
+      const placefromContentEntity = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {
+          ...worlds[0],
+          hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
+        },
+        { url: job.contentServerUrls![0] }
+      )
+
+      let rating = null
+
+      if (placefromContentEntity.content_rating !== worlds[0].content_rating) {
+        rating = {
+          id: uuid(),
+          place_id: worlds[0].id,
+          original_rating: worlds[0].content_rating,
+          update_rating: placefromContentEntity.content_rating,
+          moderator: null,
+          comment: null,
+          created_at: new Date(),
+        }
+      }
+
       placesToProcess = {
-        update: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            ...worlds[0],
-            hidden: !worldIndexing[0].shouldBeIndexed,
-            disabled:
-              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-                ?.optOut,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        update: placefromContentEntity,
+        rating,
         disabled: [],
       }
     }
@@ -111,10 +146,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const places = await PlaceModel.findEnabledByPositions(
       contentEntityScene.pointers
     )
-    placesToProcess = await processContentEntityScene(
-      contentEntityScene,
-      places
-    )
+    placesToProcess = processContentEntityScene(contentEntityScene, places)
   }
 
   if (!placesToProcess) {
@@ -133,6 +165,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.new))
 
+    await overridePlaceCategories(
+      placesToProcess.new.id,
+      contentEntityScene.metadata.tags || []
+    )
+
     notifyNewPlace(placesToProcess.new)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -149,6 +186,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.update))
 
+    await overridePlaceCategories(
+      placesToProcess.update.id,
+      contentEntityScene.metadata.tags || []
+    )
+
     notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -158,6 +200,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       action: CheckSceneLogsTypes.UPDATE,
       deploy_at: new Date(contentEntityScene.timestamp),
     })
+  }
+
+  if (placesToProcess?.rating) {
+    PlaceContentRatingModel.create(placesToProcess.rating)
   }
 
   if (placesToProcess?.disabled.length) {
@@ -177,15 +223,67 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       (await PlacePositionModel.removePositions([...positions]))
 
     notifyDisablePlaces(placesToProcess.disabled)
-    placesToProcess.disabled.forEach((place) => {
-      // TODO: use createMany instead of createOne
-      CheckScenesModel.createOne({
-        entity_id: job.entity.entityId,
-        content_server_url: job.contentServerUrls![0],
-        base_position: place.base_position,
-        positions: place.positions,
-        action: CheckSceneLogsTypes.DISABLED,
-      })
-    })
+
+    const placesToDisable = placesToProcess.disabled.map((place) => ({
+      entity_id: job.entity.entityId,
+      content_server_url: job.contentServerUrls![0],
+      base_position: place.base_position,
+      positions: place.positions,
+      action: CheckSceneLogsTypes.DISABLED,
+    }))
+
+    CheckScenesModel.createMany(placesToDisable)
   }
+}
+
+async function getValidCategories(creatorTags: string[]) {
+  const forbidden = [
+    DecentralandCategories.POI,
+    DecentralandCategories.FEATURED,
+  ] as string[]
+
+  const availableCategories = await CategoryModel.findActiveCategories()
+
+  const validCategories = new Set<string>()
+
+  for (const tag of creatorTags) {
+    if (forbidden.includes(tag)) continue
+
+    if (availableCategories.find(({ name }) => name === tag)) {
+      validCategories.add(tag)
+    }
+
+    if (validCategories.size === 3) break
+  }
+
+  return validCategories
+}
+
+async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
+  if (!creatorTags.length) return
+
+  const validCategories = await getValidCategories(creatorTags)
+
+  if (!validCategories.size) return
+
+  const currentCategories = new Set(
+    ...(await PlaceCategories.findCategoriesByPlaceId(placeId)).map(
+      ({ category_id }) => category_id
+    )
+  )
+
+  if (currentCategories.has(DecentralandCategories.POI)) {
+    validCategories.add(DecentralandCategories.POI)
+  }
+
+  if (currentCategories.has(DecentralandCategories.FEATURED)) {
+    validCategories.add(DecentralandCategories.FEATURED)
+  }
+
+  await PlaceCategories.cleanPlaceCategories(placeId)
+  await PlaceModel.overrideCategories(placeId, [...validCategories])
+
+  await PlaceCategories.addCategoriesToPlaces(
+    [...validCategories].map((category) => [placeId, category])
+  )
 }

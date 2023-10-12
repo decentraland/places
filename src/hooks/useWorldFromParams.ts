@@ -8,7 +8,7 @@ export function useWorldFromParams(params: URLSearchParams) {
     async () => {
       if (params.get("id")) {
         if (!isUUID(params.get("id")!)) {
-          null
+          return null
         }
 
         return Places.get().getPlaceById(params.get("id")!)

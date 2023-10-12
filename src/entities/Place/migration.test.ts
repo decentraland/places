@@ -16,9 +16,7 @@ export const attributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "highlighted_image",
-  "featured_image",
   "owner",
-  "tags",
   "positions",
   "base_position",
   "world_name",
@@ -26,7 +24,6 @@ export const attributes: Array<keyof PlaceAttributes> = [
   "contact_email",
   "content_rating",
   "highlighted",
-  "featured",
   "disabled",
   "disabled_at",
 ]
@@ -40,11 +37,9 @@ describe("validatePlacesWorlds", () => {
     const validatePlacesWorldsResult = validatePlacesWorlds([
       {
         base_position: "0,0",
-        featured: true,
       },
       {
         world_name: "paralax.dcl.eth",
-        featured: true,
       },
     ])
     expect(validatePlacesWorldsResult).toBeUndefined()
@@ -55,7 +50,6 @@ describe("validatePlacesWorlds", () => {
       validatePlacesWorlds([
         {
           base_position: "0,0",
-          featured: true,
           world_name: "paralax.dcl.eth",
         },
       ])
@@ -67,15 +61,12 @@ describe("createPlaceFromEntityScene", () => {
   test("should return a place with the correct data", async () => {
     const place = createPlaceFromEntityScene(entitySceneGenesisPlaza, {
       base_position: "-9,-9",
-      featured: true,
     })
     expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
       ...placeGenesisPlaza,
       id: place.id,
-      featured: true,
       created_at: place.created_at,
       updated_at: place.updated_at,
-      featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
     })
   })
@@ -93,17 +84,14 @@ describe("createPlaceFromEntityScene", () => {
       },
       {
         base_position: "-9,-9",
-        featured: true,
       }
     )
     expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
       ...placeGenesisPlaza,
       id: place.id,
-      featured: true,
       contact_name: null,
       created_at: place.created_at,
       updated_at: place.updated_at,
-      featured_image: place.featured_image,
       highlighted_image: place.highlighted_image,
     })
   })
@@ -114,9 +102,9 @@ describe("createInsertQuery", () => {
     const query = createInsertQuery(attributes)
     const insertQuery =
       "INSERT INTO places \
-      (title,description,image,highlighted_image,featured_image,owner,tags,positions,\
-        base_position,world_name,contact_name,contact_email,content_rating,highlighted,featured,disabled,disabled_at) \
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)"
+      (title,description,image,highlighted_image,owner,positions,\
+        base_position,world_name,contact_name,contact_email,content_rating,highlighted,disabled,disabled_at) \
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       insertQuery.replace(/\n|\r|\s/g, "")
     )
@@ -128,9 +116,9 @@ describe("createUpdateQuery", () => {
     const query = createUpdateQuery("-9,-9", attributes)
     const updateQuery =
       "UPDATE places SET \
-       title=$1, description=$2, image=$3, highlighted_image=$4, featured_image=$5, owner=$6, tags=$7, positions=$8, \
-       base_position=$9, world_name=$10, contact_name=$11, contact_email=$12, content_rating=$13, highlighted=$14, featured=$15, \
-       disabled=$16, disabled_at=$17 \
+       title=$1, description=$2, image=$3, highlighted_image=$4, owner=$5, positions=$6, \
+       base_position=$7, world_name=$8, contact_name=$9, contact_email=$10, content_rating=$11, highlighted=$12, \
+       disabled=$13, disabled_at=$14 \
        WHERE positions &&'{\"-9,-9\"}'"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       updateQuery.replace(/\n|\r|\s/g, "")
@@ -153,12 +141,11 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
   test("should return a query with the correct query string for updating a Place", async () => {
     const place = {
       base_position: "-9,-9",
-      featured: true,
     }
     const keys = attributes.filter((attr) => attr in place)
     const query = createUpdatePlacesAndWorldsQuery(place, keys)
     const deleteQuery =
-      "UPDATE places SET base_position=$1, featured=$2 WHERE '-9,-9' = ANY(\"positions\")"
+      "UPDATE places SET base_position=$1 WHERE '-9,-9' = ANY(\"positions\")"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
@@ -166,12 +153,11 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
   test("should return a query with the correct query string for updating a World", async () => {
     const place = {
       world_name: "paralax.dcl.eth",
-      featured: true,
     }
     const keys = attributes.filter((attr) => attr in place)
     const query = createUpdatePlacesAndWorldsQuery(place, keys)
     const deleteQuery =
-      "UPDATE places SET world_name=$1, featured=$2 WHERE world_name = 'paralax.dcl.eth'"
+      "UPDATE places SET world_name=$1 WHERE world_name = 'paralax.dcl.eth'"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
@@ -187,7 +173,6 @@ describe("createPlaceFromDefaultPlaces", () => {
     expect(data).toEqual([
       {
         ...placeGenesisPlaza,
-        tags: data[0].tags,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
         deployed_at: data[0].deployed_at,

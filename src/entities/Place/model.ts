@@ -15,10 +15,10 @@ import {
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { diff, unique } from "radash/dist/array"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
+import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
@@ -29,6 +29,7 @@ import {
 import {
   AggregatePlaceAttributes,
   FindWithAggregatesOptions,
+  HotScene,
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
@@ -50,7 +51,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           place.description || ""
         )}), 'B')`,
         SQL`setweight(to_tsvector(coalesce(${place.owner}, '')), 'C')`,
-        SQL`setweight(to_tsvector(concat(coalesce(${place.tags}, '{}'))), 'D')`,
       ],
       SQL` || `
     )})`
@@ -167,7 +167,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
       FROM ${table(this)} p
-      
+
       ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
@@ -187,16 +187,24 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
           options.search || ""
         )})) as rank`
       )}
+
       WHERE
         p."disabled" is false AND "world" is false
         ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
           SQL`AND p.base_position IN (
@@ -212,7 +220,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${offset(options.offset)}
     `
 
-    const queryResult = await this.namedQuery("find_with_agregates", sql)
+    const queryResult = await this.namedQuery<
+      AggregatePlaceAttributes & { category_id?: string }
+    >("find_with_agregates", sql)
     return queryResult
   }
 
@@ -222,21 +232,22 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "user"
       | "only_favorites"
       | "positions"
-      | "only_featured"
       | "only_highlighted"
       | "search"
+      | "categories"
     >
   ) {
     const isMissingEthereumAddress =
       options.user && !isEthereumAddress(options.user)
     const searchIsEmpty = options.search && options.search.length < 3
+
     if (isMissingEthereumAddress || searchIsEmpty) {
       return 0
     }
 
     const query = SQL`
       SELECT
-        count(*) as "total"
+        count(DISTINCT p.id) as "total"
       FROM ${table(this)} p
       ${conditional(
         !!options.user && options.only_favorites,
@@ -245,16 +256,23 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
           options.search || ""
         )})) as rank`
       )}
+
       WHERE
-        p."disabled" is false
-        AND "world" is false
-        ${conditional(options.only_featured, SQL`AND featured = TRUE`)}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        p."disabled" is false AND "world" is false
         ${conditional(
           options.positions?.length > 0,
           SQL`AND p.base_position IN (
@@ -265,12 +283,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
-    const results: { total: number }[] = await this.namedQuery(
+    const results: { total: string }[] = await this.namedQuery(
       "count_places",
       query
     )
 
-    return results[0].total
+    return Number(results[0].total)
   }
 
   static async disablePlaces(placesIds: string[]) {
@@ -397,6 +415,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("update_place", sql)
   }
 
+  static overrideCategories(placeId: string, newCategories: string[]) {
+    const categories = newCategories
+      .map((category) => `'${category}'`)
+      .join(",")
+
+    const sql = SQL`UPDATE ${table(
+      this
+    )} SET categories = ARRAY [${categories}] WHERE id = ${placeId}`
+
+    return this.namedQuery("override_categories", sql)
+  }
+
   static async findWorlds(): Promise<PlaceAttributes[]> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
@@ -497,11 +527,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           SQL`AND world_name IN ${values(options.names)}`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
-      ORDER BY 
+      ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}      
+      ${offset(options.offset)}
     `
 
     return await this.namedQuery("find_worlds", sql)
@@ -554,15 +584,30 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return results[0].total
   }
 
+  static async findEnabledByCategory(
+    category: string
+  ): Promise<AggregatePlaceAttributes[]> {
+    const sql = SQL`
+      SELECT p.*
+      FROM ${table(this)} p
+      ${SQL`INNER JOIN ${table(
+        PlaceCategories
+      )} pc ON p.id = pc.place_id AND pc.category_id = ${SQL`${category}`}`}
+      WHERE
+        p."disabled" is false AND "world" is false
+    `
+    return await this.namedQuery("find_enabled_by_category", sql)
+  }
+
   /**
    * For reference: https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
    * We're calculating the lower bound of a 95% confidence interval
    */
   static calculateLikeScoreStatement(): SQLStatement {
-    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208) 
-    / (c.count_active_likes + c.count_active_dislikes) - 1.96 
-    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) 
-    / (c.count_active_likes + c.count_active_dislikes)) 
+    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208)
+    / (c.count_active_likes + c.count_active_dislikes) - 1.96
+    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604)
+    / (c.count_active_likes + c.count_active_dislikes))
     / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE NULL END`
   }
 }

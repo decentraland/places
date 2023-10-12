@@ -1,10 +1,15 @@
 import Catalyst, {
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 import { v4 as uuid } from "uuid"
 
+import getContentRating, {
+  isDowngradingRating,
+} from "../../utils/rating/contentRating"
+import { notifyDowngradeRating } from "../Slack/utils"
 import PlaceModel from "./model"
 import { PlaceAttributes } from "./types"
 import { getThumbnailFromDeployment } from "./utils"
@@ -27,14 +32,24 @@ export function createPlaceFromEntityScene(
   const now = Time.from().format("YYYYMMDD hh:mm:ss ZZ")
   const title = entityScene?.metadata?.display?.title || null
   const positions = (entityScene?.pointers || []).sort()
-  const tags = (entityScene?.metadata?.tags || [])
-    .slice(0, 100)
-    .map((tag) => tag.slice(0, 25))
 
   const thumbnail = getThumbnailFromDeployment(entityScene)
   let contact_name = entityScene?.metadata?.contact?.name || null
   if (contact_name && contact_name.trim() === "author-name") {
     contact_name = null
+  }
+
+  const contentEntitySceneRating =
+    entityScene?.metadata?.policy?.contentRating ||
+    SceneContentRating.RATING_PENDING
+  if (
+    data.content_rating &&
+    isDowngradingRating(
+      contentEntitySceneRating,
+      data.content_rating as SceneContentRating
+    )
+  ) {
+    notifyDowngradeRating(data as PlaceAttributes, contentEntitySceneRating)
   }
 
   const placeParsed = {
@@ -44,7 +59,6 @@ export function createPlaceFromEntityScene(
     description: entityScene?.metadata?.display?.description || null,
     image: thumbnail,
     positions,
-    tags,
     likes: 0,
     dislikes: 0,
     favorites: 0,
@@ -53,21 +67,20 @@ export function createPlaceFromEntityScene(
     base_position: entityScene?.metadata?.scene?.base || positions[0],
     contact_name,
     contact_email: entityScene?.metadata?.contact?.email || null,
-    content_rating: entityScene?.metadata?.policy?.contentRating || null,
+    content_rating: getContentRating(entityScene, data),
     highlighted: false,
     highlighted_image: null,
-    featured: false,
-    featured_image: null,
     disabled: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     created_at: now,
     updated_at: now,
     deployed_at: now,
-    categories: [],
     world: false,
     world_name: null,
     hidden: false,
+    categories: [],
+    textsearch: undefined,
     ...data,
   }
 

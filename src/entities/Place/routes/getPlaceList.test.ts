@@ -1,15 +1,15 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 
 import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "../../../api/DataTeam"
+import RealmProvider from "../../../api/RealmProvider"
 import PlaceModel from "../model"
 import { getPlaceList } from "./getPlaceList"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
-const catalystHotScenes = jest.spyOn(Catalyst.get(), "getHostScenes")
+const catalystHotScenes = jest.spyOn(RealmProvider.get(), "getHotScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 
 afterEach(() => {

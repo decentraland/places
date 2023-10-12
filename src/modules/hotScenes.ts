@@ -1,11 +1,13 @@
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { memo } from "radash/dist/curry"
 
+import RealmProvider from "../api/RealmProvider"
+import { HotScene } from "../entities/Place/types"
+
 export const getHotScenes = memo(
-  async () => {
+  async (): Promise<HotScene[]> => {
     try {
-      return await Catalyst.getInstance().getHostScenes()
+      return await RealmProvider.get().getHotScenes()
     } catch (error) {
       return []
     }

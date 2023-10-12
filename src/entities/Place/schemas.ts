@@ -37,12 +37,6 @@ export const getPlaceListQuerySchema = schema({
       description: "True if shows only favorite places",
       nullable: true as any,
     },
-    only_featured: {
-      type: "string",
-      format: "boolean",
-      description: "True if shows only featured places",
-      nullable: true as any,
-    },
     only_highlighted: {
       type: "string",
       format: "boolean",
@@ -72,6 +66,12 @@ export const getPlaceListQuerySchema = schema({
       type: "string",
       description:
         "Filter places that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
+      nullable: true as any,
+    },
+    categories: {
+      type: "array",
+      items: { type: "string" },
+      description: "Filter places by available categories",
       nullable: true as any,
     },
   },
@@ -141,13 +141,6 @@ export const placeSchema = schema({
       maxLength: 42,
       description: "The owner's name",
     },
-    tags: {
-      type: "array",
-      description: "A list of tags for the place",
-      items: {
-        type: "string",
-      },
-    },
     positions: {
       type: "array",
       description: "A list of positions of the place",
@@ -176,7 +169,7 @@ export const placeSchema = schema({
     content_rating: {
       type: "string",
       minLength: 0,
-      maxLength: 5000,
+      maxLength: 1,
       description: "The content rating on the place",
     },
     likes: {
@@ -266,8 +259,31 @@ export const placeSchema = schema({
       description:
         "The number of users that had visited the place in the last 30 days",
     },
+    categories: {
+      type: "array",
+      description: "A list of the Place's categories",
+      items: { type: "string" },
+    },
   },
 })
 
 export const placeResponseSchema = schema.api(placeSchema)
 export const placeListResponseSchema = schema.api(schema.array(placeSchema))
+
+export const updateRatingBodySchema = schema({
+  type: "object",
+  description: "content rating body needed",
+  additionalProperties: false,
+  required: ["content_rating"],
+  properties: {
+    content_rating: {
+      type: "string",
+      description: "Rating for the place",
+      enum: ["PR", "E", "T", "A", "R"],
+    },
+    comment: {
+      type: "string",
+      description: "A comment for the rating",
+    },
+  },
+})

@@ -5,4 +5,12 @@ export type CategoryAttributes = {
   updated_at: Date
 }
 
-export const ALL_PLACE_CATEGORY = "all"
+export type CategoryWithPlaceCount = {
+  name: string
+  count: number
+}
+
+export enum DecentralandCategories {
+  POI = "poi",
+  FEATURED = "featured",
+}

@@ -1,11 +1,14 @@
 import API from "decentraland-gatsby/dist/utils/api/API"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { DecentralandCategories } from "../entities/Category/types"
 import {
   AggregatePlaceAttributes,
   PlaceListOptions,
+  PlaceListOrderBy,
 } from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
@@ -120,7 +123,7 @@ export default class Places extends API {
 
   async getPlacesHightRated(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      order_by: "like_rate",
+      order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
       order: "desc",
       ...options,
     })
@@ -136,7 +139,7 @@ export default class Places extends API {
 
   async getPlacesMostActive(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      order_by: "most_active",
+      order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: "desc",
       ...options,
     })
@@ -144,8 +147,8 @@ export default class Places extends API {
 
   async getPlacesFeatured(options?: { limit: number; offset: number }) {
     return this.getPlaces({
-      only_featured: true,
       ...options,
+      categories: [DecentralandCategories.FEATURED],
     })
   }
 
@@ -180,5 +183,33 @@ export default class Places extends API {
     search?: string
   }) {
     return this.getWorlds({ only_favorites: true, ...options })
+  }
+
+  async updateRating(
+    placeId: string,
+    params: { content_rating: SceneContentRating; comment?: string }
+  ) {
+    return this.fetch<UpdateUserFavoriteResponse>(
+      `/places/${placeId}/rating`,
+      this.options({ method: "PUT" }).json(params).authorization({ sign: true })
+    )
+  }
+
+  async getCategories() {
+    const result = await super.fetch<{
+      ok: boolean
+      data: { name: string; count: number }[]
+    }>("/categories")
+
+    return result.data
+  }
+
+  async getPlaceCategories(placeId: string) {
+    const result = await super.fetch<{
+      ok: boolean
+      data: { categories: string[] }
+    }>(`/places/${placeId}/categories`)
+
+    return result.data
   }
 }
