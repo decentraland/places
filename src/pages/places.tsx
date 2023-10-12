@@ -26,10 +26,10 @@ import { CategoriesModal } from "../components/Categories/CategoriesModal"
 import { CategoryFilter } from "../components/Categories/CategoryFilter"
 import { Close } from "../components/Icon/Close"
 import { Filter as FilterIcon } from "../components/Icon/Filter"
-import { RedArrow } from "../components/Icon/RedArrow"
 import { Trash } from "../components/Icon/Trash"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
+import OverviewList from "../components/Layout/OverviewList"
 import SearchInput from "../components/Layout/SearchInput"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
@@ -478,36 +478,27 @@ export default function IndexPage() {
                 .reverse()
                 .filter(({ active }) => active)
                 .map((c) => (
-                  <div className="places-page__category-breakdown__box">
-                    <div className="places-page__category-breakdown__title">
-                      <p>
+                  <OverviewList
+                    title={
+                      <>
                         {l(`categories.${c.name}`)} <span>{c.count}</span>
-                      </p>
-                      <Button
-                        content={
-                          <div>
-                            <p>{l("pages.overview.view_all")}</p>
-                            <span>
-                              <RedArrow width="15" height="26" />
-                            </span>
-                          </div>
-                        }
-                        basic
-                        onClick={() => toggleViewAllCategory(c.name)}
-                      />
-                    </div>
-                    <PlaceList
-                      places={places
-                        .filter((place) => place.categories.includes(c.name))
-                        .slice(0, 4)}
-                      onClickFavorite={(_, place) =>
-                        handleFavorite(place.id, place)
-                      }
-                      loadingFavorites={handlingFavorite}
-                      dataPlace={SegmentPlace.Places}
-                      search={search}
-                    />
-                  </div>
+                      </>
+                    }
+                    places={places.filter((place) =>
+                      place.categories.includes(c.name)
+                    )}
+                    href={locations.places({
+                      ...params,
+                      only_view_category: c.name,
+                    })}
+                    loadingFavorites={handlingFavorite}
+                    search={search}
+                    dataPlace={SegmentPlace.Places}
+                    onClickFavorite={(_, place) => {
+                      handleFavorite(place.id, place)
+                    }}
+                    loading={loadingPlaces}
+                  />
                 ))}
             {loading && (
               <PlaceList
@@ -536,7 +527,7 @@ export default function IndexPage() {
         {isMobile && (
           <CategoriesModal
             open={isCategoriesModalVisible}
-            categories={[...categories]}
+            categories={categories}
             onClose={() => setIsCategoriesModalVisible(false)}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
