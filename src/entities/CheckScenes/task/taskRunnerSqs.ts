@@ -54,16 +54,17 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
-  if (contentEntityScene.metadata.worldConfiguration) {
-    if (
-      !(
-        contentEntityScene.metadata.worldConfiguration.name ||
-        contentEntityScene.metadata.worldConfiguration.dclName
-      )
-    ) {
-      throw new Error("worldConfiguration without name")
-    }
+  if (
+    contentEntityScene.metadata.worldConfiguration &&
+    !(
+      contentEntityScene.metadata.worldConfiguration.name ||
+      contentEntityScene.metadata.worldConfiguration.dclName
+    )
+  ) {
+    throw new Error("worldConfiguration without name")
+  }
 
+  if (contentEntityScene.metadata.worldConfiguration) {
     const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
       contentEntityScene.metadata.worldConfiguration.dclName) as string
 
