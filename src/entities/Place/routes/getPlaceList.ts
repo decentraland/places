@@ -87,6 +87,6 @@ export const getPlaceList = Router.memo(
       sceneStats
     )
 
-    return new ApiResponse(response, { total: total })
+    return new ApiResponse(response, { total })
   }
 )
