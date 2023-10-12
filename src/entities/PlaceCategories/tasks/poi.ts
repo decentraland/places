@@ -9,7 +9,7 @@ import PlaceCategories from "../model"
 
 export const checkPoisForCategoryUpdate = new Task({
   name: "places_poi_category_update",
-  repeat: Task.Repeat.Weekly,
+  repeat: Task.Repeat.Daily,
   task: async (ctx) => {
     const pois = await getPois()
     await processNewPois(pois, ctx.logger)
@@ -38,6 +38,7 @@ const processNewPois = async (pois: string[], logger: Logger) => {
 
   logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
 
+  // TODO: review, reduce queries?
   for (const removable of toBeRemoved) {
     logger.log(`> Processing new PoIs > removing: ${removable.id}`)
     await PlaceCategories.removeCategoryFromPlace(
