@@ -8,11 +8,11 @@ export type NewLabelProps = {
   className?: string
 }
 
-export const NewLabel = ({ title }: NewLabelProps) => {
+export const NewLabel = ({ title, className }: NewLabelProps) => {
   const l = useFormatMessage()
 
   return (
-    <div>
+    <div className={className}>
       <p>{title}</p>
       <Label>{l("categories.new_label")}</Label>
     </div>
