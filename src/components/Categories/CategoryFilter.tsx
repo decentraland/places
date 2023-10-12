@@ -1,6 +1,7 @@
 import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 
 import "./CategoryFilter.css"
@@ -25,9 +26,10 @@ export const CategoryFilter = ({
 
   return (
     <span
-      className={`category-filter__box ${
-        !active ? "category-filter__box--not-active" : ""
-      }`}
+      className={TokenList.join([
+        `category-filter__box`,
+        active && "category-filter__box--not-active",
+      ])}
       onClick={(e) => onChange && onChange(e, { active: !active, category })}
     >
       <Filter>

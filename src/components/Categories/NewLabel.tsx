@@ -8,7 +8,7 @@ export type NewLabelProps = {
   className?: string
 }
 
-export const NewLabel = ({ title, className }: NewLabelProps) => {
+export const NewLabel = React.memo(({ title, className }: NewLabelProps) => {
   const l = useFormatMessage()
 
   return (
@@ -17,4 +17,4 @@ export const NewLabel = ({ title, className }: NewLabelProps) => {
       <Label>{l("categories.new_label")}</Label>
     </div>
   )
-}
+})

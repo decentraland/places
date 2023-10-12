@@ -257,39 +257,45 @@ export default function IndexPage() {
     [location.pathname, params, location.search]
   )
 
-  function onCategoriesFilterChange(newCategories: string[]): void {
-    // change sorting when filter by categories
-    const newParams: PlacesPageOptions = {
-      ...params,
-      categories: newCategories,
-    }
-    if (
-      (!newParams.order_by ||
-        newParams.order_by !== PlaceListOrderBy.LIKE_SCORE_BEST) &&
-      newCategories.length > 0
-    ) {
-      newParams.order_by = PlaceListOrderBy.LIKE_SCORE_BEST
-    } else if (!newCategories.length) {
-      newParams.order_by = PlaceListOrderBy.MOST_ACTIVE
-    }
+  const onCategoriesFilterChange = useCallback(
+    (newCategories: string[]) => {
+      // change sorting when filter by categories
+      const newParams: PlacesPageOptions = {
+        ...params,
+        categories: newCategories,
+      }
+      if (
+        (!newParams.order_by ||
+          newParams.order_by !== PlaceListOrderBy.LIKE_SCORE_BEST) &&
+        newCategories.length > 0
+      ) {
+        newParams.order_by = PlaceListOrderBy.LIKE_SCORE_BEST
+      } else if (!newCategories.length) {
+        newParams.order_by = PlaceListOrderBy.MOST_ACTIVE
+      }
 
-    setAllPlaces([])
-    navigate(locations.places(newParams))
-  }
+      setAllPlaces([])
+      navigate(locations.places(newParams))
+    },
+    [params.categories, params.order_by]
+  )
 
   const [ff] = useFeatureFlagContext()
 
-  const toggleViewAllCategory = (categoryId?: string) => {
-    const newParams = { ...params }
-    if (params.only_view_category) {
-      newParams.only_view_category = ""
-    } else {
-      newParams.only_view_category = categoryId!
-    }
+  const toggleViewAllCategory = useCallback(
+    (categoryId?: string) => {
+      const newParams = { ...params }
+      if (params.only_view_category) {
+        newParams.only_view_category = ""
+      } else {
+        newParams.only_view_category = categoryId!
+      }
 
-    setAllPlaces([])
-    navigate(locations.places(newParams))
-  }
+      setAllPlaces([])
+      navigate(locations.places(newParams))
+    },
+    [params.only_view_category]
+  )
 
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
