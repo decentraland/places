@@ -28,7 +28,7 @@ export const CategoryFilter = ({
     <span
       className={TokenList.join([
         `category-filter__box`,
-        active && "category-filter__box--not-active",
+        !active && "category-filter__box--not-active",
       ])}
       onClick={(e) => onChange && onChange(e, { active: !active, category })}
     >
