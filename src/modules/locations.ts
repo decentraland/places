@@ -14,14 +14,14 @@ import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 const GATSBY_BASE_URL = process.env.GATSBY_BASE_URL || "/"
 
 export type PlacesPageOptions = {
-  only_pois: boolean
   only_favorites: boolean
-  only_featured: boolean
   only_highlighted: boolean
   order_by: PlaceListOrderBy
   order: "asc" | "desc"
   page: number
   search: string
+  categories: string[]
+  only_view_category: string
 }
 
 export type WorldsPageOptions = {
@@ -34,13 +34,13 @@ export type WorldsPageOptions = {
 
 const pageOptionsDefault: PlacesPageOptions = {
   only_favorites: false,
-  only_pois: false,
-  only_featured: false,
   only_highlighted: false,
   order_by: PlaceListOrderBy.MOST_ACTIVE,
   order: "desc",
   page: 1,
   search: "",
+  categories: [],
+  only_view_category: "",
 }
 
 const pageWorldsOptionsDefault: WorldsPageOptions = {
@@ -53,9 +53,6 @@ const pageWorldsOptionsDefault: WorldsPageOptions = {
 
 export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
   return {
-    only_pois: bool(params.get("only_pois")) ?? pageOptionsDefault.only_pois,
-    only_featured:
-      bool(params.get("only_featured")) ?? pageOptionsDefault.only_featured,
     only_highlighted:
       bool(params.get("only_highlighted")) ??
       pageOptionsDefault.only_highlighted,
@@ -70,6 +67,8 @@ export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
+    categories: [...new Set(params.getAll("categories"))] ?? [],
+    only_view_category: params.get("only_view_category") ?? "",
   }
 }
 

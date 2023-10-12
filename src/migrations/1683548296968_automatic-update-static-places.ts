@@ -1,17 +1,8 @@
-import { createPlaceNewMigrationUpdate } from "../entities/Place/migration"
-import { PlaceAttributes } from "../entities/Place/types"
-import defaultPlace from "../seed/32_places_new.json"
+/* eslint-disable @typescript-eslint/naming-convention */
+import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
-const attributes: Array<keyof PlaceAttributes> = [
-  "base_position",
-  "highlighted_image",
-  "highlighted",
-  "featured",
-  "featured_image",
-  "world_name",
-]
+export const shorthands: ColumnDefinitions | undefined = undefined
 
-export const { up, down } = createPlaceNewMigrationUpdate(
-  defaultPlace,
-  attributes
-)
+export async function up(pgm: MigrationBuilder): Promise<void> {}
+
+export async function down(pgm: MigrationBuilder): Promise<void> {}

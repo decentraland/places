@@ -24,7 +24,10 @@ export function usePlaceFromParams(params: URLSearchParams) {
           offset: 0,
           limit: 1,
         })
-        return places.data[0]
+
+        const place = places.data[0]
+
+        return place
       }
 
       return null

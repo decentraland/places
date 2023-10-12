@@ -32,9 +32,6 @@ export function createPlaceFromEntityScene(
   const now = Time.from().format("YYYYMMDD hh:mm:ss ZZ")
   const title = entityScene?.metadata?.display?.title || null
   const positions = (entityScene?.pointers || []).sort()
-  const tags = (entityScene?.metadata?.tags || [])
-    .slice(0, 100)
-    .map((tag) => tag.slice(0, 25))
 
   const thumbnail = getThumbnailFromDeployment(entityScene)
   let contact_name = entityScene?.metadata?.contact?.name || null
@@ -62,7 +59,6 @@ export function createPlaceFromEntityScene(
     description: entityScene?.metadata?.display?.description || null,
     image: thumbnail,
     positions,
-    tags,
     likes: 0,
     dislikes: 0,
     favorites: 0,
@@ -74,18 +70,17 @@ export function createPlaceFromEntityScene(
     content_rating: getContentRating(entityScene, data),
     highlighted: false,
     highlighted_image: null,
-    featured: false,
-    featured_image: null,
     disabled: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     created_at: now,
     updated_at: now,
     deployed_at: now,
-    categories: [],
     world: false,
     world_name: null,
     hidden: false,
+    categories: [],
+    textsearch: undefined,
     ...data,
   }
 
