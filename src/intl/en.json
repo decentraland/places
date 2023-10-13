@@ -105,6 +105,11 @@
         "description_a": "The rating for {scene_name} has been successful changed to Adult (PG 18+). This content is now only available to users aged 18 and above.",
         "description_r": "The rating for {scene_name} has been successful changed to Restricted. This content is now no longer visible in Decentraland.",
         "button_label": "OK"
+      },
+      "category": {
+        "clear_all": "Clear All",
+        "one_or_more": "Select one or more Categories",
+        "quantity_selected": "{quantity} Category Selected"
       }
     }
   },
@@ -209,10 +214,6 @@
     "shop": "🛍️ Shop",
     "business": "🏢 Business",
     "sports": "🏅 Sports",
-    "modal": {
-      "one_or_more": "Select one or more Categories",
-      "category_selected": "Category Selected"
-    },
     "title": "Categories",
     "new_label": "NEW",
     "explore": "Explore Categories"

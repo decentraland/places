@@ -21,7 +21,7 @@ import { FeatureFlags } from "../../../modules/ff"
 import { getPois } from "../../../modules/pois"
 import { getRating } from "../../../modules/rating"
 import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
-import { CategoryFilter } from "../../Categories/CategoryFilter"
+import { CategoryFilter } from "../../Category/CategoryFilter"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
-
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
 import PlaceModel from "../entities/Place/model"

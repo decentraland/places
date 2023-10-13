@@ -12,7 +12,7 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
-import { CategoriesSection } from "../components/Categories/CategoriesSection"
+import { CategorySections } from "../components/Category/CategorySections"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import SearchList from "../components/Layout/SearchList"
@@ -262,7 +262,7 @@ export default function OverviewPage() {
             items={highlightedList}
             component={PlaceFeatured}
           />
-          <CategoriesSection categories={categories.map(({ name }) => name)} />
+          <CategorySections categories={categories.map(({ name }) => name)} />
         </>
       )}
     </>

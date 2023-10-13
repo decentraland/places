@@ -1,18 +1,21 @@
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
 import Places from "../api/Places"
-import { Categories } from "../components/Categories/types"
+import { Category } from "../entities/Category/types"
 
+/** @deprecated use isePlaceCategories instead */
 export default function usePlaceCategories(activeCategories?: string[]) {
   return useAsyncMemo(
     async () => {
       const categories = await Places.get().getCategories()
-      return categories.map((c) => ({
-        ...c,
-        active: activeCategories ? activeCategories.includes(c.name) : false,
-      })) as Categories
+      return categories.map((category) => ({
+        ...category,
+        active: activeCategories
+          ? activeCategories.includes(category.name)
+          : false,
+      })) as Category[]
     },
     activeCategories ? [activeCategories] : [],
-    { initialValue: [] as Categories }
+    { initialValue: [] as Category[] }
   )
 }

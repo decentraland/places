@@ -1,0 +1,15 @@
+.category-buttons__container {
+  display: flex;
+  flex-wrap: wrap;
+  width: 100%;
+}
+
+.category-buttons__container > .category-button {
+  margin: 0 17px 17px 0;
+}
+
+.category-buttons__container > .dg.Link.ui.button.category-button {
+  background-color: var(--text-on-primary);
+  font-weight: normal;
+  color: var(--text-on-secondary);
+}

@@ -20,10 +20,12 @@ import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
 import Places from "../api/Places"
-import { CategoriesFilters } from "../components/Categories/CategoriesFilters"
-import { CategoriesList } from "../components/Categories/CategoriesList"
-import { CategoriesModal } from "../components/Categories/CategoriesModal"
-import { CategoryFilter } from "../components/Categories/CategoryFilter"
+import {
+  CategoryFilter,
+  CategoryFilterProps,
+} from "../components/Category/CategoryFilter"
+import { CategoryFilters } from "../components/Category/CategoryFilters"
+import { CategoryList } from "../components/Category/CategoryList"
 import { Close } from "../components/Icon/Close"
 import { Filter as FilterIcon } from "../components/Icon/Filter"
 import { Trash } from "../components/Icon/Trash"
@@ -31,13 +33,16 @@ import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
 import OverviewList from "../components/Layout/OverviewList"
 import SearchInput from "../components/Layout/SearchInput"
+import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
+import { Category } from "../entities/Category/types"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
   PlaceListOrderBy,
 } from "../entities/Place/types"
 import usePlaceCategories from "../hooks/usePlaceCategories"
+import usePlaceCategoriesManager from "../hooks/usePlaceCategoriesManager"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, {
@@ -55,8 +60,14 @@ export default function IndexPage() {
   const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
+
+  // TODO: remove one of these params
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
+    [location.search]
+  )
+  const searchParams = useMemo(
+    () => new URLSearchParams(location.search),
     [location.search]
   )
   const [offset, setOffset] = useState(0)
@@ -72,7 +83,12 @@ export default function IndexPage() {
 
   const isFilteringByCategory = params.categories.length > 0
 
-  const [categories] = usePlaceCategories(params.categories)
+  // const [categories] = usePlaceCategories(params.categories)
+
+  const [
+    categories,
+    { handleAddCategory, handleRemoveCategory, handleSyncCategory },
+  ] = usePlaceCategoriesManager(params.categories)
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -230,11 +246,6 @@ export default function IndexPage() {
     [params, track]
   )
 
-  const searchParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  )
-
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const newParams = new URLSearchParams(searchParams)
@@ -257,7 +268,7 @@ export default function IndexPage() {
     [location.pathname, params, location.search]
   )
 
-  const onCategoriesFilterChange = useCallback(
+  const handleCategoriesFilterChange = useCallback(
     (newCategories: string[]) => {
       // change sorting when filter by categories
       const newParams: PlacesPageOptions = {
@@ -295,6 +306,61 @@ export default function IndexPage() {
       navigate(locations.places(newParams))
     },
     [params.only_view_category]
+  )
+
+  const handleCategoryListChange = useCallback(
+    (
+      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+      props: CategoryFilterProps
+    ) => {
+      const { active, category } = props
+      active && handleAddCategory(category)
+      !active && handleRemoveCategory(category)
+    },
+    [handleAddCategory, handleRemoveCategory]
+  )
+
+  const handleApplyCategoryListChange = useCallback(
+    (
+      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+      props: CategoryFilterProps
+    ) => {
+      const { active, category } = props
+
+      const names = categories
+        .filter(({ active }) => active)
+        .map(({ name }) => name)
+
+      if (active) {
+        handleAddCategory(category)
+        names.push(category)
+      }
+
+      if (!active) {
+        handleRemoveCategory(category)
+
+        names.splice(names.indexOf(category), 1)
+      }
+
+      handleCategoriesFilterChange(names)
+    },
+    [
+      categories,
+      handleAddCategory,
+      handleRemoveCategory,
+      handleCategoriesFilterChange,
+    ]
+  )
+
+  const handleApplyModalChange = useCallback(
+    (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
+      const names = categories
+        .filter(({ active }) => active)
+        .map(({ name }) => name)
+
+      handleCategoriesFilterChange(names)
+    },
+    [categories, handleCategoriesFilterChange]
   )
 
   if (ff.flags[FeatureFlags.Maintenance]) {
@@ -336,14 +402,8 @@ export default function IndexPage() {
         <Grid.Row>
           {!isMobile && (
             <Grid.Column tablet={4}>
-              <CategoriesList
-                onChange={(newCategories) => {
-                  onCategoriesFilterChange(
-                    newCategories
-                      .filter(({ active }) => active)
-                      .map(({ name }) => name)
-                  )
-                }}
+              <CategoryList
+                onChange={handleApplyCategoryListChange}
                 categories={categories}
               />
             </Grid.Column>
@@ -390,8 +450,8 @@ export default function IndexPage() {
                 </HeaderMenu.Right>
               </HeaderMenu>
             )}
-            <div className="places-page__category-filters__box">
-              <div className="places-page__category-filters__info">
+            <div className="places-page__category-filters-box-container">
+              <div className="places-page__category-filters-info">
                 <p>
                   {totalPlaces} {l("social.places.title")}
                 </p>
@@ -426,24 +486,16 @@ export default function IndexPage() {
                 )}
               </div>
               {isFilteringByCategory && !params.only_view_category && (
-                <div className="places-page__category-filters__filters-box">
-                  {
-                    <CategoriesFilters
-                      categories={categories}
-                      onlyActives
-                      onChange={(newCategories) => {
-                        onCategoriesFilterChange(
-                          newCategories
-                            .filter(({ active }) => active)
-                            .map(({ name }) => name)
-                        )
-                      }}
-                      filtersIcon={<Close width="20" height="20" />}
-                    />
-                  }
+                <div className="places-page__category-filters-box">
+                  <CategoryFilters
+                    categories={categories}
+                    onlyActives
+                    onChange={handleApplyCategoryListChange}
+                    filtersIcon={<Close width="20" height="20" />}
+                  />
                   <span
                     className="clear-all-filter-btn"
-                    onClick={() => onCategoriesFilterChange([])}
+                    onClick={() => handleCategoriesFilterChange([])}
                   >
                     <Filter>
                       <Trash width="20" height="20" />{" "}
@@ -480,7 +532,7 @@ export default function IndexPage() {
               )}
             {isFilteringByCategory &&
               !params.only_view_category &&
-              [...categories]
+              categories
                 .reverse()
                 .filter(({ active }) => active)
                 .map((c) => (
@@ -530,19 +582,18 @@ export default function IndexPage() {
             )}
           </Grid.Column>
         </Grid.Row>
+        {/* TODO: review how to apply or reset changes here (@lauti7) */}
         {isMobile && (
-          <CategoriesModal
+          <CategoryModal
             open={isCategoriesModalVisible}
             categories={categories}
             onClose={() => setIsCategoriesModalVisible(false)}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
-              onCategoriesFilterChange([])
+              handleCategoriesFilterChange([])
             }}
-            onActionClick={(_e, _props, newCategories) => {
-              setIsCategoriesModalVisible(false)
-              onCategoriesFilterChange(newCategories.map(({ name }) => name))
-            }}
+            onChange={handleCategoryListChange}
+            onActionClick={handleApplyModalChange}
           />
         )}
       </Grid>
