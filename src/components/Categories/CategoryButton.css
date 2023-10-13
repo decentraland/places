@@ -1,0 +1,5 @@
+.dg.Link.ui.button.category-btn {
+  background-color: var(--text-on-primary);
+  font-weight: normal;
+  color: var(--text-on-secondary);
+}
