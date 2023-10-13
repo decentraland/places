@@ -354,8 +354,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       hotScenePlaces.reverse()
     }
 
-    const from = numeric(offset || 0, { min: 0 })
-    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+    const from = numeric(offset || 0, { min: 0 }) ?? 0
+    const to = numeric(from + (limit || 100), { min: 0, max: 100 }) ?? 100
 
     return hotScenePlaces.slice(from, to)
   }

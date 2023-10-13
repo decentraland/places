@@ -61,8 +61,8 @@ export const getPlaceList = Router.memo(
 
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
-      offset: numeric(query.offset, { min: 0 }),
-      limit: numeric(query.limit, { min: 0, max: 100 }),
+      offset: numeric(query.offset, { min: 0 }) ?? 0,
+      limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),

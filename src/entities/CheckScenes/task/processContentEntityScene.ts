@@ -1,8 +1,9 @@
+import { randomUUID } from "crypto"
+
 import {
   ContentEntityScene,
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import { v4 as uuid } from "uuid"
 
 import getContentRating, {
   isDowngradingRating,
@@ -44,7 +45,7 @@ export function processContentEntityScene(
     return {
       new: placefromContentEntity,
       rating: {
-        id: uuid(),
+        id: randomUUID(),
         place_id: placefromContentEntity.id,
         original_rating: null,
         update_rating: placefromContentEntity.content_rating,
@@ -64,7 +65,7 @@ export function processContentEntityScene(
   let rating = null
   if (placefromContentEntity.content_rating !== samePlace.content_rating) {
     rating = {
-      id: uuid(),
+      id: randomUUID(),
       place_id: samePlace.id,
       original_rating: samePlace.content_rating,
       update_rating: placefromContentEntity.content_rating,
@@ -130,7 +131,7 @@ export function createPlaceFromContentEntityScene(
   }
 
   const placeParsed: PlaceAttributes = {
-    id: uuid(),
+    id: randomUUID(),
     likes: 0,
     dislikes: 0,
     favorites: 0,
