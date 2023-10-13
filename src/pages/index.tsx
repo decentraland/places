@@ -12,15 +12,12 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
-import { CategoriesSection } from "../components/Categories/CategoriesSection"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import OverviewList from "../components/Layout/OverviewList"
 import SearchList from "../components/Layout/SearchList"
 import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
-import { DecentralandCategories } from "../entities/Category/types"
 import { PlaceListOrderBy } from "../entities/Place/types"
-import usePlaceCategories from "../hooks/usePlaceCategories"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
@@ -70,8 +67,6 @@ export default function OverviewPage() {
     overviewOptions,
     search
   )
-
-  const [categories] = usePlaceCategories()
 
   const [placeListSearch, worldListSearch] = useMemo(
     () => [placeSearch.data, worldSearch.data],
@@ -143,8 +138,7 @@ export default function OverviewPage() {
           places={featuredList}
           title={l("pages.overview.featured")}
           href={locations.places({
-            categories: [DecentralandCategories.FEATURED],
-            order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
+            only_featured: true,
           })}
           onClickFavorite={(e, place) =>
             handleFavorite(place.id, place, {
@@ -216,10 +210,7 @@ export default function OverviewPage() {
       <OverviewList
         places={poisList}
         title={l("pages.overview.points_of_interest")}
-        href={locations.places({
-          categories: [DecentralandCategories.POI],
-          order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
-        })}
+        href={locations.places({ only_pois: true })}
         onClickFavorite={(e, place) =>
           handleFavorite(place.id, place, {
             place: e.currentTarget.dataset.place!,
@@ -253,17 +244,14 @@ export default function OverviewPage() {
   const renderCarousel = () => (
     <>
       {(placeListHighlightedState.loading || highlightedList.length > 0) && (
-        <>
-          <Carousel2
-            className="overview__carousel2"
-            loading={placeListHighlightedState.loading}
-            isFullscreen
-            indicatorsType={IndicatorType.Dash}
-            items={highlightedList}
-            component={PlaceFeatured}
-          />
-          <CategoriesSection categories={categories.map(({ name }) => name)} />
-        </>
+        <Carousel2
+          className="overview__carousel2"
+          loading={placeListHighlightedState.loading}
+          isFullscreen
+          indicatorsType={IndicatorType.Dash}
+          items={highlightedList}
+          component={PlaceFeatured}
+        />
       )}
     </>
   )

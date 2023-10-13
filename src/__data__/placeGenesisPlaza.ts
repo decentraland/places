@@ -11,8 +11,11 @@ export const placeGenesisPlaza: PlaceAttributes = {
   like_score: 0,
   highlighted: false,
   highlighted_image: null,
+  featured: false,
+  featured_image: null,
   disabled: false,
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
+  categories: [],
   world: false,
   world_name: null,
   title: "Genesis Plaza",
@@ -20,6 +23,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
     "Jump in to strike up a chat with other visitors, retake the commands tutorial with a cute floating robot, or dive into the swirling portal to get to Decentraland's visitor center.",
   owner: null,
   image: "https://decentraland.org/images/thumbnail/genesis-plaza.png",
+  tags: ["plaza"],
   base_position: "-9,-9",
   positions: [
     "-1,-1",
@@ -411,5 +415,4 @@ export const placeGenesisPlaza: PlaceAttributes = {
   deployed_at: new Date("2022-11-14T17:22:05.307Z"),
   hidden: false,
   textsearch: undefined,
-  categories: [],
 }

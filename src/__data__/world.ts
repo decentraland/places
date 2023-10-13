@@ -17,6 +17,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   image:
     "https://api.decentraland.org/v2/map.png?height=1024&width=1024&selected=0%2C0&center=0%2C0&size=20",
   owner: null,
+  tags: [],
   positions: ["0,0"],
   base_position: "0,0",
   contact_name: "paralax",
@@ -30,15 +31,17 @@ export const worldPlaceParalax: PlaceAttributes = {
   likes: 0,
   dislikes: 0,
   like_score: 0,
+  categories: [],
   like_rate: 0.5,
   highlighted: false,
   highlighted_image: null,
+  featured: false,
+  featured_image: null,
   world: true,
   world_name: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
   hidden: false,
   textsearch: undefined,
-  categories: [],
 }
 
 export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
@@ -48,6 +51,7 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   image:
     "https://api.decentraland.org/v2/map.png?height=1024&width=1024&selected=0%2C0&center=0%2C0&size=20",
   owner: null,
+  tags: [],
   positions: ["0,0"],
   base_position: "0,0",
   contact_name: "paralax",
@@ -60,10 +64,13 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   favorites: 0,
   likes: 0,
   dislikes: 0,
+  categories: [],
   like_rate: 0.5,
   like_score: 0,
   highlighted: false,
   highlighted_image: null,
+  featured: false,
+  featured_image: null,
   world: true,
   world_name: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
@@ -72,7 +79,6 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   user_like: false,
   user_dislike: false,
   textsearch: undefined,
-  categories: [],
 }
 
 export const worldContentEntitySceneParalax: ContentEntityScene = {
@@ -193,6 +199,7 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   image:
     "https://peer.decentraland.org/content/contents/bafkreiag7fylur5qlntcxb2oyaw3asmchxsbhoxnw6iipayfgj4wwmqkli",
   owner: null,
+  tags: [],
   positions: [
     "-1,0",
     "-1,1",
@@ -266,10 +273,13 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   favorites: 0,
   likes: 0,
   dislikes: 0,
+  categories: [],
   like_rate: 0.5,
   like_score: 0,
   highlighted: false,
   highlighted_image: null,
+  featured: false,
+  featured_image: null,
   world: true,
   world_name: "templegame.dcl.eth",
   deployed_at: new Date("2023-05-16T15:44:26.395Z"),
@@ -279,5 +289,4 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   user_dislike: false,
   user_count: 3,
   textsearch: undefined,
-  categories: [],
 }

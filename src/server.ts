@@ -27,7 +27,6 @@ import { register } from "prom-client"
 import categoryRoute from "./entities/Category/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
 import placeRoute from "./entities/Place/routes"
-import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
 import reportRoute from "./entities/Report/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
@@ -50,7 +49,6 @@ tasks.use(
   )
 )
 tasks.use(checkWorldsIndexingTask)
-tasks.use(checkPoisForCategoryUpdate)
 
 const app = express()
 app.set("x-powered-by", false)

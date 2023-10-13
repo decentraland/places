@@ -15,6 +15,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "owner",
+  "tags",
   "positions",
   "base_position",
   "contact_name",
@@ -25,6 +26,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "deployed_at",
+  "categories",
   "world",
   "world_name",
   "hidden",
@@ -153,12 +155,12 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1,
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
         order: "desc",
         search: "",
-        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -190,13 +192,13 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1,
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
         search: "",
-        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -234,13 +236,13 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1000,
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
         search: "decentraland atlas",
-        categories: [],
       })
     ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -282,13 +284,13 @@ describe(`findWithAggregates`, () => {
         offset: 0,
         limit: 1000,
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
         search: "de",
-        categories: [],
       })
     ).toEqual([])
     expect(namedQuery.mock.calls.length).toBe(0)
@@ -301,10 +303,10 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "",
-        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -314,7 +316,7 @@ describe(`countPlaces`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
-          count(DISTINCT p.id) as "total"
+          count(*) as "total"
         FROM "places" p
         WHERE
           p."disabled" is false
@@ -332,10 +334,10 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         search: "decentraland atlas",
-        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -345,7 +347,7 @@ describe(`countPlaces`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
-          count(DISTINCT p.id) as "total"
+          count(*) as "total"
         FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
         WHERE
           p."disabled" is false
@@ -363,11 +365,11 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
         search: "asdads",
-        categories: [],
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
@@ -376,11 +378,11 @@ describe(`countPlaces`, () => {
     expect(
       await PlaceModel.countPlaces({
         only_favorites: false,
+        only_featured: false,
         only_highlighted: false,
         positions: ["-9,-9"],
         user: "ABC",
         search: "",
-        categories: [],
       })
     ).toEqual(0)
   })
@@ -476,13 +478,12 @@ describe(`findWithHotScenes`, () => {
           offset: 0,
           limit: 1,
           only_favorites: false,
-
+          only_featured: false,
           only_highlighted: false,
           positions: ["-9,-9"],
           order_by: "created_at",
           order: "desc",
           search: "",
-          categories: [],
         },
         [hotSceneGenesisPlaza]
       )
@@ -526,8 +527,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "hidden", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -546,11 +547,11 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "updated_at" = $12, "deployed_at" = $13, "world" = $14, "world_name" = $15, "hidden" = $16 
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
       WHERE disabled is false AND world is false AND "base_position" IN 
       ( 
         SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $17
+        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
       )
       `
         .trim()
@@ -772,8 +773,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "hidden", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      INSERT INTO "places" ("title", "description", "image", "owner", "tags", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "categories", "world", "world_name", "hidden", "id") 
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -792,11 +793,11 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "updated_at" = $12, "deployed_at" = $13, "world" = $14, "world_name" = $15, "hidden" = $16 
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "tags" = $5, "positions" = $6, "base_position" = $7, "contact_name" = $8, "contact_email" = $9, "content_rating" = $10, "disabled" = $11, "disabled_at" = $12, "updated_at" = $13, "deployed_at" = $14, "categories" = $15, "world" = $16, "world_name" = $17, "hidden" = $18 
       WHERE disabled is false AND world is false AND "base_position" IN 
       ( 
         SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $17
+        FROM "place_positions" "pp" WHERE "pp"."position" = $19 
       )
       `
         .trim()
