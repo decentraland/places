@@ -37,7 +37,7 @@
   border-radius: 8px;
 }
 
-.place-details__container h3 {
+.place-details__container .place-details__description-container h3 {
   text-transform: uppercase;
   font-size: 14px;
   color: var(--secondary-text);
@@ -96,19 +96,6 @@
 .place-details__rating-box-container {
   display: flex;
   justify-content: flex-start;
-}
-
-.place-details__categories-container {
-  border-top: solid 1px rgba(115, 110, 125, 0.24);
-  width: 100%;
-  padding: 25px 20px;
-}
-
-.place-details__categories-container
-  .category-filter__box
-  .dcl.filter
-  .filter-background {
-  background: var(--secondary-on-modal);
 }
 
 @media (max-width: 768px) {

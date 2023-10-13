@@ -1,10 +1,7 @@
 import { v4 as uuid } from "uuid"
 
-import CategoryModel from "../../Category/model"
-import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
-import PlaceCategories from "../../PlaceCategories/model"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
 import {
@@ -29,6 +26,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "description",
   "image",
   "owner",
+  "tags",
   "positions",
   "base_position",
   "contact_name",
@@ -39,6 +37,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "created_at",
   "updated_at",
   "deployed_at",
+  "categories",
   "world",
   "world_name",
   "hidden",
@@ -146,7 +145,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const places = await PlaceModel.findEnabledByPositions(
       contentEntityScene.pointers
     )
-    placesToProcess = processContentEntityScene(contentEntityScene, places)
+    placesToProcess = await processContentEntityScene(
+      contentEntityScene,
+      places
+    )
   }
 
   if (!placesToProcess) {
@@ -165,11 +167,6 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.new))
 
-    await overridePlaceCategories(
-      placesToProcess.new.id,
-      contentEntityScene.metadata.tags || []
-    )
-
     notifyNewPlace(placesToProcess.new)
     CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
@@ -185,11 +182,6 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
     !contentEntityScene.metadata.worldConfiguration &&
       (await PlacePositionModel.syncBasePosition(placesToProcess.update))
-
-    await overridePlaceCategories(
-      placesToProcess.update.id,
-      contentEntityScene.metadata.tags || []
-    )
 
     notifyUpdatePlace(placesToProcess.update)
     CheckScenesModel.createOne({
@@ -234,56 +226,4 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     CheckScenesModel.createMany(placesToDisable)
   }
-}
-
-async function getValidCategories(creatorTags: string[]) {
-  const forbidden = [
-    DecentralandCategories.POI,
-    DecentralandCategories.FEATURED,
-  ] as string[]
-
-  const availableCategories = await CategoryModel.findActiveCategories()
-
-  const validCategories = new Set<string>()
-
-  for (const tag of creatorTags) {
-    if (forbidden.includes(tag)) continue
-
-    if (availableCategories.find(({ name }) => name === tag)) {
-      validCategories.add(tag)
-    }
-
-    if (validCategories.size === 3) break
-  }
-
-  return validCategories
-}
-
-async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
-  if (!creatorTags.length) return
-
-  const validCategories = await getValidCategories(creatorTags)
-
-  if (!validCategories.size) return
-
-  const currentCategories = new Set(
-    ...(await PlaceCategories.findCategoriesByPlaceId(placeId)).map(
-      ({ category_id }) => category_id
-    )
-  )
-
-  if (currentCategories.has(DecentralandCategories.POI)) {
-    validCategories.add(DecentralandCategories.POI)
-  }
-
-  if (currentCategories.has(DecentralandCategories.FEATURED)) {
-    validCategories.add(DecentralandCategories.FEATURED)
-  }
-
-  await PlaceCategories.cleanPlaceCategories(placeId)
-  await PlaceModel.overrideCategories(placeId, [...validCategories])
-
-  await PlaceCategories.addCategoriesToPlaces(
-    [...validCategories].map((category) => [placeId, category])
-  )
 }

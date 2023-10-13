@@ -2,7 +2,12 @@ import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import {
+  AggregatePlaceAttributes,
+  PlaceListOrderBy,
+} from "../../entities/Place/types"
+import { WorldListOrderBy } from "../../entities/World/types"
+import watermelonIcon from "../../images/watermelon-icon.svg"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
 import NoResults from "./NoResults"
