@@ -83,6 +83,13 @@ export const worldSchema = schema({
       maxLength: 42,
       description: "The owner's name",
     },
+    tags: {
+      type: "array",
+      description: "A list of tags for the world",
+      items: {
+        type: "string",
+      },
+    },
     positions: {
       type: "array",
       description: "A list of positions of the world",

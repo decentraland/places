@@ -7,19 +7,16 @@ import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/pla
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "../../../api/DataTeam"
 import RealmProvider from "../../../api/RealmProvider"
-import PlaceCategories from "../../PlaceCategories/model"
 import PlaceModel from "../model"
 import { getPlace } from "./getPlace"
 
 const place_id = randomUUID()
 const findOne = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(RealmProvider.get(), "getHotScenes")
-const findPC = jest.spyOn(PlaceCategories, "namedQuery")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 
 afterEach(() => {
   findOne.mockReset()
-  findPC.mockReset()
 })
 test("should return 400 when UUID is incorrect", async () => {
   const request = new Request("/")
@@ -31,8 +28,6 @@ test("should return 400 when UUID is incorrect", async () => {
 })
 test("should return 404 when UUID do not exist in the model", async () => {
   findOne.mockResolvedValueOnce(Promise.resolve([]))
-  findPC.mockResolvedValueOnce(Promise.resolve([]))
-
   const request = new Request("/")
   const url = new URL("https://localhost/")
   await expect(async () =>
@@ -44,8 +39,6 @@ test("should return place if the module found it", async () => {
   findOne.mockResolvedValueOnce(
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
-
-  findPC.mockResolvedValueOnce(Promise.resolve([]))
 
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])
@@ -76,7 +69,6 @@ test("should return place with Realms detail", async () => {
   findOne.mockResolvedValueOnce(
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
-  findPC.mockResolvedValueOnce(Promise.resolve([]))
 
   catalystHotScenes.mockResolvedValueOnce(
     Promise.resolve([hotSceneGenesisPlaza])

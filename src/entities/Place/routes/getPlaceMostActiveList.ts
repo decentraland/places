@@ -30,7 +30,6 @@ export const getPlaceMostActiveList = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
-      categories: ctx.url.searchParams.getAll("categories"),
     })
 
     const [hotScenes, sceneStats] = await Promise.all([
@@ -60,6 +59,7 @@ export const getPlaceMostActiveList = Router.memo(
       offset: numeric(query.offset, { min: 0 }) ?? 0,
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
+      only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions.length
         ? hotScenesPositions.filter((position) => positions.has(position))
@@ -67,7 +67,6 @@ export const getPlaceMostActiveList = Router.memo(
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
       search: query.search,
-      categories: query.categories,
     }
 
     const { offset, limit, order, ...extraOptions } = options

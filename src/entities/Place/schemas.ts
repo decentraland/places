@@ -37,6 +37,12 @@ export const getPlaceListQuerySchema = schema({
       description: "True if shows only favorite places",
       nullable: true as any,
     },
+    only_featured: {
+      type: "string",
+      format: "boolean",
+      description: "True if shows only featured places",
+      nullable: true as any,
+    },
     only_highlighted: {
       type: "string",
       format: "boolean",
@@ -66,12 +72,6 @@ export const getPlaceListQuerySchema = schema({
       type: "string",
       description:
         "Filter places that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
-      nullable: true as any,
-    },
-    categories: {
-      type: "array",
-      items: { type: "string" },
-      description: "Filter places by available categories",
       nullable: true as any,
     },
   },
@@ -140,6 +140,13 @@ export const placeSchema = schema({
       minLength: 0,
       maxLength: 42,
       description: "The owner's name",
+    },
+    tags: {
+      type: "array",
+      description: "A list of tags for the place",
+      items: {
+        type: "string",
+      },
     },
     positions: {
       type: "array",
@@ -258,11 +265,6 @@ export const placeSchema = schema({
       minimum: 0,
       description:
         "The number of users that had visited the place in the last 30 days",
-    },
-    categories: {
-      type: "array",
-      description: "A list of the Place's categories",
-      items: { type: "string" },
     },
   },
 })
