@@ -29,7 +29,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "categories",
   "world",
   "world_name",
-  "hidden",
 ]
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
@@ -799,45 +798,6 @@ describe(`updatePlace`, () => {
         SELECT DISTINCT("base_position") 
         FROM "place_positions" "pp" WHERE "pp"."position" = $19 
       )
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-})
-
-describe(`updateWorldsShown`, () => {
-  test(`should not update a empty list`, async () => {
-    namedRowCount.mockResolvedValue(0)
-    expect(
-      await PlaceModel.updateIndexWorlds([
-        {
-          dclName: "paralax.dcl.eth",
-          shouldBeIndexed: true,
-        },
-      ])
-    ).toEqual(0)
-    expect(namedQuery.mock.calls.length).toBe(0)
-  })
-  test(`should update a list of world's names`, async () => {
-    namedRowCount.mockResolvedValue(1)
-    expect(
-      await PlaceModel.updateIndexWorlds([
-        {
-          dclName: "paralax.dcl.eth",
-          shouldBeIndexed: true,
-        },
-      ])
-    ).toEqual(1)
-    expect(namedRowCount.mock.calls.length).toBe(1)
-    const [name, sql] = namedRowCount.mock.calls[0]
-    expect(name).toBe("update_index_world")
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        UPDATE "places" SET hidden = (world_name not in ($1)), 
-          updated_at = now() 
-        WHERE world is true 
-          AND world_name IN ($2)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")

@@ -44,7 +44,6 @@ export type PlaceAttributes = {
   categories: string[]
   world: boolean
   world_name: string | null
-  hidden: boolean
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
 }

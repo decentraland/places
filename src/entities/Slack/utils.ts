@@ -28,13 +28,9 @@ export async function notifyNewPlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "mrkdwn",
-          text: `:tada: New ${
-            place.world ? `world ${place.hidden ? "(hidden)" : ""}` : "place"
-          } added: ${
+          text: `:tada: New ${place.world ? "world" : "place"} added: ${
             place.world
-              ? place.hidden
-                ? place.world_name
-                : `<${worldUrl(place)}|${place.world_name}>`
+              ? `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },
@@ -64,12 +60,10 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         text: {
           type: "mrkdwn",
           text: `:white_check_mark: ${
-            place.world ? `world ${place.hidden ? "(hidden)" : ""}` : "Place"
+            place.world ? "world" : "Place"
           } updated: ${
             place.world
-              ? place.hidden
-                ? place.world_name
-                : `<${worldUrl(place)}|${place.world_name}>`
+              ? `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },
@@ -194,9 +188,7 @@ export async function notifyDowngradeRating(
             place.world ? "world" : "place"
           } updated trying to downgrade rating: ${
             place.world
-              ? place.hidden
-                ? place.world_name
-                : `<${worldUrl(place)}|${place.world_name}>`
+              ? `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },
@@ -229,9 +221,7 @@ export async function notifyUpgradingRating(
             place.world ? "world" : "place"
           } upgrade rating: ${
             place.world
-              ? place.hidden
-                ? place.world_name
-                : `<${worldUrl(place)}|${place.world_name}>`
+              ? `<${worldUrl(place)}|${place.world_name}>`
               : `<${placeUrl(place)}|${place.base_position}>`
           }`,
         },
