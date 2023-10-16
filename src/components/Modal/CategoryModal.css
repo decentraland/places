@@ -79,6 +79,7 @@
 
 .ui.modal .content.categories-modal__content .category-filter__box {
   margin: 8px;
+  display: inline-block;
 }
 
 .ui.modal .actions.categories-modal__footer {

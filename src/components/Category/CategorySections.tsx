@@ -11,7 +11,8 @@ type CategorySectionsProps = {
   categories: string[]
 }
 
-export const CategorySections = ({ categories }: CategorySectionsProps) => {
+export const CategorySections = (props: CategorySectionsProps) => {
+  const { categories } = props
   const l = useFormatMessage()
 
   return (

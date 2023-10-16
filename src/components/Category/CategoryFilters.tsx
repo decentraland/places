@@ -30,6 +30,7 @@ export const CategoryFilters = (props: CategoryFiltersProps) => {
     <div className={className}>
       {categories
         .filter(({ active }) => (onlyActives ? active : true))
+        .sort((a, b) => (a.name === b.name ? 0 : a.name < b.name ? -1 : 1))
         .map((category) => (
           <CategoryFilter
             key={category.name}

@@ -35,13 +35,11 @@ import OverviewList from "../components/Layout/OverviewList"
 import SearchInput from "../components/Layout/SearchInput"
 import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
-import { Category } from "../entities/Category/types"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
   PlaceListOrderBy,
 } from "../entities/Place/types"
-import usePlaceCategories from "../hooks/usePlaceCategories"
 import usePlaceCategoriesManager from "../hooks/usePlaceCategoriesManager"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
@@ -82,8 +80,6 @@ export default function IndexPage() {
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
 
   const isFilteringByCategory = params.categories.length > 0
-
-  // const [categories] = usePlaceCategories(params.categories)
 
   const [
     categories,
@@ -353,6 +349,7 @@ export default function IndexPage() {
   )
 
   const handleApplyModalChange = useCallback(
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
       const names = categories
         .filter(({ active }) => active)
@@ -535,19 +532,20 @@ export default function IndexPage() {
               categories
                 .reverse()
                 .filter(({ active }) => active)
-                .map((c) => (
+                .map((category) => (
                   <OverviewList
                     title={
                       <>
-                        {l(`categories.${c.name}`)} <span>{c.count}</span>
+                        {l(`categories.${category.name}`)}{" "}
+                        <span>{category.count}</span>
                       </>
                     }
                     places={places.filter((place) =>
-                      place.categories.includes(c.name)
+                      place.categories.includes(category.name)
                     )}
                     href={locations.places({
                       ...params,
-                      only_view_category: c.name,
+                      only_view_category: category.name,
                     })}
                     loadingFavorites={handlingFavorite}
                     search={search}
