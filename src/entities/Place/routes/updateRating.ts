@@ -1,3 +1,5 @@
+import { randomUUID } from "crypto"
+
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
 import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
@@ -7,7 +9,6 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import { v4 as uuid } from "uuid"
 
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
@@ -57,7 +58,7 @@ export async function updateRating(
   Promise.all([
     PlaceModel.updatePlace(newPlace, ["content_rating"]),
     PlaceContentRatingModel.create({
-      id: uuid(),
+      id: randomUUID(),
       place_id: place.id,
       original_rating: place.content_rating,
       update_rating: body.content_rating,
