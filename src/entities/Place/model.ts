@@ -407,31 +407,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("find_worlds", sql)
   }
 
-  static updateIndexWorlds = (
-    worlds: {
-      dclName: string
-      shouldBeIndexed: boolean
-    }[]
-  ) => {
-    if (!worlds || worlds.length === 0) {
-      return 0
-    }
-
-    const names = worlds.map((world) => world.dclName)
-    const namesVisible = worlds
-      .filter((world) => world.shouldBeIndexed)
-      .map((world) => world.dclName)
-
-    const sql = SQL`
-      UPDATE ${table(this)} SET hidden = (world_name not in ${values(
-      namesVisible
-    )}), updated_at = now()
-      WHERE world is true
-        AND world_name IN ${values(names)}
-    `
-    return this.namedRowCount("update_index_world", sql)
-  }
-
   static async findWorld(
     options: FindWorldWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
