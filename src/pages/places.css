@@ -154,6 +154,14 @@
     .place-list__container {
     width: calc(100% + 28px);
   }
+
+  .ui.overview-list
+    > .ui.container.full
+    > .dcl.header-menu
+    > .dcl.header-menu-left
+    > .ui.header {
+    font-size: 20px;
+  }
 }
 
 @media only screen and (max-width: 435px) {
@@ -172,6 +180,14 @@
     .ui.card.place-card {
     margin-right: 0;
     margin-left: 0;
+  }
+
+  .ui.overview-list
+    > .ui.container.full
+    > .dcl.header-menu
+    > .dcl.header-menu-left
+    > .ui.header {
+    font-size: 20px;
   }
 }
 

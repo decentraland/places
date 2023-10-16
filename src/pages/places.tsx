@@ -86,6 +86,11 @@ export default function IndexPage() {
     { handleAddCategory, handleRemoveCategory, handleSyncCategory },
   ] = usePlaceCategoriesManager(params.categories)
 
+  const previousActiveCategories = useMemo(
+    () => categories.filter(({ active }) => active),
+    [params.categories]
+  )
+
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
@@ -304,18 +309,6 @@ export default function IndexPage() {
     [params.only_view_category]
   )
 
-  const handleCategoryListChange = useCallback(
-    (
-      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
-      props: CategoryFilterProps
-    ) => {
-      const { active, category } = props
-      active && handleAddCategory(category)
-      !active && handleRemoveCategory(category)
-    },
-    [handleAddCategory, handleRemoveCategory]
-  )
-
   const handleApplyCategoryListChange = useCallback(
     (
       e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
@@ -348,6 +341,18 @@ export default function IndexPage() {
     ]
   )
 
+  const handleCategoryModalChange = useCallback(
+    (
+      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+      props: CategoryFilterProps
+    ) => {
+      const { active, category } = props
+      active && handleAddCategory(category)
+      !active && handleRemoveCategory(category)
+    },
+    [handleAddCategory, handleRemoveCategory]
+  )
+
   const handleApplyModalChange = useCallback(
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) => {
@@ -356,6 +361,7 @@ export default function IndexPage() {
         .map(({ name }) => name)
 
       handleCategoriesFilterChange(names)
+      setIsCategoriesModalVisible(false)
     },
     [categories, handleCategoriesFilterChange]
   )
@@ -530,10 +536,10 @@ export default function IndexPage() {
             {isFilteringByCategory &&
               !params.only_view_category &&
               categories
-                .reverse()
                 .filter(({ active }) => active)
                 .map((category) => (
                   <OverviewList
+                    key={category.name}
                     title={
                       <>
                         {l(`categories.${category.name}`)}{" "}
@@ -580,17 +586,26 @@ export default function IndexPage() {
             )}
           </Grid.Column>
         </Grid.Row>
-        {/* TODO: review how to apply or reset changes here (@lauti7) */}
         {isMobile && (
           <CategoryModal
             open={isCategoriesModalVisible}
             categories={categories}
-            onClose={() => setIsCategoriesModalVisible(false)}
+            onClose={() => {
+              setIsCategoriesModalVisible(false)
+              handleSyncCategory(
+                categories.map((category) => ({
+                  ...category,
+                  active: !!previousActiveCategories.find(
+                    ({ name }) => name === category.name
+                  ),
+                }))
+              )
+            }}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
               handleCategoriesFilterChange([])
             }}
-            onChange={handleCategoryListChange}
+            onChange={handleCategoryModalChange}
             onActionClick={handleApplyModalChange}
           />
         )}

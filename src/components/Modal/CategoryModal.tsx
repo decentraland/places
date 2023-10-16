@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, { useCallback, useMemo } from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
@@ -28,14 +28,12 @@ export const CategoryModal = React.memo((props: CategoryModalProps) => {
 
   const l = useFormatMessage()
 
-  const [initialSelection, setInitialSelection] = useState(categories)
-
   const selectedCategories = useMemo(
     () =>
       new Set(
         categories.filter(({ active }) => active).map(({ name }) => name)
       ),
-    [initialSelection]
+    [categories]
   )
 
   const handleClose = useCallback(
