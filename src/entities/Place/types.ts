@@ -1,8 +1,20 @@
 import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
 import {
-  Realm,
+  HotScene as CatalystHotScene,
+  Realm as CatalystRealm,
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
+// NOTE: this is slightly different from the catalyst response
+export type Realm = Pick<CatalystRealm, "serverName" | "usersCount">
+
+// NOTE: this is slightly different from the catalyst response
+export type HotScene = Pick<
+  CatalystHotScene,
+  "id" | "name" | "baseCoords" | "usersTotalCount" | "parcels"
+> & {
+  realms: Realm[]
+}
 
 export type PlaceAttributes = {
   id: string
@@ -17,7 +29,7 @@ export type PlaceAttributes = {
   base_position: string
   contact_name: string | null
   contact_email: string | null
-  content_rating: string | null
+  content_rating: SceneContentRating
   likes: number
   dislikes: number
   favorites: number

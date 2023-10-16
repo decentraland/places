@@ -1,10 +1,11 @@
+import { randomUUID } from "crypto"
+
 import Catalyst, {
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
-import { v4 as uuid } from "uuid"
 
 import getContentRating, {
   isDowngradingRating,
@@ -56,7 +57,7 @@ export function createPlaceFromEntityScene(
   }
 
   const placeParsed = {
-    id: uuid(),
+    id: randomUUID(),
     owner: entityScene?.metadata?.owner || null,
     title: title ? title.slice(0, 50) : null,
     description: entityScene?.metadata?.display?.description || null,

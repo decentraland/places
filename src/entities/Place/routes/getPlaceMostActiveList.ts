@@ -47,7 +47,7 @@ export const getPlaceMostActiveList = Router.memo(
 
     if (
       (bool(query.only_favorites) && !userAuth?.address) ||
-      numeric(query.offset) > hotScenes.length
+      (numeric(query.offset) ?? 0) > hotScenes.length
     ) {
       return new ApiResponse([], { total: 0 })
     }
@@ -56,8 +56,8 @@ export const getPlaceMostActiveList = Router.memo(
 
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
-      offset: numeric(query.offset, { min: 0 }),
-      limit: numeric(query.limit, { min: 0, max: 100 }),
+      offset: numeric(query.offset, { min: 0 }) ?? 0,
+      limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_featured: !!bool(query.only_featured),
       only_highlighted: !!bool(query.only_highlighted),
@@ -91,8 +91,8 @@ export const getPlaceMostActiveList = Router.memo(
 
     const total = hotScenePlaces.length
 
-    const from = numeric(offset || 0, { min: 0 })
-    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+    const from = numeric(offset || 0, { min: 0 }) ?? 0
+    const to = numeric(from + (limit || 100), { min: 0, max: 100 }) ?? 100
 
     return new ApiResponse(hotScenePlaces.slice(from, to), { total })
   }

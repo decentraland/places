@@ -1,9 +1,8 @@
-import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { HotScene } from "../entities/Place/types"
 
 export const hotSceneGenesisPlaza: HotScene = {
   id: "bafkreidw4inuymukjj4otmld76a5qo4sowc6lbqqk6h4dtci4yxv5qkjie",
   name: "Genesis Plaza",
-  description: "Description",
   baseCoords: [-9, -9],
   usersTotalCount: 25,
   parcels: [
@@ -388,41 +387,10 @@ export const hotSceneGenesisPlaza: HotScene = {
     [10, 8],
     [10, 9],
   ],
-  thumbnail: "https://decentraland.org/images/thumbnail/genesis-plaza.png",
-  creator: "Decentraland Foundation",
   realms: [
     {
       serverName: "artemis",
-      url: "https://peer-ap1.decentraland.org",
       usersCount: 25,
-      maxUsers: 1000,
-      userParcels: [
-        [0, -1],
-        [0, -1],
-        [1, 0],
-        [1, 0],
-        [1, -1],
-        [-1, -7],
-        [0, -1],
-        [0, -1],
-        [1, 1],
-        [1, -1],
-        [1, 0],
-        [0, -1],
-        [0, -1],
-        [1, -1],
-        [0, -1],
-        [1, -1],
-        [0, -1],
-        [0, -1],
-        [1, -1],
-        [1, -1],
-        [0, -1],
-        [1, -1],
-        [1, -1],
-        [0, -1],
-        [1, -1],
-      ],
     },
   ],
 }

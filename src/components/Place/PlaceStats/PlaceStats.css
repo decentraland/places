@@ -46,6 +46,12 @@
   font-weight: 400;
 }
 
+.place-stats > .dcl.stats > .ui.header.place-stats__rating {
+  border: 1px solid;
+  border-radius: 5px;
+  padding: 3px 10px;
+}
+
 @media only screen and (max-width: 435px) {
   .place-stats {
     display: flex;

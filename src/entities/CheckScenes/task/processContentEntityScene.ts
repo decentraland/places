@@ -1,8 +1,9 @@
+import { randomUUID } from "crypto"
+
 import {
   ContentEntityScene,
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import { v4 as uuid } from "uuid"
 
 import getContentRating, {
   isDowngradingRating,
@@ -11,6 +12,7 @@ import getContentRating, {
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
+import { PlaceContentRatingAttributes } from "../../PlaceContentRating/types"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
 
@@ -18,11 +20,13 @@ export type ProcessEntitySceneResult =
   | {
       new: PlaceAttributes
       update?: never
+      rating: PlaceContentRatingAttributes | null
       disabled: PlaceAttributes[]
     }
   | {
       new?: never
       update: PlaceAttributes
+      rating: PlaceContentRatingAttributes | null
       disabled: PlaceAttributes[]
     }
 
@@ -36,14 +40,44 @@ export function processContentEntityScene(
     return null
   }
   if (!samePlace) {
+    const placefromContentEntity =
+      createPlaceFromContentEntityScene(contentEntityScene)
     return {
-      new: createPlaceFromContentEntityScene(contentEntityScene),
+      new: placefromContentEntity,
+      rating: {
+        id: randomUUID(),
+        place_id: placefromContentEntity.id,
+        original_rating: null,
+        update_rating: placefromContentEntity.content_rating,
+        moderator: null,
+        comment: null,
+        created_at: new Date(),
+      },
       disabled: places,
     }
   }
 
+  const placefromContentEntity = createPlaceFromContentEntityScene(
+    contentEntityScene,
+    samePlace
+  )
+
+  let rating = null
+  if (placefromContentEntity.content_rating !== samePlace.content_rating) {
+    rating = {
+      id: randomUUID(),
+      place_id: samePlace.id,
+      original_rating: samePlace.content_rating,
+      update_rating: placefromContentEntity.content_rating,
+      moderator: null,
+      comment: null,
+      created_at: new Date(),
+    }
+  }
+
   return {
-    update: createPlaceFromContentEntityScene(contentEntityScene, samePlace),
+    update: placefromContentEntity,
+    rating,
     disabled: places.filter((place) => samePlace.id !== place.id),
   }
 }
@@ -97,7 +131,7 @@ export function createPlaceFromContentEntityScene(
   }
 
   const placeParsed: PlaceAttributes = {
-    id: uuid(),
+    id: randomUUID(),
     likes: 0,
     dislikes: 0,
     favorites: 0,

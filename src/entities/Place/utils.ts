@@ -1,7 +1,4 @@
-import {
-  ContentEntityScene,
-  HotScene,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 import env from "decentraland-gatsby/dist/utils/env"
 
@@ -11,6 +8,7 @@ import {
   AggregatePlaceAttributes,
   PlaceAttributes,
   unwantedThumbnailHash,
+  HotScene,
 } from "./types"
 
 const DECENTRALAND_URL =

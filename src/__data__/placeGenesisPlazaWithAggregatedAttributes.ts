@@ -1,3 +1,5 @@
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 
 export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes =
@@ -394,7 +396,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     base_position: "-9,-9",
     contact_name: "Decentraland Foundation",
     contact_email: null,
-    content_rating: "RP",
+    content_rating: SceneContentRating.RATING_PENDING,
     disabled: false,
     disabled_at: null,
     created_at: new Date("2022-11-11T04:53:07.000Z"),

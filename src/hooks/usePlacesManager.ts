@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useAsyncTasks from "decentraland-gatsby/dist/hooks/useAsyncTasks"
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import Places from "../api/Places"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
@@ -85,6 +86,24 @@ export default function usePlacesManager(
     track,
   ])
 
+  const [handlingRating, handleRating] = useAsyncTasks(
+    async (id, rate: SceneContentRating) => {
+      const ratingResponse = await Places.get().updateRating(id, {
+        content_rating: rate as SceneContentRating,
+      })
+
+      if (ratingResponse) {
+        const placesUpdated = places.map(
+          (placeToUpdate) => updateInList(placeToUpdate, id, ratingResponse),
+          [places]
+        )
+
+        setPlaces(placesUpdated)
+      }
+    },
+    [places]
+  )
+
   const modifyingFavorite = useMemo(
     () => new Set(handlingFavorite),
     [handlingFavorite]
@@ -96,15 +115,22 @@ export default function usePlacesManager(
     [handlingDislike]
   )
 
+  const modifyingRating = useMemo(
+    () => new Set(handlingRating),
+    [handlingRating]
+  )
+
   return [
     places,
     {
       handleFavorite,
       handleLike,
       handleDislike,
+      handleRating,
       handlingFavorite: modifyingFavorite,
       handlingLike: modifyingLike,
       handlingDislike: modifyingDislike,
+      handlingRating: modifyingRating,
     },
   ] as const
 }

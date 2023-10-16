@@ -15,7 +15,6 @@ import {
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { HotScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import { diff, unique } from "radash/dist/array"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
@@ -29,6 +28,7 @@ import {
 import {
   AggregatePlaceAttributes,
   FindWithAggregatesOptions,
+  HotScene,
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
@@ -167,7 +167,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
       FROM ${table(this)} p
-      
+
       ${conditional(
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
@@ -205,7 +205,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
-      ORDER BY 
+      ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
@@ -354,8 +354,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       hotScenePlaces.reverse()
     }
 
-    const from = numeric(offset || 0, { min: 0 })
-    const to = numeric(from + (limit || 100), { min: 0, max: 100 })
+    const from = numeric(offset || 0, { min: 0 }) ?? 0
+    const to = numeric(from + (limit || 100), { min: 0, max: 100 }) ?? 100
 
     return hotScenePlaces.slice(from, to)
   }
@@ -497,11 +497,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           SQL`AND world_name IN ${values(options.names)}`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
-      ORDER BY 
+      ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}      
+      ${offset(options.offset)}
     `
 
     return await this.namedQuery("find_worlds", sql)
@@ -558,10 +558,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * We're calculating the lower bound of a 95% confidence interval
    */
   static calculateLikeScoreStatement(): SQLStatement {
-    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208) 
-    / (c.count_active_likes + c.count_active_dislikes) - 1.96 
-    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) 
-    / (c.count_active_likes + c.count_active_dislikes)) 
+    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208)
+    / (c.count_active_likes + c.count_active_dislikes) - 1.96
+    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604)
+    / (c.count_active_likes + c.count_active_dislikes))
     / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE NULL END`
   }
 }

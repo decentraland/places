@@ -1,5 +1,8 @@
+import { randomUUID } from "crypto"
+
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
+import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
 import {
   notifyDisablePlaces,
@@ -69,17 +72,27 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const worldIndexing = await verifyWorldsIndexing([worldName])
 
     if (!worlds.length) {
+      const placefromContentEntity = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {
+          hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
+        },
+        { url: job.contentServerUrls![0] }
+      )
       placesToProcess = {
-        new: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            hidden: !worldIndexing[0].shouldBeIndexed,
-            disabled:
-              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-                ?.optOut,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        new: placefromContentEntity,
+        rating: {
+          id: randomUUID(),
+          place_id: placefromContentEntity.id,
+          original_rating: null,
+          update_rating: placefromContentEntity.content_rating,
+          moderator: null,
+          comment: null,
+          created_at: new Date(),
+        },
         disabled: [],
       }
     } else {
@@ -96,18 +109,35 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         )
       }
 
+      const placefromContentEntity = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {
+          ...worlds[0],
+          hidden: !worldIndexing[0].shouldBeIndexed,
+          disabled:
+            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
+              ?.optOut,
+        },
+        { url: job.contentServerUrls![0] }
+      )
+
+      let rating = null
+
+      if (placefromContentEntity.content_rating !== worlds[0].content_rating) {
+        rating = {
+          id: randomUUID(),
+          place_id: worlds[0].id,
+          original_rating: worlds[0].content_rating,
+          update_rating: placefromContentEntity.content_rating,
+          moderator: null,
+          comment: null,
+          created_at: new Date(),
+        }
+      }
+
       placesToProcess = {
-        update: createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {
-            ...worlds[0],
-            hidden: !worldIndexing[0].shouldBeIndexed,
-            disabled:
-              !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-                ?.optOut,
-          },
-          { url: job.contentServerUrls![0] }
-        ),
+        update: placefromContentEntity,
+        rating,
         disabled: [],
       }
     }
@@ -162,6 +192,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       action: CheckSceneLogsTypes.UPDATE,
       deploy_at: new Date(contentEntityScene.timestamp),
     })
+  }
+
+  if (placesToProcess?.rating) {
+    PlaceContentRatingModel.create(placesToProcess.rating)
   }
 
   if (placesToProcess?.disabled.length) {
