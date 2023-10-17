@@ -12,12 +12,12 @@ export const shorthands: ColumnDefinitions = {
 }
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropColumn(PlaceModel.tableName, shorthands)
-
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "world_name"])
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "base_position"])
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "updated_at"])
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "like_rate"])
+
+  pgm.dropColumn(PlaceModel.tableName, shorthands)
 
   pgm.createIndex(PlaceModel.tableName, ["world_name"])
   pgm.createIndex(PlaceModel.tableName, ["base_position"])
