@@ -40,7 +40,6 @@ export const worldPlaceParalax: PlaceAttributes = {
   world: true,
   world_name: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
-  hidden: false,
   textsearch: undefined,
 }
 
@@ -74,7 +73,6 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   world: true,
   world_name: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
-  hidden: false,
   user_favorite: false,
   user_like: false,
   user_dislike: false,
@@ -283,7 +281,6 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   world: true,
   world_name: "templegame.dcl.eth",
   deployed_at: new Date("2023-05-16T15:44:26.395Z"),
-  hidden: false,
   user_favorite: false,
   user_like: false,
   user_dislike: false,
