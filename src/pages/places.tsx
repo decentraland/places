@@ -83,13 +83,9 @@ export default function IndexPage() {
 
   const [
     categories,
+    previousActiveCategories,
     { handleAddCategory, handleRemoveCategory, handleSyncCategory },
   ] = usePlaceCategoriesManager(params.categories)
-
-  const previousActiveCategories = useMemo(
-    () => categories.filter(({ active }) => active),
-    [params.categories]
-  )
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -124,7 +120,7 @@ export default function IndexPage() {
         const placesFetch = Places.get().getPlaces({
           ...options,
           offset,
-          limit: 4,
+          limit: 15,
           categories: [category],
           search: isSearching ? search : undefined,
         })
@@ -549,10 +545,7 @@ export default function IndexPage() {
                     places={places.filter((place) =>
                       place.categories.includes(category.name)
                     )}
-                    href={locations.places({
-                      ...params,
-                      only_view_category: category.name,
-                    })}
+                    onClick={() => toggleViewAllCategory(category.name)}
                     loadingFavorites={handlingFavorite}
                     search={search}
                     dataPlace={SegmentPlace.Places}

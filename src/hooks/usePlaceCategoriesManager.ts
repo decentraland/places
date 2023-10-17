@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
@@ -25,6 +25,11 @@ export default function usePlaceCategoriesManager(
   useEffect(() => {
     originalCategories.length > 0 && setCategories(originalCategories)
   }, [originalCategories])
+
+  const previousActiveCategories = useMemo(
+    () => categories.filter(({ active }) => active),
+    [initActiveCategories]
+  )
 
   const handleAddCategory = useCallback(
     (categoryToActive: string) => {
@@ -57,6 +62,7 @@ export default function usePlaceCategoriesManager(
 
   return [
     categories,
+    previousActiveCategories,
     {
       handleAddCategory,
       handleRemoveCategory,
