@@ -38,7 +38,14 @@ export type PlaceCardProps = {
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const track = useTrackContext()
 
-  const { place, loading, loadingFavorites, onClickFavorite, dataPlace } = props
+  const {
+    place,
+    loading,
+    loadingFavorites,
+    onClickFavorite,
+    dataPlace,
+    trackingData,
+  } = props
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -63,11 +70,11 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    if (props.trackingData) {
+    if (trackingData) {
       track(SegmentPlace.PlaceCardClick, {
         placeId: place?.id,
-        trackingId: props.trackingData.id,
-        positionWithinList: props.trackingData.positionWithinList,
+        trackingId: trackingData.id,
+        positionWithinList: trackingData.positionWithinList,
       })
     }
 

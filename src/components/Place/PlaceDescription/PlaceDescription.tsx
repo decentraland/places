@@ -42,6 +42,7 @@ export default React.memo(function PlaceDescription(
     loadingLike,
     loadingDislike,
     loadingFavorite,
+    trackingId,
   } = props
   const l = useFormatMessage()
   const placerUrl = explorerUrl(place)
@@ -101,7 +102,7 @@ export default React.memo(function PlaceDescription(
               data-event={SegmentPlace.JumpIn}
               data-place-id={place?.id}
               data-place={dataPlace}
-              data-trackingId={props.trackingId}
+              data-trackingId={trackingId}
             />
             <div className="place-description__box-wrapper">
               <ShareBox onClick={onClickShare} loading={loading} />
