@@ -87,6 +87,7 @@ export default function IndexPage() {
   const [
     categories,
     previousActiveCategories,
+    categoriesStack,
     { handleAddCategory, handleRemoveCategory, handleSyncCategory },
   ] = usePlaceCategoriesManager(params.categories)
 
@@ -365,6 +366,19 @@ export default function IndexPage() {
     [categories, handleCategoriesFilterChange]
   )
 
+  const handleClearAll = useCallback(() => {
+    if (previousActiveCategories.length) {
+      handleCategoriesFilterChange([])
+    } else {
+      handleSyncCategory(
+        categories.map((category) => ({
+          ...category,
+          active: false,
+        }))
+      )
+    }
+  }, [previousActiveCategories, categories])
+
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
   }
@@ -497,7 +511,7 @@ export default function IndexPage() {
                   />
                   <span
                     className="clear-all-filter-btn"
-                    onClick={() => handleCategoriesFilterChange([])}
+                    onClick={handleClearAll}
                   >
                     <Filter>
                       <Trash width="20" height="20" />{" "}
@@ -534,31 +548,29 @@ export default function IndexPage() {
               )}
             {isFilteringByCategory &&
               !params.only_view_category &&
-              categories
-                .filter(({ active }) => active)
-                .map((category) => (
-                  <OverviewList
-                    key={category.name}
-                    title={
-                      <>
-                        {l(`categories.${category.name}`)}{" "}
-                        <span>{category.count}</span>
-                      </>
-                    }
-                    places={places.filter((place) =>
-                      place.categories.includes(category.name)
-                    )}
-                    onClick={() => toggleViewAllCategory(category.name)}
-                    loadingFavorites={handlingFavorite}
-                    search={search}
-                    dataPlace={SegmentPlace.Places}
-                    onClickFavorite={(_, place) => {
-                      handleFavorite(place.id, place)
-                    }}
-                    loading={loadingPlaces}
-                    trackingId={trackingId ? trackingId : undefined}
-                  />
-                ))}
+              categoriesStack.map((category) => (
+                <OverviewList
+                  key={category.name}
+                  title={
+                    <>
+                      {l(`categories.${category.name}`)}{" "}
+                      <span>{category.count}</span>
+                    </>
+                  }
+                  places={places.filter((place) =>
+                    place.categories.includes(category.name)
+                  )}
+                  onClick={() => toggleViewAllCategory(category.name)}
+                  loadingFavorites={handlingFavorite}
+                  search={search}
+                  dataPlace={SegmentPlace.Places}
+                  onClickFavorite={(_, place) => {
+                    handleFavorite(place.id, place)
+                  }}
+                  loading={loadingPlaces}
+                  trackingId={trackingId ? trackingId : undefined}
+                />
+              ))}
             {loading && (
               <PlaceList
                 className="places-page__list-loading"
@@ -601,16 +613,7 @@ export default function IndexPage() {
             }}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
-              if (previousActiveCategories.length) {
-                handleCategoriesFilterChange([])
-              } else {
-                handleSyncCategory(
-                  categories.map((category) => ({
-                    ...category,
-                    active: false,
-                  }))
-                )
-              }
+              handleClearAll()
             }}
             onChange={handleCategoryModalChange}
             onActionClick={handleApplyModalChange}
