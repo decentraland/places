@@ -207,7 +207,7 @@ export default function IndexPage() {
   ])
 
   useEffect(() => {
-    if (allPlaces.length > PAGE_SIZE) {
+    if (allPlaces.length > PAGE_SIZE && !isFilteringByCategory) {
       setTimeout(
         () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
         0
