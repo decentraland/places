@@ -3,12 +3,12 @@
     {
       "place_id": "80a17033-6d38-4de4-8421-7bea478bb62a",
       "base_position": "-102,129",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "59cfc6be-d101-47df-aff7-b20067b7b645",
       "base_position": "-29,55",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "59cfc6be-d101-47df-aff7-b20067b7b645",
@@ -18,7 +18,7 @@
     {
       "place_id": "86f32fce-240b-42d2-8a8e-0d9db79b2fcf",
       "base_position": "96,-132",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "86f32fce-240b-42d2-8a8e-0d9db79b2fcf",
@@ -28,17 +28,17 @@
     {
       "place_id": "b6523d8c-8e54-4729-ac7a-a9491da02c41",
       "base_position": "-115,133",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "b2f5688c-cb36-44ea-b3ed-c918e128c9b0",
       "base_position": "145,60",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e69cecea-c8b4-4d8b-b4a2-9f826b60a715",
       "base_position": "-29,80",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e69cecea-c8b4-4d8b-b4a2-9f826b60a715",
@@ -53,12 +53,12 @@
     {
       "place_id": "316a0714-c295-47fc-82f5-4ba7d6b22d13",
       "base_position": "47,-45",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9257a6a1-1ab1-4a80-8e53-f02fdad2f582",
       "base_position": "-6,131",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9257a6a1-1ab1-4a80-8e53-f02fdad2f582",
@@ -68,12 +68,12 @@
     {
       "place_id": "e0b15f79-96b3-4be6-b2b1-8369d19aa2bd",
       "base_position": "-104,138",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "f888b899-c509-44d1-af21-717a4cef654e",
       "base_position": "144,-7",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8f38ed26-447f-49ba-bcbb-76917e2119b4",
@@ -83,7 +83,7 @@
     {
       "place_id": "ba98b756-5c71-4cbc-85b3-bc3333cbf848",
       "base_position": "125,41",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "49c341fe-d45a-4573-94e8-0af63acbde0d",
@@ -103,7 +103,7 @@
     {
       "place_id": "707d150a-c5c7-4d4b-be4d-77ed20756667",
       "base_position": "-26,88",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "60c29712-2ee8-4617-af20-b6e816cc12ab",
@@ -113,7 +113,7 @@
     {
       "place_id": "60c29712-2ee8-4617-af20-b6e816cc12ab",
       "base_position": "-40,-59",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "ac3ee74f-2d27-4040-a2fd-703016814fc5",
@@ -123,12 +123,12 @@
     {
       "place_id": "9fe317e1-17f8-4ef8-b590-590140c444c4",
       "base_position": "-30,80",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "50778cbb-0101-4be8-ab07-ce3840d59ef3",
       "base_position": "-46,53",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c9cd9477-1749-4408-9b1a-26e1b8646e88",
@@ -153,12 +153,12 @@
     {
       "place_id": "50e8fe14-4b00-4902-a5d2-3c58a3e6ae61",
       "base_position": "99,-112",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7f67c110-a2a9-48f2-a742-6a6419a3d8f0",
       "base_position": "-30,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "69886a84-6268-49b7-9307-e372eebdbb41",
@@ -173,7 +173,7 @@
     {
       "place_id": "ed4cde99-6563-4eb8-a148-c9f61c704246",
       "base_position": "-76,77",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "cfbd6033-a530-438e-bf66-8d21fce520c6",
@@ -203,12 +203,12 @@
     {
       "place_id": "6e5b5780-9469-4693-8a23-8a0ae9a9e42d",
       "base_position": "-111,137",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "ba5f7b67-1e5d-488f-97f8-cdf058ad3ff1",
       "base_position": "-108,129",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "0e7265d4-c530-4077-97e6-712d4473835f",
@@ -258,7 +258,7 @@
     {
       "place_id": "75bfd642-0743-45f3-b3ba-5d3de8b3f6a2",
       "base_position": "-100,37",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "06721806-6a40-4c6d-ae74-27d701ef5086",
@@ -273,7 +273,7 @@
     {
       "place_id": "06721806-6a40-4c6d-ae74-27d701ef5086",
       "base_position": "143,-148",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "433af23d-bb74-4394-b822-f315e1532751",
@@ -293,7 +293,7 @@
     {
       "place_id": "8b7c1147-c885-4556-94fc-3639d223813a",
       "base_position": "-118,6",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8b7c1147-c885-4556-94fc-3639d223813a",
@@ -323,7 +323,7 @@
     {
       "place_id": "00169a6d-a8f2-4a53-9b23-7624a32c8407",
       "base_position": "-29,91",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cbf4e5d6-0122-4ed8-8b25-a3291c5b7c88",
@@ -338,7 +338,7 @@
     {
       "place_id": "68c0ae7e-a6bd-42c6-9a55-5cb30600c6e6",
       "base_position": "155,65",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "68c0ae7e-a6bd-42c6-9a55-5cb30600c6e6",
@@ -363,7 +363,7 @@
     {
       "place_id": "7285bc8a-b116-4470-80a3-ed1f495f4634",
       "base_position": "38,-3",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e861dae4-2f56-4781-8475-ba7460062c67",
@@ -388,12 +388,12 @@
     {
       "place_id": "3b50e33f-c730-407a-a0d4-dcd69d33d680",
       "base_position": "47,-46",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e0409dad-3f56-41ee-870b-45d66a36926c",
       "base_position": "49,-46",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6c335122-224b-4afd-8ee0-1bd4deb08954",
@@ -403,17 +403,17 @@
     {
       "place_id": "44e7ecd6-640f-4d82-ad60-e24d6f89a892",
       "base_position": "61,-27",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "72e7564e-3239-4044-8e31-16264a9e8455",
       "base_position": "63,-127",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7b297a66-b5e2-4044-9d29-47157fae5958",
       "base_position": "91,-148",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7b297a66-b5e2-4044-9d29-47157fae5958",
@@ -423,7 +423,7 @@
     {
       "place_id": "183c652b-4331-4f0c-8f8f-ed191b35f10b",
       "base_position": "97,-116",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "45ad08d6-4bc7-40fd-8a78-faef87325c84",
@@ -448,12 +448,12 @@
     {
       "place_id": "cc7eb5a6-2bfe-4763-a4db-b0b6fbbb7464",
       "base_position": "-80,112",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9e938130-caba-4d42-a14a-f2b70c70d8ed",
       "base_position": "119,-12",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9e938130-caba-4d42-a14a-f2b70c70d8ed",
@@ -463,7 +463,7 @@
     {
       "place_id": "579910f5-5c28-45a0-aadb-5c2288a852d4",
       "base_position": "-101,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ae20a1b8-5d62-4ee3-b26e-acdd85cbed41",
@@ -473,7 +473,7 @@
     {
       "place_id": "e874c6aa-aef4-4b1a-86cb-702d5dbc5769",
       "base_position": "-51,91",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4a147b9a-64ae-4222-8ba6-6b97fcb328cf",
@@ -488,7 +488,7 @@
     {
       "place_id": "963d8362-98fd-47eb-af27-a9ab17a15636",
       "base_position": "-62,1",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "963d8362-98fd-47eb-af27-a9ab17a15636",
@@ -503,7 +503,7 @@
     {
       "place_id": "fccd7bde-197b-4263-a7e6-0e552a8b814c",
       "base_position": "-75,109",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d87fc7ba-be3b-4bbf-a84e-a4546538262e",
@@ -518,7 +518,7 @@
     {
       "place_id": "870f6ba6-4aca-4fc9-a1c8-0d5901617079",
       "base_position": "-15,80",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "870f6ba6-4aca-4fc9-a1c8-0d5901617079",
@@ -568,17 +568,17 @@
     {
       "place_id": "b8506f47-e6c3-43c9-a0f2-96a3483879a8",
       "base_position": "-22,87",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c13d8657-ea5e-4802-9085-27fec8ea33c6",
       "base_position": "125,-6",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "b3bdd170-867a-4e93-bda5-52a017734aa6",
       "base_position": "-99,-6",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "1cd27706-1025-4be6-ad47-66ed79b80974",
@@ -598,7 +598,7 @@
     {
       "place_id": "91a1a6fe-3ea6-4524-8b0c-6f3d85cc5453",
       "base_position": "-45,106",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a6262cc2-bd2c-4363-8526-cbe6ca6d625e",
@@ -638,7 +638,7 @@
     {
       "place_id": "3b9ac301-6051-4382-9c10-12f9e66fdde1",
       "base_position": "-108,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "56b106b9-c311-4f0a-89aa-f741d8d86a14",
@@ -658,7 +658,7 @@
     {
       "place_id": "80ca5613-2dd4-4742-bd04-1403eda259cc",
       "base_position": "-22,83",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "be32f0b0-8ca7-4410-962d-294f867f15f1",
@@ -683,7 +683,7 @@
     {
       "place_id": "238012f8-183f-47ee-b70b-58976920e533",
       "base_position": "-23,84",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "0a4a0233-1f23-4193-a3f6-c16d9d1b41d8",
@@ -698,7 +698,7 @@
     {
       "place_id": "c6b7b5ce-ce08-4992-932c-fd2e99346665",
       "base_position": "-30,88",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "726dd492-3472-4fe7-a933-180854ebb559",
@@ -713,7 +713,7 @@
     {
       "place_id": "c1000708-3bff-46fe-b724-88ec049ec92e",
       "base_position": "74,51",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c1000708-3bff-46fe-b724-88ec049ec92e",
@@ -788,7 +788,7 @@
     {
       "place_id": "38f2586e-8804-44d0-bced-37bbd32191fd",
       "base_position": "61,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "38f2586e-8804-44d0-bced-37bbd32191fd",
@@ -803,7 +803,7 @@
     {
       "place_id": "43de3fbe-9cac-46bc-9df6-704ecbe33858",
       "base_position": "-27,89",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "27d2fa1a-1024-423e-aa23-df874130cc18",
@@ -833,7 +833,7 @@
     {
       "place_id": "cd705bf4-4d49-4b06-8a97-aa7d5ee7d89c",
       "base_position": "-131,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cd705bf4-4d49-4b06-8a97-aa7d5ee7d89c",
@@ -888,7 +888,7 @@
     {
       "place_id": "10333474-c461-4912-8a77-db43087faedf",
       "base_position": "87,129",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "10333474-c461-4912-8a77-db43087faedf",
@@ -923,12 +923,12 @@
     {
       "place_id": "3c9bc0e1-6b14-4d98-90a2-3b196a0e969b",
       "base_position": "-80,116",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "19f2ea87-6895-4433-ad3e-fc2f655bbf4e",
       "base_position": "-115,-67",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "19f2ea87-6895-4433-ad3e-fc2f655bbf4e",
@@ -958,7 +958,7 @@
     {
       "place_id": "eca7eed1-0f70-46bf-8148-9d78c4fe51e3",
       "base_position": "50,99",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "eca7eed1-0f70-46bf-8148-9d78c4fe51e3",
@@ -973,12 +973,12 @@
     {
       "place_id": "cb77d265-0f0c-443c-a5c0-772caca0126c",
       "base_position": "-35,-60",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "59cad9e7-f38e-4501-a837-67ef6b6d6836",
       "base_position": "-29,86",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "60769433-dfd6-494e-b6ae-202b7d7579f2",
@@ -1003,17 +1003,17 @@
     {
       "place_id": "b4deb331-8aed-4aa4-a0f7-df66b67db764",
       "base_position": "-123,143",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "78870c7a-f75a-4e09-8506-8f2b62638fa4",
       "base_position": "-30,84",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5301ddb3-6dc7-473c-9347-28640cb135a6",
       "base_position": "-22,91",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "eda7a41a-02aa-4471-aa32-e6f7a10181d6",
@@ -1038,7 +1038,7 @@
     {
       "place_id": "3e35a588-20fa-4525-b4a5-716f5869ac99",
       "base_position": "-30,92",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7af23f37-9988-4dcb-82e6-49d9e6c8f7e7",
@@ -1053,7 +1053,7 @@
     {
       "place_id": "79cf8455-2545-4314-8f32-c189ca34478c",
       "base_position": "-55,1",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b493d80f-cc91-4661-8e47-029125a03d09",
@@ -1068,7 +1068,7 @@
     {
       "place_id": "11bd50df-6b0c-4dbb-ad48-3687d36c9975",
       "base_position": "-80,111",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6f0332d0-a3db-4d81-8caf-b188e4a1f814",
@@ -1113,12 +1113,12 @@
     {
       "place_id": "7a02bfbf-98c6-4d7c-9f1c-13e5bc540cd2",
       "base_position": "-23,83",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6b01ffba-e59e-4b07-8150-b660a40aef9b",
       "base_position": "56,26",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a430989f-817b-4e74-8282-7d547c1e209f",
@@ -1148,7 +1148,7 @@
     {
       "place_id": "35b18e4d-d470-4088-a325-5a9c1dba83e2",
       "base_position": "-68,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "35b18e4d-d470-4088-a325-5a9c1dba83e2",
@@ -1163,12 +1163,12 @@
     {
       "place_id": "3f95b1b0-cbb9-4538-aab6-00ec35df11dc",
       "base_position": "-22,92",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "bea033a3-f176-4c1d-a70d-bff74dcbd8dc",
       "base_position": "128,131",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "bea033a3-f176-4c1d-a70d-bff74dcbd8dc",
@@ -1193,7 +1193,7 @@
     {
       "place_id": "a8252125-66ea-4b7f-a669-cb55d2249698",
       "base_position": "-78,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a8252125-66ea-4b7f-a669-cb55d2249698",
@@ -1203,7 +1203,7 @@
     {
       "place_id": "f9094a8c-5e36-408d-afe9-5b3fad041997",
       "base_position": "-16,82",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "065120d9-2265-4311-ad1f-f9ffc8307487",
@@ -1213,7 +1213,7 @@
     {
       "place_id": "83165a39-da7c-46c1-98a2-98385c4d5f1c",
       "base_position": "74,47",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "83165a39-da7c-46c1-98a2-98385c4d5f1c",
@@ -1228,7 +1228,7 @@
     {
       "place_id": "983e51df-6587-4166-af7c-1ac792bc270b",
       "base_position": "-26,-45",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f099ee9e-4ba6-40e8-b8ae-e6446d8eb86b",
@@ -1243,7 +1243,7 @@
     {
       "place_id": "165b122a-2f29-4172-992c-51eec94163c0",
       "base_position": "129,-4",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "165b122a-2f29-4172-992c-51eec94163c0",
@@ -1268,7 +1268,7 @@
     {
       "place_id": "cef55b5b-ee59-416c-8697-f92f15e27ba9",
       "base_position": "123,130",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cef55b5b-ee59-416c-8697-f92f15e27ba9",
@@ -1283,7 +1283,7 @@
     {
       "place_id": "e3ab3eda-3e2a-4ba1-bf4b-34e0f8e7bf0f",
       "base_position": "-28,90",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "123ce593-920b-4a81-8895-9b19d74c1972",
@@ -1338,7 +1338,7 @@
     {
       "place_id": "ab0dea65-cca4-4c51-9b85-d4bfb4051f52",
       "base_position": "-13,106",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "e0740835-fbda-4650-a8af-7369d062f2dc",
@@ -1353,12 +1353,12 @@
     {
       "place_id": "68d7a064-5305-45e6-941c-a18de992c0ca",
       "base_position": "-20,-130",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e0cf5ebf-462e-4487-a637-ba32334870ce",
       "base_position": "-71,-121",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7a26f9a2-4519-4824-be32-b25c4d92142c",
@@ -1388,7 +1388,7 @@
     {
       "place_id": "bb03b26d-a591-4f1a-a7e8-6bc2359aae36",
       "base_position": "38,103",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b24a3ccf-9a9d-4e29-b176-add5c444c7eb",
@@ -1403,7 +1403,7 @@
     {
       "place_id": "ac915fee-e09e-4676-8359-4effa12b5180",
       "base_position": "-29,90",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "178a1d5b-172b-44c6-9f23-f005d806ba42",
@@ -1418,7 +1418,7 @@
     {
       "place_id": "d3708d04-150a-4450-a96e-7b539383a2a5",
       "base_position": "-85,86",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "2e2157f6-d874-421c-9416-d016529d0399",
@@ -1433,7 +1433,7 @@
     {
       "place_id": "d9bdead1-b422-48ea-9266-f465c7362569",
       "base_position": "159,124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d9bdead1-b422-48ea-9266-f465c7362569",
@@ -1463,12 +1463,12 @@
     {
       "place_id": "6be33cd5-9315-439f-b7a0-8b8e0190b1d1",
       "base_position": "-101,40",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "369f7926-506c-4612-8f1c-00d686cad723",
       "base_position": "-82,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "369f7926-506c-4612-8f1c-00d686cad723",
@@ -1478,12 +1478,12 @@
     {
       "place_id": "becf8862-2799-41aa-9d8f-bea02accd242",
       "base_position": "5,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e47d13de-5079-498e-978f-7424fda80511",
       "base_position": "-80,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e47d13de-5079-498e-978f-7424fda80511",
@@ -1493,7 +1493,7 @@
     {
       "place_id": "a108d6f6-d12b-4a60-87e7-afc7ff9390b3",
       "base_position": "-97,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "372696d0-e7ea-4b5d-ab7e-b50661aacabc",
@@ -1538,7 +1538,7 @@
     {
       "place_id": "6b027b8d-df44-4af6-9cfa-1b0e0544e567",
       "base_position": "-79,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6b027b8d-df44-4af6-9cfa-1b0e0544e567",
@@ -1558,7 +1558,7 @@
     {
       "place_id": "c6e02ab3-28fc-48e8-8d4e-30a350b97b74",
       "base_position": "-79,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c6e02ab3-28fc-48e8-8d4e-30a350b97b74",
@@ -1568,12 +1568,12 @@
     {
       "place_id": "64f63087-885f-47a5-9af2-2ce78c1c04ce",
       "base_position": "-17,-133",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f832401d-51a6-4f69-a334-e09d2a1e40c3",
       "base_position": "-80,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f832401d-51a6-4f69-a334-e09d2a1e40c3",
@@ -1598,7 +1598,7 @@
     {
       "place_id": "c4c76df8-de0f-4b10-b1b7-71614b6b518c",
       "base_position": "-100,36",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4335bf61-8513-46d7-88dc-e91a2025d25e",
@@ -1608,12 +1608,12 @@
     {
       "place_id": "4335bf61-8513-46d7-88dc-e91a2025d25e",
       "base_position": "-77,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bb829cda-f469-4131-a0d8-d2f0dbcdb20b",
       "base_position": "-16,81",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c9a7c128-5d3d-45b4-81b7-05056cafffce",
@@ -1623,7 +1623,7 @@
     {
       "place_id": "c9a7c128-5d3d-45b4-81b7-05056cafffce",
       "base_position": "-13,105",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0342ef72-93da-49a0-9811-d1e68d713903",
@@ -1718,17 +1718,17 @@
     {
       "place_id": "379bda60-7b14-4d07-a367-49aad208f47f",
       "base_position": "6,-12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7204740d-a17d-4e86-9293-a024950a8852",
       "base_position": "71,-128",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "973d0cc8-d781-426c-b6ab-82638a0160cf",
       "base_position": "119,51",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "be108e63-13ec-4b0c-8dfa-8e5190a9f901",
@@ -1748,7 +1748,7 @@
     {
       "place_id": "7c66fbd2-864e-4f81-bd74-d5a97789d6bc",
       "base_position": "2,95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "1273c8e7-b63b-420d-8f94-68eeb7c9d47b",
@@ -1758,7 +1758,7 @@
     {
       "place_id": "cfa228b2-eef7-4f78-a9d1-9bdc3941664b",
       "base_position": "-49,-114",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cfa228b2-eef7-4f78-a9d1-9bdc3941664b",
@@ -1773,7 +1773,7 @@
     {
       "place_id": "35608607-f766-4ec3-90df-80997623eeb3",
       "base_position": "-22,77",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1353a479-6d71-421f-b25a-26bab275225a",
@@ -1783,7 +1783,7 @@
     {
       "place_id": "1b4947f4-df1e-4dc0-90f5-e54a6d176eca",
       "base_position": "-43,-52",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1b4947f4-df1e-4dc0-90f5-e54a6d176eca",
@@ -1833,7 +1833,7 @@
     {
       "place_id": "f1a5835c-694b-49eb-ab35-e061c30f392c",
       "base_position": "-82,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f1a5835c-694b-49eb-ab35-e061c30f392c",
@@ -1873,12 +1873,12 @@
     {
       "place_id": "a5f96c50-95ea-4c3e-a7be-88a2de75dc31",
       "base_position": "-16,80",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4c8fcfc5-4a49-40f1-be71-275515bb076d",
       "base_position": "-81,108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4c8fcfc5-4a49-40f1-be71-275515bb076d",
@@ -1908,7 +1908,7 @@
     {
       "place_id": "b0e46ccb-b170-4d06-a1d4-9c17711d5169",
       "base_position": "74,40",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b0e46ccb-b170-4d06-a1d4-9c17711d5169",
@@ -1948,7 +1948,7 @@
     {
       "place_id": "822e3d70-b803-4980-a509-86dec23bbd4e",
       "base_position": "-81,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "822e3d70-b803-4980-a509-86dec23bbd4e",
@@ -1958,17 +1958,17 @@
     {
       "place_id": "6aabd058-092c-43cc-ae59-6fb06ae3642d",
       "base_position": "-97,-92",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "02b3afee-78a3-4c18-aa64-0eb60677115f",
       "base_position": "121,-24",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "db215dcd-6996-4087-96fa-ad81f29a22cb",
       "base_position": "-108,-41",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "db215dcd-6996-4087-96fa-ad81f29a22cb",
@@ -1978,7 +1978,7 @@
     {
       "place_id": "97d9dffc-4936-453f-ac91-60317e61fdcb",
       "base_position": "-113,-56",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "97d9dffc-4936-453f-ac91-60317e61fdcb",
@@ -1993,12 +1993,12 @@
     {
       "place_id": "f03706aa-9f4c-4555-a532-3020919dd886",
       "base_position": "7,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7708236c-e4fe-4038-9c40-44a6e18428a2",
       "base_position": "-49,-106",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8a487bf7-c4f2-42fb-8efc-277f2fe36faa",
@@ -2008,7 +2008,7 @@
     {
       "place_id": "beff6093-d96f-441b-8bc4-763ecd9100b2",
       "base_position": "148,-34",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "beff6093-d96f-441b-8bc4-763ecd9100b2",
@@ -2023,7 +2023,7 @@
     {
       "place_id": "8b72e92f-0979-41df-a390-1f43d0d17902",
       "base_position": "-45,43",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8b72e92f-0979-41df-a390-1f43d0d17902",
@@ -2048,7 +2048,7 @@
     {
       "place_id": "fcf678be-186a-43a0-afed-fa08b1d2f0d6",
       "base_position": "131,-4",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "fcf678be-186a-43a0-afed-fa08b1d2f0d6",
@@ -2063,12 +2063,12 @@
     {
       "place_id": "abd81cb5-7258-43d0-a639-3e900e0975f7",
       "base_position": "58,-24",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "516f1d0b-5c94-4bc6-8524-ca44795e834c",
       "base_position": "-98,-140",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "516f1d0b-5c94-4bc6-8524-ca44795e834c",
@@ -2078,12 +2078,12 @@
     {
       "place_id": "5f654640-1957-4934-a071-0040c2c5179a",
       "base_position": "37,-1",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b23ab2cc-67ab-4b2b-8e07-96df861dcf6a",
       "base_position": "8,-12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5aeaa471-b6a5-4561-9725-973e42c3166f",
@@ -2093,7 +2093,7 @@
     {
       "place_id": "5aeaa471-b6a5-4561-9725-973e42c3166f",
       "base_position": "-76,79",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "677f2f00-8a1c-456c-9ee2-7d60027b3c36",
@@ -2103,12 +2103,12 @@
     {
       "place_id": "5ff3e215-8692-4df8-a63d-170840e722d3",
       "base_position": "46,33",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cd4cf21d-fbca-4e15-9393-80ee90cf89f2",
       "base_position": "-37,26",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cd4cf21d-fbca-4e15-9393-80ee90cf89f2",
@@ -2158,7 +2158,7 @@
     {
       "place_id": "dfd20956-9605-462a-86b4-7e5e6172927c",
       "base_position": "-83,116",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0c7fcf73-b088-4241-a403-489bdaece9b9",
@@ -2183,7 +2183,7 @@
     {
       "place_id": "0ca8d0d7-bab9-493b-b2d7-99fc9dd8e3ef",
       "base_position": "-13,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "dbbc21e9-a12f-4275-9fc1-771ef45df07d",
@@ -2198,7 +2198,7 @@
     {
       "place_id": "1a0e2fbb-c049-4300-97a5-cc7e2b324ff0",
       "base_position": "-96,-19",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9d754ee8-d5da-43cc-ae9a-3a52dc740bcb",
@@ -2228,12 +2228,12 @@
     {
       "place_id": "03b91eed-fcff-4b45-89ed-694203a9776b",
       "base_position": "-126,124",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "52f7eb30-ffbf-4ce3-be61-c2832cd5d64f",
       "base_position": "-132,74",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "1ba5468c-e9cd-4063-803c-8d8c2e91c54d",
@@ -2243,7 +2243,7 @@
     {
       "place_id": "b2afbb72-6be9-43b8-82c3-c89fa286c3f0",
       "base_position": "-78,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "b2afbb72-6be9-43b8-82c3-c89fa286c3f0",
@@ -2273,22 +2273,22 @@
     {
       "place_id": "4b4b765c-4a5e-4bbc-80a7-12ecac5328b2",
       "base_position": "60,-148",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d285543f-8df9-4dba-b07d-feea9591deb2",
       "base_position": "-30,141",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e6cd7835-4c30-4203-8559-a311e6b7d281",
       "base_position": "-105,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "48184758-5d87-4012-a120-87019696704c",
       "base_position": "-16,78",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "655b71fd-7789-4bbd-9a38-5a222f769806",
@@ -2308,17 +2308,17 @@
     {
       "place_id": "b99ef894-c1ca-4b1e-a696-aaa4b06c1d25",
       "base_position": "-123,149",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "1485b2a5-b4ab-4965-a05f-7045307d8f4b",
       "base_position": "10,-12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "874ea1e0-c911-4864-a47e-20798467ebb9",
       "base_position": "149,-12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3357158f-bea6-402b-919d-3f328090d3a8",
@@ -2343,17 +2343,17 @@
     {
       "place_id": "e0681b82-ff45-4eed-90d0-2d91bbf98332",
       "base_position": "-17,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "79c38c8b-a36a-4c66-b4ab-d1a711f650eb",
       "base_position": "11,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c5fdb555-763e-49d3-ad72-1bcd464cdb48",
       "base_position": "32,36",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "fc141f20-a697-4585-b453-7a649855cb1c",
@@ -2368,7 +2368,7 @@
     {
       "place_id": "54964566-86b8-4242-bdc2-95ccf2427472",
       "base_position": "45,11",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "54964566-86b8-4242-bdc2-95ccf2427472",
@@ -2398,7 +2398,7 @@
     {
       "place_id": "f9b2682c-5a32-415c-a146-015f22caffe7",
       "base_position": "-30,74",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bfe535ef-a9f0-4603-bd84-94ec39e873ac",
@@ -2408,7 +2408,7 @@
     {
       "place_id": "bfe535ef-a9f0-4603-bd84-94ec39e873ac",
       "base_position": "-133,77",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "bd442cdb-1931-4b19-8f05-6674b2e844e4",
@@ -2423,7 +2423,7 @@
     {
       "place_id": "72a48f4c-dba3-4431-9707-dbcf7f9f6344",
       "base_position": "140,1",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d4a85a5f-533c-4a58-86b2-ef3069229ab3",
@@ -2438,7 +2438,7 @@
     {
       "place_id": "878b2375-05bc-427a-b946-6f74bab61e01",
       "base_position": "-102,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "2793a306-3d22-4d82-8219-b42e268aed4a",
@@ -2453,12 +2453,12 @@
     {
       "place_id": "3748cdb8-95ab-41b1-ba3e-880539a93985",
       "base_position": "-16,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1e79b4fd-d1e1-474c-ad6b-c255ea91b1ab",
       "base_position": "34,-115",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ccb08c7a-23f0-4844-a01d-2d5860f0d62e",
@@ -2473,7 +2473,7 @@
     {
       "place_id": "ccb08c7a-23f0-4844-a01d-2d5860f0d62e",
       "base_position": "13,95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6f4ab7a5-8ce3-4155-b7f0-c8c7c081e9f8",
@@ -2488,7 +2488,7 @@
     {
       "place_id": "d61ddabd-6f92-4088-9b46-1e570c727183",
       "base_position": "21,-115",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d37adb82-c56f-49ce-9cf1-e13a005ae772",
@@ -2513,7 +2513,7 @@
     {
       "place_id": "a4dc93a8-c3e6-4b07-89d8-e1392076903e",
       "base_position": "-80,-117",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a4dc93a8-c3e6-4b07-89d8-e1392076903e",
@@ -2523,7 +2523,7 @@
     {
       "place_id": "857c10b3-e656-41ce-8a84-7972bc0c5dff",
       "base_position": "9,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c537a7d7-5ad1-40ca-9704-573a2f884da1",
@@ -2548,7 +2548,7 @@
     {
       "place_id": "4c973aba-1226-42ef-adb9-17bde108a950",
       "base_position": "-140,-119",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4c973aba-1226-42ef-adb9-17bde108a950",
@@ -2558,7 +2558,7 @@
     {
       "place_id": "0a772602-a28f-4fb0-bd8d-3fda0ebf1c00",
       "base_position": "-17,-108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "1aa9baca-c6f7-4a45-951b-c904c9a5fd4a",
@@ -2568,7 +2568,7 @@
     {
       "place_id": "a22c502a-e6f0-47aa-b6f4-6b09a374ba30",
       "base_position": "-116,142",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "a17ca55b-fcc5-4058-8ddc-778ba9a36ace",
@@ -2583,12 +2583,12 @@
     {
       "place_id": "59002df4-f08d-428c-b527-7d486425ef09",
       "base_position": "-24,15",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "42351cf6-9fc9-46bb-a090-8a4cce650516",
       "base_position": "-12,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7948e0d4-a6af-445d-bbe7-68fd0882113a",
@@ -2603,12 +2603,12 @@
     {
       "place_id": "79904235-f821-4ada-a812-f5696fc236af",
       "base_position": "-16,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4fb7c159-cea1-44f3-80be-4b8485297de2",
       "base_position": "-115,-63",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "73a54bb6-b782-4a41-93c0-983c66f14269",
@@ -2618,12 +2618,12 @@
     {
       "place_id": "21e69206-71b2-4825-b701-af4316e97913",
       "base_position": "-57,-105",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "79f4026d-8740-40d5-bd66-1002bc9a5a4d",
       "base_position": "139,-9",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a6336bb2-8cc0-41bb-ba0a-3347bc6b2fd5",
@@ -2673,7 +2673,7 @@
     {
       "place_id": "a581ffd3-0d56-4571-b521-10c6e1869fbb",
       "base_position": "15,95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "48b40671-bfda-45d7-9e24-46a4da7bad42",
@@ -2683,7 +2683,7 @@
     {
       "place_id": "20275fca-107d-405c-9cf5-263908d6829b",
       "base_position": "-93,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "81690fd4-8bb9-4536-8066-eac6d5aa081d",
@@ -2748,7 +2748,7 @@
     {
       "place_id": "92608522-610f-4085-a98f-f1c52557446e",
       "base_position": "-142,-116",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "92608522-610f-4085-a98f-f1c52557446e",
@@ -2773,7 +2773,7 @@
     {
       "place_id": "52f90fdc-b336-4469-978a-0bb5a0427282",
       "base_position": "87,-130",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "52f90fdc-b336-4469-978a-0bb5a0427282",
@@ -2803,17 +2803,17 @@
     {
       "place_id": "6b4f4fc5-3075-46b6-9824-b59cd1d6b39c",
       "base_position": "-135,65",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "21b227b9-8503-4691-9f0c-4346b4be16c7",
       "base_position": "-95,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a89c95ab-40ba-469f-a890-620f7ae08ad8",
       "base_position": "82,40",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a89c95ab-40ba-469f-a890-620f7ae08ad8",
@@ -2828,17 +2828,17 @@
     {
       "place_id": "a42777aa-e21b-4c82-9be8-668e9b74c0a0",
       "base_position": "-109,-19",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5a999b9e-0008-4a36-85f3-db9520ebeb61",
       "base_position": "-132,70",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5a999b9e-0008-4a36-85f3-db9520ebeb61",
       "base_position": "-132,70",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "9bf54146-645e-456d-924a-f152ce923f8b",
@@ -2858,12 +2858,12 @@
     {
       "place_id": "5a76d982-6d70-4689-8b81-be21a2bd91cf",
       "base_position": "-130,69",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "6bf93188-b93d-411d-84fb-c74629ce567a",
       "base_position": "-104,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "66c13dd5-7e0c-48ac-b49f-419c95320b54",
@@ -2918,17 +2918,17 @@
     {
       "place_id": "84697c4c-b7d6-4ec4-9d64-da6afd347528",
       "base_position": "-136,64",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "83a5a590-425e-4b7b-bc6a-035a4b694952",
       "base_position": "83,-16",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "58357a3b-5d70-42ad-b0f7-a214030e4610",
       "base_position": "-17,78",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b79715ab-20c2-45b1-80dc-afc8130d1ca5",
@@ -3013,7 +3013,7 @@
     {
       "place_id": "78e9d658-1717-4d31-ac80-eb936c555e56",
       "base_position": "7,-16",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d90aab15-cbd5-4c0f-928e-0ef283e1db56",
@@ -3038,12 +3038,12 @@
     {
       "place_id": "0aa23bcc-b109-4a6b-be0f-52dda7d69b45",
       "base_position": "13,-130",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "b23d83de-214d-4086-bf32-6e9a7fc96796",
       "base_position": "-135,74",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "b23d83de-214d-4086-bf32-6e9a7fc96796",
@@ -3058,7 +3058,7 @@
     {
       "place_id": "9bff16ac-4e96-48d4-897d-58e0c202252a",
       "base_position": "-90,15",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "00faf2aa-6c39-49aa-81ff-82304468ca26",
@@ -3103,7 +3103,7 @@
     {
       "place_id": "52e9003d-677e-40cd-9361-9c5d727e77fd",
       "base_position": "-146,-120",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "52e9003d-677e-40cd-9361-9c5d727e77fd",
@@ -3113,7 +3113,7 @@
     {
       "place_id": "d876cd42-e0b3-46f2-981b-c3c867cc4554",
       "base_position": "-26,22",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d908ee4e-9b6f-47d6-b3f9-99b0c55e5456",
@@ -3133,7 +3133,7 @@
     {
       "place_id": "e1f986eb-19a8-4557-9fc0-77b1d00d62e1",
       "base_position": "-77,-119",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "074af5a2-c59d-4605-b77c-2875996e0a5f",
@@ -3338,7 +3338,7 @@
     {
       "place_id": "a84e7c2f-c5ea-4358-a7c5-0e06901dfe74",
       "base_position": "-17,77",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "705dfa0f-ece2-43bc-bc7d-a767ca4935de",
@@ -3358,7 +3358,7 @@
     {
       "place_id": "e143f248-89a9-4b1c-b2af-0b8df82fcf64",
       "base_position": "-96,-15",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "65cb3f3e-89dd-4435-b7de-5dfb24f33163",
@@ -3368,7 +3368,7 @@
     {
       "place_id": "58d7913d-55d2-40e2-ac5c-2847e95975d9",
       "base_position": "59,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e10c07cb-0218-4c86-9e99-022e996ab9f4",
@@ -3403,7 +3403,7 @@
     {
       "place_id": "57b7fc85-93d6-4e32-a4e7-a9f706af25f7",
       "base_position": "-108,-13",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "82b86636-267c-45b8-aaec-c61e66986710",
@@ -3423,7 +3423,7 @@
     {
       "place_id": "ec39999c-5f20-4e12-ba83-505a1df08d7c",
       "base_position": "-136,-37",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ec706e4d-50bc-41b0-99f1-efaa53273fda",
@@ -3438,12 +3438,12 @@
     {
       "place_id": "0e265ea8-07b5-4a5f-af07-263fae79fb1d",
       "base_position": "-132,66",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "cdd8fbdf-649a-4f7b-9321-7f79a868487a",
       "base_position": "-69,125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5d5cebb3-9917-48dd-ba5e-c7920b2335e7",
@@ -3458,7 +3458,7 @@
     {
       "place_id": "b9328aa5-91a6-4eeb-be96-c6baab3e1953",
       "base_position": "-1,120",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "00f8a854-51c2-425d-80c1-c49216f238de",
@@ -3508,7 +3508,7 @@
     {
       "place_id": "25018871-dd51-48e2-b92a-c0294633ddb8",
       "base_position": "-8,-69",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6bed88ef-ccf4-4ace-8f7d-63f7b5bba7ab",
@@ -3543,7 +3543,7 @@
     {
       "place_id": "4d2178b7-68da-4879-933e-6bc7098c3d38",
       "base_position": "-32,-9",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "93ae20e5-5a63-4f7d-bfd5-1e3447fce638",
@@ -3583,7 +3583,7 @@
     {
       "place_id": "9413494d-57f3-4ed9-9e8b-22edd8b96497",
       "base_position": "82,-33",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bbfbf20d-47a2-4dc2-ad51-7298f9f38742",
@@ -3623,7 +3623,7 @@
     {
       "place_id": "058e4784-f7e2-47d5-a346-778da2e38b25",
       "base_position": "142,-143",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c16bd296-aed3-40b3-804c-6163797160eb",
@@ -3638,17 +3638,17 @@
     {
       "place_id": "dac72c4b-f3f3-4d14-950e-62299cc46e74",
       "base_position": "2,-110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "2d5abe6e-914a-4f2b-8d90-796415bdef94",
       "base_position": "-22,75",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "72732b42-9cb6-4c09-95b3-663ca9750137",
       "base_position": "123,-97",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "72732b42-9cb6-4c09-95b3-663ca9750137",
@@ -3688,12 +3688,12 @@
     {
       "place_id": "9e0a5701-70c5-4691-bdb4-9cf6163f7e0a",
       "base_position": "-70,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "fe537ac0-e525-40fa-8cc7-7a43f3a0672a",
       "base_position": "30,2",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "a21f79ab-0c4a-4a91-8111-853209ca9485",
@@ -3728,12 +3728,12 @@
     {
       "place_id": "7067c719-335c-4838-9d44-ede1c5cd3a81",
       "base_position": "-148,122",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "da2c0da9-2593-4431-a4c1-9c5d95dc372b",
       "base_position": "-18,77",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cc52b663-60b8-4049-811d-f8ee87c31016",
@@ -3743,12 +3743,12 @@
     {
       "place_id": "e0b53baf-8dd4-4ef2-94bf-993ea13f6fa3",
       "base_position": "57,43",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b014608d-11a7-44ad-a8e7-7bb8cd79e358",
       "base_position": "-56,120",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "78dd38df-fc1e-4b08-8df1-b032521217a9",
@@ -3793,7 +3793,7 @@
     {
       "place_id": "95a917dd-7658-4c92-9cd4-9e046af5e52c",
       "base_position": "-21,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3845282c-958e-4ae3-85fb-0439047899e9",
@@ -3843,7 +3843,7 @@
     {
       "place_id": "1c533a9e-e5c8-40b5-a01c-385a7816792b",
       "base_position": "-20,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "2c9c0c13-df4e-414f-b2c1-15a942659de0",
@@ -3903,7 +3903,7 @@
     {
       "place_id": "654ca0a2-fcf6-4874-8cf8-8fdbf1b3650d",
       "base_position": "35,36",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c40467ab-1be3-491f-9bc9-8bcecd566d81",
@@ -3913,7 +3913,7 @@
     {
       "place_id": "c537bf28-30fa-4a11-89eb-72ded5bc2fe6",
       "base_position": "100,23",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d1f906c2-d6ed-47b4-a364-e6cd0fea78ee",
@@ -3923,12 +3923,12 @@
     {
       "place_id": "ba7e9c66-9b5e-401a-b579-06b09a007cef",
       "base_position": "-130,65",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "3afe0a6e-2dde-4186-937f-d35bbc5dad7e",
       "base_position": "-17,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "06638b5b-3d6b-458a-ac5f-7a51b24f881a",
@@ -3963,7 +3963,7 @@
     {
       "place_id": "53250428-7672-4654-83d1-9a4be5c63865",
       "base_position": "19,101",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "456e8067-6b4b-4a30-a3b8-beb8d86ffae7",
@@ -3988,7 +3988,7 @@
     {
       "place_id": "a10606ff-0344-484c-a3b6-ec21c781f5d1",
       "base_position": "32,34",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cd758878-25e5-452d-8a85-86b68585d52d",
@@ -4018,27 +4018,27 @@
     {
       "place_id": "d906b45d-6c46-4f82-946a-164829226fc5",
       "base_position": "137,48",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b900666e-8b07-493f-8f63-66c3f9df762c",
       "base_position": "105,-24",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4b04aa39-2c3f-4906-824e-70969acac1de",
       "base_position": "45,42",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "834fc84a-7028-4aec-aab6-66725e60c239",
       "base_position": "-95,32",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "db8edbad-a172-4608-bece-846f75bd7480",
       "base_position": "149,-1",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "72659218-d9b0-4d8d-a215-10a785c85192",
@@ -4153,7 +4153,7 @@
     {
       "place_id": "1d8c54a2-34af-46b2-8601-91894efbf8e9",
       "base_position": "36,8",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1d8c54a2-34af-46b2-8601-91894efbf8e9",
@@ -4168,7 +4168,7 @@
     {
       "place_id": "6224055b-24e4-42ef-a85c-e4e0483bc850",
       "base_position": "56,118",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6224055b-24e4-42ef-a85c-e4e0483bc850",
@@ -4198,7 +4198,7 @@
     {
       "place_id": "53e0bf01-b212-4c44-95c0-b398f38b1632",
       "base_position": "-23,140",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "72c809a6-91fc-437b-a16b-605d44542523",
@@ -4223,7 +4223,7 @@
     {
       "place_id": "8aac007e-1d18-4ed5-afe6-64791ef0355c",
       "base_position": "-16,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "bac41b71-19a9-4ad0-962b-30fe50eefff9",
@@ -4263,7 +4263,7 @@
     {
       "place_id": "0925ac41-0b18-42c1-94a1-0468752e2633",
       "base_position": "1,95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "18531df2-8704-449b-a0b5-93583b65b64f",
@@ -4273,12 +4273,12 @@
     {
       "place_id": "2b46f8f2-e425-46b2-b16d-c6db5f815afe",
       "base_position": "-114,-50",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5721647e-cd77-46b2-9bc5-0ac905ba58ad",
       "base_position": "141,-60",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5721647e-cd77-46b2-9bc5-0ac905ba58ad",
@@ -4303,7 +4303,7 @@
     {
       "place_id": "9929b877-d61d-4ecf-8773-f2ceefc72de5",
       "base_position": "27,86",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3ac7160b-6d49-4fc8-ab0d-025edcc1276e",
@@ -4323,7 +4323,7 @@
     {
       "place_id": "6310c62c-4f94-4c5b-869f-bfb78ea7bb55",
       "base_position": "-22,74",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "81b9ec6d-a721-4351-937e-17dd9db2a244",
@@ -4338,7 +4338,7 @@
     {
       "place_id": "eaf719ad-6c4a-4060-a2e9-a91bab48058c",
       "base_position": "-93,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4ba02474-44b2-49b4-8567-5f1a24a6dded",
@@ -4353,7 +4353,7 @@
     {
       "place_id": "649f8c50-3739-45b3-8034-0e0bf885a191",
       "base_position": "63,94",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5eb2fdad-1c02-4647-b3a5-d4ce45f5501a",
@@ -4428,7 +4428,7 @@
     {
       "place_id": "eb1e602f-9f5e-4182-9263-6426e51ce365",
       "base_position": "-32,13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "18b14fdf-951d-4a85-b1b2-dc2bcbb6b548",
@@ -4473,7 +4473,7 @@
     {
       "place_id": "3b6d1288-c6f9-4281-910e-1e400c02e0cb",
       "base_position": "145,-51",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f0edd4ce-c4e2-4b1e-9d62-588946c34aaa",
@@ -4488,7 +4488,7 @@
     {
       "place_id": "eeda9084-51a0-4568-a2eb-f6fb510212c3",
       "base_position": "27,-125",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f20dc7f8-b198-4651-8f56-c20b533268b3",
@@ -4503,12 +4503,12 @@
     {
       "place_id": "98712c92-8dca-4f82-8ae0-92cc7ac220a1",
       "base_position": "-38,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "15656e41-7d10-4242-84ae-f51a971c434e",
       "base_position": "69,-145",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4fef6a3e-c629-4a51-9392-238a6dcc03c9",
@@ -4518,7 +4518,7 @@
     {
       "place_id": "b3d0171e-7b8d-4ac0-b340-b2e5353bcdba",
       "base_position": "137,-145",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8af6a082-1ee3-4f8f-b8ab-384b89f8852a",
@@ -4598,12 +4598,12 @@
     {
       "place_id": "63040b92-3856-40a1-aff6-5dbc33f194e7",
       "base_position": "-84,14",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9b0edbc7-13df-4651-a7d7-61604bcc4202",
       "base_position": "130,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9b0edbc7-13df-4651-a7d7-61604bcc4202",
@@ -4663,7 +4663,7 @@
     {
       "place_id": "fc126db9-8b3c-4ae9-a69f-f9bf30659f90",
       "base_position": "-19,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "246dd2fe-ffb3-4ff7-8624-92413bfec8fe",
@@ -4703,7 +4703,7 @@
     {
       "place_id": "ec3ba705-887c-45f2-8f82-c3bac08762b7",
       "base_position": "100,-102",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7d95fcb8-d168-4cf4-9aba-6922e5090f16",
@@ -4738,17 +4738,17 @@
     {
       "place_id": "e7d36b5e-7301-408d-a1df-1e6c09d28e8d",
       "base_position": "2,67",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "91be4e68-e3f8-4bb0-bb5c-b4824beb22ac",
       "base_position": "-17,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "ac592f9d-12d7-480d-b469-f25c525c798c",
       "base_position": "-32,-53",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a5187814-a8fe-42f0-a74b-0d63c28fc2d5",
@@ -4813,7 +4813,7 @@
     {
       "place_id": "33cea38d-2727-4ac3-85bf-73ee78104029",
       "base_position": "-19,75",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "23503206-ce4c-44c6-ba21-3c75aceb8006",
@@ -4848,7 +4848,7 @@
     {
       "place_id": "f769e32a-8ae1-4080-85af-7e1c1672fd57",
       "base_position": "87,39",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "523755ba-401d-412a-8d05-c9b7c3c6a90a",
@@ -4863,12 +4863,12 @@
     {
       "place_id": "ab8b3cbe-7a45-406c-8a74-d5231596afe1",
       "base_position": "-136,-34",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8deada12-8600-40bd-8e79-79bcbd07f2e0",
       "base_position": "-18,76",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "15503557-20d6-4076-9d5f-b26e22076a30",
@@ -4888,7 +4888,7 @@
     {
       "place_id": "d32660b1-c977-4d99-a84d-a7f766518962",
       "base_position": "-125,-94",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a7b67cd5-40ff-482f-a203-2eda8fb04fb3",
@@ -4948,7 +4948,7 @@
     {
       "place_id": "f2f9cde3-45d4-4dfa-85cd-7bd9fa8319b5",
       "base_position": "-37,84",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "c16987b5-28f7-44b7-addd-8942e259da1e",
@@ -4973,7 +4973,7 @@
     {
       "place_id": "27ee4160-552e-4955-a89d-1f96db9e0306",
       "base_position": "21,-113",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8fe0009e-ea16-444e-b120-752c1242fbf9",
@@ -4988,7 +4988,7 @@
     {
       "place_id": "e3056b78-64f9-4854-9102-bda3592101df",
       "base_position": "-1,-115",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "05a6fa30-4b20-4e13-9d3f-27ffd367c79b",
@@ -5048,7 +5048,7 @@
     {
       "place_id": "bf7e4827-a99a-4e72-a343-a68cce0d24b4",
       "base_position": "-6,-120",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "59fc02f8-1380-421e-a1b5-007823f80551",
@@ -5108,7 +5108,7 @@
     {
       "place_id": "917208a7-3353-44d1-a252-388f7d48b63c",
       "base_position": "30,-25",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "46ac6557-eebb-4d7e-8475-6258aa375096",
@@ -5133,7 +5133,7 @@
     {
       "place_id": "a73e7143-361d-4599-ae34-d3271b5baee1",
       "base_position": "35,-70",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d027893b-4f57-4ef9-bbcb-1b877ed4dce8",
@@ -5158,12 +5158,12 @@
     {
       "place_id": "b7d1943b-e0d7-4d2f-9a8f-12c6e5f2cefe",
       "base_position": "143,-58",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4452c16d-6dff-49a1-a75c-cec43326181e",
       "base_position": "59,132",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "281cdede-0827-442b-a673-e13c3141b9f9",
@@ -5278,7 +5278,7 @@
     {
       "place_id": "9585be80-e043-4857-9ddb-d209717174eb",
       "base_position": "144,-14",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8f9e2f1f-5039-4c2b-9f68-8c6dd1e7adf9",
@@ -5313,7 +5313,7 @@
     {
       "place_id": "b6a53165-3499-4f0a-9db5-a84a64e7248f",
       "base_position": "-64,41",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "571b0cd4-5b45-4f79-b205-b5b0b3ac0bb2",
@@ -5353,7 +5353,7 @@
     {
       "place_id": "ae24066f-85a3-49fa-addc-48928ebd1adc",
       "base_position": "-42,110",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "96ae58e6-e7dc-4c04-8661-04ceca0a8c8a",
@@ -5368,7 +5368,7 @@
     {
       "place_id": "0f1cd992-cbed-496e-b803-51ed86fa9c93",
       "base_position": "36,110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8e8f9ed9-4cae-4814-a550-502770301c6b",
@@ -5378,7 +5378,7 @@
     {
       "place_id": "7353a69d-8085-4311-becf-ee2c96b1a7b8",
       "base_position": "-114,-44",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d863dc60-b9d2-4cea-977e-607638ba8527",
@@ -5423,7 +5423,7 @@
     {
       "place_id": "c9c559dc-df48-4017-8352-845e69b8811d",
       "base_position": "74,39",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "f6b11c7b-5a79-4537-8e8c-7ec3c5775a47",
@@ -5498,7 +5498,7 @@
     {
       "place_id": "0a137e5e-81a5-4db3-b810-dc46e0c5acd0",
       "base_position": "127,-14",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "749eeb56-74fa-4181-b10c-f766036364dc",
@@ -5518,7 +5518,7 @@
     {
       "place_id": "d3d3c75f-796a-4db3-b3e0-23669b61491b",
       "base_position": "129,-9",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "01dcb569-d3d5-4f21-8cda-851f21ae1452",
@@ -5528,7 +5528,7 @@
     {
       "place_id": "f49ca139-bf72-4eae-b0de-c2ddaa1ad3ff",
       "base_position": "121,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d50a87c9-efe2-4d75-b03f-20ecf9d9e15b",
@@ -5568,7 +5568,7 @@
     {
       "place_id": "22f42f3d-0008-4fb0-878e-042b6b024283",
       "base_position": "-60,-13",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "83399b43-51f1-4f18-a3d4-511606c67fa8",
@@ -5663,7 +5663,7 @@
     {
       "place_id": "470cafce-89be-48b8-8afe-a58d1823f928",
       "base_position": "16,-120",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f2eef089-d2cf-436d-a86c-8c3b92fcded4",
@@ -5698,7 +5698,7 @@
     {
       "place_id": "70b4c1de-b022-4ba1-aebd-a858d1e49928",
       "base_position": "-129,65",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "1a1fbe0c-04da-4e2a-b595-00b87cb0734c",
@@ -5708,7 +5708,7 @@
     {
       "place_id": "b8326584-e2bc-4ae0-873d-f47d6241fc35",
       "base_position": "-116,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "630babc8-ba65-457b-beca-c7918b4ccd54",
@@ -5778,7 +5778,7 @@
     {
       "place_id": "a0f5b01e-80a0-48d8-8f83-93ca60604c84",
       "base_position": "-21,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "09d462ed-87de-40d0-9eea-8bc57779dcbe",
@@ -5793,7 +5793,7 @@
     {
       "place_id": "5314a72f-9a3c-47e6-a358-a4fc55a2c51c",
       "base_position": "33,-83",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9b7510a4-e65e-4c4e-9c64-832895c169ba",
@@ -5818,7 +5818,7 @@
     {
       "place_id": "a511e392-5222-4123-a9d0-bf4e640c62b7",
       "base_position": "101,-28",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a511e392-5222-4123-a9d0-bf4e640c62b7",
@@ -5858,7 +5858,7 @@
     {
       "place_id": "6fcac2b1-a4da-418d-894a-99827e2cc96e",
       "base_position": "-22,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5e5a241d-3a7d-474c-9f53-36b5fbd6e195",
@@ -5873,7 +5873,7 @@
     {
       "place_id": "2febc08a-9876-450a-a852-4938a07113b0",
       "base_position": "-136,25",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3db58d21-db07-431a-9c9f-80691b188325",
@@ -5893,7 +5893,7 @@
     {
       "place_id": "ed66cabd-7d94-415a-91b3-6a4413609241",
       "base_position": "121,35",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "376f46dd-470b-49ed-b795-678e8add6888",
@@ -6003,12 +6003,12 @@
     {
       "place_id": "7c5df44a-7a4a-45aa-8958-028a6ff2b2fc",
       "base_position": "100,33",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a3efdd96-7dc3-4321-942b-fb9d8188dda1",
       "base_position": "-57,145",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "7ec26cba-9316-4595-a3f2-388ca3f06c2b",
@@ -6018,7 +6018,7 @@
     {
       "place_id": "afc34d9e-9c45-42d0-9aa7-cfd90c5656b0",
       "base_position": "74,38",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a849cee6-1008-48aa-a5d0-b5de2f85f2b9",
@@ -6028,12 +6028,12 @@
     {
       "place_id": "714a246f-117e-4eff-b638-7fb718d306a9",
       "base_position": "-76,36",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e2d5c19d-3ed7-4f9b-9d40-1560ff4cd572",
       "base_position": "-127,65",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "9a6cb501-e2d7-42ca-b589-3d992dd331f0",
@@ -6083,22 +6083,22 @@
     {
       "place_id": "0a400782-7351-4489-a63c-f84799e790a4",
       "base_position": "-64,-7",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "58ccd241-0120-4aa6-b6fa-3014cd6deee1",
       "base_position": "19,-145",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0a80fe50-f0bd-4fa5-9d17-a431ec158421",
       "base_position": "85,55",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "dedabe87-a409-4c70-9333-d455a641d222",
       "base_position": "-112,3",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "baeb1666-a8c4-449c-a6c1-365e13dcd096",
@@ -6108,12 +6108,12 @@
     {
       "place_id": "baeb1666-a8c4-449c-a6c1-365e13dcd096",
       "base_position": "-27,23",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5d48a4c7-9da6-4662-86aa-7e0e18c96be2",
       "base_position": "-19,74",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4e7ade69-301c-478e-a825-0ff2b31bf897",
@@ -6123,7 +6123,7 @@
     {
       "place_id": "069dece3-5968-4f39-8421-e9f371f0dc9e",
       "base_position": "-45,129",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4ca00b41-92c2-4b1b-9e05-999307a1de39",
@@ -6158,7 +6158,7 @@
     {
       "place_id": "8c65314f-a437-44a7-a47c-0acc4f705fa7",
       "base_position": "-56,119",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f7ca0bd1-e5ae-466b-b096-8355eab2c3e7",
@@ -6223,7 +6223,7 @@
     {
       "place_id": "231d2ab8-10ea-4203-a5d5-715c25225bae",
       "base_position": "-56,-11",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4a787d5a-98bc-43f8-950a-12d3a7905082",
@@ -6268,7 +6268,7 @@
     {
       "place_id": "6e374c99-a01a-4185-ab0c-afa881260d39",
       "base_position": "20,103",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "e9ac780b-042f-4792-bf22-579675224316",
@@ -6323,7 +6323,7 @@
     {
       "place_id": "2ce3522d-a200-413a-8941-42273f661b79",
       "base_position": "-19,-14",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5af560b3-1730-44b7-8187-67812cf73f41",
@@ -6388,7 +6388,7 @@
     {
       "place_id": "05600d0f-1ee3-4da6-bfaa-29d07c61f718",
       "base_position": "61,-35",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9dfb3c70-0713-4374-b940-d06751ed17c8",
@@ -6433,12 +6433,12 @@
     {
       "place_id": "8913fdf8-d16c-4ffe-9a00-e9d689f2d3e3",
       "base_position": "-102,36",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "04dde9c0-b5e0-4760-bccb-4bfbe7cfa37f",
       "base_position": "-75,-64",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "89743f0e-50a9-42fe-84c3-3a064c6ecdd2",
@@ -6468,12 +6468,12 @@
     {
       "place_id": "88b90baa-586d-4bb0-81b4-1140a3029b57",
       "base_position": "33,143",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bff2d31a-148f-49dc-a584-19107f35ba0e",
       "base_position": "21,71",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "dbcd9dfb-2afe-4779-979f-f85486c20d2b",
@@ -6493,7 +6493,7 @@
     {
       "place_id": "74429784-7761-4616-8a98-62ba073b3ad3",
       "base_position": "39,-32",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3682adc8-d947-4359-822a-49cea810c5f7",
@@ -6513,12 +6513,12 @@
     {
       "place_id": "585cb4ce-c1f9-4ef1-8131-aefb5282afff",
       "base_position": "19,-29",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "65fa553d-bd3a-4abf-b735-0982c29e6fca",
       "base_position": "-1,-110",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "40bd7069-321c-425a-80ca-3abd8a3562c4",
@@ -6533,7 +6533,7 @@
     {
       "place_id": "4e6006e8-837e-419c-b8d4-8f21dbb28610",
       "base_position": "-49,-73",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4682906d-64c6-41f2-86d2-c529f2457aee",
@@ -6543,7 +6543,7 @@
     {
       "place_id": "5d82be80-ca52-4f55-9588-2c3e371a9a8d",
       "base_position": "149,-37",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "be81a79c-1468-49ad-bb92-fbf2a2874961",
@@ -6593,7 +6593,7 @@
     {
       "place_id": "2528bbb0-f11a-49c5-a412-bd50a87b1f9d",
       "base_position": "-54,107",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f78a2f52-c046-448d-9693-b9625702fda9",
@@ -6638,7 +6638,7 @@
     {
       "place_id": "e8abd110-69af-462c-ad72-2fa401d04def",
       "base_position": "-51,125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "733a7f05-7779-4e36-a0dd-c32e43ad1365",
@@ -6703,7 +6703,7 @@
     {
       "place_id": "8bb736da-e31c-400c-8e2a-a676d331c1ac",
       "base_position": "7,66",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a989299c-c4af-4e1d-a3ae-36f95db46386",
@@ -6723,7 +6723,7 @@
     {
       "place_id": "82f52724-33ba-4a5a-9a01-05ba1b99ae6b",
       "base_position": "46,54",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8228810e-915c-4a8f-a2e6-3830c133cf67",
@@ -6738,12 +6738,12 @@
     {
       "place_id": "b8594084-fa71-4f00-8ae7-a41438e5f6f4",
       "base_position": "37,-10",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "1854ce68-71f6-44d1-9cfb-95b4ef5c7429",
       "base_position": "-53,119",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "7555bf0f-455f-4319-ab89-485c50348302",
@@ -6763,7 +6763,7 @@
     {
       "place_id": "4e8d51de-3ee3-446d-a648-a6385e81ea11",
       "base_position": "-126,83",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a061ac1a-9e5c-43e0-8327-0710ab71f105",
@@ -6783,7 +6783,7 @@
     {
       "place_id": "fecdaec0-614e-4f3a-a9cf-dd2813efae19",
       "base_position": "85,-20",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5c8eea1d-ee0d-429e-b630-bdec4e103117",
@@ -6808,7 +6808,7 @@
     {
       "place_id": "0d1e65a2-04db-414d-ba04-006e5f2fa650",
       "base_position": "-42,31",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a7b48ff8-e425-4a85-9831-9f2c7500dc5a",
@@ -6903,7 +6903,7 @@
     {
       "place_id": "fdacc519-7372-4f73-a711-cd7cf96ebeb7",
       "base_position": "96,-19",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b26534f6-9b03-4f91-8689-bb5a3890a914",
@@ -6938,7 +6938,7 @@
     {
       "place_id": "1eb60ee1-b458-4cc8-94ed-4bf17a3ad9b1",
       "base_position": "-73,18",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "25446b83-d247-45cb-bcdd-4b57355cae7a",
@@ -6948,7 +6948,7 @@
     {
       "place_id": "02eac55f-9213-4e16-aefd-ea2927e22c54",
       "base_position": "-19,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "151500e5-02e6-4996-b950-be57ad8e78af",
@@ -6973,7 +6973,7 @@
     {
       "place_id": "9a6e8b21-ed0b-49b0-8ff3-467d9a73548f",
       "base_position": "21,-32",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "59713743-3b4b-4a7c-97ec-bfab1076c952",
@@ -6983,12 +6983,12 @@
     {
       "place_id": "59713743-3b4b-4a7c-97ec-bfab1076c952",
       "base_position": "-126,19",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "07ffd456-cd0e-4f0e-a740-ded189c7a9e0",
       "base_position": "-116,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0d9c988f-9d94-4ee6-af34-83a6a53e6577",
@@ -7013,7 +7013,7 @@
     {
       "place_id": "c379348e-259a-4b7f-9aa4-9ae3785acf8f",
       "base_position": "-131,-61",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "b274f723-edf4-41e3-8110-68660ab67400",
@@ -7033,7 +7033,7 @@
     {
       "place_id": "28460b8a-8489-44de-b122-82a1c0ad54d5",
       "base_position": "113,44",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "ca1260e4-30e2-4c3e-a6f0-0274968bc949",
@@ -7048,7 +7048,7 @@
     {
       "place_id": "bb02a2b3-6d38-41f7-9a07-979495d65d7b",
       "base_position": "-45,112",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6caa8e06-47a8-4ab6-aa6b-569888ac5d2a",
@@ -7058,7 +7058,7 @@
     {
       "place_id": "74238c03-f473-44cb-887c-b2bdd35e494d",
       "base_position": "147,-36",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "e3f4dd4d-c854-4bba-92ef-8c8ff03189c6",
@@ -7068,7 +7068,7 @@
     {
       "place_id": "f93caed6-5522-484c-a5c0-9f1df439e829",
       "base_position": "-119,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ff14c241-588c-427c-8529-d62ddaa87391",
@@ -7083,12 +7083,12 @@
     {
       "place_id": "ff381726-443d-4249-9300-2f50474de91e",
       "base_position": "-76,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "5fd49de1-2b29-4d7b-846b-d810da60417e",
       "base_position": "4,-69",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "50de523b-9a83-49b9-810f-454b3568c6af",
@@ -7103,7 +7103,7 @@
     {
       "place_id": "6064421c-8b4e-407b-a30a-9564af41b193",
       "base_position": "17,87",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6605020d-7918-4dde-bad6-0b9bf4b3d5e7",
@@ -7123,7 +7123,7 @@
     {
       "place_id": "44dc6f45-7b87-4e34-ac1d-4c18d4d04ee4",
       "base_position": "-55,-34",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3785146e-9ceb-4bda-ad8a-0b4842d5e04a",
@@ -7268,7 +7268,7 @@
     {
       "place_id": "c6adcb1d-ace6-48b6-9efe-95d23350e611",
       "base_position": "-129,-85",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5f96071b-89a5-4407-be8e-75dd691361f8",
@@ -7338,7 +7338,7 @@
     {
       "place_id": "e97c83dc-cf4c-4953-9ccf-38ffd1b9f90a",
       "base_position": "3,-34",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3102dc82-dfa3-4148-b885-5a06c2ad8983",
@@ -7353,7 +7353,7 @@
     {
       "place_id": "49964e9b-13c3-430c-aedb-dc2b4fc1b804",
       "base_position": "-19,-57",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "24a8280a-c0d2-4cf6-a89b-b1367175c692",
@@ -7368,12 +7368,12 @@
     {
       "place_id": "24a8280a-c0d2-4cf6-a89b-b1367175c692",
       "base_position": "-90,26",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3b02cab6-c37c-479d-900f-b2a79c6221d0",
       "base_position": "-54,132",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3b02cab6-c37c-479d-900f-b2a79c6221d0",
@@ -7413,17 +7413,17 @@
     {
       "place_id": "a676011f-9227-4371-be3a-a84c6f5a10cd",
       "base_position": "149,-30",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0c186e88-44f2-4668-a43a-59e6a9d2e928",
       "base_position": "-1,-94",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8eafc3c5-e58e-40fa-8e18-e7e045b05033",
       "base_position": "-48,-73",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ab7bc26f-0f3f-4f0a-8a87-2337b36bab5b",
@@ -7473,7 +7473,7 @@
     {
       "place_id": "2ef7957c-826d-4ce0-a9fb-120ba3eba22f",
       "base_position": "142,-58",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bf9200d7-a76d-4dd0-98c5-d75e81c95f4e",
@@ -7618,7 +7618,7 @@
     {
       "place_id": "e65d7257-07a0-4111-93a3-13de5d459117",
       "base_position": "-39,31",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "8e582431-d340-4ac1-98e0-e2351e0eef62",
@@ -7638,7 +7638,7 @@
     {
       "place_id": "21634574-7ba7-4a6e-a9b1-d00eea90facd",
       "base_position": "-46,-108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "78db6066-0056-40c0-a25c-314dcf6fbbb2",
@@ -7648,7 +7648,7 @@
     {
       "place_id": "ada5911d-a887-4fc9-a880-6d149557b059",
       "base_position": "-70,19",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "df29aa64-c0bc-413d-a0d7-ac3ec8f219ca",
@@ -7698,27 +7698,27 @@
     {
       "place_id": "fee3cec6-7fda-4c31-9298-63352a701260",
       "base_position": "-71,135",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "d1993a95-9c71-4565-a15f-dc6140c709d1",
       "base_position": "85,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "85351fd1-2a05-48c4-801b-2bcc51dc2f22",
       "base_position": "-146,13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "fea243b8-b81f-48e3-a11e-51ec7bdb16da",
       "base_position": "-18,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7c016641-74fc-4d21-a1e2-95503af4b1e9",
       "base_position": "-87,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f103ab36-8a8c-4388-a536-89f04950da4b",
@@ -7758,12 +7758,12 @@
     {
       "place_id": "a689af8a-35b6-469e-880e-f50fa1949567",
       "base_position": "-20,73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "01c2ef80-ce8c-4854-92e3-20c3fe8f18f3",
       "base_position": "-1,-121",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "65d72112-6910-4326-8eca-4a0d45bf23d9",
@@ -7773,7 +7773,7 @@
     {
       "place_id": "b2a0a473-f68c-4cb4-9fff-a11156040a75",
       "base_position": "2,-56",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d491f364-1f5d-4d71-9539-fb647cfcbb7e",
@@ -7798,7 +7798,7 @@
     {
       "place_id": "8a560618-80e9-463d-aaed-b77943e53540",
       "base_position": "-81,-68",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "12a2006d-2202-4aa5-b5dd-bfe8c1b35ebf",
@@ -7838,7 +7838,7 @@
     {
       "place_id": "9a74adc4-9539-45a8-ab2c-2489be61f8a6",
       "base_position": "-57,-139",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "7489127c-ecd8-4545-961b-88a6a8894e95",
@@ -7883,7 +7883,7 @@
     {
       "place_id": "d55c0fbc-30b9-459e-936a-27df298d16b7",
       "base_position": "147,3",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c2da4afa-400c-4406-ba82-f808770e6392",
@@ -7898,12 +7898,12 @@
     {
       "place_id": "d260f5a9-4912-4419-93d5-db01c22d78ae",
       "base_position": "-10,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "23fe91ea-2dfa-4b0e-8bfc-9e8c07a1df4b",
       "base_position": "-87,-74",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a59b4ceb-a4b5-4996-968c-4f3af0f8579b",
@@ -8043,7 +8043,7 @@
     {
       "place_id": "b50676b6-400d-4da9-b8ac-f6c3a50d6ed9",
       "base_position": "-106,-80",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7f894843-5f1a-4bf3-a462-f40f96c541cf",
@@ -8068,7 +8068,7 @@
     {
       "place_id": "7c0eb60a-2d82-489c-b8a7-19d98098fbd9",
       "base_position": "40,-71",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ba20b2f7-16bd-4de0-8511-94f8647701d9",
@@ -8088,12 +8088,12 @@
     {
       "place_id": "670a0ab4-48e6-4a13-9560-ed751cde8065",
       "base_position": "-71,41",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "670a0ab4-48e6-4a13-9560-ed751cde8065",
       "base_position": "-71,41",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "61466ead-2dec-4aa0-b3f9-d6972dd38583",
@@ -8118,7 +8118,7 @@
     {
       "place_id": "1ce23149-c124-4a0a-aca5-f955d5aae0d7",
       "base_position": "-40,126",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "2cf26c29-20df-46ea-8f1d-114aa44031ed",
@@ -8178,7 +8178,7 @@
     {
       "place_id": "c4f5cd9b-b7a4-4845-8f9b-ca95080561bf",
       "base_position": "-98,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "10408bf8-fc01-425f-a27c-9a00f3c9c442",
@@ -8188,12 +8188,12 @@
     {
       "place_id": "10408bf8-fc01-425f-a27c-9a00f3c9c442",
       "base_position": "-133,-35",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7a75e0c4-fb91-45bf-8d97-e175326cc9db",
       "base_position": "-58,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "54514031-e4f6-4170-974f-abfa3177b797",
@@ -8218,7 +8218,7 @@
     {
       "place_id": "44d021cb-4636-45c2-990f-5e537f1e2085",
       "base_position": "6,-52",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d2ada229-158e-439e-ae05-46b49e8f89a5",
@@ -8243,7 +8243,7 @@
     {
       "place_id": "b92a0cbe-42e9-40d7-bc6a-56886f3248d3",
       "base_position": "-38,-111",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "375f58c9-a45f-485b-ae25-71a006f5a3a8",
@@ -8273,7 +8273,7 @@
     {
       "place_id": "688c5d0d-584f-4287-b89b-74488ea7cf00",
       "base_position": "56,-112",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "1e047fa6-8802-449e-9aba-95ca559f5f1e",
@@ -8298,7 +8298,7 @@
     {
       "place_id": "27966bc8-1c9d-4ee1-90c7-e0e5d1a2318c",
       "base_position": "-127,-34",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4a2aca76-efdb-499f-a6e3-dee1cc6700ca",
@@ -8308,12 +8308,12 @@
     {
       "place_id": "76145a2b-dfb1-4124-9f46-0b856e2eb696",
       "base_position": "29,-13",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "468a2140-79d0-4824-987c-e70e78e43350",
       "base_position": "83,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "65bcfac5-d754-4dc0-8dd0-33c481b06d01",
@@ -8388,17 +8388,17 @@
     {
       "place_id": "e32fe1a2-ae58-44cf-b7c3-8c8b161483fd",
       "base_position": "-2,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "ce20c8eb-7dd5-4d6d-9a93-0ae36caff240",
       "base_position": "-119,-65",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f6e01ccd-79b5-41c8-befa-bb6f648b0b66",
       "base_position": "-32,-6",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "dfb4efc3-d6d0-475c-89f8-348d72474e2e",
@@ -8408,7 +8408,7 @@
     {
       "place_id": "da7f53af-b736-4cf9-b5dc-04145a5c7ead",
       "base_position": "-119,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "00d879c7-210b-4ab3-97cd-e8f356fe5bcc",
@@ -8473,7 +8473,7 @@
     {
       "place_id": "49ca00a0-541d-4c0b-ab16-15c6f50525d0",
       "base_position": "129,19",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "49ca00a0-541d-4c0b-ab16-15c6f50525d0",
@@ -8488,12 +8488,12 @@
     {
       "place_id": "b5d14d4c-ffbb-475d-9a10-65d5d4999adb",
       "base_position": "-78,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4bac7fe5-a923-4ee2-9eae-42d0cba54c47",
       "base_position": "74,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c5a616fb-04dd-4a3f-8e2d-ae1343da6263",
@@ -8518,12 +8518,12 @@
     {
       "place_id": "ae4f156b-b09e-4529-86fb-259841273dca",
       "base_position": "144,1",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8981658a-eae8-4286-821b-9c07f27b1ddb",
       "base_position": "-76,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "24200720-96c9-4198-a1ca-5933b61c87f4",
@@ -8548,7 +8548,7 @@
     {
       "place_id": "a8dc1c60-116d-420e-82bc-c913b9239d48",
       "base_position": "138,-15",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "2d6daacb-f169-4812-b2fc-bfe3eb5ac2e6",
@@ -8593,7 +8593,7 @@
     {
       "place_id": "e2f6d1f8-c4ab-499b-b7ea-8a55c669ab4f",
       "base_position": "75,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "516d0138-36ed-4c80-98e6-cbbe842e50ba",
@@ -8608,12 +8608,12 @@
     {
       "place_id": "88f4092d-1401-4611-8c8e-86f108e092e1",
       "base_position": "-128,92",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "88f4092d-1401-4611-8c8e-86f108e092e1",
       "base_position": "-128,92",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "78439a8a-0686-4e24-8ed7-2e9f3aeea3af",
@@ -8643,7 +8643,7 @@
     {
       "place_id": "cfe26ed6-9a83-437f-a9a8-0399d7bf71be",
       "base_position": "2,-121",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "b7854f2d-a1e4-4eee-82c0-b7fde507f8e8",
@@ -8673,7 +8673,7 @@
     {
       "place_id": "acd9db38-8b02-4442-b40a-ec865b2ea4ba",
       "base_position": "-1,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3af33c0d-6a6e-4274-88bb-c1c4f15ed96f",
@@ -8698,12 +8698,12 @@
     {
       "place_id": "6195f01a-0ca2-4f68-9340-6e7f0e3d91dd",
       "base_position": "2,-103",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3faca921-8b57-4d0c-91fb-6f13146635d4",
       "base_position": "45,64",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "fa3db9c9-8f62-416b-b1f6-9e3bce386820",
@@ -8743,7 +8743,7 @@
     {
       "place_id": "b80866f4-f51c-4b86-a1d6-999debdbf225",
       "base_position": "42,-66",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "097a513c-a349-4476-8ef1-f612d138d569",
@@ -8803,12 +8803,12 @@
     {
       "place_id": "33572851-42ec-4f65-8799-acad8db14f33",
       "base_position": "79,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b09c02fe-cc19-4ac4-bd19-1dba75281900",
       "base_position": "-96,-73",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5fa4ea6e-cf91-4f8d-a6c1-0af738aa3d21",
@@ -8823,7 +8823,7 @@
     {
       "place_id": "36d0b916-c254-4bf3-9922-fda32578bcf4",
       "base_position": "-84,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9f23518b-9509-4c33-9beb-f06aa2a4e233",
@@ -8893,7 +8893,7 @@
     {
       "place_id": "01b74d7a-059b-485a-9da6-a2f142c83042",
       "base_position": "49,41",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "789cd4b1-5129-4b5e-9e2c-1b456b0229e8",
@@ -8908,7 +8908,7 @@
     {
       "place_id": "abfa6a60-35a6-489f-ae8e-6b2bb4a925f7",
       "base_position": "38,-64",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0c69ae08-f0ad-44bf-a15c-f0630f771130",
@@ -8928,7 +8928,7 @@
     {
       "place_id": "aea99e2a-9391-4099-9f2e-6e9cb5487970",
       "base_position": "78,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d8d787a9-92dd-4e3f-8601-f2911957632b",
@@ -8953,7 +8953,7 @@
     {
       "place_id": "d0141b19-f59c-422e-9b1c-153730485a9c",
       "base_position": "77,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "6b9d8304-6cc3-4a9c-a7d2-930ef0eaa46a",
@@ -8978,7 +8978,7 @@
     {
       "place_id": "2465f2ef-7474-46ef-b6c2-44f397b89923",
       "base_position": "-105,-79",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "20ca43a2-978e-4385-a710-3e0f39840d6f",
@@ -9003,7 +9003,7 @@
     {
       "place_id": "e6145670-bb22-428d-aa9a-b09eb0089367",
       "base_position": "19,92",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "819b8654-3a21-4e21-b80c-757cef3fabfb",
@@ -9018,7 +9018,7 @@
     {
       "place_id": "3e7baa69-eea3-4d75-ac1f-27a3a38e8210",
       "base_position": "-4,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a897bf16-bf06-4a67-a005-190fb9b83d23",
@@ -9048,7 +9048,7 @@
     {
       "place_id": "0a27daf9-31f1-4a3c-9c92-82b1271a95fc",
       "base_position": "-31,37",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "aa1a82f4-7280-41cb-a6a1-feeafc8af38a",
@@ -9088,12 +9088,12 @@
     {
       "place_id": "42d5a291-3495-4257-b710-cf178ab8acc4",
       "base_position": "76,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7646df0c-f683-41f7-b12a-a109b36d5f8a",
       "base_position": "149,-32",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "80d7a9b2-f178-4663-86e0-51fa2c834aa2",
@@ -9108,12 +9108,12 @@
     {
       "place_id": "03f09fa5-cf67-4262-8680-93bada04e5f8",
       "base_position": "84,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c14452c8-cacc-4de7-a00a-439552d597c5",
       "base_position": "88,29",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "fd066f26-15be-4988-9e91-130b44c9ce99",
@@ -9173,7 +9173,7 @@
     {
       "place_id": "464bf368-b28b-4bd0-ae1f-5b6e923623fc",
       "base_position": "62,43",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f568f503-549e-4050-ac87-4cfe461e9ca7",
@@ -9198,7 +9198,7 @@
     {
       "place_id": "6b15ff88-bd90-46dd-91c6-02344cafc67a",
       "base_position": "-66,41",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a2d4960d-c054-4809-a873-23575f58ed51",
@@ -9258,22 +9258,22 @@
     {
       "place_id": "7aa4fbc8-6413-4899-85bf-49972545848b",
       "base_position": "-42,85",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7efce3ec-306a-4583-a5e1-204656db95ae",
       "base_position": "149,-18",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "cc574383-283d-4a1f-a9b4-dea2765d5583",
       "base_position": "-146,-147",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "cc27e5d4-d70a-4cea-8b67-0991eb556c4a",
       "base_position": "24,-145",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "13ba878c-1809-439d-93d3-b2536143d9b9",
@@ -9298,7 +9298,7 @@
     {
       "place_id": "12a66b25-fa64-4711-be3c-2a8a9f96ca91",
       "base_position": "-131,-71",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b5f7aa22-7f23-47cb-a210-d751c1c0c522",
@@ -9333,7 +9333,7 @@
     {
       "place_id": "925dc8d7-e3e3-46f4-959a-bea33e3d03f3",
       "base_position": "-58,106",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9672c369-3736-47fc-84ac-4fd62b945c16",
@@ -9383,12 +9383,12 @@
     {
       "place_id": "dab4890c-e9e0-4b4e-88e2-db1b585e761e",
       "base_position": "-19,-146",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b1990a3b-884e-420c-b46c-894aeda00a36",
       "base_position": "-140,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "87aea680-ec3c-4aa9-a740-e9f8acc97151",
@@ -9408,7 +9408,7 @@
     {
       "place_id": "723aaada-af42-4bac-b018-e33d4e1a8ff9",
       "base_position": "24,-144",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b9e0224f-9290-4a34-8845-e2e0dfb6ac18",
@@ -9458,12 +9458,12 @@
     {
       "place_id": "839009ef-43a4-46cf-a8b6-6ef03089c871",
       "base_position": "20,-141",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "559bdbb4-e65f-4b82-bbcb-af3e295dac73",
       "base_position": "84,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "292f1c8b-472e-421a-9673-b33791ff994c",
@@ -9483,7 +9483,7 @@
     {
       "place_id": "3442e3ac-b784-41cd-b5af-8d3f63284528",
       "base_position": "-73,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c3b801e1-7009-4596-a253-792375c5deed",
@@ -9538,7 +9538,7 @@
     {
       "place_id": "bc11c1f8-38fd-4875-bdf1-0e8cfe688e79",
       "base_position": "39,-71",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4d552034-2801-4c85-af7f-73e91ebf4bfb",
@@ -9558,7 +9558,7 @@
     {
       "place_id": "a051822d-b28d-406d-9789-40196e593f7a",
       "base_position": "84,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1f032bcb-68ce-447c-99f5-d1f44d2cb929",
@@ -9568,12 +9568,12 @@
     {
       "place_id": "087409f5-694c-47a6-841f-bda844d58ad9",
       "base_position": "81,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c0367799-b0fb-4162-b500-9ae22b56f404",
       "base_position": "77,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3a0fdc14-1630-4788-96b9-8cf31503cb34",
@@ -9583,7 +9583,7 @@
     {
       "place_id": "b29f8805-a2d0-4a2e-baf1-e37bfc711d15",
       "base_position": "84,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "0122d2e7-333a-403e-9180-377f36d337f9",
@@ -9598,12 +9598,12 @@
     {
       "place_id": "7bfe3147-79e4-4f55-8cbd-651313484003",
       "base_position": "80,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "2a5b78d1-b9b9-4be2-aad3-ea4232d100a2",
       "base_position": "-131,-59",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "310bfbd1-c4e2-499b-94e3-98e9f8adfc28",
@@ -9628,12 +9628,12 @@
     {
       "place_id": "0de9397c-f413-4ae3-be85-2bfed659ca6e",
       "base_position": "-87,32",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "014cdbfb-b6c3-4b01-b4c7-5faab01a7515",
       "base_position": "80,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b64fb7c8-9558-43bc-8601-3b607673b415",
@@ -9653,7 +9653,7 @@
     {
       "place_id": "80016432-bd53-4798-b04b-39ab23e232ae",
       "base_position": "-57,149",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "4808f101-a0b4-43ca-96e8-91810c4a4d3b",
@@ -9673,7 +9673,7 @@
     {
       "place_id": "56a8240e-6eb0-4837-9c1a-f43d8f5a2733",
       "base_position": "83,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d8391e07-90d2-4732-bf2b-5ad4faf749af",
@@ -9683,7 +9683,7 @@
     {
       "place_id": "b8bfebb6-749c-4aa6-be4d-33edd23a5ad6",
       "base_position": "62,-104",
-      "category_id": "gambling"
+      "category_id": "casino"
     },
     {
       "place_id": "954690e9-c84e-4b27-8531-7dcef6ec84aa",
@@ -9733,7 +9733,7 @@
     {
       "place_id": "773d1796-319e-4c36-8a92-cbcd2360d09f",
       "base_position": "-91,33",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a3fa55e5-93ac-481d-87d6-fd612d0b3e14",
@@ -9758,7 +9758,7 @@
     {
       "place_id": "da0629f0-1275-497b-b534-606819637d97",
       "base_position": "111,-37",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3ea7a08b-6bc1-45cd-b9ec-8153e5234533",
@@ -9773,7 +9773,7 @@
     {
       "place_id": "583d64e6-7dca-405f-8262-43cb2b121ca2",
       "base_position": "22,-145",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "19c2e29c-9f13-4198-9acd-646e4b8fb52f",
@@ -9798,17 +9798,17 @@
     {
       "place_id": "8d7c968a-95f2-4149-85c2-46c41786472e",
       "base_position": "30,-22",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "ac69ac98-166a-4299-a42f-df9ef0d83404",
       "base_position": "-92,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "66291483-c75e-44b1-b111-715e20f5a7ab",
       "base_position": "-123,-63",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c6c693b6-a7f3-40f2-9d04-a66174bc5c26",
@@ -9828,7 +9828,7 @@
     {
       "place_id": "1f8ddf0e-bee4-4d08-b67f-cb44e7038633",
       "base_position": "-48,-142",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c26daba6-cf04-4333-9e42-e78f74dec636",
@@ -9858,7 +9858,7 @@
     {
       "place_id": "b2200ad1-62b5-45d1-a092-557292c9d0f1",
       "base_position": "-52,-33",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b2200ad1-62b5-45d1-a092-557292c9d0f1",
@@ -9938,7 +9938,7 @@
     {
       "place_id": "19bb34f5-972e-4223-a99a-6aa0a4bd7424",
       "base_position": "75,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "63cbe634-115b-4f88-8d23-07260a8d4dc9",
@@ -9953,12 +9953,12 @@
     {
       "place_id": "9f64d741-1bae-43ab-b837-f8c28d349971",
       "base_position": "75,-25",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "437b6268-bd4e-40cc-8632-7a78b8cc39c0",
       "base_position": "50,131",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f9bc9d60-4caa-4ebb-8691-a9c50a6e180c",
@@ -9993,7 +9993,7 @@
     {
       "place_id": "ec2bb9a1-553b-4a31-9f59-b45238db44f4",
       "base_position": "-109,-67",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6033499e-69ed-4ff7-9419-0491579363ac",
@@ -10013,12 +10013,12 @@
     {
       "place_id": "fe218a3f-c452-46e9-bb42-1dc1fd0825f2",
       "base_position": "150,1",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "b1ba91e8-3a81-406f-b79c-ee53ea8cc053",
       "base_position": "2,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "cd8b888e-2468-472d-9dc1-fe5b53a7e5e9",
@@ -10033,7 +10033,7 @@
     {
       "place_id": "6f386b8a-cbf2-49c9-8f1b-cef35a757995",
       "base_position": "-60,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d908a731-ba00-4b23-a902-2be50344ae74",
@@ -10063,7 +10063,7 @@
     {
       "place_id": "d41a3863-b855-4aa3-87a9-1f39ae7ec01c",
       "base_position": "-146,25",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "cd0e4861-7f0a-4d2c-98e7-fc076f3cdd34",
@@ -10098,7 +10098,7 @@
     {
       "place_id": "6ec10702-315b-48e0-8b77-077787696745",
       "base_position": "82,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7cb9fbe3-bfd3-4871-bdca-2c90de8c8497",
@@ -10108,12 +10108,12 @@
     {
       "place_id": "9f1f608e-8475-4a02-95f5-70cdd7cbcafc",
       "base_position": "81,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b80859ed-9d8e-4b37-b273-42522a23f8a5",
       "base_position": "82,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "f999ed47-8451-4be7-bbbc-d6ce9fe53f85",
@@ -10128,7 +10128,7 @@
     {
       "place_id": "849de926-3fba-4120-b8d2-a1072abb73af",
       "base_position": "-1,-100",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "7aa2a1d7-5263-4eca-81c2-97de63807b3e",
@@ -10138,12 +10138,12 @@
     {
       "place_id": "e5dff831-7715-44d7-bd73-825c59bb6018",
       "base_position": "-110,-60",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "2348ed9d-8d36-448a-8561-a4a6f8f235a9",
       "base_position": "23,-144",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "a3c5d73f-530a-45ba-950f-b39ed66c9915",
@@ -10153,7 +10153,7 @@
     {
       "place_id": "2b5af553-c6e6-4e29-9277-077cea1a4eaf",
       "base_position": "3,-94",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "92265390-a2ca-47ab-9215-0f1cd34d7d1a",
@@ -10228,7 +10228,7 @@
     {
       "place_id": "ee3fbe7e-4f51-47ed-a47f-a921c1118eb1",
       "base_position": "7,-95",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5f9fb8c8-89da-417b-b1b2-1e330f3d7e4f",
@@ -10253,7 +10253,7 @@
     {
       "place_id": "a2b3805f-ed0d-4e80-9e64-4c2ee1662df1",
       "base_position": "79,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e22a07af-30e4-4273-9a2b-a09d460e08c6",
@@ -10283,7 +10283,7 @@
     {
       "place_id": "1b184cc9-0d37-4ef3-bb7b-ec90394fd36b",
       "base_position": "-135,102",
-      "category_id": "sport"
+      "category_id": "sports"
     },
     {
       "place_id": "1b184cc9-0d37-4ef3-bb7b-ec90394fd36b",
@@ -10293,7 +10293,7 @@
     {
       "place_id": "f040e23c-b96b-4ea8-9af0-770277e83834",
       "base_position": "83,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a2dbdde6-ca41-43fd-9209-3c9909ec8321",
@@ -10318,7 +10318,7 @@
     {
       "place_id": "d9244963-3373-4ae7-bcb9-95232ae6af05",
       "base_position": "79,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c6d4d912-d124-4688-971d-fde3d0ab95ae",
@@ -10358,7 +10358,7 @@
     {
       "place_id": "bc01649f-fc03-4a70-8553-2f2d43308627",
       "base_position": "78,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "0c08b598-bf08-4cc3-87f5-70eb92045382",
@@ -10403,7 +10403,7 @@
     {
       "place_id": "3b9972ad-053c-461f-b5d9-90cb25355733",
       "base_position": "75,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "f03b8001-c658-4fb3-8f26-76d395912467",
@@ -10418,7 +10418,7 @@
     {
       "place_id": "a96b702b-6204-49c6-8e74-d536e8594803",
       "base_position": "77,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cc93632a-d577-4023-878e-7d0d6a5dcaaa",
@@ -10428,17 +10428,17 @@
     {
       "place_id": "74e7abf8-f899-4e6c-b116-292777317900",
       "base_position": "19,-57",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "f7eba3cb-90d4-4cb0-92f2-6510e3880940",
       "base_position": "81,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "bb0687c8-56cd-465f-90ab-d7ab08004f3d",
       "base_position": "20,-60",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "bb0687c8-56cd-465f-90ab-d7ab08004f3d",
@@ -10453,7 +10453,7 @@
     {
       "place_id": "bf7b858b-0341-4b4f-bbee-53c8c2c7ac2f",
       "base_position": "75,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "a434e8c4-78ea-4aec-bbf4-67f4cd07ab77",
@@ -10463,7 +10463,7 @@
     {
       "place_id": "e7e815da-a207-41ab-8761-9f2d4a8fc92d",
       "base_position": "41,58",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "20b78a66-6f5b-41bb-b646-98f4ce36db9d",
@@ -10488,12 +10488,12 @@
     {
       "place_id": "04c24b62-b0d7-469f-9d7f-890cf7745a9a",
       "base_position": "-139,-45",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "31463d79-f643-494b-a1db-a48769090f5d",
       "base_position": "-121,-65",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9622e4e4-b85a-4b57-b139-6fb5f22396c0",
@@ -10503,22 +10503,22 @@
     {
       "place_id": "938d303a-b1d9-4edc-b780-4d86bd831b4d",
       "base_position": "-77,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bcdb66c8-624e-4940-a6c3-ec4ae77673b8",
       "base_position": "-106,-73",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "c03c7b1b-b568-4ab6-ba7b-c228560fa538",
       "base_position": "-17,-97",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "0f229c31-14ee-4da2-8b8e-d8ae7ff06d5e",
       "base_position": "-78,-15",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "c9d8a644-b79f-4ef4-8c3c-c6beefddfcea",
@@ -10533,12 +10533,12 @@
     {
       "place_id": "c12f60f2-ec08-4782-894a-f891868cb90b",
       "base_position": "-38,79",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "22dabedc-5f4a-4858-8443-bf90e4ec2cbf",
       "base_position": "31,-20",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "3de5fadd-9a86-4f9c-8426-3a9660cf0dca",
@@ -10548,12 +10548,12 @@
     {
       "place_id": "1ddbdca1-1d9c-4d71-ae84-6e6a7158446d",
       "base_position": "83,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "e8e98142-ff65-4bc4-80ce-ca0fe0094e81",
       "base_position": "-79,12",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "6c6c5dbf-ee67-4ebf-8659-9cad5fa1abfa",
@@ -10573,7 +10573,7 @@
     {
       "place_id": "80652d08-f853-4fca-8267-b03e61294868",
       "base_position": "76,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "586a5877-bfbf-4315-bb4a-02f4cc50eccd",
@@ -10583,7 +10583,7 @@
     {
       "place_id": "4ac22a89-97cd-4033-98f6-39b9ab5d5a03",
       "base_position": "80,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "588770e8-515c-4667-a7b0-0442883b6180",
@@ -10593,7 +10593,7 @@
     {
       "place_id": "55cf5719-b444-438a-bb34-4607d758494e",
       "base_position": "78,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "aa9e9142-b212-494b-900f-1e374d017315",
@@ -10613,7 +10613,7 @@
     {
       "place_id": "25b634af-9934-4a74-ac52-a07f98031b0b",
       "base_position": "80,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "05d3287e-da9b-469f-8748-938c88755a78",
@@ -10623,12 +10623,12 @@
     {
       "place_id": "82d094c7-2575-4145-bfe7-3c1accd09783",
       "base_position": "84,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "b6ff840e-4b7d-452f-9875-63e8921a51ce",
       "base_position": "81,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1c9983e8-e148-4b53-9cfe-84fd936ffb91",
@@ -10648,7 +10648,7 @@
     {
       "place_id": "8e35e55e-cb02-4787-96bb-c3ba92b2e28b",
       "base_position": "25,-144",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cd904995-fe88-4397-af88-3e9f2b715630",
@@ -10668,7 +10668,7 @@
     {
       "place_id": "d1cd43f8-a210-4d5e-a46f-152ccb9e6b70",
       "base_position": "-4,-103",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "4ed9bc09-1950-497e-8d4e-575f4b107b9f",
@@ -10683,7 +10683,7 @@
     {
       "place_id": "e7e40bc7-e314-48b9-8780-894c5ea92e96",
       "base_position": "-74,-74",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "eaff60f7-822e-4970-9550-cd00f2d6072f",
@@ -10718,7 +10718,7 @@
     {
       "place_id": "8728bbc3-9bbb-4362-826d-1c95fa226038",
       "base_position": "23,-146",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "841da901-c5a6-427e-a85c-039bc9c1bb4f",
@@ -10733,7 +10733,7 @@
     {
       "place_id": "8feb2195-2750-446b-b986-3eb3512fc6c0",
       "base_position": "22,-45",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "d23c5b43-c479-443c-8ec7-e5d0369dc7ac",
@@ -10758,7 +10758,7 @@
     {
       "place_id": "79ce457a-e109-4f09-b07f-0d847916e5fc",
       "base_position": "74,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "60e39481-1383-48e2-b1d9-0b31d99d3196",
@@ -10768,7 +10768,7 @@
     {
       "place_id": "2b7647f6-c0c6-4e1d-9d74-ac4ceeeb3ec6",
       "base_position": "82,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "7297c7af-7fc8-4c50-9445-cb4039182252",
@@ -10798,17 +10798,17 @@
     {
       "place_id": "2654775a-ac74-4d88-8c9d-56d515b1ad17",
       "base_position": "82,-123",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "f23027e7-60dd-4989-b40f-7dc32fc15f83",
       "base_position": "85,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "077b169c-87e3-497a-b39a-d4a58c75408e",
       "base_position": "77,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1b8b6bd6-778d-461e-a9f1-f785c7228052",
@@ -10833,17 +10833,17 @@
     {
       "place_id": "1157a723-5af3-4490-8aa8-826dcb0b064a",
       "base_position": "-101,-70",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "f314fa45-1490-4d7e-b7b2-678935807f13",
       "base_position": "49,-91",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "441b1a36-bd8c-4b23-ac27-ebcac8fcd602",
       "base_position": "25,-145",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "9833df86-5f92-47f7-9de3-d82d053a65cb",
@@ -10858,12 +10858,12 @@
     {
       "place_id": "08f2335f-9abb-4003-8f80-c456a478425f",
       "base_position": "-5,-105",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "60b54df7-ca53-4452-a2f7-76dbc280102d",
       "base_position": "-136,-95",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "afd79f6c-de18-44e7-8619-ec7b2f46481a",
@@ -10893,7 +10893,7 @@
     {
       "place_id": "843ca881-f484-409f-97ad-1d979becd23f",
       "base_position": "141,-56",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "843ca881-f484-409f-97ad-1d979becd23f",
@@ -10993,7 +10993,7 @@
     {
       "place_id": "70134a74-a3fd-4573-8747-e79697e51ee2",
       "base_position": "-88,33",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "13e28d63-97bd-4fb2-9f03-98d050f1177a",
@@ -11023,17 +11023,17 @@
     {
       "place_id": "05cdfc25-1f2e-4291-8d07-72a17b64eeea",
       "base_position": "81,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "16dba404-0536-4e78-8836-1d22956c6b0b",
       "base_position": "79,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "deff5e9a-98db-44be-9088-356d9a27d407",
       "base_position": "75,-127",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "cddb24f1-2ec2-4846-a49d-dd181b16536f",
@@ -11048,7 +11048,7 @@
     {
       "place_id": "066d8d56-74d1-4a14-afe0-8423a858263e",
       "base_position": "-37,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "9f347e93-b611-4584-9baf-136c64b46b86",
@@ -11083,7 +11083,7 @@
     {
       "place_id": "00177852-0be7-4473-a57a-1819a2113af3",
       "base_position": "149,-26",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "1c5fd570-2852-44ec-9bbc-6ec064b7a718",
@@ -11093,12 +11093,12 @@
     {
       "place_id": "cee9b0c5-7b02-48e1-a228-f15d68201499",
       "base_position": "-130,-82",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "ec095a0e-2a7e-4794-81e8-5edda505b83f",
       "base_position": "-4,-108",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "8b549cdf-b94c-4d37-930c-6b35e0b48fc2",
@@ -11108,7 +11108,7 @@
     {
       "place_id": "1b68044f-ecb3-455b-81b1-4eef8fbc324f",
       "base_position": "139,-90",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "20451461-d6cb-4177-90a9-6d64319d6fbb",
@@ -11188,7 +11188,7 @@
     {
       "place_id": "b2d4e9af-a742-4e31-beb3-77c10d7f70d1",
       "base_position": "-26,-140",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "249312e3-9b2f-497d-ad13-5989acbdbfba",
@@ -11198,7 +11198,7 @@
     {
       "place_id": "78953d65-145d-4bff-914d-1533dc423915",
       "base_position": "76,-125",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "5471aba3-9d7a-456d-a270-f097eda25f08",
@@ -11223,7 +11223,7 @@
     {
       "place_id": "40cd54c9-35ee-45ab-bd91-a6f0fde37fef",
       "base_position": "-106,-70",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d4496472-a64a-4ddf-a508-abe4b9123983",
@@ -11248,7 +11248,7 @@
     {
       "place_id": "3ad74e27-0b10-46c5-96f4-9d213c303860",
       "base_position": "-78,34",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "09322f5b-fedd-478f-9130-b3efd344a1af",
@@ -11298,7 +11298,7 @@
     {
       "place_id": "ed44e80e-321a-4733-a114-a642e2a1cfd7",
       "base_position": "-139,-94",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "d7d799f1-0a2f-4a2a-944c-b4d493f3d4ad",
@@ -11323,17 +11323,17 @@
     {
       "place_id": "5afbef2a-94a4-4e51-a6d7-2046c55fbc45",
       "base_position": "78,-126",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "1760ef81-e1cc-4636-bf3a-96d75ff33395",
       "base_position": "-57,130",
-      "category_id": "commercial"
+      "category_id": "shop"
     },
     {
       "place_id": "bfe04b29-520d-46a3-805d-25dd12ce170e",
       "base_position": "76,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     },
     {
       "place_id": "3b3c4149-0d49-444e-8d5e-6c64f6eb2f4e",
@@ -11343,7 +11343,7 @@
     {
       "place_id": "d59261e0-68b9-4225-a87a-5957b6311cee",
       "base_position": "78,-124",
-      "category_id": "gaming"
+      "category_id": "game"
     }
   ]
 }

@@ -1,97 +1,78 @@
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
-import { unique } from "radash"
 
 import PlaceModel from "../entities/Place/model"
-import PlaceCategories from "../entities/PlaceCategories/model"
+import PlaceCategoriesModel from "../entities/PlaceCategories/model"
+import PlacePositionModel from "../entities/PlacePosition/model"
 
 export const shorthands: ColumnDefinitions | undefined = undefined
-
-const MAPPED: Record<string, string> = {
-  gaming: "game",
-  gambling: "casino",
-  commercial: "shop",
-  sport: "sports",
-}
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   const { content } = await import("../seed/base_categorized_content.json")
 
-  const positions = content
-    .map(({ base_position }) => `'${base_position}'`)
-    .join(",")
-
-  const ids: { id: string; base_position: string }[] = await pgm.db.select(
-    `SELECT DISTINCT id, base_position FROM ${PlaceModel.tableName} WHERE base_position IN (${positions})`
-  )
-
-  let tmpRows = []
-  for (const place of ids) {
-    const categoryRecords = unique(
-      content
-        .filter(({ base_position }) => place.base_position === base_position)
-        .map(({ category_id }) => category_id)
-        .filter((category) => category != "ads")
-    )
-
-    for (const category of categoryRecords) {
-      const mapped = MAPPED[category] || category
-      tmpRows.push(`('${place.id}', '${mapped}')`)
+  const processed = content.reduce((acc, curr) => {
+    if (acc[curr.category_id]) {
+      acc[curr.category_id].push(curr.base_position)
+    } else {
+      acc[curr.category_id] = [curr.base_position]
     }
+    return acc
+  }, {} as Record<string, string[]>)
 
-    pgm.sql(
-      `UPDATE ${
-        PlaceModel.tableName
-      } SET categories = array_cat(categories, '{${categoryRecords.join(
-        ","
-      )}}') WHERE id = '${place.id}'`
-    )
-
-    if (tmpRows.length === 100) {
-      pgm.sql(
-        `INSERT INTO ${
-          PlaceCategories.tableName
-        } (place_id, category_id) VALUES ${tmpRows.join(",")}`
+  for (const [category, positions] of Object.entries(processed)) {
+    pgm.sql(`UPDATE ${PlaceModel.tableName}
+      SET categories = array_append(categories, '${category}')
+      WHERE
+        disabled is false AND base_position IN (
+        SELECT DISTINCT(pp.base_position)
+        FROM ${PlacePositionModel.tableName} pp
+        WHERE pp.position IN (${positions.map((pos) => `'${pos}'`).join(",")})
       )
-      tmpRows = []
-    }
-  }
+    `)
 
-  if (tmpRows.length) {
-    pgm.sql(
-      `INSERT INTO ${
-        PlaceCategories.tableName
-      } (place_id, category_id) VALUES ${tmpRows.join(",")}`
-    )
+    pgm.sql(`
+    INSERT INTO ${PlaceCategoriesModel.tableName} (category_id, place_id)
+    SELECT
+      '${category}', p.id 
+      FROM ${PlaceModel.tableName} p
+      WHERE 
+        p.disabled is false
+        AND p.base_position IN (
+          SELECT DISTINCT(pp.base_position)
+          FROM ${PlacePositionModel.tableName} pp
+          WHERE pp.position IN (${positions.map((pos) => `'${pos}'`).join(",")})
+     )
+  `)
   }
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
   const { content } = await import("../seed/base_categorized_content.json")
 
-  const positions = content
-    .map(({ base_position }) => `'${base_position}'`)
-    .join(",")
-
-  const ids: { id: string; base_position: string }[] = await pgm.db.select(
-    `SELECT DISTINCT id, base_position FROM ${PlaceModel.tableName} WHERE base_position IN (${positions})`
-  )
-
-  for (const place of ids) {
-    const categoryRecords = unique(
-      content
-        .filter(({ base_position }) => place.base_position === base_position)
-        .map(({ category_id }) => category_id)
-        .filter((category) => category != "ads")
-    )
-
-    for (const category of categoryRecords) {
-      const mapped = MAPPED[category] || category
-      pgm.sql(
-        `DELETE FROM ${PlaceCategories.tableName} WHERE place_id = '${place.id}' AND category_id = '${mapped}'`
+  for (const value of content) {
+    pgm.sql(`UPDATE ${PlaceModel.tableName} p
+      SET categories = array_remove(categories, '${value.category_id}')
+      WHERE
+        disabled is false
+        AND base_position IN (
+        SELECT DISTINCT(pp.base_position)
+        FROM ${PlacePositionModel.tableName} pp
+        WHERE '${value.base_position}' = pp.position
       )
-      pgm.sql(
-        `UPDATE ${PlaceModel.tableName} SET categories = array_remove(categories, '${mapped}') WHERE id = '${place.id}'`
+    `)
+    pgm.sql(`
+      DELETE FROM ${PlaceCategoriesModel.tableName}
+      WHERE category_id = '${value.category_id}' AND place_id IN (
+      SELECT
+        p.id 
+        FROM ${PlaceModel.tableName} p
+        WHERE 
+          p.disabled is false
+          AND p.base_position IN (
+            SELECT DISTINCT(pp.base_position)
+            FROM ${PlacePositionModel.tableName} pp
+            WHERE '${value.base_position}' = pp.position
+          )
       )
-    }
+    `)
   }
 }
