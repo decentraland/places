@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 
-import { randomUUID } from "crypto"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
@@ -19,6 +18,7 @@ import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
+import { v4 as uuidV4 } from "uuid"
 
 import Places from "../api/Places"
 import {
@@ -140,7 +140,7 @@ export default function IndexPage() {
     }
 
     if (isFilteringByCategory || isSearching) {
-      const newTrackingId = randomUUID()
+      const newTrackingId = uuidV4()
       track(SegmentPlace.PlacesSearch, {
         trackingId: newTrackingId,
         resultsCount: response.total,
@@ -601,7 +601,16 @@ export default function IndexPage() {
             }}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
-              handleCategoriesFilterChange([])
+              if (previousActiveCategories.length) {
+                handleCategoriesFilterChange([])
+              } else {
+                handleSyncCategory(
+                  categories.map((category) => ({
+                    ...category,
+                    active: false,
+                  }))
+                )
+              }
             }}
             onChange={handleCategoryModalChange}
             onActionClick={handleApplyModalChange}
