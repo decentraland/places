@@ -22,9 +22,7 @@ export type PlaceAttributes = {
   description: string | null
   image: string | null
   highlighted_image: string | null
-  featured_image: string | null
   owner: string | null
-  tags: string[]
   positions: string[]
   base_position: string
   contact_name: string | null
@@ -36,17 +34,16 @@ export type PlaceAttributes = {
   like_rate: number | null
   like_score: number | null
   highlighted: boolean
-  featured: boolean
   disabled: boolean
   disabled_at: Date | null
   created_at: Date
   updated_at: Date
-  categories: string[]
   world: boolean
   world_name: string | null
   hidden: boolean
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
+  categories: string[]
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {
@@ -74,24 +71,24 @@ export type GetPlaceListQuery = {
   offset: string
   positions: string[]
   only_favorites: string
-  only_featured: string
   only_highlighted: string
   order_by: string
   order: string
   with_realms_detail: string
   search: string
+  categories: string[]
 }
 
 export type PlaceListOptions = {
   offset: number
   limit: number
   only_favorites: boolean
-  only_featured: boolean
   only_highlighted: boolean
   positions: string[]
   order_by: string
   order: string
   search: string
+  categories: string[]
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {

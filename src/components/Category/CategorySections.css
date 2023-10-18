@@ -1,0 +1,30 @@
+.category-sections__box {
+  background-color: var(--secondary-on-modal-hover);
+  width: 100%;
+  padding: 35px;
+}
+
+.category-sections__title {
+  margin-bottom: 25px;
+  display: flex;
+  align-items: center;
+}
+
+.category-sections__title > p {
+  color: var(--secondary-text);
+  letter-spacing: 1px;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 0 16px 0 0;
+  text-transform: uppercase;
+}
+
+.category-sections__title > .ui.label {
+  font-weight: 700;
+  font-size: 8px;
+  background-color: var(--primary);
+  line-height: normal;
+  padding: 2px 5px;
+  border-radius: 3px;
+  color: var(--text-on-primary);
+}

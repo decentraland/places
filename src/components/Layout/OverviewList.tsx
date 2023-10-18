@@ -16,10 +16,9 @@ import PlaceList from "../Place/PlaceList/PlaceList"
 
 import "./OverviewList.css"
 
-export type OverviewListProps = {
+type BaseOverviewListProps = {
   places: AggregatePlaceAttributes[]
   title: string | React.ReactNode
-  href: string
   loading: boolean
   onClickFavorite: (
     e: React.MouseEvent<HTMLButtonElement>,
@@ -32,12 +31,24 @@ export type OverviewListProps = {
   searchResultCount?: number
 }
 
+type OverviewListPropsWithHref = BaseOverviewListProps & {
+  href: string
+  onClick?: never
+}
+type OverviewListPropsWithOnClick = BaseOverviewListProps & {
+  onClick: () => void
+  href?: never
+}
+
+export type OverviewListProps =
+  | OverviewListPropsWithHref
+  | OverviewListPropsWithOnClick
+
 export default React.memo(function OverviewList(props: OverviewListProps) {
   const {
     places,
     title,
     loading,
-    href,
     onClickFavorite,
     loadingFavorites,
     dataPlace,
@@ -68,18 +79,39 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
             )}
           </HeaderMenu.Left>
           <HeaderMenu.Right>
-            <Button
-              basic
-              as="a"
-              href={href}
-              onClick={(e) => {
-                e.preventDefault()
-                navigate(href)
-              }}
-            >
-              {l("components.overview_list.view_all")}
-              <Icon name="chevron right" className="overview-list__view-all" />
-            </Button>
+            {props.href && (
+              <Button
+                basic
+                as="a"
+                href={props.href}
+                onClick={(e) => {
+                  e.preventDefault()
+                  navigate(props.href)
+                }}
+              >
+                {l("components.overview_list.view_all")}
+                <Icon
+                  name="chevron right"
+                  className="overview-list__view-all"
+                />
+              </Button>
+            )}
+            {props.onClick && (
+              <Button
+                basic
+                as="button"
+                onClick={(e) => {
+                  e.preventDefault()
+                  props.onClick()
+                }}
+              >
+                {l("components.overview_list.view_all")}
+                <Icon
+                  name="chevron right"
+                  className="overview-list__view-all"
+                />
+              </Button>
+            )}
           </HeaderMenu.Right>
         </HeaderMenu>
       </Container>

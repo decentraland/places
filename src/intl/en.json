@@ -65,7 +65,8 @@
       "description": "description",
       "location": "location",
       "content_moderation": "Content Moderation",
-      "rate_label": "Please rate this scene"
+      "rate_label": "Please rate this scene",
+      "appears_on": "Appears On"
     },
     "rating_button": {
       "rating_t": "T",
@@ -104,6 +105,11 @@
         "description_a": "The rating for {scene_name} has been successful changed to Adult (PG 18+). This content is now only available to users aged 18 and above.",
         "description_r": "The rating for {scene_name} has been successful changed to Restricted. This content is now no longer visible in Decentraland.",
         "button_label": "OK"
+      },
+      "category": {
+        "clear_all": "Clear All",
+        "one_or_more": "Select one or more Categories",
+        "quantity_selected": "{quantity} Category Selected"
       }
     }
   },
@@ -132,7 +138,10 @@
       "pois": "Point of interest",
       "featured": "Featured",
       "show_more": "Show More",
-      "search_results_title": "Search results for"
+      "search_results_title": "Search results for",
+      "clear_all": "Clear All",
+      "category_filter_title": "Categories",
+      "categories_selected": "Selected"
     },
     "favorites": {
       "title": "Favorites",
@@ -190,5 +199,23 @@
   },
   "user_menu": {
     "api": "API"
+  },
+  "categories": {
+    "poi": "📍Point of Interest",
+    "featured": "✨ Featured",
+    "art": "🎨 Art",
+    "game": "🕹️ Game",
+    "casino": "🃏 Casino",
+    "social": "👥 Social",
+    "music": "🎶 Music",
+    "fashion": "👠 Fashion",
+    "crypto": "🪙 Crypto",
+    "education": "📚 Education",
+    "shop": "🛍️ Shop",
+    "business": "🏢 Business",
+    "sports": "🏅 Sports",
+    "title": "Categories",
+    "new_label": "NEW",
+    "explore": "Explore Categories"
   }
 }

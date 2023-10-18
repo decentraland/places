@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 

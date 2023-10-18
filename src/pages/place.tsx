@@ -118,7 +118,7 @@ export default function PlacePage() {
 
       setOpenContentModerationModal(false)
 
-      await handleRating(place.id, selectedRate as SceneContentRating)
+      await handleRating(place.id, selectedRate)
 
       setOpenConfirmModal(true)
     },

@@ -1,22 +1,7 @@
-import { createPlaceMigration } from "../entities/Place/migration"
-import { PlaceAttributes } from "../entities/Place/types"
-import defaultPlace from "../seed/04_places.json"
+import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
-const attributes: Array<keyof PlaceAttributes> = [
-  "title",
-  "description",
-  "image",
-  "featured_image",
-  "owner",
-  "tags",
-  "positions",
-  "base_position",
-  "contact_name",
-  "contact_email",
-  "content_rating",
-  "featured",
-  "disabled",
-  "disabled_at",
-]
+export const shorthands: ColumnDefinitions | undefined = undefined
 
-export const { up, down } = createPlaceMigration(defaultPlace, attributes)
+export async function up(pgm: MigrationBuilder): Promise<void> {}
+
+export async function down(pgm: MigrationBuilder): Promise<void> {}
