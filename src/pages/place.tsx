@@ -224,6 +224,7 @@ export default function PlacePage() {
             loadingLike={handlingLike.has(place?.id)}
             loadingDislike={handlingDislike.has(place?.id)}
             dataPlace={SegmentPlace.Place}
+            trackingId={params.get("t") || undefined}
           />
           <PlaceDetails
             place={place}

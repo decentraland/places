@@ -29,7 +29,10 @@ export type PlaceCardProps = {
   dataPlace?: SegmentPlace
   loading?: boolean
   loadingFavorites?: boolean
-  search?: string
+  trackingData?: {
+    id: string
+    positionWithinList: number
+  }
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
@@ -50,7 +53,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const href = useMemo(() => {
     if (place && !place.world) {
-      return locations.place(place.base_position)
+      return locations.place(place.base_position, props.trackingData?.id)
     } else if (place && place.world) {
       return locations.world(place.world_name!)
     }
@@ -60,10 +63,11 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    if (props.search) {
+    if (props.trackingData) {
       track(SegmentPlace.PlaceCardClick, {
         placeId: place?.id,
-        search: props.search,
+        trackingId: props.trackingData.id,
+        positionWithinList: props.trackingData.positionWithinList,
       })
     }
 
@@ -116,6 +120,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
               data-event={SegmentPlace.JumpIn}
               data-place-id={place?.id}
               data-place={dataPlace}
+              data-trackingId={props.trackingData?.id}
             />
             <FavoriteButton
               active={!!place?.user_favorite}

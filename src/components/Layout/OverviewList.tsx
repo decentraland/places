@@ -29,6 +29,7 @@ type BaseOverviewListProps = {
   dataPlace: SegmentPlace
   search?: string
   searchResultCount?: number
+  trackingId?: string
 }
 
 type OverviewListPropsWithHref = BaseOverviewListProps & {
@@ -124,7 +125,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
           size={cardsToShow}
           loadingFavorites={loadingFavorites}
           dataPlace={dataPlace}
-          search={search}
+          trackingId={props.trackingId ? props.trackingId : undefined}
         />
       </Container>
     </div>

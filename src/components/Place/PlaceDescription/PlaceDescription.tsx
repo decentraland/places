@@ -25,6 +25,7 @@ export type PlaceDescriptionProps = {
   loadingLike?: boolean
   loadingDislike?: boolean
   loadingFavorite?: boolean
+  trackingId?: string
 }
 
 export default React.memo(function PlaceDescription(
@@ -100,6 +101,7 @@ export default React.memo(function PlaceDescription(
               data-event={SegmentPlace.JumpIn}
               data-place-id={place?.id}
               data-place={dataPlace}
+              data-trackingId={props.trackingId}
             />
             <div className="place-description__box-wrapper">
               <ShareBox onClick={onClickShare} loading={loading} />

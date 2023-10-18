@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 
+import { randomUUID } from "crypto"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
@@ -79,6 +80,8 @@ export default function IndexPage() {
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
 
+  const [trackingId, setTrackingId] = useState<string | null>(null)
+
   const isFilteringByCategory = params.categories.length > 0
 
   const [
@@ -90,11 +93,6 @@ export default function IndexPage() {
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
-    })
-
-    track(SegmentPlace.FilterChange, {
-      filters: options,
-      place: SegmentPlace.Places,
     })
 
     const only_view_places: AggregatePlaceAttributes[] = []
@@ -114,7 +112,7 @@ export default function IndexPage() {
       data: [] as AggregatePlaceAttributes[],
       ok: false,
     }
-    if (params.categories.length) {
+    if (isFilteringByCategory) {
       const categoriesFetch = []
       for (const category of params.categories) {
         const placesFetch = Places.get().getPlaces({
@@ -141,14 +139,26 @@ export default function IndexPage() {
       response = placesFetch
     }
 
-    if (isSearching) {
+    if (isFilteringByCategory || isSearching) {
+      const newTrackingId = randomUUID()
       track(SegmentPlace.PlacesSearch, {
+        trackingId: newTrackingId,
         resultsCount: response.total,
         top10: response.data.slice(0, 10),
         search,
+        categories: isFilteringByCategory ? params.categories : undefined,
+        viewAllCategory:
+          params.only_view_category != ""
+            ? params.only_view_category
+            : undefined,
+        orderBy: params.order_by,
         place: SegmentPlace.Places,
       })
 
+      setTrackingId(newTrackingId as string)
+    }
+
+    if (isSearching) {
       if (params.only_view_category) {
         setAllPlaces(only_view_places)
       } else {
@@ -216,11 +226,7 @@ export default function IndexPage() {
     (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault()
       e.stopPropagation()
-      track(SegmentPlace.FilterChange, {
-        filters: params,
-        place: SegmentPlace.PlacesShowMore,
-        search,
-      })
+
       loadPlaces()
       setOffset(offset + PAGE_SIZE)
     },
@@ -234,10 +240,7 @@ export default function IndexPage() {
         PlaceListOrderBy.LIKE_SCORE_BEST
       const newParams = { ...params, order_by: value, page: 1 }
       setAllPlaces([])
-      track(SegmentPlace.FilterChange, {
-        filters: newParams,
-        place: SegmentPlace.PlacesChangeOrder,
-      })
+
       navigate(locations.places(newParams))
     },
     [params, track]
@@ -526,7 +529,7 @@ export default function IndexPage() {
                   }
                   loadingFavorites={handlingFavorite}
                   dataPlace={SegmentPlace.Places}
-                  search={search}
+                  trackingId={trackingId ? trackingId : undefined}
                 />
               )}
             {isFilteringByCategory &&
@@ -553,6 +556,7 @@ export default function IndexPage() {
                       handleFavorite(place.id, place)
                     }}
                     loading={loadingPlaces}
+                    trackingId={trackingId ? trackingId : undefined}
                   />
                 ))}
             {loading && (
@@ -563,6 +567,7 @@ export default function IndexPage() {
                 loading={true}
                 size={PAGE_SIZE}
                 dataPlace={SegmentPlace.Places}
+                trackingId={trackingId ? trackingId : undefined}
               />
             )}
             {!loading &&
