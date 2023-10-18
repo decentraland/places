@@ -3,7 +3,7 @@ import { getCategoryList } from "./routes"
 
 const findCategoriesWithPlaces = jest.spyOn(
   CategoryModel,
-  "findCategoriesWithPlaces"
+  "findActiveCategoriesWithPlaces"
 )
 
 test("should return list of categories", async () => {
