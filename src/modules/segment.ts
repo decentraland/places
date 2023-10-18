@@ -5,7 +5,6 @@ export enum SegmentPlace {
   Share = "Share",
   JumpIn = "Jump In",
   Join = "Join",
-  FilterChange = "Filter Change",
   FilterClear = "Filter Clear",
   highlighted = "highlighted",
   OverviewMostActive = "Overview Most Active",

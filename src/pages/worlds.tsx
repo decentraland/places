@@ -57,10 +57,6 @@ export default function WorldsPage() {
       pageSize: PAGE_SIZE,
     })
 
-    track(SegmentPlace.FilterChange, {
-      filters: options,
-      place: SegmentPlace.Worlds,
-    })
     const placesFetch = await Places.get().getWorlds({
       ...options,
       offset: offset,
@@ -125,11 +121,7 @@ export default function WorldsPage() {
     (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault()
       e.stopPropagation()
-      track(SegmentPlace.FilterChange, {
-        filters: params,
-        place: SegmentPlace.WorldsShowMore,
-        search,
-      })
+
       loadWorlds()
       setOffset(offset + PAGE_SIZE)
     },
@@ -199,7 +191,6 @@ export default function WorldsPage() {
                 onClickFavorite={(_, place) => handleFavorite(place.id, place)}
                 loadingFavorites={handlingFavorite}
                 dataPlace={SegmentPlace.Places}
-                search={search}
               />
             )}
             {loading && (
