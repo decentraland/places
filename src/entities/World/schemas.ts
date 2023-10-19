@@ -169,10 +169,6 @@ export const worldSchema = schema({
       type: "string",
       format: "date-time",
     },
-    hidden: {
-      type: "boolean",
-      description: "True if the world is hidden",
-    },
     user_like: {
       type: "boolean",
       description: "True if user likes the world",

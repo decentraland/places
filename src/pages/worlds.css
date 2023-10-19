@@ -123,23 +123,6 @@
   margin-bottom: 20px;
 }
 
-.worlds-page__disclamer {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 20px;
-}
-
-.worlds-page__disclamer img {
-  margin-top: 3px;
-}
-
-.worlds-page__disclamer span {
-  margin-left: 10px;
-  color: #736e7d;
-  font-size: 15px;
-  line-height: 18px;
-}
-
 @media only screen and (min-width: 768px) {
   .worlds-page .worlds-page__filters .ui.header {
     margin-left: 22px;
@@ -197,9 +180,5 @@
     .ui.card.place-card {
     margin-right: 0;
     margin-left: 0;
-  }
-
-  .worlds-page__disclamer {
-    margin-bottom: 36px;
   }
 }

@@ -6,9 +6,9 @@ import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import {
   AggregatePlaceAttributes,
+  HotScene,
   PlaceAttributes,
   unwantedThumbnailHash,
-  HotScene,
 } from "./types"
 
 const DECENTRALAND_URL =
