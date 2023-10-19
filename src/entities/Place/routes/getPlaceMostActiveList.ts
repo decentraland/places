@@ -33,10 +33,9 @@ export const getPlaceMostActiveList = Router.memo(
       categories: ctx.url.searchParams.getAll("categories"),
     })
 
-    const [hotScenes, sceneStats] = await Promise.all([
-      getHotScenes(),
-      getSceneStats(),
-    ])
+    const sceneStats = await getSceneStats()
+
+    const hotScenes = getHotScenes()
 
     const hotScenesParcels = hotScenes.map((scene) => scene.parcels)
 

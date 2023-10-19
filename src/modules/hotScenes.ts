@@ -1,16 +1,21 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
-import { memo } from "radash/dist/curry"
 
 import RealmProvider from "../api/RealmProvider"
 import { HotScene } from "../entities/Place/types"
 
-export const getHotScenes = memo(
-  async (): Promise<HotScene[]> => {
-    try {
-      return await RealmProvider.get().getHotScenes()
-    } catch (error) {
-      return []
-    }
-  },
-  { ttl: Time.Minute }
-)
+const DEFAULT_HOST_SCENE = [] as HotScene[]
+
+let memory = DEFAULT_HOST_SCENE
+
+export const getHotScenes = () => {
+  return memory
+}
+
+setInterval(async () => {
+  try {
+    const response = await RealmProvider.get().getHotScenes()
+    memory = response
+  } catch (error) {
+    memory = DEFAULT_HOST_SCENE
+  }
+}, Time.Minute)

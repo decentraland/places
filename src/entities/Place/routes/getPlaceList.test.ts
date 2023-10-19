@@ -4,16 +4,17 @@ import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "../../../api/DataTeam"
-import RealmProvider from "../../../api/RealmProvider"
+import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../model"
 import { getPlaceList } from "./getPlaceList"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
-const catalystHotScenes = jest.spyOn(RealmProvider.get(), "getHotScenes")
+const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 
 afterEach(() => {
   find.mockReset()
+  catalystHotScenes.mockReset()
 })
 
 test("should return a list of places with no query", async () => {
@@ -21,9 +22,7 @@ test("should return a list of places with no query", async () => {
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
-  catalystHotScenes.mockResolvedValueOnce(
-    Promise.resolve([hotSceneGenesisPlaza])
-  )
+  catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
@@ -54,9 +53,8 @@ test("should return a list of places with query", async () => {
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
-  catalystHotScenes.mockResolvedValueOnce(
-    Promise.resolve([hotSceneGenesisPlaza])
-  )
+  catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
@@ -89,9 +87,8 @@ test("should return a list of places with order by most_active", async () => {
   find.mockResolvedValueOnce(
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
-  catalystHotScenes.mockResolvedValueOnce(
-    Promise.resolve([hotSceneGenesisPlaza])
-  )
+  catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
@@ -123,9 +120,8 @@ test("should return a list of places with Realm details", async () => {
     Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
   )
   find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
-  catalystHotScenes.mockResolvedValueOnce(
-    Promise.resolve([hotSceneGenesisPlaza])
-  )
+  catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
