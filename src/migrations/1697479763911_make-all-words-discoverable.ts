@@ -14,15 +14,23 @@ export const shorthands: ColumnDefinitions = {
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "world_name"])
   pgm.dropIndex(PlaceModel.tableName, ["hidden", "base_position"])
-  pgm.dropIndex(PlaceModel.tableName, ["hidden", "updated_at"])
-  pgm.dropIndex(PlaceModel.tableName, ["hidden", "like_rate"])
+  pgm.dropIndex(PlaceModel.tableName, ["updated_at"])
+  pgm.dropIndex(PlaceModel.tableName, ["like_rate"])
 
   pgm.dropColumn(PlaceModel.tableName, shorthands)
 
-  pgm.createIndex(PlaceModel.tableName, ["world_name"])
-  pgm.createIndex(PlaceModel.tableName, ["base_position"])
-  pgm.createIndex(PlaceModel.tableName, ["updated_at"])
-  pgm.createIndex(PlaceModel.tableName, ["like_rate"])
+  pgm.createIndex(PlaceModel.tableName, ["world_name"], {
+    where: "disabled is false and world is true",
+  })
+  pgm.createIndex(PlaceModel.tableName, ["base_position"], {
+    where: "disabled is false and world is false",
+  })
+  pgm.createIndex(PlaceModel.tableName, ["updated_at"], {
+    where: "disabled is false and world is false",
+  })
+  pgm.createIndex(PlaceModel.tableName, ["like_rate"], {
+    where: "disabled is false and world is false",
+  })
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
