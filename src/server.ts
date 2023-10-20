@@ -33,7 +33,6 @@ import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 import worldRoute from "./entities/World/routes"
-import { checkWorldsIndexingTask } from "./entities/World/task/checkWorldsIndexingTask"
 
 const tasks = tasksManager()
 tasks.use(
@@ -49,7 +48,7 @@ tasks.use(
     }
   )
 )
-tasks.use(checkWorldsIndexingTask)
+
 tasks.use(checkPoisForCategoryUpdate)
 
 const app = express()

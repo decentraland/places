@@ -1,7 +1,6 @@
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
-import { exampleContentEntityProfile } from "../../../__data__/entities"
 import {
   sqsMessage,
   sqsMessageProfile,

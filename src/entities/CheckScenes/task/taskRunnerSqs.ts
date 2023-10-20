@@ -12,7 +12,6 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
-import { verifyWorldsIndexing } from "../../World/task/verifyWorldsIndexing"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
 import { getWorldAbout } from "../utils"
@@ -41,7 +40,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "deployed_at",
   "world",
   "world_name",
-  "hidden",
   "textsearch",
 ]
 
@@ -70,13 +68,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     const worlds = await PlaceModel.findEnabledWorldName(worldName)
 
-    const worldIndexing = await verifyWorldsIndexing([worldName])
-
     if (!worlds.length) {
       const placefromContentEntity = createPlaceFromContentEntityScene(
         contentEntityScene,
         {
-          hidden: !worldIndexing[0].shouldBeIndexed,
           disabled:
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
@@ -114,7 +109,6 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         contentEntityScene,
         {
           ...worlds[0],
-          hidden: !worldIndexing[0].shouldBeIndexed,
           disabled:
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
