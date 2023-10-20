@@ -89,10 +89,11 @@
   align-items: center;
   background: none;
   margin: 0;
+  margin-bottom: 80px;
 }
 
 .ui.modal .actions.categories-modal__footer > .ui.button {
-  width: 75%;
+  width: 100%;
   margin: 0 0 10px 0;
 }
 
