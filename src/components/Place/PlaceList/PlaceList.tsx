@@ -27,7 +27,6 @@ export type PlaceListProps = {
   size?: number
   className?: string
   loading?: boolean
-  trackingId?: string
 }
 
 interface CustomCSSProperties extends CSSProperties {
@@ -43,7 +42,6 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
     loading,
     size,
     loadingFavorites,
-    trackingId,
   } = props
 
   const isTablet = useTabletAndBelowMediaQuery()
@@ -90,16 +88,9 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               loadingFavorites={
                 props.item?.id ? loadingFavorites?.has(props.item.id) : false
               }
-              trackingData={
-                trackingId
-                  ? {
-                      id: trackingId,
-                      positionWithinList: places.findIndex(
-                        ({ id }) => id === props.item.id
-                      ),
-                    }
-                  : undefined
-              }
+              positionWithinList={places.findIndex(
+                ({ id }) => id === props.item.id
+              )}
             />
           )}
         />
@@ -118,14 +109,7 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               loadingFavorites={
                 place?.id ? loadingFavorites?.has(place.id) : false
               }
-              trackingData={
-                trackingId
-                  ? {
-                      id: trackingId,
-                      positionWithinList: key,
-                    }
-                  : undefined
-              }
+              positionWithinList={key}
             />
           )
         })}

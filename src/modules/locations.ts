@@ -120,15 +120,11 @@ export function fromWorldsOptions(
 
 export default {
   home: () => API.url(GATSBY_BASE_URL, "/"),
-  place: (position: string, trackingId?: string) => {
+  place: (position: string) => {
     const canonicalPosition = toCanonicalPosition(position)!
 
     const params: Record<string, string> = {
       position: canonicalPosition,
-    }
-
-    if (trackingId) {
-      params.t = trackingId
     }
 
     return API.url(GATSBY_BASE_URL, "/place/", params)

@@ -1,9 +1,10 @@
-import React from "react"
+import React, { useContext } from "react"
 
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
+import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
@@ -25,7 +26,6 @@ export type PlaceDescriptionProps = {
   loadingLike?: boolean
   loadingDislike?: boolean
   loadingFavorite?: boolean
-  trackingId?: string
 }
 
 export default React.memo(function PlaceDescription(
@@ -42,12 +42,13 @@ export default React.memo(function PlaceDescription(
     loadingLike,
     loadingDislike,
     loadingFavorite,
-    trackingId,
   } = props
   const l = useFormatMessage()
   const placerUrl = explorerUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()
+
+  const [trackingId] = useContext(TrackingPlacesSearchContext)
 
   return (
     <div

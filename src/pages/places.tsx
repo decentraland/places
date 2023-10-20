@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -36,6 +42,7 @@ import OverviewList from "../components/Layout/OverviewList"
 import SearchInput from "../components/Layout/SearchInput"
 import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
+import { TrackingPlacesSearchContext } from "../context/TrackingContext"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
@@ -59,6 +66,7 @@ export default function IndexPage() {
   const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
+  const [trackingId, setTrackingId] = useContext(TrackingPlacesSearchContext)
 
   // TODO: remove one of these params
   const params = useMemo(
@@ -75,8 +83,6 @@ export default function IndexPage() {
 
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
-
-  const [trackingId, setTrackingId] = useState<string | null>(null)
 
   const isFilteringByCategory = params.categories.length > 0
 
@@ -139,8 +145,9 @@ export default function IndexPage() {
 
     if (isFilteringByCategory || isSearching || params.only_view_category) {
       const newTrackingId = crypto.randomUUID()
+      setTrackingId(newTrackingId as string)
       track(SegmentPlace.PlacesSearch, {
-        trackingId: newTrackingId,
+        trackingId: trackingId,
         resultsCount: response.total,
         top10: response.data.slice(0, 10),
         search,
@@ -152,8 +159,6 @@ export default function IndexPage() {
         orderBy: params.order_by,
         place: SegmentPlace.Places,
       })
-
-      setTrackingId(newTrackingId as string)
     }
 
     if (isSearching) {
@@ -542,7 +547,6 @@ export default function IndexPage() {
                   }
                   loadingFavorites={handlingFavorite}
                   dataPlace={SegmentPlace.Places}
-                  trackingId={trackingId ? trackingId : undefined}
                 />
               )}
             {isFilteringByCategory &&
@@ -567,7 +571,6 @@ export default function IndexPage() {
                     handleFavorite(place.id, place)
                   }}
                   loading={loadingPlaces}
-                  trackingId={trackingId ? trackingId : undefined}
                 />
               ))}
             {loading && (
@@ -578,7 +581,6 @@ export default function IndexPage() {
                 loading={true}
                 size={PAGE_SIZE}
                 dataPlace={SegmentPlace.Places}
-                trackingId={trackingId ? trackingId : undefined}
               />
             )}
             {!loading &&
