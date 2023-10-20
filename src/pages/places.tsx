@@ -66,7 +66,7 @@ export default function IndexPage() {
   const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
-  const [trackingId, setTrackingId] = useContext(TrackingPlacesSearchContext)
+  const [, setTrackingId] = useContext(TrackingPlacesSearchContext)
 
   // TODO: remove one of these params
   const params = useMemo(
@@ -118,6 +118,7 @@ export default function IndexPage() {
 
     if (isFilteringByCategory && !params.only_view_category) {
       const categoriesFetch = []
+      // TODO: review later. use map instead
       for (const category of params.categories) {
         const placesFetch = Places.get().getPlaces({
           ...options,
@@ -147,7 +148,7 @@ export default function IndexPage() {
       const newTrackingId = crypto.randomUUID()
       setTrackingId(newTrackingId as string)
       track(SegmentPlace.PlacesSearch, {
-        trackingId: trackingId,
+        trackingId: newTrackingId,
         resultsCount: response.total,
         top10: response.data.slice(0, 10),
         search,

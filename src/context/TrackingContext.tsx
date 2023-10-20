@@ -2,7 +2,7 @@ import React, { Dispatch, SetStateAction, createContext, useState } from "react"
 
 export const TrackingPlacesSearchContext = createContext<
   [string, Dispatch<SetStateAction<string>>]
->([crypto.randomUUID(), function a() {} as any])
+>(["", function a() {} as any])
 
 export function TrackingPlacesSearchProvider(
   props: React.PropsWithChildren<{}>
