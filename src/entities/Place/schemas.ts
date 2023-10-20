@@ -227,10 +227,6 @@ export const placeSchema = schema({
       type: "string",
       format: "date-time",
     },
-    hidden: {
-      type: "boolean",
-      description: "True if the place is hidden",
-    },
     user_like: {
       type: "boolean",
       description: "True if user likes the place",

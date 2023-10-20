@@ -10,7 +10,7 @@ export default class CategoryModel extends Model<CategoryAttributes> {
 
   static findActiveCategories = async () => {
     const query = SQL`
-      SELECT name FROM ${table(CategoryModel)} WHERE active IS true
+      SELECT c.name FROM ${table(CategoryModel)} c  WHERE c.active IS true
     `
 
     return await CategoryModel.namedQuery<{ name: string }>(
