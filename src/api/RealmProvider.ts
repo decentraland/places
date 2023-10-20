@@ -26,6 +26,7 @@ export default class RealmProvider extends API {
   }
 
   async getHotScenes() {
+    // TODO(@lauti7): review later
     const { signal, abort } = new AbortController()
 
     const fetchOptions = new Options({ signal })
