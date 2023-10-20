@@ -19,7 +19,6 @@ import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
-import { v4 as uuidV4 } from "uuid"
 
 import Places from "../api/Places"
 import {
@@ -139,7 +138,7 @@ export default function IndexPage() {
     }
 
     if (isFilteringByCategory || isSearching || params.only_view_category) {
-      const newTrackingId = uuidV4()
+      const newTrackingId = crypto.randomUUID()
       track(SegmentPlace.PlacesSearch, {
         trackingId: newTrackingId,
         resultsCount: response.total,
