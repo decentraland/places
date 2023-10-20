@@ -11,6 +11,7 @@ import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
+import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Back } from "decentraland-ui/dist/components/Back/Back"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
@@ -410,7 +411,7 @@ export default function IndexPage() {
       <Grid stackable className="places-page">
         <Grid.Row>
           {!isMobile && !params.only_view_category && (
-            <Grid.Column tablet={3}>
+            <Grid.Column id="column-filters">
               <CategoryList
                 onChange={handleApplyCategoryListChange}
                 categories={categories}
@@ -418,8 +419,11 @@ export default function IndexPage() {
             </Grid.Column>
           )}
           <Grid.Column
-            tablet={!params.only_view_category ? 13 : 16}
-            className="places-page__list"
+            className={TokenList.join([
+              "places-page__list",
+              params.only_view_category && "full",
+            ])}
+            id="column-places-list"
           >
             {isMobile && (
               <div className="places-page__search-input--mobile">

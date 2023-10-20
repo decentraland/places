@@ -1,7 +1,6 @@
 .category-list__box {
   background-color: var(--secondary-on-modal-hover);
-  min-width: 248px;
-  max-width: 320px;
+  width: 320px;
   padding: 16px;
   border-radius: 10px;
 }
