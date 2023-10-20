@@ -5,10 +5,11 @@ import debounce from "decentraland-gatsby/dist/utils/function/debounce"
 
 import "./SearchInput.css"
 
-export default function SearchInput({
-  onChange,
-  ...rest
-}: React.InputHTMLAttributes<HTMLInputElement>) {
+export default function SearchInput(
+  props: React.InputHTMLAttributes<HTMLInputElement>
+) {
+  const { onChange, placeholder, className, ...propsRest } = props
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     onChange!(e)
   }
@@ -20,9 +21,9 @@ export default function SearchInput({
 
   return (
     <input
-      {...rest}
-      placeholder={rest.placeholder || "Search..."}
-      className={TokenList.join(["search__input", rest.className])}
+      {...propsRest}
+      placeholder={placeholder || "Search..."}
+      className={TokenList.join(["search__input", className])}
       onChange={debouncedHandleChange}
     />
   )
