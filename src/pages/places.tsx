@@ -65,10 +65,6 @@ export default function IndexPage() {
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
   )
-  const searchParams = useMemo(
-    () => new URLSearchParams(location.search),
-    [location.search]
-  )
   const [offset, setOffset] = useState(0)
 
   const isSearching = !!params.search && params.search.length > 2
@@ -96,7 +92,11 @@ export default function IndexPage() {
       pageSize: PAGE_SIZE,
     })
 
-    const only_view_places: AggregatePlaceAttributes[] = []
+    let response = {
+      total: 0,
+      data: [] as AggregatePlaceAttributes[],
+      ok: false,
+    }
 
     if (params.only_view_category) {
       const placesFetch = await Places.get().getPlaces({
@@ -105,15 +105,12 @@ export default function IndexPage() {
         categories: [params.only_view_category],
         search: isSearching ? search : undefined,
       })
-      only_view_places.push(...placesFetch.data)
+      response.data = placesFetch.data
+      response.ok = placesFetch.ok
+      response.total = placesFetch.total
     }
 
-    let response = {
-      total: 0,
-      data: [] as AggregatePlaceAttributes[],
-      ok: false,
-    }
-    if (isFilteringByCategory) {
+    if (isFilteringByCategory && !params.only_view_category) {
       const categoriesFetch = []
       for (const category of params.categories) {
         const placesFetch = Places.get().getPlaces({
@@ -131,7 +128,7 @@ export default function IndexPage() {
         response.total += res.total
         response.data.push(...res.data)
       }
-    } else {
+    } else if (!params.only_view_category) {
       const placesFetch = await Places.get().getPlaces({
         ...options,
         offset,
@@ -140,7 +137,7 @@ export default function IndexPage() {
       response = placesFetch
     }
 
-    if (isFilteringByCategory || isSearching) {
+    if (isFilteringByCategory || isSearching || params.only_view_category) {
       const newTrackingId = uuidV4()
       track(SegmentPlace.PlacesSearch, {
         trackingId: newTrackingId,
@@ -160,17 +157,13 @@ export default function IndexPage() {
     }
 
     if (isSearching) {
-      if (params.only_view_category) {
-        setAllPlaces(only_view_places)
-      } else {
-        setAllPlaces(response.data)
-      }
+      setAllPlaces(response.data)
     } else {
-      setAllPlaces((allPlaces) => [
-        ...allPlaces,
-        ...only_view_places,
-        ...response.data,
-      ])
+      if (params.only_view_category) {
+        setAllPlaces(response.data)
+      } else {
+        setAllPlaces((allPlaces) => [...allPlaces, ...response.data])
+      }
     }
 
     if (Number.isSafeInteger(response.total)) {
@@ -191,11 +184,6 @@ export default function IndexPage() {
   ])
 
   useEffect(() => {
-    setAllPlaces([])
-    loadPlaces()
-  }, [isSearching, search])
-
-  useEffect(() => {
     setOffset(0)
   }, [
     search,
@@ -208,7 +196,11 @@ export default function IndexPage() {
   ])
 
   useEffect(() => {
-    if (allPlaces.length > PAGE_SIZE && !isFilteringByCategory) {
+    if (
+      allPlaces.length > PAGE_SIZE &&
+      !isFilteringByCategory &&
+      !params.only_view_category
+    ) {
       setTimeout(
         () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
         0
@@ -249,24 +241,20 @@ export default function IndexPage() {
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newParams = new URLSearchParams(searchParams)
+      const newParams: PlacesPageOptions = {
+        ...params,
+      }
+
       if (e.target.value) {
-        newParams.set("search", e.target.value)
+        newParams.search = e.target.value
       } else {
-        newParams.delete("search")
+        newParams.search = ""
       }
 
-      let target = location.pathname
-      const search = newParams.toString()
-      // location
-      // navigate to /search+=?search=${search}
-      if (search) {
-        target += "?" + search
-      }
-
-      navigate(target)
+      setAllPlaces([])
+      navigate(locations.places(newParams))
     },
-    [location.pathname, params, location.search]
+    [params]
   )
 
   const handleCategoriesFilterChange = useCallback(
@@ -289,16 +277,21 @@ export default function IndexPage() {
       setAllPlaces([])
       navigate(locations.places(newParams))
     },
-    [params.categories, params.order_by]
+    [params]
   )
 
   const [ff] = useFeatureFlagContext()
 
   const toggleViewAllCategory = useCallback(
-    (categoryId?: string) => {
+    (categoryId: string | null, back?: boolean) => {
       const newParams = { ...params }
       if (params.only_view_category) {
         newParams.only_view_category = ""
+        if (!back) {
+          newParams.categories = newParams.categories.filter(
+            (category) => category != params.only_view_category
+          )
+        }
       } else {
         newParams.only_view_category = categoryId!
       }
@@ -306,7 +299,7 @@ export default function IndexPage() {
       setAllPlaces([])
       navigate(locations.places(newParams))
     },
-    [params.only_view_category]
+    [params]
   )
 
   const handleApplyCategoryListChange = useCallback(
@@ -416,21 +409,24 @@ export default function IndexPage() {
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>
-          {!isMobile && (
-            <Grid.Column tablet={4}>
+          {!isMobile && !params.only_view_category && (
+            <Grid.Column tablet={3}>
               <CategoryList
                 onChange={handleApplyCategoryListChange}
                 categories={categories}
               />
             </Grid.Column>
           )}
-          <Grid.Column tablet={12} className="places-page__list">
+          <Grid.Column
+            tablet={!params.only_view_category ? 13 : 16}
+            className="places-page__list"
+          >
             {isMobile && (
               <div className="places-page__search-input--mobile">
                 <SearchInput
                   placeholder={l(`navigation.search.${NavigationTab.Places}`)}
                   onChange={handleSearchChange}
-                  defaultValue={searchParams.get("search") || ""}
+                  defaultValue={params.search}
                 />
               </div>
             )}
@@ -440,7 +436,7 @@ export default function IndexPage() {
                   <SearchInput
                     placeholder={l(`navigation.search.${NavigationTab.Places}`)}
                     onChange={handleSearchChange}
-                    defaultValue={searchParams.get("search") || ""}
+                    defaultValue={params.search}
                   />
                 </HeaderMenu.Left>
                 <HeaderMenu.Right>
@@ -522,12 +518,12 @@ export default function IndexPage() {
               )}
               {params.only_view_category && (
                 <div className="only-view-category-navbar__box">
-                  <Back onClick={() => toggleViewAllCategory()} />
+                  <Back onClick={() => toggleViewAllCategory(null, true)} />
                   <div>
                     <CategoryFilter
                       category={params.only_view_category}
                       active
-                      onChange={() => toggleViewAllCategory()}
+                      onChange={() => toggleViewAllCategory(null, false)}
                       actionIcon={<Close width="20" height="20" />}
                     />
                   </div>
