@@ -220,7 +220,6 @@ export default function FavoritesPage() {
                         loadingFavorites={
                           item?.id ? handlingFavorite?.has(item.id) : false
                         }
-                        search={search}
                       />
                     )
                   })}
@@ -290,7 +289,6 @@ export default function FavoritesPage() {
                           loadingFavorites={
                             item?.id ? handlingFavorite?.has(item.id) : false
                           }
-                          search={search}
                         />
                       )
                     })}

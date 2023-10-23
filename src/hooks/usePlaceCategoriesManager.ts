@@ -22,8 +22,21 @@ export default function usePlaceCategoriesManager(
 
   const [categories, setCategories] = useState([] as Category[])
 
+  const [categoriesStack, setCateoriesStack] = useState([] as Category[])
+
   useEffect(() => {
-    originalCategories.length > 0 && setCategories(originalCategories)
+    if (originalCategories.length > 0) {
+      setCategories(originalCategories)
+    }
+
+    // when loads with params
+    if (!categoriesStack.length) {
+      setCateoriesStack(originalCategories.filter(({ active }) => active))
+    } else {
+      if (!initActiveCategories?.length) {
+        setCateoriesStack([])
+      }
+    }
   }, [originalCategories])
 
   const previousActiveCategories = useMemo(
@@ -33,14 +46,17 @@ export default function usePlaceCategoriesManager(
 
   const handleAddCategory = useCallback(
     (categoryToActive: string) => {
-      setCategories((prevCategories) =>
-        prevCategories.map((category) => ({
-          ...category,
-          active: categoryToActive === category.name || category.active,
-        }))
-      )
+      const newCategories = categories.map((category) => ({
+        ...category,
+        active: categoryToActive === category.name || category.active,
+      }))
+      setCategories(newCategories)
+      setCateoriesStack((currentStack) => [
+        newCategories.find(({ name }) => name == categoryToActive)!,
+        ...currentStack,
+      ])
     },
-    [setCategories]
+    [setCateoriesStack, categories]
   )
 
   const handleRemoveCategory = useCallback(
@@ -51,18 +67,25 @@ export default function usePlaceCategoriesManager(
           active: categoryToRemove === category.name ? false : category.active,
         }))
       )
+      setCateoriesStack((categoriesStack) =>
+        categoriesStack.filter(({ name }) => name != categoryToRemove)
+      )
     },
-    [setCategories]
+    [setCategories, setCateoriesStack]
   )
 
   const handleSyncCategory = useCallback(
-    (newCategoriesState: Category[]) => setCategories(newCategoriesState),
+    (newCategoriesState: Category[]) => {
+      setCategories(newCategoriesState)
+      setCateoriesStack(newCategoriesState.filter(({ active }) => active))
+    },
     [setCategories]
   )
 
   return [
     categories,
     previousActiveCategories,
+    categoriesStack,
     {
       handleAddCategory,
       handleRemoveCategory,

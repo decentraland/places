@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from "react"
+import React, { useCallback, useContext, useMemo } from "react"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
@@ -8,6 +8,7 @@ import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
+import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
@@ -29,13 +30,22 @@ export type PlaceCardProps = {
   dataPlace?: SegmentPlace
   loading?: boolean
   loadingFavorites?: boolean
-  search?: string
+  positionWithinList?: number
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const track = useTrackContext()
 
-  const { place, loading, loadingFavorites, onClickFavorite, dataPlace } = props
+  const {
+    place,
+    loading,
+    loadingFavorites,
+    onClickFavorite,
+    dataPlace,
+    positionWithinList,
+  } = props
+
+  const [trackingId] = useContext(TrackingPlacesSearchContext)
 
   const handleClickFavorite = useCallback(
     (e: React.MouseEvent<any>) => {
@@ -60,12 +70,11 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
-    if (props.search) {
-      track(SegmentPlace.PlaceCardClick, {
-        placeId: place?.id,
-        search: props.search,
-      })
-    }
+    track(SegmentPlace.PlaceCardClick, {
+      placeId: place?.id,
+      trackingId: trackingId,
+      positionWithinList: positionWithinList,
+    })
 
     href && navigate(href)
   }
@@ -116,6 +125,7 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
               data-event={SegmentPlace.JumpIn}
               data-place-id={place?.id}
               data-place={dataPlace}
+              data-trackingId={trackingId}
             />
             <FavoriteButton
               active={!!place?.user_favorite}

@@ -42,10 +42,6 @@ export default function FavoritesPage() {
     const paginationResult = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
     })
-    track(SegmentPlace.FilterChange, {
-      filters: paginationResult,
-      place: SegmentPlace.MyPlace,
-    })
 
     return [
       { limit: paginationResult.limit, offset: paginationResult.offset },
@@ -72,10 +68,7 @@ export default function FavoritesPage() {
       e.preventDefault()
       e.stopPropagation()
       const newParams = { page: Number(props.activePage ?? 1) }
-      track(SegmentPlace.FilterChange, {
-        filters: newParams,
-        place: SegmentPlace.FavoritesWorldsChangePagination,
-      })
+
       navigate(locations.favoritesPlaces(newParams))
     },
     [params, track]
@@ -215,7 +208,6 @@ export default function FavoritesPage() {
           className="favorites-list__place-list"
           loadingFavorites={handlingFavorite}
           dataPlace={SegmentPlace.FavoritesPlaces}
-          search={search}
         />
         {!accountState.loading && worldList.length !== 0 && (
           <div className="places__pagination">

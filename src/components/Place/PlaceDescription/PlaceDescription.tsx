@@ -1,9 +1,10 @@
-import React from "react"
+import React, { useContext } from "react"
 
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
+import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
@@ -46,6 +47,8 @@ export default React.memo(function PlaceDescription(
   const placerUrl = explorerUrl(place)
 
   const handleJumpInTrack = useTrackLinkContext()
+
+  const [trackingId] = useContext(TrackingPlacesSearchContext)
 
   return (
     <div
@@ -100,6 +103,7 @@ export default React.memo(function PlaceDescription(
               data-event={SegmentPlace.JumpIn}
               data-place-id={place?.id}
               data-place={dataPlace}
+              data-trackingId={trackingId}
             />
             <div className="place-description__box-wrapper">
               <ShareBox onClick={onClickShare} loading={loading} />

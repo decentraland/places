@@ -5,7 +5,13 @@
 }
 
 .category-buttons__container > .category-button {
-  margin: 0 17px 17px 0;
+  margin: 0 16px 16px 0;
+}
+
+@media (max-width: 768px) {
+  .category-buttons__container > .category-button {
+    margin: 0 8px 8px 0;
+  }
 }
 
 .category-buttons__container > .dg.Link.ui.button.category-button {

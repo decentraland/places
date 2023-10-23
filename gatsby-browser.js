@@ -32,15 +32,19 @@ import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { TrackingPlacesSearchProvider } from "./src/context/TrackingContext"
+
 export const registerServiceWorker = () => true
 
 const ssoUrl = env("SSO_URL")
 
 export const wrapRootElement = ({ element }) => (
   <AuthProvider sso={ssoUrl}>
-    <FeatureFlagProvider applicationName={["places", "dapps"]}>
-      <ShareProvider>{element}</ShareProvider>
-    </FeatureFlagProvider>
+    <TrackingPlacesSearchProvider>
+      <FeatureFlagProvider applicationName={["places", "dapps"]}>
+        <ShareProvider>{element}</ShareProvider>
+      </FeatureFlagProvider>
+    </TrackingPlacesSearchProvider>
   </AuthProvider>
 )
 

@@ -122,7 +122,12 @@ export default {
   home: () => API.url(GATSBY_BASE_URL, "/"),
   place: (position: string) => {
     const canonicalPosition = toCanonicalPosition(position)!
-    return API.url(GATSBY_BASE_URL, "/place/", { position: canonicalPosition })
+
+    const params: Record<string, string> = {
+      position: canonicalPosition,
+    }
+
+    return API.url(GATSBY_BASE_URL, "/place/", params)
   },
   world: (name: string) => {
     return API.url(GATSBY_BASE_URL, "/world/", { name: name })

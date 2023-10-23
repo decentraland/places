@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react"
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+} from "react"
 
 import { Helmet } from "react-helmet"
 
@@ -11,6 +17,7 @@ import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
+import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Back } from "decentraland-ui/dist/components/Back/Back"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
@@ -35,6 +42,7 @@ import OverviewList from "../components/Layout/OverviewList"
 import SearchInput from "../components/Layout/SearchInput"
 import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
+import { TrackingPlacesSearchContext } from "../context/TrackingContext"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
@@ -58,14 +66,11 @@ export default function IndexPage() {
   const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
+  const [, setTrackingId] = useContext(TrackingPlacesSearchContext)
 
   // TODO: remove one of these params
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
-    [location.search]
-  )
-  const searchParams = useMemo(
-    () => new URLSearchParams(location.search),
     [location.search]
   )
   const [offset, setOffset] = useState(0)
@@ -84,6 +89,7 @@ export default function IndexPage() {
   const [
     categories,
     previousActiveCategories,
+    categoriesStack,
     { handleAddCategory, handleRemoveCategory, handleSyncCategory },
   ] = usePlaceCategoriesManager(params.categories)
 
@@ -92,12 +98,11 @@ export default function IndexPage() {
       pageSize: PAGE_SIZE,
     })
 
-    track(SegmentPlace.FilterChange, {
-      filters: options,
-      place: SegmentPlace.Places,
-    })
-
-    const only_view_places: AggregatePlaceAttributes[] = []
+    let response = {
+      total: 0,
+      data: [] as AggregatePlaceAttributes[],
+      ok: false,
+    }
 
     if (params.only_view_category) {
       const placesFetch = await Places.get().getPlaces({
@@ -106,16 +111,14 @@ export default function IndexPage() {
         categories: [params.only_view_category],
         search: isSearching ? search : undefined,
       })
-      only_view_places.push(...placesFetch.data)
+      response.data = placesFetch.data
+      response.ok = placesFetch.ok
+      response.total = placesFetch.total
     }
 
-    let response = {
-      total: 0,
-      data: [] as AggregatePlaceAttributes[],
-      ok: false,
-    }
-    if (params.categories.length) {
+    if (isFilteringByCategory && !params.only_view_category) {
       const categoriesFetch = []
+      // TODO: review later. use map instead
       for (const category of params.categories) {
         const placesFetch = Places.get().getPlaces({
           ...options,
@@ -132,7 +135,7 @@ export default function IndexPage() {
         response.total += res.total
         response.data.push(...res.data)
       }
-    } else {
+    } else if (!params.only_view_category) {
       const placesFetch = await Places.get().getPlaces({
         ...options,
         offset,
@@ -141,25 +144,32 @@ export default function IndexPage() {
       response = placesFetch
     }
 
-    if (isSearching) {
+    if (isFilteringByCategory || isSearching || params.only_view_category) {
+      const newTrackingId = crypto.randomUUID()
+      setTrackingId(newTrackingId as string)
       track(SegmentPlace.PlacesSearch, {
+        trackingId: newTrackingId,
         resultsCount: response.total,
         top10: response.data.slice(0, 10),
         search,
+        categories: isFilteringByCategory ? params.categories : undefined,
+        viewAllCategory:
+          params.only_view_category != ""
+            ? params.only_view_category
+            : undefined,
+        orderBy: params.order_by,
         place: SegmentPlace.Places,
       })
+    }
 
-      if (params.only_view_category) {
-        setAllPlaces(only_view_places)
-      } else {
-        setAllPlaces(response.data)
-      }
+    if (isSearching) {
+      setAllPlaces(response.data)
     } else {
-      setAllPlaces((allPlaces) => [
-        ...allPlaces,
-        ...only_view_places,
-        ...response.data,
-      ])
+      if (params.only_view_category) {
+        setAllPlaces(response.data)
+      } else {
+        setAllPlaces((allPlaces) => [...allPlaces, ...response.data])
+      }
     }
 
     if (Number.isSafeInteger(response.total)) {
@@ -180,11 +190,6 @@ export default function IndexPage() {
   ])
 
   useEffect(() => {
-    setAllPlaces([])
-    loadPlaces()
-  }, [isSearching, search])
-
-  useEffect(() => {
     setOffset(0)
   }, [
     search,
@@ -197,7 +202,11 @@ export default function IndexPage() {
   ])
 
   useEffect(() => {
-    if (allPlaces.length > PAGE_SIZE) {
+    if (
+      allPlaces.length > PAGE_SIZE &&
+      !isFilteringByCategory &&
+      !params.only_view_category
+    ) {
       setTimeout(
         () => window.scrollBy({ top: 500, left: 0, behavior: "smooth" }),
         0
@@ -216,11 +225,7 @@ export default function IndexPage() {
     (e: React.MouseEvent<HTMLButtonElement, MouseEvent>) => {
       e.preventDefault()
       e.stopPropagation()
-      track(SegmentPlace.FilterChange, {
-        filters: params,
-        place: SegmentPlace.PlacesShowMore,
-        search,
-      })
+
       loadPlaces()
       setOffset(offset + PAGE_SIZE)
     },
@@ -234,10 +239,7 @@ export default function IndexPage() {
         PlaceListOrderBy.LIKE_SCORE_BEST
       const newParams = { ...params, order_by: value, page: 1 }
       setAllPlaces([])
-      track(SegmentPlace.FilterChange, {
-        filters: newParams,
-        place: SegmentPlace.PlacesChangeOrder,
-      })
+
       navigate(locations.places(newParams))
     },
     [params, track]
@@ -245,24 +247,20 @@ export default function IndexPage() {
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const newParams = new URLSearchParams(searchParams)
+      const newParams: PlacesPageOptions = {
+        ...params,
+      }
+
       if (e.target.value) {
-        newParams.set("search", e.target.value)
+        newParams.search = e.target.value
       } else {
-        newParams.delete("search")
+        newParams.search = ""
       }
 
-      let target = location.pathname
-      const search = newParams.toString()
-      // location
-      // navigate to /search+=?search=${search}
-      if (search) {
-        target += "?" + search
-      }
-
-      navigate(target)
+      setAllPlaces([])
+      navigate(locations.places(newParams))
     },
-    [location.pathname, params, location.search]
+    [params]
   )
 
   const handleCategoriesFilterChange = useCallback(
@@ -285,16 +283,21 @@ export default function IndexPage() {
       setAllPlaces([])
       navigate(locations.places(newParams))
     },
-    [params.categories, params.order_by]
+    [params]
   )
 
   const [ff] = useFeatureFlagContext()
 
   const toggleViewAllCategory = useCallback(
-    (categoryId?: string) => {
+    (categoryId: string | null, back?: boolean) => {
       const newParams = { ...params }
       if (params.only_view_category) {
         newParams.only_view_category = ""
+        if (!back) {
+          newParams.categories = newParams.categories.filter(
+            (category) => category != params.only_view_category
+          )
+        }
       } else {
         newParams.only_view_category = categoryId!
       }
@@ -302,7 +305,7 @@ export default function IndexPage() {
       setAllPlaces([])
       navigate(locations.places(newParams))
     },
-    [params.only_view_category]
+    [params]
   )
 
   const handleApplyCategoryListChange = useCallback(
@@ -362,6 +365,19 @@ export default function IndexPage() {
     [categories, handleCategoriesFilterChange]
   )
 
+  const handleClearAll = useCallback(() => {
+    if (previousActiveCategories.length) {
+      handleCategoriesFilterChange([])
+    } else {
+      handleSyncCategory(
+        categories.map((category) => ({
+          ...category,
+          active: false,
+        }))
+      )
+    }
+  }, [previousActiveCategories, categories])
+
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
   }
@@ -399,21 +415,27 @@ export default function IndexPage() {
       <Navigation activeTab={NavigationTab.Places} />
       <Grid stackable className="places-page">
         <Grid.Row>
-          {!isMobile && (
-            <Grid.Column tablet={4}>
+          {!isMobile && !params.only_view_category && (
+            <Grid.Column id="column-filters">
               <CategoryList
                 onChange={handleApplyCategoryListChange}
                 categories={categories}
               />
             </Grid.Column>
           )}
-          <Grid.Column tablet={12} className="places-page__list">
+          <Grid.Column
+            className={TokenList.join([
+              "places-page__list",
+              params.only_view_category && "full",
+            ])}
+            id="column-places-list"
+          >
             {isMobile && (
               <div className="places-page__search-input--mobile">
                 <SearchInput
                   placeholder={l(`navigation.search.${NavigationTab.Places}`)}
                   onChange={handleSearchChange}
-                  defaultValue={searchParams.get("search") || ""}
+                  defaultValue={params.search}
                 />
               </div>
             )}
@@ -423,7 +445,7 @@ export default function IndexPage() {
                   <SearchInput
                     placeholder={l(`navigation.search.${NavigationTab.Places}`)}
                     onChange={handleSearchChange}
-                    defaultValue={searchParams.get("search") || ""}
+                    defaultValue={params.search}
                   />
                 </HeaderMenu.Left>
                 <HeaderMenu.Right>
@@ -494,7 +516,7 @@ export default function IndexPage() {
                   />
                   <span
                     className="clear-all-filter-btn"
-                    onClick={() => handleCategoriesFilterChange([])}
+                    onClick={handleClearAll}
                   >
                     <Filter>
                       <Trash width="20" height="20" />{" "}
@@ -505,12 +527,12 @@ export default function IndexPage() {
               )}
               {params.only_view_category && (
                 <div className="only-view-category-navbar__box">
-                  <Back onClick={() => toggleViewAllCategory()} />
+                  <Back onClick={() => toggleViewAllCategory(null, true)} />
                   <div>
                     <CategoryFilter
                       category={params.only_view_category}
                       active
-                      onChange={() => toggleViewAllCategory()}
+                      onChange={() => toggleViewAllCategory(null, false)}
                       actionIcon={<Close width="20" height="20" />}
                     />
                   </div>
@@ -526,35 +548,32 @@ export default function IndexPage() {
                   }
                   loadingFavorites={handlingFavorite}
                   dataPlace={SegmentPlace.Places}
-                  search={search}
                 />
               )}
             {isFilteringByCategory &&
               !params.only_view_category &&
-              categories
-                .filter(({ active }) => active)
-                .map((category) => (
-                  <OverviewList
-                    key={category.name}
-                    title={
-                      <>
-                        {l(`categories.${category.name}`)}{" "}
-                        <span>{category.count}</span>
-                      </>
-                    }
-                    places={places.filter((place) =>
-                      place.categories.includes(category.name)
-                    )}
-                    onClick={() => toggleViewAllCategory(category.name)}
-                    loadingFavorites={handlingFavorite}
-                    search={search}
-                    dataPlace={SegmentPlace.Places}
-                    onClickFavorite={(_, place) => {
-                      handleFavorite(place.id, place)
-                    }}
-                    loading={loadingPlaces}
-                  />
-                ))}
+              categoriesStack.map((category) => (
+                <OverviewList
+                  key={category.name}
+                  title={
+                    <>
+                      {l(`categories.${category.name}`)}{" "}
+                      <span>{category.count}</span>
+                    </>
+                  }
+                  places={places.filter((place) =>
+                    place.categories.includes(category.name)
+                  )}
+                  onClick={() => toggleViewAllCategory(category.name)}
+                  loadingFavorites={handlingFavorite}
+                  search={search}
+                  dataPlace={SegmentPlace.Places}
+                  onClickFavorite={(_, place) => {
+                    handleFavorite(place.id, place)
+                  }}
+                  loading={loadingPlaces}
+                />
+              ))}
             {loading && (
               <PlaceList
                 className="places-page__list-loading"
@@ -596,7 +615,7 @@ export default function IndexPage() {
             }}
             onClearAll={() => {
               setIsCategoriesModalVisible(false)
-              handleCategoriesFilterChange([])
+              handleClearAll()
             }}
             onChange={handleCategoryModalChange}
             onActionClick={handleApplyModalChange}

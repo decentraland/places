@@ -53,7 +53,7 @@ export const CategoryModal = React.memo((props: CategoryModalProps) => {
           basic
           content={l("components.modal.category.clear_all")}
           onClick={onClearAll}
-          disabled={!!selectedCategories.size}
+          disabled={selectedCategories.size === 0}
           className="clear-all"
         />
         <p

@@ -194,3 +194,15 @@
 .ui.modal .ui.button.category-btn {
   background-color: var(--text-on-primary);
 }
+
+#column-filters {
+  width: 320px;
+}
+
+#column-places-list {
+  width: calc(100% - 320px);
+}
+
+#column-places-list.full {
+  width: 100%;
+}
