@@ -1,4 +1,6 @@
 import API from "decentraland-gatsby/dist/utils/api/API"
+import Options from "decentraland-gatsby/dist/utils/api/Options"
+import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { HotScene } from "../entities/Place/types"
@@ -24,6 +26,19 @@ export default class RealmProvider extends API {
   }
 
   async getHotScenes() {
-    return this.fetch<HotScene[]>("/hot-scenes")
+    // TODO(@lauti7): review later
+    const { signal, abort } = new AbortController()
+
+    const fetchOptions = new Options({ signal })
+
+    const timeoutId = setTimeout(() => {
+      abort()
+    }, Time.Second * 10)
+
+    const response = this.fetch<HotScene[]>("/hot-scenes", fetchOptions)
+
+    clearTimeout(timeoutId)
+
+    return response
   }
 }

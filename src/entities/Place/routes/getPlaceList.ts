@@ -73,12 +73,13 @@ export const getPlaceList = Router.memo(
       categories: query.categories,
     }
 
-    const [data, total, hotScenes, sceneStats] = await Promise.all([
+    const [data, total, sceneStats] = await Promise.all([
       PlaceModel.findWithAggregates(options),
       PlaceModel.countPlaces(options),
-      getHotScenes(),
       getSceneStats(),
     ])
+
+    const hotScenes = getHotScenes()
 
     const response = placesWithUserVisits(
       placesWithUserCount(data, hotScenes, {

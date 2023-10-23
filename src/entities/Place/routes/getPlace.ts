@@ -34,7 +34,7 @@ export const getPlace = Router.memo(
       )
     }
 
-    const hotScenes = await getHotScenes()
+    const hotScenes = getHotScenes()
     const sceneStats = await getSceneStats()
     let aggregatedPlaces = [place]
     aggregatedPlaces = placesWithUserCount(aggregatedPlaces, hotScenes, {
