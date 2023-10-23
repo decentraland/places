@@ -557,28 +557,28 @@ export default function IndexPage() {
                   place.categories.includes(category.name)
                 )
 
-                if (!categorizedPlaces.length) return null
-
-                return (
-                  <OverviewList
-                    key={category.name}
-                    title={
-                      <>
-                        {l(`categories.${category.name}`)}{" "}
-                        <span>{category.count}</span>
-                      </>
-                    }
-                    places={categorizedPlaces}
-                    onClick={() => toggleViewAllCategory(category.name)}
-                    loadingFavorites={handlingFavorite}
-                    search={search}
-                    dataPlace={SegmentPlace.Places}
-                    onClickFavorite={(_, place) => {
-                      handleFavorite(place.id, place)
-                    }}
-                    loading={loadingPlaces}
-                  />
-                )
+                if (categorizedPlaces.length > 0) {
+                  return (
+                    <OverviewList
+                      key={category.name}
+                      title={
+                        <>
+                          {l(`categories.${category.name}`)}{" "}
+                          <span>{category.count}</span>
+                        </>
+                      }
+                      places={categorizedPlaces}
+                      onClick={() => toggleViewAllCategory(category.name)}
+                      loadingFavorites={handlingFavorite}
+                      search={search}
+                      dataPlace={SegmentPlace.Places}
+                      onClickFavorite={(_, place) => {
+                        handleFavorite(place.id, place)
+                      }}
+                      loading={loadingPlaces}
+                    />
+                  )
+                }
               })}
             {loading && (
               <PlaceList
