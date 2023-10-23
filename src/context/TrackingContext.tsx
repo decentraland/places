@@ -7,7 +7,7 @@ export const TrackingPlacesSearchContext = createContext<
 export function TrackingPlacesSearchProvider(
   props: React.PropsWithChildren<{}>
 ) {
-  const [trackingId, setTrackingId] = useState(crypto.randomUUID() as string)
+  const [trackingId, setTrackingId] = useState("")
 
   return (
     <TrackingPlacesSearchContext.Provider value={[trackingId, setTrackingId]}>
