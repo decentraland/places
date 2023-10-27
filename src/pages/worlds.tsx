@@ -6,24 +6,33 @@ import { useLocation } from "@gatsbyjs/reach-router"
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
+import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { Link } from "decentraland-gatsby/dist/plugins/intl"
+import { Link, navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import env from "decentraland-gatsby/dist/utils/env"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
+import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
+import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
+import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
 import Places from "../api/Places"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
+import SearchInput from "../components/Layout/SearchInput"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
-import { WorldListOptions } from "../entities/World/types"
+import { getWorldListQuerySchema } from "../entities/World/schemas"
+import { WorldListOrderBy } from "../entities/World/types"
 import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
-import { toWorldsOptions } from "../modules/locations"
+import locations, {
+  WorldsPageOptions,
+  toWorldsOptions,
+} from "../modules/locations"
 import { SegmentPlace } from "../modules/segment"
 
 import "./worlds.css"
@@ -37,6 +46,7 @@ const WORLDS_FIND_OUT_URL = env(
 
 export default function WorldsPage() {
   const l = useFormatMessage()
+  const isMobile = useMobileMediaQuery()
   const location = useLocation()
   const track = useTrackContext()
   const params = useMemo(
@@ -52,7 +62,7 @@ export default function WorldsPage() {
   const [allWorlds, setAllWorlds] = useState<AggregatePlaceAttributes[]>([])
 
   const [loadingWorlds, loadWorlds] = useAsyncTask(async () => {
-    const options: Partial<WorldListOptions> = API.fromPagination(params, {
+    const options: Partial<WorldsPageOptions> = API.fromPagination(params, {
       pageSize: PAGE_SIZE,
     })
 
@@ -127,6 +137,40 @@ export default function WorldsPage() {
     [params, track, offset]
   )
 
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newParams: Partial<WorldsPageOptions> = {
+        ...params,
+      }
+
+      if (e.target.value) {
+        newParams.search = e.target.value
+      } else {
+        newParams.search = ""
+      }
+
+      setAllWorlds([])
+      navigate(locations.worlds(newParams))
+    },
+    [params]
+  )
+
+  const handleChangeOrder = useCallback(
+    (
+      _: React.MouseEvent<HTMLDivElement, MouseEvent>,
+      props: { value?: any }
+    ) => {
+      const value =
+        oneOf(props.value, getWorldListQuerySchema.properties.order_by.enum) ??
+        WorldListOrderBy.LIKE_SCORE_BEST
+      const newParams = { ...params, order_by: value, page: 1 }
+      setAllWorlds([])
+
+      navigate(locations.worlds(newParams))
+    },
+    [params, track]
+  )
+
   const [ff] = useFeatureFlagContext()
 
   if (ff.flags[FeatureFlags.Maintenance]) {
@@ -180,6 +224,47 @@ export default function WorldsPage() {
         </Grid.Row>
         <Grid.Row>
           <Grid.Column tablet={16} className="worlds-page__list">
+            {isMobile && (
+              <div className="places-page__search-input--mobile">
+                <SearchInput
+                  placeholder={l(`navigation.search.${NavigationTab.Worlds}`)}
+                  onChange={handleSearchChange}
+                  defaultValue={params.search}
+                />
+              </div>
+            )}
+            {!isMobile && (
+              <HeaderMenu stackable>
+                <HeaderMenu.Left>
+                  <SearchInput
+                    placeholder={l(`navigation.search.${NavigationTab.Worlds}`)}
+                    onChange={handleSearchChange}
+                    defaultValue={params.search}
+                  />
+                </HeaderMenu.Left>
+                <HeaderMenu.Right>
+                  <Dropdown
+                    text={l(`general.order_by.${params.order_by}`)}
+                    direction="left"
+                  >
+                    <Dropdown.Menu>
+                      {getWorldListQuerySchema.properties.order_by.enum.map(
+                        (orderBy) => {
+                          return (
+                            <Dropdown.Item
+                              key={orderBy}
+                              value={orderBy}
+                              text={l(`general.order_by.${orderBy}`)}
+                              onClick={handleChangeOrder}
+                            />
+                          )
+                        }
+                      )}
+                    </Dropdown.Menu>
+                  </Dropdown>
+                </HeaderMenu.Right>
+              </HeaderMenu>
+            )}
             {allWorlds.length > 0 && (
               <PlaceList
                 places={places}

@@ -233,7 +233,10 @@ export default function IndexPage() {
   )
 
   const handleChangeOrder = useCallback(
-    (_: React.SyntheticEvent<any>, props: { value?: any }) => {
+    (
+      _: React.MouseEvent<HTMLDivElement, MouseEvent>,
+      props: { value?: any }
+    ) => {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
         PlaceListOrderBy.LIKE_SCORE_BEST
