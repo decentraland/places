@@ -555,7 +555,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       query
     )
 
-    return results[0].total
+    return Number(results[0].total)
   }
 
   static async findWorldNames(): Promise<{ world_name: string }[]> {
@@ -584,7 +584,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       query
     )
 
-    return results[0].total
+    return Number(results[0].total)
   }
 
   static async findEnabledByCategory(
