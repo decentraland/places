@@ -104,7 +104,8 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
               </Label>
             </div>
           </div>
-          {place?.categories.length && (
+
+          {place?.categories.length > 0 && (
             <div className="place-details__categories-container">
               <h3>{l("components.place_detail.appears_on")}</h3>
               {place.categories.map((id) => (
