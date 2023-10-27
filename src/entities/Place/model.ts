@@ -555,7 +555,36 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       query
     )
 
-    return results[0].total
+    return Number(results[0].total)
+  }
+
+  static async findWorldNames(): Promise<{ world_name: string }[]> {
+    const sql = SQL`
+      SELECT p.world_name
+      FROM ${table(this)} p
+      WHERE
+        p.disabled is false AND world is true
+      ORDER BY p.world_name ASC
+    `
+
+    return await this.namedQuery("find_world_names", sql)
+  }
+
+  static async countWorldNames() {
+    const query = SQL`
+      SELECT
+        count(*) as total
+      FROM ${table(this)} p
+      WHERE
+        p.disabled is false
+        AND p.world is true
+    `
+    const results: { total: number }[] = await this.namedQuery(
+      "count_world_names",
+      query
+    )
+
+    return Number(results[0].total)
   }
 
   static async findEnabledByCategory(
