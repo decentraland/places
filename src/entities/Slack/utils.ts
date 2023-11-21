@@ -39,7 +39,9 @@ export async function notifyNewPlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "plain_text",
-          text: [`${place.title}`, place.description].join("\n\n"),
+          text: [place.title, place.description, `UUID: ${place.id}`].join(
+            "\n\n"
+          ),
         },
         accessory: {
           type: "image",
@@ -72,7 +74,9 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
         type: "section",
         text: {
           type: "plain_text",
-          text: [`${place.title}`, place.description].join("\n\n"),
+          text: [place.title, place.description, `UUID: ${place.id}`].join(
+            "\n\n"
+          ),
         },
         accessory: {
           type: "image",
@@ -114,7 +118,7 @@ export async function notifyDisablePlaces(places: PlaceAttributes[]) {
               (place) =>
                 `${place.title} (${
                   place.world ? place.world_name : place.base_position
-                })`
+                })\nUUID: ${place.id}`
             )
             .join("\n\n"),
         },
