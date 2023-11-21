@@ -123,7 +123,7 @@ export default function OverviewPage() {
       <OverviewList
         places={mostActiveList}
         title={l("pages.overview.most_active")}
-        href={locations.places({
+        href={locations.genesis({
           order_by: PlaceListOrderBy.MOST_ACTIVE,
         })}
         onClickFavorite={(e, place) =>
@@ -142,7 +142,7 @@ export default function OverviewPage() {
         <OverviewList
           places={featuredList}
           title={l("pages.overview.featured")}
-          href={locations.places({
+          href={locations.genesis({
             categories: [DecentralandCategories.FEATURED],
             order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
           })}
@@ -180,7 +180,7 @@ export default function OverviewPage() {
       <OverviewList
         places={hightRatedList}
         title={l("pages.overview.best")}
-        href={locations.places({
+        href={locations.genesis({
           order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         })}
         onClickFavorite={(e, place) =>
@@ -216,7 +216,7 @@ export default function OverviewPage() {
       <OverviewList
         places={poisList}
         title={l("pages.overview.points_of_interest")}
-        href={locations.places({
+        href={locations.genesis({
           categories: [DecentralandCategories.POI],
           order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         })}

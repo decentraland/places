@@ -4,6 +4,7 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import API from "decentraland-gatsby/dist/utils/api/API"
+import env from "decentraland-gatsby/dist/utils/env"
 
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import { PlaceListOrderBy } from "../entities/Place/types"
@@ -132,8 +133,12 @@ export default {
   world: (name: string) => {
     return API.url(GATSBY_BASE_URL, "/world/", { name: name })
   },
-  places: (options: Partial<PlacesPageOptions>) =>
-    API.url(GATSBY_BASE_URL, "/places/", fromPlacesOptions(options)),
+  genesis: (options: Partial<PlacesPageOptions>) =>
+    API.url(
+      GATSBY_BASE_URL,
+      env("NEW_ROLLOUT") ? "/genesis/" : "/places/",
+      fromPlacesOptions(options)
+    ),
   worlds: (options: Partial<WorldsPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/worlds/", fromWorldsOptions(options)),
   favorites: () => API.url(GATSBY_BASE_URL, "/favorites/"),

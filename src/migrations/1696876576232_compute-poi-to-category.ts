@@ -28,13 +28,16 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   const poiPlaces = currentPois.map(({ id }) => `('${id}', 'poi')`).join(",")
   const ids = currentPois.map(({ id }) => `'${id}'`).join(",")
 
-  pgm.sql(
-    `INSERT INTO ${PlaceCategories.tableName} (place_id, category_id) VALUES ${poiPlaces}`
-  )
-
-  pgm.sql(
-    `UPDATE ${PlaceModel.tableName} SET categories = array_append(categories, 'poi') WHERE id IN (${ids})`
-  )
+  if (poiPlaces.length > 0) {
+    pgm.sql(
+      `INSERT INTO ${PlaceCategories.tableName} (place_id, category_id) VALUES ${poiPlaces}`
+    )
+  }
+  if (ids.length > 0) {
+    pgm.sql(
+      `UPDATE ${PlaceModel.tableName} SET categories = array_append(categories, 'poi') WHERE id IN (${ids})`
+    )
+  }
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {

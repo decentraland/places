@@ -27,7 +27,7 @@ export const CategoryButtons = (props: CategoryButtonsProps) => {
           key={category}
           className="category-button"
           content={l(`categories.${category}`)}
-          href={locations.places({
+          href={locations.genesis({
             categories: [category],
             order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
           })}
