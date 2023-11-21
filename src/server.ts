@@ -89,6 +89,9 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
         ],
@@ -96,6 +99,9 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
         ],
@@ -103,6 +109,9 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
         ],
@@ -110,6 +119,9 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
         ],
@@ -117,9 +129,11 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
-          "https://*.decentraland.org",
           "https://connect.facebook.net",
           "http://*.hotjar.com:*",
           "https://*.hotjar.com:*",
@@ -150,6 +164,9 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
           "https://decentraland.org",
           "https://decentraland.today",
           "https://decentraland.zone",
+          "https://*.decentraland.org",
+          "https://*.decentraland.today",
+          "https://*.decentraland.zone",
           // Used to test the proxied service
           // "http://192.168.1.8:*",
         ].join(" "),
