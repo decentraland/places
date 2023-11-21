@@ -191,7 +191,7 @@ export default function FavoritesPage() {
             <Paragraph secondary>
               {l("pages.favorites.no_favorite_selected")}
               <br />
-              <Link href={locations.places({})}>
+              <Link href={locations.genesis({})}>
                 {l("pages.favorites.go_to_places")}
               </Link>
             </Paragraph>

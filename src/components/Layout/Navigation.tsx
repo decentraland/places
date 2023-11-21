@@ -45,7 +45,7 @@ export default function Navigation(props: NavigationProps) {
           </NavigationMenu.Item>
           <NavigationMenu.Item
             active={props.activeTab === NavigationTab.Places}
-            href={locations.places({
+            href={locations.genesis({
               order_by: PlaceListOrderBy.MOST_ACTIVE,
             })}
           >

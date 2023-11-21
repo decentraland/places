@@ -62,7 +62,7 @@ export default React.memo(function SearchList(props: SearchListProps) {
         <OverviewList
           places={placeResultList!}
           title={l("pages.overview.places")}
-          href={locations.places({
+          href={locations.genesis({
             search,
           })}
           onClickFavorite={(e, place) =>

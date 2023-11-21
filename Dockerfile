@@ -1,7 +1,7 @@
 FROM node:18.8-alpine as compiler
 
 RUN apk add --no-cache openssh-client \
- && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
+  && mkdir ~/.ssh && ssh-keyscan github.com > ~/.ssh/known_hosts
 
 RUN apk add --no-cache --virtual native-deps \
   g++ gcc libgcc libstdc++ linux-headers make automake autoconf libtool python3 \
@@ -41,6 +41,8 @@ COPY ./tsconfig.json        /app/tsconfig.json
 
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:server
 # RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:sw
+RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:front -- --prefix-paths
+RUN mv public public-prefix
 RUN NODE_OPTIONS="--max-old-space-size=2048" npm run build:front
 RUN npm prune --production
 
@@ -62,6 +64,7 @@ COPY --from=compiler /app/package-lock.json    /app/package-lock.json
 COPY --from=compiler /app/node_modules         /app/node_modules
 COPY --from=compiler /app/lib                  /app/lib
 COPY --from=compiler /app/public               /app/public
+COPY --from=compiler /app/public-prefix        /app/public-prefix
 COPY --from=compiler /app/static               /app/static
 COPY --from=compiler /app/entrypoint.sh        /app/entrypoint.sh
 
