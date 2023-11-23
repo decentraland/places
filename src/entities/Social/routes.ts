@@ -4,6 +4,7 @@ import { replaceHelmetMetadata } from "decentraland-gatsby/dist/entities/Gatsby/
 import { handleRaw } from "decentraland-gatsby/dist/entities/Route/handle"
 import routes from "decentraland-gatsby/dist/entities/Route/routes"
 import { readOnce } from "decentraland-gatsby/dist/entities/Route/routes/file"
+import env from "decentraland-gatsby/dist/utils/env"
 import { Request, Response } from "express"
 import { escape } from "html-escaper"
 import isUUID from "validator/lib/isUUID"
@@ -21,7 +22,7 @@ export default routes((router) => {
 async function readFile(req: Request) {
   const path = resolve(
     process.cwd(),
-    "./public",
+    env("NEW_ROLLOUT") !== undefined ? "./public-prefix" : "./public",
     "." + req.path,
     "./index.html"
   )

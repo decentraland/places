@@ -72,7 +72,7 @@ app.use("/api", [
 ])
 
 app.use(metrics([gatsbyRegister, register]))
-app.use(socialRoutes)
+app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", socialRoutes)
 app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
   withCors({
     cors: "*",
