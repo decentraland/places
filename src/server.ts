@@ -77,6 +77,7 @@ app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
   withCors({
     cors: "*",
     corsOrigin: "*",
+    allowedHeaders: "*",
   }),
   gatsby(
     resolve(
