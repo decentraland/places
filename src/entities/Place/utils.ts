@@ -73,8 +73,6 @@ function explorerPlaceUrl(
 function explorerWorldUrl(place: Pick<PlaceAttributes, "world_name">): string {
   const target = new URL("/", DECENTRALAND_URL)
   const isNewRollout = !!env("NEW_ROLLOUT")
-  console.log("+++++++++++++++++++++++++++++")
-  console.log("isNewRollout: ", isNewRollout)
   if (isNewRollout) {
     target.pathname = `/play/`
   }
