@@ -19,19 +19,23 @@ const DECENTRALAND_URL =
 export function placeUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
-  target.pathname = `/place/`
+  const isNewRollout = !!env("NEW_ROLLOUT")
+  target.pathname = isNewRollout ? `/places/place/` : `/place/`
   return target
 }
 
 export function worldUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.searchParams.set("name", place.world_name!)
-  target.pathname = `/world/`
+  const isNewRollout = !!env("NEW_ROLLOUT")
+  target.pathname = isNewRollout ? `/places/world/` : `/world/`
   return target
 }
 
 export function siteUrl(pathname = "") {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  const isNewRollout = !!env("NEW_ROLLOUT")
+  target.pathname = isNewRollout ? `/places/${pathname}/` : pathname
   target.pathname = pathname
   return target
 }
@@ -51,6 +55,10 @@ function explorerPlaceUrl(
   realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
+  const isNewRollout = !!env("NEW_ROLLOUT")
+  if (isNewRollout) {
+    target.pathname = `/play/`
+  }
   if (place?.base_position) {
     target.searchParams.set("position", place.base_position)
   }
@@ -64,6 +72,11 @@ function explorerPlaceUrl(
 /** @private */
 function explorerWorldUrl(place: Pick<PlaceAttributes, "world_name">): string {
   const target = new URL("/", DECENTRALAND_URL)
+  const isNewRollout = !!env("NEW_ROLLOUT")
+  if (isNewRollout) {
+    target.pathname = `/play/`
+  }
+
   if (place) {
     target.searchParams.set("realm", place.world_name!)
   }

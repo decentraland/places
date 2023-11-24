@@ -3,6 +3,7 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import env from "decentraland-gatsby/dist/utils/env"
 import isURL from "validator/lib/isURL"
 
+import { DeploymentToSqs } from "../CheckScenes/task/consumer"
 import { PlaceAttributes } from "../Place/types"
 import { placeUrl, worldUrl } from "../Place/utils"
 
@@ -20,7 +21,10 @@ if (!isURL(CONTENT_MODERATION_SLACK_WEBHOOK)) {
   logger.log(`missing config CONTENT_MODERATION_SLACK_WEBHOOK`)
 }
 
-export async function notifyNewPlace(place: PlaceAttributes) {
+export async function notifyNewPlace(
+  place: PlaceAttributes,
+  entity: DeploymentToSqs
+) {
   logger.log(`sending new place "${place.id}" to slack`)
   await sendToSlack({
     blocks: [
@@ -38,10 +42,12 @@ export async function notifyNewPlace(place: PlaceAttributes) {
       {
         type: "section",
         text: {
-          type: "plain_text",
-          text: [place.title, place.description, `UUID: ${place.id}`].join(
-            "\n\n"
-          ),
+          type: "mrkdwn",
+          text: [
+            place.title,
+            place.description,
+            `UUID: ${place.id} (<${entity.contentServerUrls}/contents/${entity.entity.entityId}|Entity>)`,
+          ].join("\n\n"),
         },
         accessory: {
           type: "image",
@@ -53,7 +59,10 @@ export async function notifyNewPlace(place: PlaceAttributes) {
   })
 }
 
-export async function notifyUpdatePlace(place: PlaceAttributes) {
+export async function notifyUpdatePlace(
+  place: PlaceAttributes,
+  entity: DeploymentToSqs
+) {
   logger.log(`sending update place "${place.id}" to slack`)
   await sendToSlack({
     blocks: [
@@ -73,10 +82,12 @@ export async function notifyUpdatePlace(place: PlaceAttributes) {
       {
         type: "section",
         text: {
-          type: "plain_text",
-          text: [place.title, place.description, `UUID: ${place.id}`].join(
-            "\n\n"
-          ),
+          type: "mrkdwn",
+          text: [
+            place.title,
+            place.description,
+            `UUID: ${place.id} (<${entity.contentServerUrls}/contents/${entity.entity.entityId}|Entity>)`,
+          ].join("\n\n"),
         },
         accessory: {
           type: "image",
@@ -210,7 +221,8 @@ export async function notifyDowngradeRating(
 
 export async function notifyUpgradingRating(
   place: PlaceAttributes,
-  updatedBy: "Content Moderator" | "Content Creator"
+  updatedBy: "Content Moderator" | "Content Creator",
+  ratingProposed: SceneContentRating
 ) {
   logger.log(
     `sending upgrading rating "${place.title}" to content moderation slack`
@@ -235,6 +247,13 @@ export async function notifyUpgradingRating(
         text: {
           type: "plain_text",
           text: `The rating was upgraded by ${updatedBy}`,
+        },
+      },
+      {
+        type: "section",
+        text: {
+          type: "plain_text",
+          text: `Previous rating: ${place.content_rating} - New rating: ${ratingProposed}`,
         },
       },
     ],

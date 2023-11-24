@@ -124,7 +124,11 @@ export function createPlaceFromContentEntityScene(
       data.content_rating as SceneContentRating
     )
   ) {
-    notifyUpgradingRating(data as PlaceAttributes, "Content Creator")
+    notifyUpgradingRating(
+      data as PlaceAttributes,
+      "Content Creator",
+      contentEntitySceneRating
+    )
   }
 
   const placeParsed: PlaceAttributes = {

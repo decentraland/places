@@ -416,9 +416,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   static overrideCategories(placeId: string, newCategories: string[]) {
-    const categories = newCategories
-      .map((category) => `'${category}'`)
-      .join(",")
+    const categories = join(newCategories.map((category) => SQL`${category}`))
 
     const sql = SQL`UPDATE ${table(
       this

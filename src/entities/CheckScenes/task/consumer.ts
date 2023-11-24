@@ -98,7 +98,7 @@ export class SQSConsumer {
           } catch (err: any) {
             notifyError([
               err.toString(),
-              `<${body.contentServerUrls}contents/${body.entity.entityId}|${body.entity.entityId}>`,
+              `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`,
             ])
             loggerExtended.error(err.toString())
 
