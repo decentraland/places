@@ -75,7 +75,7 @@ export async function updateRating(
       place.content_rating as SceneContentRating
     )
   ) {
-    notifyUpgradingRating(place, "Content Moderator")
+    notifyUpgradingRating(place, "Content Moderator", body.content_rating)
   }
 
   return new ApiResponse(newPlace)

@@ -144,7 +144,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   }
 
   if (!placesToProcess) {
-    CheckScenesModel.createOne({
+    await CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
       content_server_url: job.contentServerUrls![0],
       base_position: contentEntityScene.metadata.scene!.base,
@@ -164,8 +164,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       contentEntityScene.metadata.tags || []
     )
 
-    notifyNewPlace(placesToProcess.new)
-    CheckScenesModel.createOne({
+    notifyNewPlace(placesToProcess.new, job)
+    await CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
       content_server_url: job.contentServerUrls![0],
       base_position: contentEntityScene.metadata.scene!.base,
@@ -185,8 +185,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       contentEntityScene.metadata.tags || []
     )
 
-    notifyUpdatePlace(placesToProcess.update)
-    CheckScenesModel.createOne({
+    notifyUpdatePlace(placesToProcess.update, job)
+    await CheckScenesModel.createOne({
       entity_id: job.entity.entityId,
       content_server_url: job.contentServerUrls![0],
       base_position: contentEntityScene.metadata.scene!.base,
@@ -197,7 +197,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   }
 
   if (placesToProcess?.rating) {
-    PlaceContentRatingModel.create(placesToProcess.rating)
+    await PlaceContentRatingModel.create(placesToProcess.rating)
   }
 
   if (placesToProcess?.disabled.length) {
@@ -226,7 +226,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       action: CheckSceneLogsTypes.DISABLED,
     }))
 
-    CheckScenesModel.createMany(placesToDisable)
+    await CheckScenesModel.createMany(placesToDisable)
   }
 }
 
