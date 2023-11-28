@@ -69,5 +69,9 @@ export function isUpgradingRating(
   const originalIndex = ratingScale.indexOf(originalRating)
   const contentEntityIndex = ratingScale.indexOf(rating)
 
-  return originalIndex < contentEntityIndex
+  return (
+    originalIndex >= 0 &&
+    contentEntityIndex >= 0 &&
+    originalIndex < contentEntityIndex
+  )
 }
