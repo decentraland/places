@@ -1,6 +1,6 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
-import { memo } from "radash/dist/curry"
+import { memo } from "radash"
 
 const DCL_LIST_URL = env(
   `GATSBY_DCL_LIST_URL`,

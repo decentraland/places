@@ -1,5 +1,5 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
-import { memo } from "radash/dist/curry"
+import { memo } from "radash"
 
 import DataTeam from "../api/DataTeam"
 

@@ -7,7 +7,7 @@ import {
   numeric,
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { flat, sort } from "radash/dist/array"
+import { flat, sort } from "radash"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"

@@ -1,5 +1,7 @@
 import React, { useCallback, useContext, useMemo } from "react"
 
+import { withPrefix } from "gatsby"
+
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
@@ -109,10 +111,18 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         </div>
       </Link>
       <Card.Content>
-        <Card.Header as="a" href={href} onClick={handleClickCard}>
+        <Card.Header
+          as="a"
+          href={href ? withPrefix(href) : href}
+          onClick={handleClickCard}
+        >
           {place?.title || " "}
         </Card.Header>
-        <Card.Meta as="a" href={href} onClick={handleClickCard}>
+        <Card.Meta
+          as="a"
+          href={href ? withPrefix(href) : href}
+          onClick={handleClickCard}
+        >
           {place?.contact_name || " "}
         </Card.Meta>
         {false && (
