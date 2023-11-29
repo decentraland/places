@@ -1,6 +1,6 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import fetch from "node-fetch"
-import { memo } from "radash/dist/curry"
+import { memo } from "radash"
 
 export type WorldLivePerWorldProps = {
   users: number

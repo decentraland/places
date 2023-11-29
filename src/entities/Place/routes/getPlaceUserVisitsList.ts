@@ -3,7 +3,7 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool, numeric } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { sort } from "radash/dist/array"
+import { sort } from "radash"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"

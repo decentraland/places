@@ -15,7 +15,7 @@ import {
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { diff, unique } from "radash/dist/array"
+import { diff, unique } from "radash"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import PlaceCategories from "../PlaceCategories/model"

@@ -17,7 +17,7 @@ import { Container } from "decentraland-ui/dist/components/Container/Container"
 import { Header } from "decentraland-ui/dist/components/Header/Header"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
-import { cluster } from "radash/dist/array"
+import { cluster } from "radash"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Navigation, { NavigationTab } from "../../components/Layout/Navigation"
