@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react"
 
+import { withPrefix } from "gatsby"
 import { Helmet } from "react-helmet"
 
 import { useLocation } from "@gatsbyjs/reach-router"
@@ -102,7 +103,8 @@ export default function PlacePage() {
         share({
           title: place.title || undefined,
           text: `${l("general.place_share")}${shareableText}`,
-          url: location.origin + locations.place(place.base_position),
+          url:
+            location.origin + withPrefix(locations.place(place.base_position)),
           thumbnail: place.image || undefined,
         })
       }

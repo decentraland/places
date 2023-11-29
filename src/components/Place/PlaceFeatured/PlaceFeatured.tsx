@@ -1,5 +1,7 @@
 import React, { useMemo } from "react"
 
+import { withPrefix } from "gatsby"
+
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
@@ -51,7 +53,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
           <Button
             primary
             as="a"
-            href={placeJumpInUrl}
+            href={withPrefix(placeJumpInUrl)}
             onClick={handleJumpInTrack}
             target="_blank"
             data-event={SegmentPlace.JumpIn}
@@ -64,7 +66,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
           <Button
             secondary
             as="a"
-            href={placeDetailUrl}
+            href={withPrefix(placeDetailUrl)}
             onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
               e.preventDefault()
               placeDetailUrl && navigate(placeDetailUrl)

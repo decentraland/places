@@ -1,5 +1,7 @@
 import React from "react"
 
+import { withPrefix } from "gatsby"
+
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
@@ -83,7 +85,7 @@ export default React.memo(function OverviewList(props: OverviewListProps) {
               <Button
                 basic
                 as="a"
-                href={props.href}
+                href={withPrefix(props.href)}
                 onClick={(e) => {
                   e.preventDefault()
                   navigate(props.href)
