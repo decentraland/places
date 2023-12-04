@@ -7,11 +7,11 @@
     },
     {
       "base_position": "-29,55",
-      "featured": true
+      "highlighted": true
     },
     {
       "world_name": "mgoldman.dcl.eth",
-      "featured": true,
+      "highlighted": true,
     }
   ]
 } */
