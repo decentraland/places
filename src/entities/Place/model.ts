@@ -203,7 +203,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
 
       WHERE
-        p."disabled" is false AND "world" is false
+        p."disabled" is false 
+        ${conditional(!options.only_highlighted, SQL`AND "world" is false`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(
@@ -273,7 +274,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
 
       WHERE
-        p."disabled" is false AND "world" is false
+        p."disabled" is false 
+        ${conditional(!options.only_highlighted, SQL`AND "world" is false`)}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
