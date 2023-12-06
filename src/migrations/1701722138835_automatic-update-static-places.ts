@@ -1,6 +1,6 @@
 import { createPlaceNewMigrationUpdate } from "../entities/Place/migration"
 import { PlaceAttributes } from "../entities/Place/types"
-import defaultPlace from "../seed/FILENAME"
+import defaultPlace from "../seed/34_places_new.json"
 
 const attributes: Array<keyof PlaceAttributes> = [
   "base_position",
