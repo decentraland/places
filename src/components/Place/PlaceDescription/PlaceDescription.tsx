@@ -8,6 +8,7 @@ import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
+import { getImageUrl } from "../../../utils/image"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import ShareBox from "../../Button/ShareBox"
@@ -60,7 +61,7 @@ export default React.memo(function PlaceDescription(
           style={
             !loading && place?.image
               ? {
-                  backgroundImage: `url(${place.image})`,
+                  backgroundImage: `url(${getImageUrl(place.image)})`,
                 }
               : {}
           }
