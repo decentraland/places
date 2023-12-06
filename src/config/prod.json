@@ -11,5 +11,5 @@
   "WORLDS_FIND_OUT_URL": "https://decentraland.org/blog/announcements/introducing-decentraland-worlds-beta-your-own-3d-space-in-the-metaverse",
   "GATSBY_DCL_LIST_URL": "https://dcl-lists.decentraland.org",
   "GATSBY_SSO_URL": "https://id.decentraland.org",
-  "GATSBY_ADMIN_ADDRESSES": "0xd9b96b5dc720fc52bede1ec3b40a930e15f70ddd,0x8Cff6832174091DAe86F0244e3Fd92d4CeD2Fe07,0x3385C05cA0dDB46B51F9c2D99FC597cf6F0DA891,0xC1cAD2e2B78E14843004E7e1994B8CD68bA383a0,0x4DAa4f8704fE0cfFaCa667810e8cB212b4FC516e"
+  "GATSBY_ADMIN_ADDRESSES": "0xd9b96b5dc720fc52bede1ec3b40a930e15f70ddd,0x3385C05cA0dDB46B51F9c2D99FC597cf6F0DA891,0x4DAa4f8704fE0cfFaCa667810e8cB212b4FC516e"
 }
