@@ -7,6 +7,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import { SegmentPlace } from "../../../modules/segment"
+import { getImageUrl } from "../../../utils/image"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import ShareBox from "../../Button/ShareBox"
@@ -58,7 +59,7 @@ export default React.memo(function WorldDescription(
           style={
             !loading && world?.image
               ? {
-                  backgroundImage: `url(${world.image})`,
+                  backgroundImage: `url(${getImageUrl(world.image)})`,
                 }
               : {}
           }

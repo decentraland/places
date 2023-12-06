@@ -13,6 +13,7 @@ import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { explorerUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
+import { getImageUrl } from "../../../utils/image"
 import UserCount from "../../Label/UserCount/UserCount"
 
 import "./PlaceFeatured.css"
@@ -37,7 +38,9 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
     <div
       className={TokenList.join(["place-featured", loading && "loading"])}
       style={{
-        backgroundImage: `url("${item.highlighted_image || item.image}")`,
+        backgroundImage: `url("${getImageUrl(
+          item.highlighted_image || item.image
+        )}")`,
       }}
     >
       <div className="place-featured__overlay" />
