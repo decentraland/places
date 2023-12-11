@@ -23,7 +23,7 @@ export default routes((router) => {
 async function readFile(req: Request) {
   const path = resolve(
     process.cwd(),
-    env("NEW_ROLLOUT") !== undefined ? "./public-prefix" : "./public",
+    "./public",
     "." + req.path,
     "./index.html"
   )

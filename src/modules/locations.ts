@@ -134,11 +134,7 @@ export default {
     return API.url(GATSBY_BASE_URL, "/world/", { name: name })
   },
   genesis: (options: Partial<PlacesPageOptions>) =>
-    API.url(
-      GATSBY_BASE_URL,
-      env("NEW_ROLLOUT") ? "/genesis/" : "/places/",
-      fromPlacesOptions(options)
-    ),
+    API.url(GATSBY_BASE_URL, "/genesis/", fromPlacesOptions(options)),
   worlds: (options: Partial<WorldsPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/worlds/", fromWorldsOptions(options)),
   favorites: () => API.url(GATSBY_BASE_URL, "/favorites/"),
