@@ -28,10 +28,10 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
 
   const l = useFormatMessage()
   const placeJumpInUrl = item && explorerUrl(item)
-  const placeDetailUrl = useMemo(
-    () => item && locations.place(item.base_position),
-    [item]
-  )
+  const placeDetailUrl = useMemo(() => {
+    if (item.world) return locations.world(item.world_name!)
+    return locations.place(item.base_position)
+  }, [item])
   const handleJumpInTrack = useTrackLinkContext()
 
   return (
