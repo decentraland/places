@@ -32,7 +32,7 @@ export function worldUrl(place: PlaceAttributes) {
 
 export function siteUrl(pathname = "") {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
-  target.pathname = `/places/${pathname}/`
+  target.pathname = pathname ? `/places/${pathname}/` : '/places/'
   return target
 }
 

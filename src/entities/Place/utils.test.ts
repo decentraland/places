@@ -21,32 +21,32 @@ describe("Instance of URL", () => {
     const url = placeUrl(placeGenesisPlaza)
     expect(url).toBeInstanceOf(URL)
     expect(url.toString()).toBe(
-      "https://places.decentraland.org/place/?position=-9.-9"
+      "https://places.decentraland.org/places/place/?position=-9.-9"
     )
   })
 
   test("should return an URL instance of places", () => {
-    const url = siteUrl("/")
+    const url = siteUrl()
     expect(url).toBeInstanceOf(URL)
-    expect(url.toString()).toBe("https://places.decentraland.org/")
+    expect(url.toString()).toBe("https://places.decentraland.org/places/")
   })
 })
 
 describe("explorerUrl", () => {
   test("should return a string with an URL of a places with the realm", () => {
     const url = explorerUrl({ base_position: "-9,-9", world_name: null }, "dg")
-    expect(url).toBe("https://play.decentraland.org/?position=-9%2C-9&realm=dg")
+    expect(url).toBe("https://play.decentraland.org/play/?position=-9%2C-9&realm=dg")
   })
   test("should return a string with an URL of a places without the realm", () => {
     const url = explorerUrl({ base_position: "-9,-9", world_name: null })
-    expect(url).toBe("https://play.decentraland.org/?position=-9%2C-9")
+    expect(url).toBe("https://play.decentraland.org/play/?position=-9%2C-9")
   })
   test("should return a string with an URL of a world", () => {
     const url = explorerUrl({
       world_name: "paralax.dcl.eth",
       base_position: "-9,-9",
     })
-    expect(url).toBe("https://play.decentraland.org/?realm=paralax.dcl.eth")
+    expect(url).toBe("https://play.decentraland.org/play/?realm=paralax.dcl.eth")
   })
 })
 
