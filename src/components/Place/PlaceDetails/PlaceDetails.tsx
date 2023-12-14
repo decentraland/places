@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 
 import ReactMarkdown from "react-markdown"
 
@@ -7,6 +7,7 @@ import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
@@ -16,12 +17,19 @@ import remarkGfm from "remark-gfm"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import {
+  AggregatePlaceAttributes,
+  PlaceListOrderBy,
+} from "../../../entities/Place/types"
 import { FeatureFlags } from "../../../modules/ff"
+import locations from "../../../modules/locations"
 import { getPois } from "../../../modules/pois"
 import { getRating } from "../../../modules/rating"
 import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
-import { CategoryFilter } from "../../Category/CategoryFilter"
+import {
+  CategoryFilter,
+  CategoryFilterProps,
+} from "../../Category/CategoryFilter"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
@@ -54,6 +62,23 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
   const isPoi = useMemo(
     () => intersects(place?.positions || [], pois || []),
     [place, pois]
+  )
+
+  const handleCategoryChange = useCallback(
+    (
+      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+      props: CategoryFilterProps
+    ) => {
+      const { category } = props
+
+      navigate(
+        locations.genesis({
+          categories: [category],
+          order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
+        })
+      )
+    },
+    []
   )
 
   return (
@@ -109,7 +134,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
             <div className="place-details__categories-container">
               <h3>{l("components.place_detail.appears_on")}</h3>
               {place.categories.map((id) => (
-                <CategoryFilter category={id} />
+                <CategoryFilter category={id} onChange={handleCategoryChange} />
               ))}
             </div>
           )}
