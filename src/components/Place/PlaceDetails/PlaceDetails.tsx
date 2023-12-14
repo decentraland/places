@@ -64,7 +64,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
     [place, pois]
   )
 
-  const handleCategoryChange = useCallback(
+  const handleCategorySelect = useCallback(
     (
       e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
       props: CategoryFilterProps
@@ -134,7 +134,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
             <div className="place-details__categories-container">
               <h3>{l("components.place_detail.appears_on")}</h3>
               {place.categories.map((id) => (
-                <CategoryFilter category={id} onChange={handleCategoryChange} />
+                <CategoryFilter category={id} onChange={handleCategorySelect} />
               ))}
             </div>
           )}
