@@ -72,109 +72,103 @@ app.use("/api", [
 ])
 
 app.use(metrics([gatsbyRegister, register]))
-app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", socialRoutes)
-app.use(env("NEW_ROLLOUT") !== undefined ? "/places" : "/", [
+app.use("/places", socialRoutes)
+app.use("/places", [
   withCors({
     cors: "*",
     corsOrigin: "*",
     allowedHeaders: "*",
   }),
-  gatsby(
-    resolve(
-      __filename,
-      env("NEW_ROLLOUT") !== undefined ? "../../public-prefix" : "../../public"
-    ),
-    {
-      contentSecurityPolicy: {
-        fontSrc: [
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-        ],
-        styleSrc: [
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-        ],
-        imgSrc: [
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-        ],
-        manifestSrc: [
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-        ],
-        scriptSrc: [
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-          "https://connect.facebook.net",
-          "http://*.hotjar.com:*",
-          "https://*.hotjar.com:*",
-          "http://*.hotjar.io",
-          "https://*.hotjar.io",
-          "wss://*.hotjar.com",
-          "https://*.twitter.com",
-          "https://cdn.segment.com",
-          "https://ajax.cloudflare.com",
-          "https://googleads.g.doubleclick.net",
-          "https://ssl.google-analytics.com",
-          "https://tagmanager.google.com",
-          "https://www.google-analytics.com",
-          "https://www.google-analytics.com",
-          "https://www.google.com",
-          "https://www.googleadservices.com",
-          "https://www.googletagmanager.com",
-          "https://app.intercom.io",
-          "https://widget.intercom.io",
-          "https://js.intercomcdn.com",
-          "https://verify.walletconnect.com",
-          "https://js.sentry-cdn.com",
-          "https://browser.sentry-cdn.com",
-        ].join(" "),
-        connectSrc: [
-          "https:",
-          "*.sentry.io",
-          "https://decentraland.org",
-          "https://decentraland.today",
-          "https://decentraland.zone",
-          "https://*.decentraland.org",
-          "https://*.decentraland.today",
-          "https://*.decentraland.zone",
-          // Used to test the proxied service
-          // "http://192.168.1.8:*",
-        ].join(" "),
-        workerSrc: ["'self'", "blob:"].join(" "),
-      },
-    }
-  ),
+  gatsby(resolve(__filename, "../../public"), {
+    contentSecurityPolicy: {
+      fontSrc: [
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+      ],
+      styleSrc: [
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+      ],
+      imgSrc: [
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+      ],
+      manifestSrc: [
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+      ],
+      scriptSrc: [
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+        "https://connect.facebook.net",
+        "http://*.hotjar.com:*",
+        "https://*.hotjar.com:*",
+        "http://*.hotjar.io",
+        "https://*.hotjar.io",
+        "wss://*.hotjar.com",
+        "https://*.twitter.com",
+        "https://cdn.segment.com",
+        "https://ajax.cloudflare.com",
+        "https://googleads.g.doubleclick.net",
+        "https://ssl.google-analytics.com",
+        "https://tagmanager.google.com",
+        "https://www.google-analytics.com",
+        "https://www.google-analytics.com",
+        "https://www.google.com",
+        "https://www.googleadservices.com",
+        "https://www.googletagmanager.com",
+        "https://app.intercom.io",
+        "https://widget.intercom.io",
+        "https://js.intercomcdn.com",
+        "https://verify.walletconnect.com",
+        "https://js.sentry-cdn.com",
+        "https://browser.sentry-cdn.com",
+      ].join(" "),
+      connectSrc: [
+        "https:",
+        "*.sentry.io",
+        "https://decentraland.org",
+        "https://decentraland.today",
+        "https://decentraland.zone",
+        "https://*.decentraland.org",
+        "https://*.decentraland.today",
+        "https://*.decentraland.zone",
+        // Used to test the proxied service
+        // "http://192.168.1.8:*",
+      ].join(" "),
+      workerSrc: ["'self'", "blob:"].join(" "),
+    },
+  }),
 ])
 
 initializeServices([
