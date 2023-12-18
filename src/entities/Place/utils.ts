@@ -19,7 +19,7 @@ const DECENTRALAND_URL =
 export function placeUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
-  target.pathname = `/places/place/`
+  target.pathname = "/places/place/"
   return target
 }
 
@@ -32,7 +32,7 @@ export function worldUrl(place: PlaceAttributes) {
 
 export function siteUrl(pathname = "") {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
-  target.pathname = pathname ? `/places/${pathname}/` : '/places/'
+  target.pathname = pathname ? `/places/${pathname}/` : "/places/"
   return target
 }
 
