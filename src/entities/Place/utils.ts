@@ -51,7 +51,6 @@ function explorerPlaceUrl(
   realm?: string
 ): string {
   const target = new URL("/", DECENTRALAND_URL)
-  target.pathname = `/play/`
   if (place?.base_position) {
     target.searchParams.set("position", place.base_position)
   }
@@ -65,7 +64,6 @@ function explorerPlaceUrl(
 /** @private */
 function explorerWorldUrl(place: Pick<PlaceAttributes, "world_name">): string {
   const target = new URL("/", DECENTRALAND_URL)
-  target.pathname = `/play/`
 
   if (place) {
     target.searchParams.set("realm", place.world_name!)
