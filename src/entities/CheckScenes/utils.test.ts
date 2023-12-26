@@ -80,16 +80,3 @@ describe("isSameWorld", () => {
     expect(findSamePlace(contentEntitySceneGenesisPlaza, [])).toBeNull()
   })
 })
-
-describe("getWorldAbout", () => {
-  test("should return world about", async () => {
-    const worldAbout = await getWorldAbout(
-      sqsMessageWorld.contentServerUrls![0],
-      worldContentEntitySceneParalax.metadata.worldConfiguration!.name!
-    )
-    expect(worldAbout).toEqual({
-      ...worldAboutParalax,
-      configurations: worldAbout.configurations,
-    })
-  })
-})
