@@ -7,6 +7,7 @@ import MaintenancePage from "decentraland-gatsby/dist/components/Layout/Maintena
 import Link from "decentraland-gatsby/dist/components/Text/Link"
 import Paragraph from "decentraland-gatsby/dist/components/Text/Paragraph"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import { DappsFeatureFlags } from "decentraland-gatsby/dist/context/FeatureFlag/types"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -75,6 +76,7 @@ export default function FavoritesPage() {
   )
 
   const [ff] = useFeatureFlagContext()
+  const isAuthDappEnabled = ff.enabled(DappsFeatureFlags.AuthDappEnabled)
 
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
@@ -133,7 +135,9 @@ export default function FavoritesPage() {
         <Container className="favorites-list__sign-in">
           <SignIn
             isConnecting={accountState.loading}
-            onConnect={() => accountState.select()}
+            onConnect={
+              isAuthDappEnabled ? accountState.authorize : accountState.select
+            }
           />
         </Container>
       </>
