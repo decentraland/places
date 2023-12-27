@@ -9,6 +9,7 @@ import Carousel2, {
 import MaintenancePage from "decentraland-gatsby/dist/components/Layout/MaintenancePage"
 import Paragraph from "decentraland-gatsby/dist/components/Text/Paragraph"
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
+import { DappsFeatureFlags } from "decentraland-gatsby/dist/context/FeatureFlag/types"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { Link } from "decentraland-gatsby/dist/plugins/intl"
@@ -66,6 +67,7 @@ export default function FavoritesPage() {
   ] = usePlacesManager(placesMemo)
 
   const [ff] = useFeatureFlagContext()
+  const isAuthDappEnabled = ff.enabled(DappsFeatureFlags.AuthDappEnabled)
 
   if (ff.flags[FeatureFlags.Maintenance]) {
     return <MaintenancePage />
@@ -130,7 +132,9 @@ export default function FavoritesPage() {
         <Container className="my-places-list__sign-in">
           <SignIn
             isConnecting={accountState.loading}
-            onConnect={() => accountState.select()}
+            onConnect={
+              isAuthDappEnabled ? accountState.authorize : accountState.select
+            }
           />
         </Container>
       </>
