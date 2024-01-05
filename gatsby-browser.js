@@ -24,9 +24,11 @@ import "decentraland-gatsby/dist/variables.css"
 import "./src/theme.css"
 
 import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
+import Layout2 from "decentraland-gatsby/dist/components/Layout/Layout2"
 import UserInformation from "decentraland-gatsby/dist/components/User/UserInformation"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
+import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import ShareProvider from "decentraland-gatsby/dist/context/Share/ShareProvider"
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
@@ -49,11 +51,21 @@ export const wrapRootElement = ({ element }) => (
 )
 
 export const wrapPageElement = ({ element, props }) => {
+  const [ff] = useFeatureFlagContext()
+  const isNewMenu = ff.flags["dapps-navbar2_variant"]
+
   return (
     <IntlProvider {...props.pageContext.intl}>
-      <Layout {...props} rightMenu={<UserInformation />} activePage="places">
-        {element}
-      </Layout>
+      {!isNewMenu && (
+        <Layout {...props} rightMenu={<UserInformation />} activePage="places">
+          {element}
+        </Layout>
+      )}
+      {isNewMenu && (
+        <Layout2 {...props} activePage="explore">
+          {element}
+        </Layout2>
+      )}
     </IntlProvider>
   )
 }
