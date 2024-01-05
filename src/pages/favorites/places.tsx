@@ -75,6 +75,10 @@ export default function FavoritesPage() {
     [params, track]
   )
 
+  const handleClickBack = useCallback(() => {
+    back()
+  }, [track])
+
   const [ff] = useFeatureFlagContext()
   const isAuthDappEnabled = ff.enabled(DappsFeatureFlags.AuthDappEnabled)
 
@@ -186,7 +190,7 @@ export default function FavoritesPage() {
       <Navigation />
       <Container className="favorites-list__container">
         <div className="favorites-list__back">
-          <Back onClick={back} />
+          <Back onClick={handleClickBack} />
           <p>{l("pages.favorites.back")}</p>
         </div>
         <Header>{l("pages.favorites.places")}</Header>

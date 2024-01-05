@@ -22,9 +22,6 @@ import "decentraland-ui/dist/themes/alternative/light-theme.css"
 import "decentraland-gatsby/dist/variables.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "./src/theme.css"
-
-import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
-import UserInformation from "decentraland-gatsby/dist/components/User/UserInformation"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
 import ShareProvider from "decentraland-gatsby/dist/context/Share/ShareProvider"
@@ -32,6 +29,7 @@ import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import Layout from "./src/components/Layout/Layout"
 import { TrackingPlacesSearchProvider } from "./src/context/TrackingContext"
 
 export const registerServiceWorker = () => true
@@ -51,9 +49,7 @@ export const wrapRootElement = ({ element }) => (
 export const wrapPageElement = ({ element, props }) => {
   return (
     <IntlProvider {...props.pageContext.intl}>
-      <Layout {...props} rightMenu={<UserInformation />} activePage="places">
-        {element}
-      </Layout>
+      <Layout {...props}>{element}</Layout>
     </IntlProvider>
   )
 }
