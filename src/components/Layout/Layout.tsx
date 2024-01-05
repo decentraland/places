@@ -9,7 +9,7 @@ export default function Layout(props: any) {
   const [ff] = useFeatureFlagContext()
   const isNewMenu = ff.flags["dapps-navbar2_variant"]
   if (isNewMenu) {
-    return <Layout2 {...props} />
+    return <Layout2 {...props} activePage="explore" />
   }
   return (
     <Layout1 {...props} rightMenu={<UserInformation />} activePage="places" />
