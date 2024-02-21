@@ -26,10 +26,8 @@ import locations from "../../../modules/locations"
 import { getPois } from "../../../modules/pois"
 import { getRating } from "../../../modules/rating"
 import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
-import {
-  CategoryFilter,
-  CategoryFilterProps,
-} from "../../Category/CategoryFilter"
+import AppearsOnCategory from "../../Category/AppearsOnCategory"
+import { CategoryFilterProps } from "../../Category/CategoryFilter"
 import PlaceStats from "../PlaceStats/PlaceStats"
 
 import "./PlaceDetails.css"
@@ -131,12 +129,10 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
           </div>
 
           {place?.categories.length > 0 && (
-            <div className="place-details__categories-container">
-              <h3>{l("components.place_detail.appears_on")}</h3>
-              {place.categories.map((id) => (
-                <CategoryFilter category={id} onChange={handleCategorySelect} />
-              ))}
-            </div>
+            <AppearsOnCategory
+              categories={place.categories}
+              onSelectCategory={handleCategorySelect}
+            />
           )}
           <PlaceStats place={place} loading={loading} poi={isPoi} />
         </>
