@@ -98,6 +98,7 @@ export async function injectWorldMetadata(req: Request, res: Response) {
         order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
         order: "asc",
         search: "",
+        categories: [],
       })
     )[0]
   }

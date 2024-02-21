@@ -39,7 +39,8 @@ describe("CategoryModel", () => {
       `
         SELECT c.name, count(pc.place_id) as count 
         FROM "categories" c 
-        LEFT JOIN "place_categories" pc ON pc.category_id = c.name 
+        LEFT JOIN "place_categories" pc ON pc.category_id = c.name
+        LEFT JOIN "places" p ON pc.place_id = p.id 
         WHERE c.active IS true 
         GROUP BY c.name ORDER BY count DESC
       `

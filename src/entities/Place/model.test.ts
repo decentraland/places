@@ -591,6 +591,7 @@ describe(`findWorld`, () => {
         order_by: "created_at",
         order: "desc",
         search: "",
+        categories: [],
       })
     ).toEqual([worldPlaceTemplegame])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -625,6 +626,7 @@ describe(`findWorld`, () => {
         order: "desc",
         user: userLikeTrue.user,
         search: "decentraland",
+        categories: [],
       })
     ).toEqual([worldPlaceTemplegame])
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -670,6 +672,7 @@ describe(`findWorld`, () => {
         order: "desc",
         user: userLikeTrue.user,
         search: "de",
+        categories: [],
       })
     ).toEqual([])
     expect(namedQuery.mock.calls.length).toBe(0)
@@ -684,6 +687,7 @@ describe(`countWorlds`, () => {
         only_favorites: false,
         names: ["templegame.dcl.eth"],
         search: "",
+        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -711,6 +715,7 @@ describe(`countWorlds`, () => {
         only_favorites: false,
         names: ["templegame.dcl.eth"],
         search: "decentraland",
+        categories: [],
       })
     ).toEqual(1)
     expect(namedQuery.mock.calls.length).toBe(1)
@@ -739,6 +744,7 @@ describe(`countWorlds`, () => {
         names: ["templegame.dcl.eth"],
         user: "ABC",
         search: "a",
+        categories: [],
       })
     ).toEqual(0)
   })
@@ -750,6 +756,7 @@ describe(`countWorlds`, () => {
         names: ["templegame.dcl.eth"],
         user: "ABC",
         search: "asdkad",
+        categories: [],
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)

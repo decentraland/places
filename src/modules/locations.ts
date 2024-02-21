@@ -4,7 +4,6 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import API from "decentraland-gatsby/dist/utils/api/API"
-import env from "decentraland-gatsby/dist/utils/env"
 
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import { PlaceListOrderBy } from "../entities/Place/types"
@@ -31,6 +30,8 @@ export type WorldsPageOptions = {
   order: "asc" | "desc"
   page: number
   search: string
+  categories: string[]
+  only_view_category: string
 }
 
 const pageOptionsDefault: PlacesPageOptions = {
@@ -50,6 +51,8 @@ const pageWorldsOptionsDefault: WorldsPageOptions = {
   order: "desc",
   page: 1,
   search: "",
+  categories: [],
+  only_view_category: "",
 }
 
 export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
@@ -86,6 +89,8 @@ export function toWorldsOptions(params: URLSearchParams): WorldsPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
+    categories: [...new Set(params.getAll("categories"))] ?? [],
+    only_view_category: params.get("only_view_category") ?? "",
   }
 }
 

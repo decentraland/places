@@ -6,6 +6,7 @@ export type GetWorldListQuery = {
   order_by: string
   order: string
   search: string
+  categories: string[]
 }
 
 export enum WorldListOrderBy {
@@ -21,6 +22,7 @@ export type WorldListOptions = {
   order_by: string
   order: string
   search: string
+  categories: string[]
 }
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {

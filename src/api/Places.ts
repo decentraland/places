@@ -4,7 +4,10 @@ import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { DecentralandCategories } from "../entities/Category/types"
+import {
+  CategoryCountTarget,
+  DecentralandCategories,
+} from "../entities/Category/types"
 import {
   AggregatePlaceAttributes,
   PlaceListOptions,
@@ -195,11 +198,11 @@ export default class Places extends API {
     )
   }
 
-  async getCategories() {
+  async getCategories(target: CategoryCountTarget = "all") {
     const result = await super.fetch<{
       ok: boolean
       data: { name: string; count: number }[]
-    }>("/categories")
+    }>(`/categories?target=${target}`)
 
     return result.data
   }

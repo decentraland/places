@@ -33,6 +33,7 @@ export const getWorldList = Router.memo(
       search: ctx.url.searchParams.get("search"),
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
+      categories: ctx.url.searchParams.getAll("categories"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -50,6 +51,7 @@ export const getWorldList = Router.memo(
       order_by: query.order_by,
       order: query.order,
       search: query.search,
+      categories: query.categories,
     }
 
     const [data, total, liveData] = await Promise.all([

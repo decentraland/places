@@ -1,6 +1,11 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
-import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
+import {
+  SQL,
+  conditional,
+  table,
+} from "decentraland-gatsby/dist/entities/Database/utils"
 
+import PlaceModel from "../Place/model"
 import PlaceCategories from "../PlaceCategories/model"
 import { CategoryAttributes, CategoryWithPlaceCount } from "./types"
 
@@ -19,13 +24,18 @@ export default class CategoryModel extends Model<CategoryAttributes> {
     )
   }
 
-  static async findActiveCategoriesWithPlaces(): Promise<
-    CategoryWithPlaceCount[]
-  > {
+  static async findActiveCategoriesWithPlaces(
+    target: "all" | "worlds" | "places" = "all"
+  ): Promise<CategoryWithPlaceCount[]> {
     const query = SQL`
       SELECT c.name, count(pc.place_id) as count FROM ${table(CategoryModel)} c
       LEFT JOIN ${table(PlaceCategories)} pc ON pc.category_id = c.name
-      WHERE c.active IS true  
+      LEFT JOIN ${table(PlaceModel)} p ON pc.place_id = p.id
+      WHERE c.active IS true
+
+      ${conditional(target === "worlds", SQL`AND p.world IS true`)}
+      ${conditional(target === "places", SQL`AND p.world IS false`)}
+
       GROUP BY c.name
       ORDER BY count DESC
       `
