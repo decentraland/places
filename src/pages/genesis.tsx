@@ -18,24 +18,21 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { Back } from "decentraland-ui/dist/components/Back/Back"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
-import { Filter } from "decentraland-ui/dist/components/Filter/Filter"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media"
+import { unique } from "radash"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
 import Places from "../api/Places"
-import {
-  CategoryFilter,
-  CategoryFilterProps,
-} from "../components/Category/CategoryFilter"
-import { CategoryFilters } from "../components/Category/CategoryFilters"
+import Banner from "../components/Banner"
+import BannerMobile from "../components/BannerMobile"
+import { CategoryFilterProps } from "../components/Category/CategoryFilter"
 import { CategoryList } from "../components/Category/CategoryList"
-import { Close } from "../components/Icon/Close"
+import OnlyViewCategoryNavbar from "../components/Category/OnlyViewCategoryNavbar"
+import SelectedCategoriesNavbar from "../components/Category/SelectedCategoriesNavbar"
 import { Filter as FilterIcon } from "../components/Icon/Filter"
-import { Trash } from "../components/Icon/Trash"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
 import OverviewList from "../components/Layout/OverviewList"
@@ -68,7 +65,8 @@ export default function IndexPage() {
   const track = useTrackContext()
   const [, setTrackingId] = useContext(TrackingPlacesSearchContext)
 
-  // TODO: remove one of these params
+  const [showBanner, setShowBanner] = useState(true)
+
   const params = useMemo(
     () => toPlacesOptions(new URLSearchParams(location.search)),
     [location.search]
@@ -84,14 +82,15 @@ export default function IndexPage() {
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [allPlaces, setAllPlaces] = useState<AggregatePlaceAttributes[]>([])
 
-  const isFilteringByCategory = params.categories.length > 0
-
-  const [
+  const {
     categories,
     previousActiveCategories,
     categoriesStack,
-    { handleAddCategory, handleRemoveCategory, handleSyncCategory },
-  ] = usePlaceCategoriesManager(params.categories)
+    isFilteringByCategory,
+    handleAddCategory,
+    handleRemoveCategory,
+    handleSyncCategory,
+  } = usePlaceCategoriesManager("places", params.categories)
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {
@@ -117,18 +116,15 @@ export default function IndexPage() {
     }
 
     if (isFilteringByCategory && !params.only_view_category) {
-      const categoriesFetch = []
-      // TODO: review later. use map instead
-      for (const category of params.categories) {
-        const placesFetch = Places.get().getPlaces({
+      const categoriesFetch = params.categories.map((category) => {
+        return Places.get().getPlaces({
           ...options,
           offset,
           limit: 15,
           categories: [category],
           search: isSearching ? search : undefined,
         })
-        categoriesFetch.push(placesFetch)
-      }
+      })
       const responses = await Promise.all(categoriesFetch)
 
       for (const res of responses) {
@@ -168,7 +164,11 @@ export default function IndexPage() {
       if (params.only_view_category) {
         setAllPlaces(response.data)
       } else {
-        setAllPlaces((allPlaces) => [...allPlaces, ...response.data])
+        setAllPlaces((allPlaces) => {
+          const newPlaces = [...allPlaces, ...response.data]
+          // each category is singly requested, a same place can appear on more than one category
+          return unique(newPlaces, (place) => place.id)
+        })
       }
     }
 
@@ -423,6 +423,7 @@ export default function IndexPage() {
               <CategoryList
                 onChange={handleApplyCategoryListChange}
                 categories={categories}
+                label={l("social.places.title")}
               />
             </Grid.Column>
           )}
@@ -510,38 +511,31 @@ export default function IndexPage() {
                 )}
               </div>
               {isFilteringByCategory && !params.only_view_category && (
-                <div className="places-page__category-filters-box">
-                  <CategoryFilters
-                    categories={categories}
-                    onlyActives
-                    onChange={handleApplyCategoryListChange}
-                    filtersIcon={<Close width="20" height="20" />}
-                  />
-                  <span
-                    className="clear-all-filter-btn"
-                    onClick={handleClearAll}
-                  >
-                    <Filter>
-                      <Trash width="20" height="20" />{" "}
-                      <p>{l("pages.places.clear_all")}</p>
-                    </Filter>
-                  </span>
-                </div>
+                <SelectedCategoriesNavbar
+                  categories={categories}
+                  onChangeFilters={handleApplyCategoryListChange}
+                  onClickClearAll={handleClearAll}
+                />
               )}
               {params.only_view_category && (
-                <div className="only-view-category-navbar__box">
-                  <Back onClick={() => toggleViewAllCategory(null, true)} />
-                  <div>
-                    <CategoryFilter
-                      category={params.only_view_category}
-                      active
-                      onChange={() => toggleViewAllCategory(null, false)}
-                      actionIcon={<Close width="20" height="20" />}
-                    />
-                  </div>
-                </div>
+                <OnlyViewCategoryNavbar
+                  onClickBack={() => toggleViewAllCategory(null, true)}
+                  onClickCategoryFilter={() =>
+                    toggleViewAllCategory(null, false)
+                  }
+                  category={params.only_view_category}
+                />
               )}
             </div>
+            {showBanner &&
+              (isMobile ? (
+                <BannerMobile
+                  type="places"
+                  onClose={() => setShowBanner(false)}
+                />
+              ) : (
+                <Banner type="places" onClose={() => setShowBanner(false)} />
+              ))}
             {allPlaces.length > 0 &&
               (!isFilteringByCategory || params.only_view_category) && (
                 <PlaceList

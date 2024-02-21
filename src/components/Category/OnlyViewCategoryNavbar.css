@@ -1,0 +1,9 @@
+.only-view-category-navbar__box {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.only-view-category-navbar__box > .dcl.back {
+  margin-right: 5px;
+}

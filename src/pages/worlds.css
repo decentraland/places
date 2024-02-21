@@ -10,6 +10,10 @@
   padding: 0 !important;
 }
 
+.worlds-banner-container {
+  padding: 0 48px 24px;
+}
+
 .ui.grid.worlds-page > .row > .column.worlds-page__list,
 .ui.grid.worlds-page > .row > .column.worlds-page__description {
   padding: 0 48px 24px;
@@ -127,13 +131,6 @@
   .worlds-page .worlds-page__filters .ui.header {
     margin-left: 22px;
   }
-
-  .ui.grid.worlds-page
-    > .row
-    > .column.worlds-page__list
-    .place-list__container {
-    width: calc(100% + 28px);
-  }
 }
 
 @media only screen and (max-width: 767px) {
@@ -181,4 +178,69 @@
     margin-right: 0;
     margin-left: 0;
   }
+}
+
+#column-filters {
+  width: 320px;
+}
+
+#column-worlds-list {
+  width: calc(100% - 320px);
+}
+
+#column-worlds-list.full {
+  width: 100%;
+}
+
+.worlds-page__category-filters-box-container {
+  display: flex;
+  flex-direction: column;
+}
+
+.worlds-page__category-filters-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.worlds-page__category-filters-info p {
+  color: var(--secondary-text);
+  font-size: 14px;
+  font-weight: 700;
+  margin-bottom: 0;
+}
+
+.worlds-page__category-filters-info > div {
+  display: flex;
+  align-items: center;
+}
+
+.worlds-page__category-filters-info > div > .ui.basic.button {
+  margin-left: 5px;
+}
+
+.worlds-page__category-filters_box--mobile > .dcl.box-children {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.worlds-page__category-filters_box--mobile
+  > .dcl.box-children
+  .category-filter__box {
+  margin-bottom: 5px;
+}
+
+.worlds-page__category-filters-box {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.worlds-page__category-filters-box .dcl.filter {
+  margin: 2px 0;
+}
+
+.worlds-page .places-page__filters {
+  border-right: 1px solid var(--divider);
 }

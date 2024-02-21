@@ -16,19 +16,29 @@ type CategoryList = {
     props: CategoryFilterProps
   ) => void
   categories: Category[]
+  label: string
   applyfilter?: boolean
+  isNew?: boolean
 }
 
 export const CategoryList = React.memo((props: CategoryList) => {
-  const { categories, onChange } = props
+  const { categories, onChange, isNew, label } = props
   const l = useFormatMessage()
 
   return (
     <div className="category-list__box">
-      <NewLabel
-        title={l("categories.title")}
-        className="category-list__title"
-      />
+      {isNew ? (
+        <NewLabel
+          title={`${label} ${l("categories.title")}`}
+          className="category-list__title"
+        />
+      ) : (
+        <div className="category-list__title">
+          <p>
+            {label} {l("categories.title")}
+          </p>
+        </div>
+      )}
       <CategoryFilters
         categories={categories}
         onChange={onChange}
