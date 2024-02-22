@@ -18,7 +18,6 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import { Back } from "decentraland-ui/dist/components/Back/Back"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Dropdown } from "decentraland-ui/dist/components/Dropdown/Dropdown"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
@@ -29,13 +28,10 @@ import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 import Places from "../api/Places"
 import Banner from "../components/Banner"
 import BannerMobile from "../components/BannerMobile"
-import {
-  CategoryFilter,
-  CategoryFilterProps,
-} from "../components/Category/CategoryFilter"
+import { CategoryFilterProps } from "../components/Category/CategoryFilter"
 import { CategoryList } from "../components/Category/CategoryList"
+import OnlyViewCategoryNavbar from "../components/Category/OnlyViewCategoryNavbar"
 import SelectedCategoriesNavbar from "../components/Category/SelectedCategoriesNavbar"
-import { Close } from "../components/Icon/Close"
 import { Filter } from "../components/Icon/Filter"
 import Navigation, { NavigationTab } from "../components/Layout/Navigation"
 import NoResults from "../components/Layout/NoResults"
@@ -523,17 +519,13 @@ export default function WorldsPage() {
                 />
               )}
               {params.only_view_category && (
-                <div className="only-view-category-navbar__box">
-                  <Back onClick={() => toggleViewAllCategory(null, true)} />
-                  <div>
-                    <CategoryFilter
-                      category={params.only_view_category}
-                      active
-                      onChange={() => toggleViewAllCategory(null, false)}
-                      actionIcon={<Close width="20" height="20" />}
-                    />
-                  </div>
-                </div>
+                <OnlyViewCategoryNavbar
+                  onClickBack={() => toggleViewAllCategory(null, true)}
+                  onClickCategoryFilter={() =>
+                    toggleViewAllCategory(null, false)
+                  }
+                  category={params.only_view_category}
+                />
               )}
             </div>
             {showBanner &&
