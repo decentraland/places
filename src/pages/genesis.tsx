@@ -40,6 +40,7 @@ import SearchInput from "../components/Layout/SearchInput"
 import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { TrackingPlacesSearchContext } from "../context/TrackingContext"
+import { CategoryCountTargetOptions } from "../entities/Category/types"
 import { getPlaceListQuerySchema } from "../entities/Place/schemas"
 import {
   AggregatePlaceAttributes,
@@ -530,11 +531,14 @@ export default function IndexPage() {
             {showBanner &&
               (isMobile ? (
                 <BannerMobile
-                  type="places"
+                  type={CategoryCountTargetOptions.PLACES}
                   onClose={() => setShowBanner(false)}
                 />
               ) : (
-                <Banner type="places" onClose={() => setShowBanner(false)} />
+                <Banner
+                  type={CategoryCountTargetOptions.PLACES}
+                  onClose={() => setShowBanner(false)}
+                />
               ))}
             {allPlaces.length > 0 &&
               (!isFilteringByCategory || params.only_view_category) && (

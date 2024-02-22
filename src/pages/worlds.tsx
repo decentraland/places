@@ -44,6 +44,7 @@ import SearchInput from "../components/Layout/SearchInput"
 import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { TrackingPlacesSearchContext } from "../context/TrackingContext"
+import { CategoryCountTargetOptions } from "../entities/Category/types"
 import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { getWorldListQuerySchema } from "../entities/World/schemas"
 import { WorldListOrderBy } from "../entities/World/types"
@@ -535,11 +536,14 @@ export default function WorldsPage() {
             {showBanner &&
               (isMobile ? (
                 <BannerMobile
-                  type="worlds"
+                  type={CategoryCountTargetOptions.WORLDS}
                   onClose={() => setShowBanner(false)}
                 />
               ) : (
-                <Banner type="worlds" onClose={() => setShowBanner(false)} />
+                <Banner
+                  type={CategoryCountTargetOptions.WORLDS}
+                  onClose={() => setShowBanner(false)}
+                />
               ))}
             {allWorlds.length > 0 &&
               (!isFilteringByCategory || params.only_view_category) && (
