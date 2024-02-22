@@ -3,10 +3,13 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
 import Places from "../api/Places"
-import { Category, CategoryCountTarget } from "../entities/Category/types"
+import {
+  Category,
+  CategoryCountTargetOptions,
+} from "../entities/Category/types"
 
 export default function usePlaceCategoriesManager(
-  target: CategoryCountTarget,
+  target: CategoryCountTargetOptions,
   initActiveCategories?: string[]
 ) {
   const [originalCategories] = useAsyncMemo(

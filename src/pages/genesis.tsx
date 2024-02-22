@@ -91,7 +91,10 @@ export default function IndexPage() {
     handleAddCategory,
     handleRemoveCategory,
     handleSyncCategory,
-  } = usePlaceCategoriesManager("places", params.categories)
+  } = usePlaceCategoriesManager(
+    CategoryCountTargetOptions.PLACES,
+    params.categories
+  )
 
   const [loadingPlaces, loadPlaces] = useAsyncTask(async () => {
     const options = API.fromPagination(params, {

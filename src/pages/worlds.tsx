@@ -91,7 +91,10 @@ export default function WorldsPage() {
     handleAddCategory,
     handleRemoveCategory,
     handleSyncCategory,
-  } = usePlaceCategoriesManager("worlds", params.categories)
+  } = usePlaceCategoriesManager(
+    CategoryCountTargetOptions.WORLDS,
+    params.categories
+  )
 
   const [, setTrackingId] = useContext(TrackingPlacesSearchContext)
 
