@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react"
+import React, { useCallback, useMemo, useState } from "react"
 
 import ReactMarkdown from "react-markdown"
 
@@ -6,6 +6,7 @@ import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
+import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
@@ -16,8 +17,11 @@ import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
 import { FeatureFlags } from "../../../modules/ff"
+import locations from "../../../modules/locations"
 import { getRating } from "../../../modules/rating"
 import RatingButton, { RatingButtonProps } from "../../Button/RatingButton"
+import AppearsOnCategory from "../../Category/AppearsOnCategory"
+import { CategoryFilterProps } from "../../Category/CategoryFilter"
 import PlaceStats from "../../Place/PlaceStats/PlaceStats"
 
 import "./WorldDetails.css"
@@ -44,6 +48,22 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
   const rating = useMemo(
     () => getRating(place?.content_rating, SceneContentRating.RATING_PENDING),
     [place]
+  )
+
+  const handleCategorySelect = useCallback(
+    (
+      e: React.MouseEvent<HTMLSpanElement, MouseEvent>,
+      props: CategoryFilterProps
+    ) => {
+      const { category } = props
+
+      navigate(
+        locations.worlds({
+          categories: [category],
+        })
+      )
+    },
+    []
   )
 
   return (
@@ -94,6 +114,14 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
               </Label>
             </div>
           </div>
+
+          {place?.categories.length > 0 && (
+            <AppearsOnCategory
+              categories={place.categories}
+              onSelectCategory={handleCategorySelect}
+            />
+          )}
+
           <PlaceStats
             place={place}
             loading={loading}

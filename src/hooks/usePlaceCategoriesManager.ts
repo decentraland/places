@@ -3,14 +3,18 @@ import { useCallback, useEffect, useMemo, useState } from "react"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
 import Places from "../api/Places"
-import { Category } from "../entities/Category/types"
+import {
+  Category,
+  CategoryCountTargetOptions,
+} from "../entities/Category/types"
 
 export default function usePlaceCategoriesManager(
+  target: CategoryCountTargetOptions,
   initActiveCategories?: string[]
 ) {
   const [originalCategories] = useAsyncMemo(
     async () => {
-      const categories = await Places.get().getCategories()
+      const categories = await Places.get().getCategories(target)
       return categories.map((category) => ({
         ...category,
         active: initActiveCategories?.includes(category.name) || false,
@@ -82,14 +86,16 @@ export default function usePlaceCategoriesManager(
     [setCategories]
   )
 
-  return [
+  const isFilteringByCategory =
+    categories.filter(({ active }) => active).length > 0
+
+  return {
     categories,
     previousActiveCategories,
     categoriesStack,
-    {
-      handleAddCategory,
-      handleRemoveCategory,
-      handleSyncCategory,
-    },
-  ] as const
+    isFilteringByCategory,
+    handleAddCategory,
+    handleRemoveCategory,
+    handleSyncCategory,
+  } as const
 }

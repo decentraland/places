@@ -497,6 +497,15 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           options.search || ""
         )})) as rank`
       )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
       WHERE
         p.disabled is false AND world is true
         ${conditional(
@@ -517,7 +526,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names" | "search"
+      "user" | "only_favorites" | "names" | "search" | "categories"
     >
   ) {
     const isMissingEthereumAddress =
@@ -536,6 +545,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
         )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
       )}
       ${conditional(
         !!options.search,

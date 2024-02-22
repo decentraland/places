@@ -1,0 +1,754 @@
+{
+  "content": [
+    {
+      "place_id": "40115ef9-3846-4dca-abc5-ed21101db938",
+      "world_name": "arcania.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "40115ef9-3846-4dca-abc5-ed21101db938",
+      "world_name": "arcania.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "40115ef9-3846-4dca-abc5-ed21101db938",
+      "world_name": "arcania.dcl.eth",
+      "category_id": "crypto"
+    },
+    {
+      "place_id": "14b99cc2-775c-49ce-a8ff-26e71202a83f",
+      "world_name": "metadynelabs.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "0703e273-4e0f-4bc5-8dc5-28cec040d1ed",
+      "world_name": "strategicunit.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "d2341d4a-fa13-4da0-96c2-7a6e06a9dd44",
+      "world_name": "greenscreen.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "b1692817-85d6-44ac-938b-8367b385adac",
+      "world_name": "improve.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "dd9838e2-f2ca-4c44-820f-1c7b05a03d02",
+      "world_name": "outfits.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "dd9838e2-f2ca-4c44-820f-1c7b05a03d02",
+      "world_name": "outfits.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "ac95a895-4aaa-40db-b666-b01edbb95cb5",
+      "world_name": "meangreendoge.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "b6918481-7a88-44c5-b00d-a1d7d3cda2a1",
+      "world_name": "lowpolymodels.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "b6918481-7a88-44c5-b00d-a1d7d3cda2a1",
+      "world_name": "lowpolymodels.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "80a5135d-4890-496a-98ea-920b0facdf5f",
+      "world_name": "wasteland.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "3a506123-8ff6-4038-8d5b-63ababc7b348",
+      "world_name": "dachainrk.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "3a506123-8ff6-4038-8d5b-63ababc7b348",
+      "world_name": "dachainrk.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "1366f7ca-0417-4965-a9b7-c4c10ade97a3",
+      "world_name": "oldguy.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "e294e90e-3227-4a16-877a-92b0b6f0a663",
+      "world_name": "lasertagarena.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "e180331b-6376-4752-bac7-f0b8b2713ba8",
+      "world_name": "tophub.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "6548f2a7-0ce7-4b68-a5b7-f6535014a741",
+      "world_name": "dexou.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "6548f2a7-0ce7-4b68-a5b7-f6535014a741",
+      "world_name": "dexou.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "9159ce0b-24c6-47cf-a5a2-e65c5d7323c1",
+      "world_name": "dexou.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "8dde2f50-e3f7-4f11-86e0-53c67c333169",
+      "world_name": "bitfuel.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "284c5412-2f0b-4515-93b7-3b7657b0f202",
+      "world_name": "luciddreams.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "a8104e50-2b0d-4af5-8861-2624d309eeb4",
+      "world_name": "templegame.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "a8104e50-2b0d-4af5-8861-2624d309eeb4",
+      "world_name": "templegame.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "1722f688-f2c3-481f-ba82-5f83830a5bd9",
+      "world_name": "ded.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "1ef01c51-8f0b-4ca1-bfef-b8093f0226bf",
+      "world_name": "wizardry.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "89bda919-3d17-4c1b-aa25-17946db8c77e",
+      "world_name": "8metagames.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "229f63b2-3bc4-4f00-8a18-1ca212aff8b2",
+      "world_name": "residence.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "cd162d59-e1d6-4a6c-b2c4-420f1d45ebe9",
+      "world_name": "metafoxcrew.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "d89efc1e-f477-4a6e-98c4-fb3131bec702",
+      "world_name": "exodustown.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "7a84a7b1-0075-4076-a61c-ebb74d97281d",
+      "world_name": "mvmf21water.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "7a84a7b1-0075-4076-a61c-ebb74d97281d",
+      "world_name": "mvmf21water.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "46fa885a-157f-4cf5-bb5a-2066ec6ac4d8",
+      "world_name": "talentless.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "46fa885a-157f-4cf5-bb5a-2066ec6ac4d8",
+      "world_name": "talentless.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "7aaa7c59-6824-45f8-b22f-cd46b6d8f493",
+      "world_name": "sammich.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "9fd06083-da58-4780-8f97-aff5645ad980",
+      "world_name": "rnb.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "7b5237ca-f42f-486e-9f56-8ead8630c2cb",
+      "world_name": "paralax.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "e7b1cb48-d040-4a6d-8e05-32fd0bc2fed3",
+      "world_name": "madagascar.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "61561b05-5187-4383-9f5e-64dc1e2ae9b4",
+      "world_name": "mvmf21meta.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "61561b05-5187-4383-9f5e-64dc1e2ae9b4",
+      "world_name": "mvmf21meta.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "8e356993-2a57-4165-94db-25963c593081",
+      "world_name": "ivroom.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "d4adf838-b6b9-479c-b776-4eca1bdb3504",
+      "world_name": "megeve.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "5fe933db-4c4b-4384-b444-7a7fcafc77dd",
+      "world_name": "markcuban4skin.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "7343d22a-1f05-4736-a9c3-f45b326fd5f4",
+      "world_name": "duelarena.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "fa8edd97-44f4-43bf-9b58-d2c785cd2df6",
+      "world_name": "ova.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "612bd413-851f-48f7-9389-7fb117b655cd",
+      "world_name": "artemls.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "612bd413-851f-48f7-9389-7fb117b655cd",
+      "world_name": "artemls.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "a6f93f7c-3072-412a-b7de-4e18994659df",
+      "world_name": "surz.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "36be6770-3bb0-4460-92dd-345d176c2da2",
+      "world_name": "lauti7.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "2024935d-14df-41bc-ae4b-d8b71ddf76de",
+      "world_name": "vlm.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "2024935d-14df-41bc-ae4b-d8b71ddf76de",
+      "world_name": "vlm.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "bcfcdee8-2491-401f-8550-af8d980dcc00",
+      "world_name": "eoneye.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "bdda66eb-bdd6-4532-9c88-d669bcd12ec1",
+      "world_name": "solowallet.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "1bd3a9fe-94f8-4a2c-a004-98adb19c964a",
+      "world_name": "cryptoacademy.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "1bd3a9fe-94f8-4a2c-a004-98adb19c964a",
+      "world_name": "cryptoacademy.dcl.eth",
+      "category_id": "crypto"
+    },
+    {
+      "place_id": "1bd3a9fe-94f8-4a2c-a004-98adb19c964a",
+      "world_name": "cryptoacademy.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "284bdea5-3df2-4f0f-b817-182ef66bf4e6",
+      "world_name": "emgeducation.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "d2b9fdd0-81e0-4248-89c8-d03a986dd95b",
+      "world_name": "marinamarion.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "2619db84-5180-448d-bc9a-d7e83ae7ee1d",
+      "world_name": "rizkgh.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "b8c0f12a-f33d-46f9-b8a0-4bfe7892b4cd",
+      "world_name": "teamwes.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "052ad211-1e0b-4352-a8e4-08efa6005d31",
+      "world_name": "quadrax.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "31a69d3f-57b9-43c6-a808-4265457f6696",
+      "world_name": "maximocossetti.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "1372077f-79dd-4910-ac30-36da565a3c2c",
+      "world_name": "pko.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "1372077f-79dd-4910-ac30-36da565a3c2c",
+      "world_name": "pko.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "c9c07f77-fbb6-48e8-82c7-38337b03fcd6",
+      "world_name": "dclmvfw.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "0b2aac85-9542-4bfc-8100-821730047c50",
+      "world_name": "mgmplanetstage.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "0b2aac85-9542-4bfc-8100-821730047c50",
+      "world_name": "mgmplanetstage.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "ef3cf146-23d6-4716-b9e9-3f1b26badd4f",
+      "world_name": "41510.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "ef3cf146-23d6-4716-b9e9-3f1b26badd4f",
+      "world_name": "41510.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "02d20276-ad0d-43de-9703-985a4f70fbb5",
+      "world_name": "tru.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "deacbd35-06c2-41a0-a3de-0826712a4ab2",
+      "world_name": "baybackner.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "deacbd35-06c2-41a0-a3de-0826712a4ab2",
+      "world_name": "baybackner.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "946260af-afb3-4579-bf95-6561f5bd82b8",
+      "world_name": "fim.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "0e3228c6-df54-4f7f-9869-77b5ac40fba0",
+      "world_name": "ahmadh.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "397c76cc-03e6-41c5-819c-a5f4ef6697ef",
+      "world_name": "artdecentralart.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "397c76cc-03e6-41c5-819c-a5f4ef6697ef",
+      "world_name": "artdecentralart.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "951ac818-ea37-4947-ae11-5b7d737c854c",
+      "world_name": "metavs.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "b3d849d4-b486-4fe1-b7c2-2879f868f5b5",
+      "world_name": "innoarea.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "7e71801f-7e9b-4858-ba82-25b751cc342b",
+      "world_name": "nikkifuego.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "7e71801f-7e9b-4858-ba82-25b751cc342b",
+      "world_name": "nikkifuego.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "922f7e60-5921-4862-ac6c-1ed8682d82b7",
+      "world_name": "soapbox.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "d9171ba6-aa3e-409c-93c3-361f55e9080f",
+      "world_name": "weronika.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "d9171ba6-aa3e-409c-93c3-361f55e9080f",
+      "world_name": "weronika.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "5f2c24f4-cb0b-4b93-bb8b-aebe1070122d",
+      "world_name": "grins.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "5f2c24f4-cb0b-4b93-bb8b-aebe1070122d",
+      "world_name": "grins.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "5f2c24f4-cb0b-4b93-bb8b-aebe1070122d",
+      "world_name": "grins.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "041bbe51-b69d-4409-988d-164bbcfb9326",
+      "world_name": "alltimehigh.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "45460e1f-dca2-4dd4-b753-48bc92685c95",
+      "world_name": "tracey.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "236cc6fb-0848-4a38-a3c8-fda6df2ced48",
+      "world_name": "sonidobaylando.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "236cc6fb-0848-4a38-a3c8-fda6df2ced48",
+      "world_name": "sonidobaylando.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "8ac67a97-6955-49f3-956d-da194319d1a5",
+      "world_name": "lordlike.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "2a63165b-c886-4342-83fc-7b9532979a06",
+      "world_name": "akasya.dcl.eth",
+      "category_id": "crypto"
+    },
+    {
+      "place_id": "2a63165b-c886-4342-83fc-7b9532979a06",
+      "world_name": "akasya.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "2a63165b-c886-4342-83fc-7b9532979a06",
+      "world_name": "akasya.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "fcdeb62f-f8fe-4d56-979d-94322b528a01",
+      "world_name": "spacevin.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "fd14a3db-6120-4bd5-a7b4-dada6d5374fe",
+      "world_name": "e2hereum.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "a2719675-8493-4e73-a453-ef7ddef29e18",
+      "world_name": "motherhacker.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "45b1d62c-49be-4801-b57d-0875ea22c950",
+      "world_name": "luciddream.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "45b1d62c-49be-4801-b57d-0875ea22c950",
+      "world_name": "luciddream.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "1a9a219e-bcd1-488d-81ee-564a2f24e20f",
+      "world_name": "hausfuego.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "0f69a3eb-8bf5-4860-851e-b65bfa82e91c",
+      "world_name": "beatkoin.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "0f69a3eb-8bf5-4860-851e-b65bfa82e91c",
+      "world_name": "beatkoin.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "89e91c7b-05d2-4e35-8ad8-823bb09576f2",
+      "world_name": "argent.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "01d6354c-3668-4f82-ad7f-b8d12d060662",
+      "world_name": "poko.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "01d6354c-3668-4f82-ad7f-b8d12d060662",
+      "world_name": "poko.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "707e87e8-72a0-4dd2-ae23-28c7fcc79bcf",
+      "world_name": "metalivestudio.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "0f1cbe85-2cae-42df-aa10-b8b5607b6711",
+      "world_name": "cryptonico.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "fff43637-c0b9-4efa-b616-22b686479abb",
+      "world_name": "imagineharmony.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "fff43637-c0b9-4efa-b616-22b686479abb",
+      "world_name": "imagineharmony.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "f291b92a-6363-4892-a7b7-fbea4ae1b807",
+      "world_name": "sinney.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "7f893bbf-ef23-4dcd-9285-9cb5faf89055",
+      "world_name": "multinft.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "7f893bbf-ef23-4dcd-9285-9cb5faf89055",
+      "world_name": "multinft.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "1c72a33a-96db-4cb0-80f5-ea1df8e8372d",
+      "world_name": "thegreathall.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "1c72a33a-96db-4cb0-80f5-ea1df8e8372d",
+      "world_name": "thegreathall.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "a642b633-d935-4fbd-98a7-77fd99f56552",
+      "world_name": "rhagde.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "cea877b6-093f-41d0-baa0-5533e33b1e15",
+      "world_name": "spacetime.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "cea877b6-093f-41d0-baa0-5533e33b1e15",
+      "world_name": "spacetime.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "fd88381c-3126-4838-a66c-05e68ec43650",
+      "world_name": "ai47patos.dcl.eth",
+      "category_id": "game"
+    },
+    {
+      "place_id": "070119c4-30e2-4493-87e2-2c375e8f4f68",
+      "world_name": "sophiaverse.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "35e1bf7d-aab7-4f9d-9cfd-4cb24797c17f",
+      "world_name": "mualabs.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "35e1bf7d-aab7-4f9d-9cfd-4cb24797c17f",
+      "world_name": "mualabs.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "2461e526-5498-4c71-8624-62dfb362a597",
+      "world_name": "twink.dcl.eth",
+      "category_id": "fashion"
+    },
+    {
+      "place_id": "e0368a01-d1b2-4279-ac4d-48b30c0e4f6a",
+      "world_name": "trumpking.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "98503079-03cb-4397-9633-fcd2be81f0e8",
+      "world_name": "mvagents.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "98503079-03cb-4397-9633-fcd2be81f0e8",
+      "world_name": "mvagents.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "5e20870d-3656-400e-bfd0-b0a42de48382",
+      "world_name": "urbantechnology.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "5e20870d-3656-400e-bfd0-b0a42de48382",
+      "world_name": "urbantechnology.dcl.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "92fb09f9-e24c-4db4-a210-1eb0d382804d",
+      "world_name": "stargate.dcl.eth",
+      "category_id": "business"
+    },
+    {
+      "place_id": "7b1f466d-18ef-44b1-b77f-a23aec0fff68",
+      "world_name": "sirtesla.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "ae9ad2c0-89c4-4cb6-addd-e46b0f2d001b",
+      "world_name": "shenyu.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "ae9ad2c0-89c4-4cb6-addd-e46b0f2d001b",
+      "world_name": "shenyu.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "7b6652dd-698f-48a9-a4ca-2af079163318",
+      "world_name": "ferritto.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "7b6652dd-698f-48a9-a4ca-2af079163318",
+      "world_name": "ferritto.eth",
+      "category_id": "shop"
+    },
+    {
+      "place_id": "f9359fd7-620d-4a72-a794-40b0555cf841",
+      "world_name": "adricci.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "f9359fd7-620d-4a72-a794-40b0555cf841",
+      "world_name": "adricci.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "f9359fd7-620d-4a72-a794-40b0555cf841",
+      "world_name": "adricci.eth",
+      "category_id": "crypto"
+    },
+    {
+      "place_id": "770e06e5-2046-4d45-bf31-06039575a1fb",
+      "world_name": "trumpking.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "770e06e5-2046-4d45-bf31-06039575a1fb",
+      "world_name": "trumpking.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "c205e6c5-a839-4027-b7c7-f8bda740d86e",
+      "world_name": "colleconline.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "f66585cc-e295-4455-bbf2-b9acfcec0cd4",
+      "world_name": "deuceeclipse.dcl.eth",
+      "category_id": "music"
+    },
+    {
+      "place_id": "6ebe1ca6-6526-446f-9863-8855860f754a",
+      "world_name": "thestudio.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "c43ab82e-2f7b-482b-a7be-b0fdd2285da1",
+      "world_name": "rockstlighting.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "c43ab82e-2f7b-482b-a7be-b0fdd2285da1",
+      "world_name": "rockstlighting.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "4ff3ee0c-b058-4e27-b1d3-72ab8f70c5f7",
+      "world_name": "hirotokai.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "4ff3ee0c-b058-4e27-b1d3-72ab8f70c5f7",
+      "world_name": "hirotokai.dcl.eth",
+      "category_id": "education"
+    },
+    {
+      "place_id": "4ff3ee0c-b058-4e27-b1d3-72ab8f70c5f7",
+      "world_name": "hirotokai.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "4fce5442-7369-4b41-9b51-c01fc529ab40",
+      "world_name": "phuturemusic.dcl.eth",
+      "category_id": "social"
+    },
+    {
+      "place_id": "1bc61493-7aad-4cb9-9a78-7e305807b7e7",
+      "world_name": "soundclash.dcl.eth",
+      "category_id": "art"
+    },
+    {
+      "place_id": "91aeff15-ae9f-460c-bbf7-bf2330df7f32",
+      "world_name": "rumraisin.dcl.eth",
+      "category_id": "social"
+    }
+  ]
+}

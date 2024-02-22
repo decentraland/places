@@ -17,3 +17,9 @@ export enum DecentralandCategories {
 
 // TODO: review this type with the other ones: naming and maybe we can merge some (@lauti7)
 export type Category = { name: string; active: boolean; count?: number }
+
+export enum CategoryCountTargetOptions {
+  ALL = "all",
+  PLACES = "places",
+  WORLDS = "worlds",
+}

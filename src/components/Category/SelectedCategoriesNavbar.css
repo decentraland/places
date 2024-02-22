@@ -1,0 +1,20 @@
+.clear-all-filter-btn .dcl.filter > span {
+  display: flex;
+  align-items: center;
+}
+
+.clear-all-filter-btn .dcl.filter > span > p {
+  color: inherit;
+  font-weight: 700;
+  margin-left: 8px;
+}
+
+.category-filters-box {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+
+.category-filters-box .dcl.filter {
+  margin: 2px 0;
+}
