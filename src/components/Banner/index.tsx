@@ -2,6 +2,7 @@ import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
+import { CategoryCountTargetOptions } from "../../entities/Category/types"
 import DCLLogo from "../../images/dcl-logo.svg"
 import GenesisBanner from "../../images/genesis-banner.png"
 import WorldBanner from "../../images/worlds-banner.png"
@@ -11,7 +12,7 @@ import { Close } from "../Icon/Close"
 import "./index.css"
 
 type BannerProps = {
-  type: "places" | "worlds"
+  type: CategoryCountTargetOptions.PLACES | CategoryCountTargetOptions.WORLDS
   onClose: (e: React.MouseEvent<SVGElement, MouseEvent>) => void
 }
 
@@ -21,11 +22,17 @@ export default ({ onClose, type }: BannerProps) => {
   return (
     <div
       className={`banner ${
-        type === "places" ? "genesis-banner" : "worlds-banner"
+        type === CategoryCountTargetOptions.PLACES
+          ? "genesis-banner"
+          : "worlds-banner"
       }`}
     >
       <div>
-        <img src={type === "places" ? DCLLogo : WorldsLogo} />
+        <img
+          src={
+            type === CategoryCountTargetOptions.PLACES ? DCLLogo : WorldsLogo
+          }
+        />
         <div>
           <p className="banner__title">{l(`pages.${type}.banner.title`)}</p>
           <p className="banner__description">
@@ -33,7 +40,13 @@ export default ({ onClose, type }: BannerProps) => {
           </p>
         </div>
       </div>
-      <img src={type === "places" ? GenesisBanner : WorldBanner} />
+      <img
+        src={
+          type === CategoryCountTargetOptions.PLACES
+            ? GenesisBanner
+            : WorldBanner
+        }
+      />
       <Close width="32" height="32" type="filled" onClick={onClose} />
     </div>
   )

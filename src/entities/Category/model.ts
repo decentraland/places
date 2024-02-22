@@ -7,7 +7,11 @@ import {
 
 import PlaceModel from "../Place/model"
 import PlaceCategories from "../PlaceCategories/model"
-import { CategoryAttributes, CategoryWithPlaceCount } from "./types"
+import {
+  CategoryAttributes,
+  CategoryCountTargetOptions,
+  CategoryWithPlaceCount,
+} from "./types"
 
 export default class CategoryModel extends Model<CategoryAttributes> {
   static tableName = "categories"
@@ -25,7 +29,7 @@ export default class CategoryModel extends Model<CategoryAttributes> {
   }
 
   static async findActiveCategoriesWithPlaces(
-    target: "all" | "worlds" | "places" = "all"
+    target: CategoryCountTargetOptions = CategoryCountTargetOptions.ALL
   ): Promise<CategoryWithPlaceCount[]> {
     const query = SQL`
       SELECT c.name, count(pc.place_id) as count FROM ${table(CategoryModel)} c
@@ -33,8 +37,14 @@ export default class CategoryModel extends Model<CategoryAttributes> {
       LEFT JOIN ${table(PlaceModel)} p ON pc.place_id = p.id
       WHERE c.active IS true
 
-      ${conditional(target === "worlds", SQL`AND p.world IS true`)}
-      ${conditional(target === "places", SQL`AND p.world IS false`)}
+      ${conditional(
+        target === CategoryCountTargetOptions.WORLDS,
+        SQL`AND p.world IS true`
+      )}
+      ${conditional(
+        target === CategoryCountTargetOptions.PLACES,
+        SQL`AND p.world IS false`
+      )}
 
       GROUP BY c.name
       ORDER BY count DESC

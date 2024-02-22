@@ -4,18 +4,18 @@ import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 
 import { categories as CategoryTranslations } from "../../intl/en.json"
 import CategoryModel from "./model"
-import { CategoryCountTarget } from "./types"
+import { CategoryCountTargetOptions } from "./types"
 
 export default routes((router) => {
   router.get("/categories", getCategoryList)
 })
 
 export async function getCategoryList(ctx: Context<{}, "url" | "request">) {
-  let target: CategoryCountTarget = "all"
+  let target = CategoryCountTargetOptions.ALL
   switch (ctx.url.searchParams.get("target")) {
-    case "places":
-    case "worlds":
-      target = ctx.url.searchParams.get("target")! as CategoryCountTarget
+    case CategoryCountTargetOptions.PLACES:
+    case CategoryCountTargetOptions.WORLDS:
+      target = ctx.url.searchParams.get("target")! as CategoryCountTargetOptions
       break
     default:
       break
