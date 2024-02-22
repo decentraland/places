@@ -86,8 +86,7 @@ export default function usePlaceCategoriesManager(
     [setCategories]
   )
 
-  const isFilteringByCategory =
-    categories.filter(({ active }) => active).length > 0
+  const isFilteringByCategory = (initActiveCategories || []).length > 0
 
   return {
     categories,
