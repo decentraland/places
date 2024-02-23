@@ -5,7 +5,7 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { CategoryCountTargetOptions } from "../../entities/Category/types"
 import DCLLogo from "../../images/dcl-logo.svg"
 import GenesisBanner from "../../images/genesis-banner-mobile.png"
-import WorldBanner from "../../images/worlds-banner.png"
+import WorldBanner from "../../images/worlds-banner-mobile.png"
 import WorldsLogo from "../../images/worlds-logo.svg"
 import { Close } from "../Icon/Close"
 

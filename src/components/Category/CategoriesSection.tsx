@@ -5,13 +5,13 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { CategoryButtons } from "../Button/CategoryButtons"
 import { NewLabel } from "../Label/NewLabel/NewLabel"
 
-import "./CategorySections.css"
+import "./CategoriesSection.css"
 
-type CategorySectionsProps = {
+type CategoriesSectionProps = {
   categories: string[]
 }
 
-export const CategorySections = (props: CategorySectionsProps) => {
+export const CategoriesSection = (props: CategoriesSectionProps) => {
   const { categories } = props
   const l = useFormatMessage()
 
