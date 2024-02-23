@@ -42,8 +42,8 @@
 }
 
 .banner-mobile > img {
-  width: 346px;
-  height: 132px;
+  width: 100%;
+  height: 125px;
 }
 
 .banner-mobile > svg {
