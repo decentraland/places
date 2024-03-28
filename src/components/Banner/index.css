@@ -1,0 +1,62 @@
+.banner {
+  width: 100%;
+  height: 172px;
+  padding-left: 24px;
+  border-radius: 12px;
+  justify-content: space-between;
+  align-items: center;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+
+.banner > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: center;
+}
+
+.banner > div > img {
+  border-radius: 8px;
+  width: 64px;
+}
+
+.banner > div > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.banner__title {
+  color: white;
+  font-size: 20px;
+  margin-bottom: 0;
+  font-weight: 700;
+  font-family: "Inter";
+}
+
+.banner__description {
+  color: white;
+  font-size: 16px;
+  font-weight: 500;
+  font-family: "Inter";
+}
+
+.banner > img {
+  width: 500px;
+  height: 172px;
+}
+
+.banner > svg {
+  position: absolute;
+  right: 16px;
+  top: 16px;
+}
+
+.genesis-banner {
+  background: linear-gradient(360deg, #ff7562 0%, #b60f55 100%);
+}
+
+.worlds-banner {
+  background: linear-gradient(180deg, #161518 0%, #6c27a1 100%);
+}

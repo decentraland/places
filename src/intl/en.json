@@ -141,7 +141,11 @@
       "search_results_title": "Search results for",
       "clear_all": "Clear All",
       "category_filter_title": "Categories",
-      "categories_selected": "Selected"
+      "categories_selected": "Selected",
+      "banner": {
+        "title": "Genesis City",
+        "description": "Map Made up of thousands of parcels owned and populated with dynamic content by its diverse community."
+      }
     },
     "favorites": {
       "title": "Favorites",
@@ -159,7 +163,11 @@
     "worlds": {
       "description": "Your own 3D Space in the Metaverse. A place for Decentraland citizens to build, experiment, and host events and even interactive experiences without owning LAND.",
       "find_out_more": "Find Out More",
-      "search_results_title": "Search results for"
+      "search_results_title": "Search results for",
+      "banner": {
+        "title": "Decentraland Worlds",
+        "description": "Personal 3D space separate from Genesis City, where you can unleash your creativity, host events, and more!"
+      }
     }
   },
   "social": {

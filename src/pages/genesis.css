@@ -41,15 +41,6 @@
   margin-bottom: 5px;
 }
 
-.places-page__category-filters-box {
-  display: flex;
-  flex-wrap: wrap;
-}
-
-.places-page__category-filters-box .dcl.filter {
-  margin: 2px 0;
-}
-
 .places-page .places-page__filters {
   border-right: 1px solid var(--divider);
 }
@@ -117,6 +108,7 @@
 .only-view-category-navbar__box {
   display: flex;
   align-items: center;
+  margin-bottom: 10px;
 }
 
 .only-view-category-navbar__box > .dcl.back {
@@ -132,27 +124,9 @@
   font-weight: 600;
 }
 
-.clear-all-filter-btn .dcl.filter > span {
-  display: flex;
-  align-items: center;
-}
-
-.clear-all-filter-btn .dcl.filter > span > p {
-  color: inherit;
-  font-weight: 700;
-  margin-left: 8px;
-}
-
 @media only screen and (min-width: 768px) {
   .places-page .places-page__filters .ui.header {
     margin-left: 22px;
-  }
-
-  .ui.grid.places-page
-    > .row
-    > .column.places-page__list
-    .place-list__container {
-    width: calc(100% + 28px);
   }
 
   .ui.overview-list
