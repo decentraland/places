@@ -10,6 +10,8 @@ import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
+import PlacePositionModel from "../PlacePosition/model"
+import roadCoordinates from "./RoadCoordinates.json"
 import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 /** @deprecated */
@@ -87,4 +89,27 @@ export async function getWorldAbout(
 ): Promise<WorldAbout> {
   const worldContentServer = await ContentServer.getInstanceFrom(url)
   return worldContentServer.fetch(`/world/${worldName}/about`)
+}
+
+export async function calculateWorldManifestPositions() {
+  const occupiedPositions = await PlacePositionModel.find({})
+  const emptyPositions = []
+
+  for (let x = -150; x <= 150; x++) {
+    for (let y = -150; y <= 150; y++) {
+      const position = [x.toString(), y.toString()]
+      if (
+        !occupiedPositions.some((place) =>
+          areSamePositions(place.position, position)
+        ) &&
+        !roadCoordinates.some((roadPosition) =>
+          areSamePositions(roadPosition.split(","), position)
+        )
+      ) {
+        emptyPositions.push(position)
+      }
+    }
+  }
+
+  return { occupiedPositions, emptyPositions, roadPositions: roadCoordinates }
 }

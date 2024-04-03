@@ -1,5 +1,10 @@
 import { randomUUID } from "crypto"
 
+import AWS from "aws-sdk"
+import env from "decentraland-gatsby/dist/utils/env"
+import fetch from "node-fetch"
+import { retry } from "radash"
+
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
@@ -14,7 +19,7 @@ import {
 } from "../../Slack/utils"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { getWorldAbout } from "../utils"
+import { calculateWorldManifestPositions, getWorldAbout } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import {
   ProcessEntitySceneResult,
@@ -42,6 +47,50 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world_name",
   "textsearch",
 ]
+
+const ACCESS_KEY = env("AWS_ACCESS_KEY")
+const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
+const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
+const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
+
+async function updateWorldManifest() {
+  const s3 = new AWS.S3({
+    accessKeyId: ACCESS_KEY,
+    secretAccessKey: ACCESS_SECRET,
+  })
+
+  const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
+    const responseUrl = s3.getSignedUrl("putObject", {
+      Bucket: BUCKET_NAME,
+      Key: `WorldManifest.json`,
+      Expires: 60 * 1000,
+      ContentType: "application/json",
+      ACL: "public-read",
+      CacheControl: "no-store, no-cache, must-revalidate, proxy-revalidate",
+    })
+
+    const url = new URL(responseUrl)
+    if (url.searchParams.size === 0) {
+      throw new Error("Invalid AWS response")
+    }
+
+    if (BUCKET_HOSTNAME) {
+      url.hostname = BUCKET_HOSTNAME
+    }
+
+    return url.toString()
+  })
+
+  const worldManifestPositions = await calculateWorldManifestPositions()
+
+  return await fetch(signedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(worldManifestPositions),
+  })
+}
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
   const contentEntityScene = await processEntityId(job)
@@ -228,6 +277,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     await CheckScenesModel.createMany(placesToDisable)
   }
+
+  // do not await so it is done on background
+  updateWorldManifest()
 }
 
 async function getValidCategories(creatorTags: string[]) {
