@@ -19,7 +19,7 @@ import {
 } from "../../Slack/utils"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { calculateWorldManifestPositions, getWorldAbout } from "../utils"
+import { calculateGenesisCityManifestPositions, getWorldAbout } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import {
   ProcessEntitySceneResult,
@@ -53,7 +53,7 @@ const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
 const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
 const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
 
-async function updateWorldManifest() {
+async function updateGenesisCityManifest() {
   const s3 = new AWS.S3({
     accessKeyId: ACCESS_KEY,
     secretAccessKey: ACCESS_SECRET,
@@ -81,14 +81,15 @@ async function updateWorldManifest() {
     return url.toString()
   })
 
-  const worldManifestPositions = await calculateWorldManifestPositions()
+  const genesisCityManifestPositions =
+    await calculateGenesisCityManifestPositions()
 
   return await fetch(signedUrl, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(worldManifestPositions),
+    body: JSON.stringify(genesisCityManifestPositions),
   })
 }
 
@@ -279,7 +280,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   }
 
   // do not await so it is done on background
-  updateWorldManifest()
+  updateGenesisCityManifest()
 }
 
 async function getValidCategories(creatorTags: string[]) {

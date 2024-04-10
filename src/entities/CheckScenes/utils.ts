@@ -8,10 +8,10 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
+import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
 import PlacePositionModel from "../PlacePosition/model"
-import roadCoordinates from "./RoadCoordinates.json"
 import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 /** @deprecated */
@@ -91,7 +91,7 @@ export async function getWorldAbout(
   return worldContentServer.fetch(`/world/${worldName}/about`)
 }
 
-export async function calculateWorldManifestPositions() {
+export async function calculateGenesisCityManifestPositions() {
   const occupiedPositions = await PlacePositionModel.find({})
   const emptyPositions = []
 
