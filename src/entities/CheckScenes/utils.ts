@@ -8,6 +8,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
+import allCoordinates from "../../__data__/pointers.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
@@ -83,6 +84,14 @@ export function isSameWorld(
   )
 }
 
+type Pointer = string
+
+interface ManifestResponse {
+  roads: Pointer[]
+  occupied: Pointer[]
+  empty: Pointer[]
+}
+
 export async function getWorldAbout(
   url: string,
   worldName: string
@@ -91,25 +100,25 @@ export async function getWorldAbout(
   return worldContentServer.fetch(`/world/${worldName}/about`)
 }
 
-export async function calculateGenesisCityManifestPositions() {
-  const occupiedPositions = await PlacePositionModel.find({})
-  const emptyPositions = []
+export async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {
+  const occupiedPositions = (await PlacePositionModel.find({})).map(
+    (place) => place.position
+  )
 
-  for (let x = -150; x <= 150; x++) {
-    for (let y = -150; y <= 150; y++) {
-      const position = [x.toString(), y.toString()]
-      if (
-        !occupiedPositions.some((place) =>
-          areSamePositions(place.position, position)
-        ) &&
-        !roadCoordinates.some((roadPosition) =>
-          areSamePositions(roadPosition.split(","), position)
-        )
-      ) {
-        emptyPositions.push(position)
-      }
-    }
+  const response: ManifestResponse = {
+    roads: roadCoordinates,
+    occupied: occupiedPositions,
+    empty: [],
   }
 
-  return { occupiedPositions, emptyPositions, roadPositions: roadCoordinates }
+  const roadSet = new Set(roadCoordinates)
+  const occupiedSet = new Set(occupiedPositions)
+  const restOfCoordinates = new Set(allCoordinates)
+
+  roadSet.forEach((coordinate) => restOfCoordinates.delete(coordinate))
+  occupiedSet.forEach((coordinate) => restOfCoordinates.delete(coordinate))
+
+  response.empty = Array.from(restOfCoordinates)
+
+  return response
 }
