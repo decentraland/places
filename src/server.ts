@@ -56,7 +56,13 @@ app.set("x-powered-by", false)
 app.use(withLogs())
 app.use("/api", [
   withDDosProtection(),
-  withCors(),
+  withCors({
+    corsOrigin: [
+      /^http:\/\/localhost:[0-9]{1,10}$/,
+      /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
+    ],
+    allowedHeaders: "*",
+  }),
   withBody(),
   categoryRoute,
   userFavoriteRoute,
@@ -75,8 +81,10 @@ app.use(metrics([gatsbyRegister, register]))
 app.use("/places", socialRoutes)
 app.use("/places", [
   withCors({
-    cors: "*",
-    corsOrigin: "*",
+    corsOrigin: [
+      /^http:\/\/localhost:[0-9]{1,10}$/,
+      /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
+    ],
     allowedHeaders: "*",
   }),
   gatsby(resolve(__filename, "../../public"), {
