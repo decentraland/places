@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto"
+import { Readable } from "stream"
 
 import AWS from "aws-sdk"
 import env from "decentraland-gatsby/dist/utils/env"
@@ -57,6 +58,7 @@ async function updateGenesisCityManifest() {
   const s3 = new AWS.S3({
     accessKeyId: ACCESS_KEY,
     secretAccessKey: ACCESS_SECRET,
+    signatureVersion: "v4",
   })
 
   const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
@@ -84,12 +86,13 @@ async function updateGenesisCityManifest() {
   const genesisCityManifestPositions =
     await calculateGenesisCityManifestPositions()
 
-  return await fetch(signedUrl, {
+  const stream = Readable.from([JSON.stringify(genesisCityManifestPositions)])
+  await fetch(signedUrl, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify(genesisCityManifestPositions),
+    body: stream,
   })
 }
 

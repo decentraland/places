@@ -8,7 +8,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
-import allCoordinates from "../../__data__/pointers.json"
+import allCoordinates from "../../__data__/AllCoordinates.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
@@ -101,24 +101,24 @@ export async function getWorldAbout(
 }
 
 export async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {
-  const occupiedPositions = (await PlacePositionModel.find({})).map(
+  const occupiedPositions = (await PlacePositionModel.find()).map(
     (place) => place.position
   )
 
+  const roadSet = new Set(roadCoordinates)
+  const occupiedSet = new Set(occupiedPositions)
+  const restOfCoordinatesSet = new Set(allCoordinates)
+
   const response: ManifestResponse = {
-    roads: roadCoordinates,
-    occupied: occupiedPositions,
+    roads: Array.from(roadSet),
+    occupied: Array.from(occupiedSet),
     empty: [],
   }
 
-  const roadSet = new Set(roadCoordinates)
-  const occupiedSet = new Set(occupiedPositions)
-  const restOfCoordinates = new Set(allCoordinates)
+  roadSet.forEach((coordinate) => restOfCoordinatesSet.delete(coordinate))
+  occupiedSet.forEach((coordinate) => restOfCoordinatesSet.delete(coordinate))
 
-  roadSet.forEach((coordinate) => restOfCoordinates.delete(coordinate))
-  occupiedSet.forEach((coordinate) => restOfCoordinates.delete(coordinate))
-
-  response.empty = Array.from(restOfCoordinates)
+  response.empty = Array.from(restOfCoordinatesSet)
 
   return response
 }
