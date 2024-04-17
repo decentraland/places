@@ -14,7 +14,7 @@ import {
 } from "../../Slack/utils"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { getWorldAbout } from "../utils"
+import { getWorldAbout, updateGenesisCityManifest } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import {
   ProcessEntitySceneResult,
@@ -228,6 +228,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     await CheckScenesModel.createMany(placesToDisable)
   }
+
+  // do not await so it is done on background
+  updateGenesisCityManifest()
 }
 
 async function getValidCategories(creatorTags: string[]) {

@@ -1,4 +1,7 @@
+import { Readable } from "stream"
+
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
+import AWS from "aws-sdk"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
   ContentDeploymentScene,
@@ -7,10 +10,102 @@ import {
   ContentEntityScene,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
+import env from "decentraland-gatsby/dist/utils/env"
+import fetch from "node-fetch"
+import { retry } from "radash"
 
+import allCoordinates from "../../__data__/AllCoordinates.json"
+import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
+import PlacePositionModel from "../PlacePosition/model"
 import { DeploymentTrackAttributes, WorldAbout } from "./types"
+
+const ACCESS_KEY = env("AWS_ACCESS_KEY")
+const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
+const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
+const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
+
+type Pointer = string
+
+interface ManifestResponse {
+  roads: Pointer[]
+  occupied: Pointer[]
+  empty: Pointer[]
+}
+
+export async function getWorldAbout(
+  url: string,
+  worldName: string
+): Promise<WorldAbout> {
+  const worldContentServer = await ContentServer.getInstanceFrom(url)
+  return worldContentServer.fetch(`/world/${worldName}/about`)
+}
+
+async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {
+  const occupiedPositions = (await PlacePositionModel.find()).map(
+    (place) => place.position
+  )
+
+  const roadSet = new Set(roadCoordinates)
+  const occupiedSet = new Set(occupiedPositions)
+  const restOfCoordinatesSet = new Set(allCoordinates)
+
+  const response: ManifestResponse = {
+    roads: Array.from(roadSet),
+    occupied: Array.from(occupiedSet),
+    empty: [],
+  }
+
+  roadSet.forEach((coordinate) => restOfCoordinatesSet.delete(coordinate))
+  occupiedSet.forEach((coordinate) => restOfCoordinatesSet.delete(coordinate))
+
+  response.empty = Array.from(restOfCoordinatesSet)
+
+  return response
+}
+
+export async function updateGenesisCityManifest() {
+  const s3 = new AWS.S3({
+    accessKeyId: ACCESS_KEY,
+    secretAccessKey: ACCESS_SECRET,
+    signatureVersion: "v4",
+  })
+
+  const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
+    const responseUrl = s3.getSignedUrl("putObject", {
+      Bucket: BUCKET_NAME,
+      Key: `WorldManifest.json`,
+      Expires: 60 * 1000,
+      ContentType: "application/json",
+      ACL: "public-read",
+      CacheControl: "no-store, no-cache, must-revalidate, proxy-revalidate",
+    })
+
+    const url = new URL(responseUrl)
+    if (url.searchParams.size === 0) {
+      throw new Error("Invalid AWS response")
+    }
+
+    if (BUCKET_HOSTNAME) {
+      url.hostname = BUCKET_HOSTNAME
+    }
+
+    return url.toString()
+  })
+
+  const genesisCityManifestPositions =
+    await calculateGenesisCityManifestPositions()
+
+  const stream = Readable.from(JSON.stringify(genesisCityManifestPositions))
+  await fetch(signedUrl, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: stream,
+  })
+}
 
 /** @deprecated */
 export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
@@ -79,12 +174,4 @@ export function isSameWorld(
     place.world &&
     place.world_name === contentEntityScene.metadata.worldConfiguration?.name
   )
-}
-
-export async function getWorldAbout(
-  url: string,
-  worldName: string
-): Promise<WorldAbout> {
-  const worldContentServer = await ContentServer.getInstanceFrom(url)
-  return worldContentServer.fetch(`/world/${worldName}/about`)
 }
