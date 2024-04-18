@@ -80,7 +80,6 @@ export async function updateGenesisCityManifest() {
       Key: `WorldManifest.json`,
       Expires: 60 * 1000,
       ContentType: "application/json",
-      ACL: "public-read",
       CacheControl: "no-store, no-cache, must-revalidate, proxy-revalidate",
     })
 
