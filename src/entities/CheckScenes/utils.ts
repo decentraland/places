@@ -25,7 +25,7 @@ import { DeploymentTrackAttributes, WorldAbout } from "./types"
 const ACCESS_KEY = env("AWS_ACCESS_KEY")
 const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
 const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
-const BUCKET_NAME = env("AWS_BUCKET_NAME", "")
+const BUCKET_NAME = env("PUBLIC_BUCKET", "")
 
 type Pointer = string
 
