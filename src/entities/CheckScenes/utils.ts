@@ -88,10 +88,6 @@ export async function updateGenesisCityManifest() {
       throw new Error("Invalid AWS response")
     }
 
-    if (BUCKET_HOSTNAME) {
-      url.hostname = BUCKET_HOSTNAME
-    }
-
     return url.toString()
   })
 
