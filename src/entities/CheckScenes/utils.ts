@@ -1,5 +1,3 @@
-import { Readable } from "stream"
-
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import AWS from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
@@ -12,8 +10,6 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch from "node-fetch"
-import { retry } from "radash"
 
 import allCoordinates from "../../__data__/AllCoordinates.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
@@ -24,7 +20,6 @@ import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 const ACCESS_KEY = env("AWS_ACCESS_KEY")
 const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
-const BUCKET_HOSTNAME = env("BUCKET_HOSTNAME")
 const BUCKET_NAME = env("PUBLIC_BUCKET", "")
 
 type Pointer = string
@@ -70,45 +65,29 @@ export async function updateGenesisCityManifest() {
   const s3 = new AWS.S3({
     accessKeyId: ACCESS_KEY,
     secretAccessKey: ACCESS_SECRET,
-    signatureVersion: "v4",
+    s3ForcePathStyle: true,
   })
   logger.log("Updating Genesis City manifest")
-
-  const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
-    const responseUrl = s3.getSignedUrl("putObject", {
-      Bucket: BUCKET_NAME,
-      Key: `WorldManifest.json`,
-      Expires: 60 * 1000,
-      ContentType: "application/json",
-      CacheControl: "no-store, no-cache, must-revalidate, proxy-revalidate",
-    })
-
-    const url = new URL(responseUrl)
-    if (url.searchParams.size === 0) {
-      throw new Error("Invalid AWS response")
-    }
-
-    return url.toString()
-  })
 
   const genesisCityManifestPositions =
     await calculateGenesisCityManifestPositions()
 
-  const stream = Readable.from(JSON.stringify(genesisCityManifestPositions))
-  const response = await fetch(signedUrl, {
-    method: "PUT",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: stream,
-  })
+  const uploadParams = {
+    Bucket: BUCKET_NAME,
+    Key: `WorldManifest.json`,
+    Body: JSON.stringify(genesisCityManifestPositions),
+    ContentType: "application/json",
+    CacheControl: "no-store, no-cache, must-revalidate, proxy-revalidate",
+  }
 
-  if (!response.ok) {
-    logger.error("Failed to update Genesis City manifest", {
-      error: await response.text(),
-    })
-  } else {
+  try {
+    await s3.upload(uploadParams).promise()
+
     logger.log("Genesis City manifest updated correctly")
+  } catch (error: any) {
+    logger.error("Failed to update Genesis City manifest", {
+      error: error?.message,
+    })
   }
 }
 
