@@ -2,6 +2,7 @@ import { Readable } from "stream"
 
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import AWS from "aws-sdk"
+import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import {
   ContentDeploymentScene,
@@ -71,6 +72,7 @@ export async function updateGenesisCityManifest() {
     secretAccessKey: ACCESS_SECRET,
     signatureVersion: "v4",
   })
+  logger.log("Updating Genesis City manifest")
 
   const signedUrl = await retry({ times: 10, delay: 100 }, async () => {
     const responseUrl = s3.getSignedUrl("putObject", {
@@ -98,13 +100,21 @@ export async function updateGenesisCityManifest() {
     await calculateGenesisCityManifestPositions()
 
   const stream = Readable.from(JSON.stringify(genesisCityManifestPositions))
-  await fetch(signedUrl, {
+  const response = await fetch(signedUrl, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
     body: stream,
   })
+
+  if (!response.ok) {
+    logger.error("Failed to update Genesis City manifest", {
+      error: await response.text(),
+    })
+  } else {
+    logger.log("Genesis City manifest updated correctly")
+  }
 }
 
 /** @deprecated */
