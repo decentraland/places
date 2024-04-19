@@ -16,10 +16,7 @@ const DECENTRALAND_URL =
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
 
-const CONTENT_SERVER_URL =
-  process.env.GATSBY_PROFILE_URL ||
-  process.env.PROFILE_URL ||
-  "https://peer.decentraland.org"
+const CONTENT_SERVER_URL = env("PROFILE_URL", "https://peer.decentraland.org")
 
 export function placeUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
