@@ -16,6 +16,11 @@ const DECENTRALAND_URL =
   process.env.DECENTRALAND_URL ||
   "https://play.decentraland.org"
 
+const CONTENT_SERVER_URL =
+  process.env.GATSBY_PROFILE_URL ||
+  process.env.PROFILE_URL ||
+  "https://peer.decentraland.org"
+
 export function placeUrl(place: PlaceAttributes) {
   const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
   target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
@@ -83,7 +88,7 @@ export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
     if (!content || unwantedThumbnailHash.includes(content.hash)) {
       thumbnail = null
     } else {
-      thumbnail = `https://peer.decentraland.org/content/contents/${content.hash}`
+      thumbnail = `${CONTENT_SERVER_URL}/content/contents/${content.hash}`
     }
   }
 
@@ -106,7 +111,7 @@ export function getThumbnailFromContentDeployment(
       (content) => content.file === thumbnail
     )
     const contentServerUrl = (
-      options.url || "https://peer.decentraland.org/content"
+      options.url || `${CONTENT_SERVER_URL}/content`
     ).replace(/\/+$/, "")
 
     if (!content || unwantedThumbnailHash.includes(content.hash)) {
