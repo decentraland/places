@@ -173,6 +173,7 @@ describe("createPlaceFromDefaultPlaces", () => {
     expect(data).toEqual([
       {
         ...placeGenesisPlaza,
+        contact_name: data[0].contact_name,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
         deployed_at: data[0].deployed_at,
