@@ -9,7 +9,7 @@ const strategies = [
     params: {
       name: "multichain",
       graphs: {
-        137: "https://api.thegraph.com/subgraphs/name/decentraland/blocks-matic-mainnet",
+        137: "subgraph.decentraland.org/blocks-matic-mainnet",
       },
       symbol: "MANA",
       strategies: [
