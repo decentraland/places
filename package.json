@@ -48,7 +48,7 @@
     "rrule": "^2.6.8",
     "sharp": "^0.29.3",
     "uuid": "^8.3.2",
-    "web-push": "^3.4.5",
+    "web-push": "^3.6.7",
     "xml": "^1.0.1"
   },
   "devDependencies": {
@@ -63,7 +63,7 @@
     "@types/react": "^17.0.34",
     "@types/react-helmet": "^5.0.15",
     "@types/validator": "^13.7.5",
-    "@types/web-push": "^3.3.2",
+    "@types/web-push": "^3.6.3",
     "@types/xml": "^1.0.5",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
