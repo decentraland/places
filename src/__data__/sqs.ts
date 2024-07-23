@@ -32,7 +32,7 @@ export const sqsMessageRoad: DeploymentToSqs = {
 
 export const sqsMessageProfile: DeploymentToSqs = {
   entity: {
-    entityId: "bafkreifda4yoyikpngjyxnkq6qa2ovon23n6mor2cb4cpgb2ax3v2jv6ky",
+    entityId: "bafkreigdypg5e33uopitp6ueubhtkvmuk6npwtc4hmmcchk2e2wgstzlgi",
     authChain: [
       {
         signature: "",
