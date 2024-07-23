@@ -60,6 +60,7 @@ app.use("/api", [
     corsOrigin: [
       /^http:\/\/localhost:[0-9]{1,10}$/,
       /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
+      /https:\/\/dcl-preview\.decentraland\.app/,
     ],
     allowedHeaders: "*",
   }),
