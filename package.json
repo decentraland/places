@@ -13,7 +13,7 @@
     "@sentry/browser": "^7.66.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
-    "autoprefixer": "^10.4.0",
+    "autoprefixer": "^10.4.20",
     "aws-sdk": "^2.1002.0",
     "caniuse-lite": "^1.0.30001470",
     "core-js": "^3.22.2",
