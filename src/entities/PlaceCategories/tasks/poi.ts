@@ -28,28 +28,32 @@ const processNewPois = async (pois: string[], logger: Logger) => {
   logger.log(`> Processing new PoIs > poi Places ${poiPlaces.length}`)
 
   // Places to be removed from POI category
-  const toBeRemoved = diff(categorizedPlaces, poiPlaces)
+  const toBeRemoved = diff(
+    categorizedPlaces.map(({ id }) => id),
+    poiPlaces.map(({ id }) => id)
+  )
 
   // Places to be added to POI Category
-  const toBeAdded = diff(poiPlaces, categorizedPlaces).map((poiPlace) => [
-    poiPlace.id,
-    DecentralandCategories.POI,
-  ])
+  const toBeAdded = diff(
+    poiPlaces.map(({ id }) => id),
+    categorizedPlaces.map(({ id }) => id)
+  ).map((placeId) => [placeId, DecentralandCategories.POI])
 
   logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
 
   // TODO: review, reduce queries?
-  for (const removable of toBeRemoved) {
-    logger.log(`> Processing new PoIs > removing: ${removable.id}`)
+  for (const removableId of toBeRemoved) {
+    logger.log(`> Processing new PoIs > removing: ${removableId}`)
     await PlaceCategories.removeCategoryFromPlace(
-      removable.id,
+      removableId,
       DecentralandCategories.POI
     )
     const currentCategories = await PlaceCategories.findCategoriesByPlaceId(
-      removable.id
+      removableId
     )
+
     await PlaceModel.overrideCategories(
-      removable.id,
+      removableId,
       currentCategories.map(({ category_id }) => category_id)
     )
   }

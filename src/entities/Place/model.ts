@@ -420,7 +420,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   static overrideCategories(placeId: string, newCategories: string[]) {
-    const categories = join(newCategories.map((category) => SQL`${category}`))
+    const categories =
+      newCategories.length > 0
+        ? join(newCategories.map((category) => SQL`${category}`))
+        : SQL`ARRAY[]::text[]`
 
     const sql = SQL`UPDATE ${table(
       this
