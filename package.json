@@ -14,7 +14,7 @@
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.4.0",
-    "aws-sdk": "^2.1002.0",
+    "aws-sdk": "^2.1689.0",
     "caniuse-lite": "^1.0.30001470",
     "core-js": "^3.22.2",
     "cssnano": "^5.0.10",
