@@ -176,6 +176,7 @@ app.use("/places", [
         // "http://192.168.1.8:*",
       ].join(" "),
       workerSrc: ["'self'", "blob:"].join(" "),
+      frameSrc: ["https:", "dcl:", "decentraland:"].join(" "),
     },
   }),
 ])
