@@ -1,10 +1,9 @@
-import React, { useCallback, useContext, useMemo } from "react"
+import React, { useContext, useMemo } from "react"
 
 import { withPrefix } from "gatsby"
 
 import ImgFixed from "decentraland-gatsby/dist/components/Image/ImgFixed"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
-import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
 import { Link } from "decentraland-gatsby/dist/plugins/intl"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
@@ -12,11 +11,8 @@ import { Card } from "decentraland-ui/dist/components/Card/Card"
 
 import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { explorerUrl } from "../../../entities/Place/utils"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
-import FavoriteButton from "../../Button/FavoriteButton"
-import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import UserCount from "../../Label/UserCount/UserCount"
 import UserLikePercentage from "../../Label/UserLikePercentage/UserLikePercentage"
 import UserPreviewCount from "../../Label/UserPreviewCount/UserPreviewCount"
@@ -25,40 +21,16 @@ import "./PlaceCard.css"
 
 export type PlaceCardProps = {
   place?: AggregatePlaceAttributes
-  onClickFavorite?: (
-    e: React.MouseEvent<HTMLButtonElement>,
-    place: AggregatePlaceAttributes
-  ) => void
-  dataPlace?: SegmentPlace
   loading?: boolean
-  loadingFavorites?: boolean
   positionWithinList?: number
 }
 
 export default React.memo(function PlaceCard(props: PlaceCardProps) {
   const track = useTrackContext()
 
-  const {
-    place,
-    loading,
-    loadingFavorites,
-    onClickFavorite,
-    dataPlace,
-    positionWithinList,
-  } = props
+  const { place, loading, positionWithinList } = props
 
   const [trackingId] = useContext(TrackingPlacesSearchContext)
-
-  const handleClickFavorite = useCallback(
-    (e: React.MouseEvent<any>) => {
-      e.stopPropagation()
-      e.preventDefault()
-      if (onClickFavorite && place) {
-        onClickFavorite(e, place)
-      }
-    },
-    [place, onClickFavorite]
-  )
 
   const href = useMemo(() => {
     if (place && !place.world) {
@@ -67,8 +39,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
       return locations.world(place.world_name!)
     }
   }, [place])
-
-  const placerUrl = useMemo(() => place && explorerUrl(place), [place])
 
   const handleClickCard = (e: React.MouseEvent<HTMLAnchorElement>) => {
     e.preventDefault()
@@ -80,8 +50,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
 
     href && navigate(href)
   }
-
-  const handleJumpInTrack = useTrackLinkContext()
 
   return (
     <Card
@@ -125,26 +93,6 @@ export default React.memo(function PlaceCard(props: PlaceCardProps) {
         >
           {place?.contact_name || " "}
         </Card.Meta>
-        {false && (
-          /* hidden for now */
-          <div className="place-card__button-container">
-            <JumpInPositionButton
-              href={placerUrl}
-              loading={loading}
-              onClick={handleJumpInTrack}
-              data-event={SegmentPlace.JumpIn}
-              data-place-id={place?.id}
-              data-place={dataPlace}
-              data-trackingId={trackingId}
-            />
-            <FavoriteButton
-              active={!!place?.user_favorite}
-              onClick={handleClickFavorite}
-              loading={loading || loadingFavorites}
-              dataPlace={dataPlace}
-            />
-          </div>
-        )}
       </Card.Content>
     </Card>
   )

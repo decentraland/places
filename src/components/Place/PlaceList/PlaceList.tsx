@@ -83,11 +83,6 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               key={props.item?.id}
               place={props.item}
               loading={loading}
-              onClickFavorite={onClickFavorite}
-              dataPlace={dataPlace}
-              loadingFavorites={
-                props.item?.id ? loadingFavorites?.has(props.item.id) : false
-              }
               positionWithinList={places.findIndex(
                 ({ id }) => id === props.item.id
               )}
@@ -104,11 +99,6 @@ export default React.memo(function PlaceList(props: PlaceListProps) {
               key={place?.id || key}
               place={place}
               loading={loading}
-              onClickFavorite={onClickFavorite}
-              dataPlace={dataPlace}
-              loadingFavorites={
-                place?.id ? loadingFavorites?.has(place.id) : false
-              }
               positionWithinList={key}
             />
           )
