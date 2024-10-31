@@ -38,6 +38,7 @@ export function siteUrl(pathname = "") {
   return target
 }
 
+/** @deprecated */
 export function explorerUrl(
   place?: Pick<PlaceAttributes, "base_position" | "world_name">,
   realm?: string

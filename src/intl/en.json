@@ -110,6 +110,11 @@
         "clear_all": "Clear All",
         "one_or_more": "Select one or more Categories",
         "quantity_selected": "{quantity} Category Selected"
+      },
+      "download": {
+        "title": "Download Decentraland to Jump in.",
+        "description": "Download the all-new Decentraland and come back to this page to jump straight into this place.",
+        "button_label": "Download"
       }
     }
   },

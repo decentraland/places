@@ -215,15 +215,6 @@ export default function FavoritesPage() {
                           placeListMyFavoritesState.version === 0 ||
                           placeListMyFavoritesState.loading
                         }
-                        onClickFavorite={(e, place) =>
-                          handleFavorite(place.id, place, {
-                            place: e.currentTarget.dataset.place!,
-                          })
-                        }
-                        dataPlace={SegmentPlace.FavoritesPlaces}
-                        loadingFavorites={
-                          item?.id ? handlingFavorite?.has(item.id) : false
-                        }
                       />
                     )
                   })}
@@ -283,15 +274,6 @@ export default function FavoritesPage() {
                           loading={
                             worldListMyFavoritesState.version === 0 ||
                             worldListMyFavoritesState.loading
-                          }
-                          onClickFavorite={(e, place) =>
-                            handleFavorite(place.id, place, {
-                              place: e.currentTarget.dataset.place!,
-                            })
-                          }
-                          dataPlace={SegmentPlace.FavoritesPlaces}
-                          loadingFavorites={
-                            item?.id ? handlingFavorite?.has(item.id) : false
                           }
                         />
                       )

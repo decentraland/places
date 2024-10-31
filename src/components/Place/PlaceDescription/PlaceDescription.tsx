@@ -1,18 +1,21 @@
-import React, { useContext } from "react"
+import React, { useCallback, useContext, useState } from "react"
 
-import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
+import env from "decentraland-gatsby/dist/utils/env"
 
 import { TrackingPlacesSearchContext } from "../../../context/TrackingContext"
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { explorerUrl } from "../../../entities/Place/utils"
+import { launchDesktopApp } from "../../../modules/desktop"
 import { SegmentPlace } from "../../../modules/segment"
+import { placeClientOptions } from "../../../modules/utils"
 import { getImageUrl } from "../../../utils/image"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import ShareBox from "../../Button/ShareBox"
 import { Likes } from "../../Label/Likes/Likes"
+import DownloadModal from "../../Modal/DownloadModal"
 
 import "./PlaceDescription.css"
 
@@ -45,11 +48,47 @@ export default React.memo(function PlaceDescription(
     loadingFavorite,
   } = props
   const l = useFormatMessage()
-  const placerUrl = explorerUrl(place)
-
-  const handleJumpInTrack = useTrackLinkContext()
-
   const [trackingId] = useContext(TrackingPlacesSearchContext)
+
+  const track = useTrackContext()
+  const [showModal, setShowModal] = useState(false)
+
+  let hasDecentralandLauncher: null | boolean = null
+
+  const handleClick = useCallback(
+    async function (e: React.MouseEvent<HTMLButtonElement>) {
+      e.stopPropagation()
+      e.preventDefault()
+      if (event) {
+        hasDecentralandLauncher = await launchDesktopApp(
+          placeClientOptions(place)
+        )
+
+        !hasDecentralandLauncher && setShowModal(true)
+      }
+
+      track(SegmentPlace.JumpIn, {
+        placeId: place?.id,
+        place: dataPlace,
+        trackingId: trackingId,
+        has_laucher: !!hasDecentralandLauncher,
+      })
+    },
+    [place, track, trackingId]
+  )
+
+  const handleModalClick = useCallback(
+    async function (e: React.MouseEvent<HTMLButtonElement>) {
+      e.stopPropagation()
+      e.preventDefault()
+
+      window.open(
+        env("DECENTRALAND_DOWNLOAD_URL", "https://decentraland.org/download"),
+        "_blank"
+      )
+    },
+    [track, hasDecentralandLauncher]
+  )
 
   return (
     <div
@@ -97,15 +136,7 @@ export default React.memo(function PlaceDescription(
                 }}
               />
             )}
-            <JumpInPositionButton
-              href={placerUrl}
-              loading={loading}
-              onClick={handleJumpInTrack}
-              data-event={SegmentPlace.JumpIn}
-              data-place-id={place?.id}
-              data-place={dataPlace}
-              data-trackingId={trackingId}
-            />
+            <JumpInPositionButton loading={loading} onClick={handleClick} />
             <div className="place-description__box-wrapper">
               <ShareBox onClick={onClickShare} loading={loading} />
               <FavoriteBox
@@ -118,6 +149,11 @@ export default React.memo(function PlaceDescription(
           </div>
         </div>
       </div>
+      <DownloadModal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        onModalClick={handleModalClick}
+      />
     </div>
   )
 })
