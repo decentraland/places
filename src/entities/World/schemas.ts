@@ -32,7 +32,11 @@ export const getWorldListQuerySchema = schema({
     order_by: {
       type: "string",
       description: "Order worlds by",
-      enum: [WorldListOrderBy.LIKE_SCORE_BEST, WorldListOrderBy.MOST_ACTIVE],
+      enum: [
+        WorldListOrderBy.LIKE_SCORE_BEST,
+        WorldListOrderBy.MOST_ACTIVE,
+        WorldListOrderBy.CREATED_AT,
+      ],
       nullable: true as any,
     },
     order: {
