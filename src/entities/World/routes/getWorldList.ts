@@ -29,7 +29,12 @@ export const getWorldList = Router.memo(
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
-      order_by: WorldListOrderBy.MOST_ACTIVE,
+      order_by:
+        oneOf(ctx.url.searchParams.get("order_by"), [
+          WorldListOrderBy.MOST_ACTIVE,
+          WorldListOrderBy.LIKE_SCORE_BEST,
+          WorldListOrderBy.CREATED_AT,
+        ]) || WorldListOrderBy.MOST_ACTIVE,
       search: ctx.url.searchParams.get("search"),
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
