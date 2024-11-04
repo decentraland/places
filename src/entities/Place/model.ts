@@ -142,7 +142,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = PlaceListOrderBy.LIKE_SCORE_BEST
+    // The columns most_active, user_visits doesn't exists in the PlaceAttributes
+    const orderBy =
+      oneOf(options.order_by, [
+        PlaceListOrderBy.LIKE_SCORE_BEST,
+        PlaceListOrderBy.UPDATED_AT,
+        PlaceListOrderBy.CREATED_AT,
+      ]) ?? PlaceListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
@@ -451,7 +457,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = WorldListOrderBy.LIKE_SCORE_BEST
+    const orderBy =
+      oneOf(options.order_by, [
+        WorldListOrderBy.LIKE_SCORE_BEST,
+        WorldListOrderBy.CREATED_AT,
+      ]) ?? WorldListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
