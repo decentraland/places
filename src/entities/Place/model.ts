@@ -142,7 +142,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = options.order_by ?? PlaceListOrderBy.LIKE_SCORE_BEST
+    const orderBy = PlaceListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(
@@ -451,7 +451,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    const orderBy = options.order_by ?? WorldListOrderBy.LIKE_SCORE_BEST
+    const orderBy = WorldListOrderBy.LIKE_SCORE_BEST
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
     const order = SQL.raw(

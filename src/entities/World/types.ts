@@ -12,7 +12,6 @@ export type GetWorldListQuery = {
 export enum WorldListOrderBy {
   LIKE_SCORE_BEST = "like_score",
   MOST_ACTIVE = "most_active",
-  CREATED_AT = "created_at",
 }
 
 export type WorldListOptions = {
