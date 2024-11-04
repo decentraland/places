@@ -46,7 +46,6 @@ export const getPlaceList = Router.memo(
         oneOf(ctx.url.searchParams.get("order_by"), [
           PlaceListOrderBy.LIKE_SCORE_BEST,
           PlaceListOrderBy.UPDATED_AT,
-          PlaceListOrderBy.CREATED_AT,
         ]) || PlaceListOrderBy.LIKE_SCORE_BEST,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
