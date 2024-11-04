@@ -6,7 +6,7 @@ import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza
 import DataTeam from "../../../api/DataTeam"
 import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../../Place/model"
-import { getPlaceList } from "./getPlaceList"
+import { getMapPlaces } from "./getMapPlaces"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
@@ -28,7 +28,7 @@ test("should return a object of places with no query", async () => {
   )
   const request = new Request("/")
   const url = new URL("https://localhost/")
-  const placeResponse = await getPlaceList({
+  const placeResponse = await getMapPlaces({
     request,
     url,
   })
@@ -63,7 +63,7 @@ test("should return a object of places with query", async () => {
   const url = new URL(
     "https://localhost/?position=-9,-9&limit=1&offset=1&order_by=like_rate&order=asc"
   )
-  const placeResponse = await getPlaceList({
+  const placeResponse = await getMapPlaces({
     request,
     url,
   })
@@ -96,7 +96,7 @@ test("should return a object of places with order by most_active", async () => {
   )
   const request = new Request("/")
   const url = new URL("https://localhost/?&order_by=most_active&limit=1")
-  const placeResponse = await getPlaceList({
+  const placeResponse = await getMapPlaces({
     request,
     url,
   })
@@ -130,7 +130,7 @@ test("should return a object of places with Realm details", async () => {
   )
   const request = new Request("/")
   const url = new URL("https://localhost/?with_realms_detail=true")
-  const placeResponse = await getPlaceList({
+  const placeResponse = await getMapPlaces({
     request,
     url,
   })
@@ -155,7 +155,7 @@ test("should return a object of places with Realm details", async () => {
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
   const request = new Request("/")
   const url = new URL("https://localhost/?only_favorites=true")
-  const placeResponse = await getPlaceList({
+  const placeResponse = await getMapPlaces({
     request,
     url,
   })
@@ -173,7 +173,7 @@ test("should return an error when a wrong value has been sent in the query", asy
   const url = new URL("https://localhost/?order_by=fake")
 
   expect(async () =>
-    getPlaceList({
+    getMapPlaces({
       request,
       url,
     })

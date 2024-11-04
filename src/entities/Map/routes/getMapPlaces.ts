@@ -7,18 +7,30 @@ import {
   numeric,
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
-import { flat, sort } from "radash"
 
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../../Place/model"
-import { FindWithAggregatesOptions, PlaceListOrderBy } from "../../Place/types"
+import { getPlaceListQuerySchema } from "../../Place/schemas"
+import {
+  FindWithAggregatesOptions,
+  GetPlaceListQuery,
+  PlaceListOrderBy,
+} from "../../Place/types"
 import { DEFAULT_MAX_LIMIT } from "../types"
 import { placesWithCoordinatesAggregates } from "../utils"
-import { validateGetPlaceListQuery } from "./getPlaceList"
+import { getMapPlacesMostActive } from "./getMapPlacesMostActive"
 
-export const getPlaceMostActiveList = Router.memo(
+export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
+  getPlaceListQuerySchema
+)
+
+export const getMapPlaces = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
+    if (ctx.url.searchParams.get("order_by") === PlaceListOrderBy.MOST_ACTIVE) {
+      return getMapPlacesMostActive(ctx)
+    }
+
     const query = await validateGetPlaceListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
       offset: ctx.url.searchParams.get("offset"),
@@ -26,7 +38,12 @@ export const getPlaceMostActiveList = Router.memo(
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
-      order_by: PlaceListOrderBy.MOST_ACTIVE,
+      order_by:
+        oneOf(ctx.url.searchParams.get("order_by"), [
+          PlaceListOrderBy.LIKE_SCORE_BEST,
+          PlaceListOrderBy.UPDATED_AT,
+          PlaceListOrderBy.CREATED_AT,
+        ]) || PlaceListOrderBy.LIKE_SCORE_BEST,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
@@ -34,26 +51,11 @@ export const getPlaceMostActiveList = Router.memo(
       categories: ctx.url.searchParams.getAll("categories"),
     })
 
-    const sceneStats = await getSceneStats()
-
-    const hotScenes = getHotScenes()
-
-    const hotScenesParcels = hotScenes.map((scene) => scene.parcels)
-
-    const hotScenesPositions = flat(hotScenesParcels).map((scene) =>
-      scene.join(",")
-    )
-
     const userAuth = await withAuthOptional(ctx)
 
-    if (
-      (bool(query.only_favorites) && !userAuth?.address) ||
-      (numeric(query.offset) ?? 0) > hotScenes.length
-    ) {
+    if (bool(query.only_favorites) && !userAuth?.address) {
       return new ApiResponse([], { total: 0 })
     }
-
-    const positions = new Set(query.positions)
 
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
@@ -63,44 +65,30 @@ export const getPlaceMostActiveList = Router.memo(
         DEFAULT_MAX_LIMIT,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
-      positions: query.positions.length
-        ? hotScenesPositions.filter((position) => positions.has(position))
-        : hotScenesPositions,
-      order_by: PlaceListOrderBy.MOST_ACTIVE,
+      positions: query.positions,
+      order_by: query.order_by,
       order: query.order,
       search: query.search,
       categories: query.categories,
     }
 
-    const { offset, limit, order, ...extraOptions } = options
-    const places = await PlaceModel.findWithCoordinatesAggregates({
-      offset,
-      limit,
-      order,
-      ...extraOptions,
-    })
+    const [data, total, sceneStats] = await Promise.all([
+      PlaceModel.findWithCoordinatesAggregates(options),
+      PlaceModel.countPlacesWithCoordinatesAggregates(options),
+      getSceneStats(),
+    ])
 
-    const hotScenePlaces = sort(
-      Object.entries(
-        placesWithCoordinatesAggregates(places, hotScenes, sceneStats, {
-          withRealmsDetail: !!query.with_realms_detail,
-        })
-      ),
-      ([, place]) => place.user_count || 0,
-      !order || order === "desc"
+    const hotScenes = getHotScenes()
+
+    const response = placesWithCoordinatesAggregates(
+      data,
+      hotScenes,
+      sceneStats,
+      {
+        withRealmsDetail: !!bool(query.with_realms_detail),
+      }
     )
 
-    const total = hotScenePlaces.length
-
-    const from = numeric(offset || 0, { min: 0 }) ?? 0
-    const to =
-      numeric(from + (limit || DEFAULT_MAX_LIMIT), {
-        min: 0,
-        max: DEFAULT_MAX_LIMIT,
-      }) ?? DEFAULT_MAX_LIMIT
-
-    return new ApiResponse(Object.fromEntries(hotScenePlaces.slice(from, to)), {
-      total,
-    })
+    return new ApiResponse(response, { total })
   }
 )
