@@ -244,10 +244,12 @@ export default function IndexPage() {
       const value =
         oneOf(props.value, getPlaceListQuerySchema.properties.order_by.enum) ??
         PlaceListOrderBy.LIKE_SCORE_BEST
-      const newParams = { ...params, order_by: value, page: 1 }
-      setAllPlaces([])
+      if (params.order_by !== value) {
+        const newParams = { ...params, order_by: value, page: 1 }
+        setAllPlaces([])
 
-      navigate(locations.genesis(newParams))
+        navigate(locations.genesis(newParams))
+      }
     },
     [params, track]
   )
