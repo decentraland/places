@@ -18,6 +18,10 @@ import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { diff, unique } from "radash"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
+import {
+  type AggregateCoordinatePlaceAttributes,
+  DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
+} from "../Map/types"
 import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
 import UserFavoriteModel from "../UserFavorite/model"
@@ -644,5 +648,174 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604)
     / (c.count_active_likes + c.count_active_dislikes))
     / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE NULL END`
+  }
+
+  static async findWithCoordinatesAggregates(
+    options: FindWithAggregatesOptions
+  ): Promise<AggregateCoordinatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (searchIsEmpty) {
+      return []
+    }
+
+    // The columns most_active, user_visits doesn't exists in the PlaceAttributes
+    const orderBy =
+      oneOf(options.order_by, [
+        PlaceListOrderBy.LIKE_SCORE_BEST,
+        PlaceListOrderBy.UPDATED_AT,
+        PlaceListOrderBy.CREATED_AT,
+      ]) ?? PlaceListOrderBy.LIKE_SCORE_BEST
+    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
+
+    const order = SQL.raw(
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p.deployed_at DESC`
+    )
+
+    const sql = SQL`
+      SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories
+      ${conditional(
+        !!options.user,
+        SQL`, uf.user is not null as user_favorite`
+      )}
+      ${conditional(!options.user, SQL`, false as user_favorite`)}
+      ${conditional(
+        !!options.user,
+        SQL`, coalesce(ul.like,false) as user_like`
+      )}
+      ${conditional(!options.user, SQL`, false as user_like`)}
+      ${conditional(
+        !!options.user,
+        SQL`, not coalesce(ul.like,true) as user_dislike`
+      )}
+      ${conditional(!options.user, SQL`, false as user_dislike`)}
+      FROM ${table(this)} p
+
+      ${conditional(
+        !!options.user && !options.only_favorites,
+        SQL`LEFT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserLikesModel
+        )} ul on p.id = ul.place_id AND ul.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+
+      WHERE
+        p.disabled is false 
+        AND array_length(p.categories, 1) > 0
+        ${conditional(!options.only_highlighted, SQL`AND world is false`)}
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        ${conditional(!!options.search, SQL`AND rank > 0`)}
+        ${conditional(
+          options.positions?.length > 0,
+          SQL`AND p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position IN ${values(options.positions)}
+            )`
+        )}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
+      ${limit(options.limit, { max: DEFAULT_MAP_MAX_LIMIT })}
+      ${offset(options.offset)}
+    `
+
+    const queryResult = await this.namedQuery<
+      AggregateCoordinatePlaceAttributes & { category_id?: string }
+    >("find_with_coordinates_aggregates", sql)
+    return queryResult
+  }
+
+  static async countPlacesWithCoordinatesAggregates(
+    options: Pick<
+      FindWithAggregatesOptions,
+      | "user"
+      | "only_favorites"
+      | "positions"
+      | "only_highlighted"
+      | "search"
+      | "categories"
+    >
+  ) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+
+    if (isMissingEthereumAddress || searchIsEmpty) {
+      return 0
+    }
+
+    const query = SQL`
+      SELECT
+        count(DISTINCT p.id) as "total"
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+
+      WHERE
+        p.disabled is false 
+        AND array_length(p.categories, 1) > 0
+        ${conditional(!options.only_highlighted, SQL`AND "world" is false`)}
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        ${conditional(
+          options.positions?.length > 0,
+          SQL`AND p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position IN ${values(options.positions)}
+            )`
+        )}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
+    `
+    const results: { total: string }[] = await this.namedQuery(
+      "count_places",
+      query
+    )
+
+    return Number(results[0].total)
   }
 }
