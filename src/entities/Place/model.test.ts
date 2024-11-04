@@ -806,3 +806,287 @@ describe(`updatePlace`, () => {
     )
   })
 })
+
+describe(`findWithCoordinatesAggregates`, () => {
+  test(`should return an empty list if search is not long enough`, async () => {
+    namedQuery.mockResolvedValue([])
+    expect(
+      await PlaceModel.findWithCoordinatesAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        search: "de",
+        categories: [],
+      })
+    ).toEqual([])
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions without user`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithCoordinatesAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        search: "",
+        categories: [],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_coordinates_aggregates")
+    expect(sql.values).toEqual(["-9,-9", 1, 0])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , false as user_favorite , false as user_like , false as user_dislike
+        FROM "places" p
+        WHERE
+          p.disabled is false 
+          AND array_length(p.categories, 1) > 0
+          AND world is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
+        ORDER BY p.created_at DESC NULLS LAST, p.deployed_at DESC
+        LIMIT $2
+        OFFSET $3
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions with user`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithCoordinatesAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "",
+        categories: [],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_coordinates_aggregates")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "-9,-9",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        WHERE
+          p.disabled is false 
+          AND array_length(p.categories, 1) > 0
+          AND world is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+          )
+        ORDER BY p.created_at DESC NULLS LAST, p.deployed_at DESC
+        LIMIT $4
+        OFFSET $5
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions with search`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithCoordinatesAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "decentraland atlas",
+        categories: [],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_coordinates_aggregates")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "decentraland:*&atlas:*",
+      "-9,-9",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
+        FROM "places" p 
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2 , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
+        WHERE p.disabled is false 
+          AND array_length(p.categories, 1) > 0
+          AND world is false
+          AND rank > 0
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) 
+            FROM "place_positions" 
+            WHERE position IN ($4)
+          )
+        ORDER BY rank DESC, p.created_at DESC NULLS LAST, p.deployed_at DESC
+        LIMIT $5
+        OFFSET $6
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions with categories`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithCoordinatesAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "decentraland atlas",
+        categories: ["art"],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_coordinates_aggregates")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "art",
+      "decentraland:*&atlas:*",
+      "-9,-9",
+      1,
+      0,
+    ])
+  })
+})
+
+describe(`countPlacesWithCoordinatesAggregates`, () => {
+  test(`should return the total number of places matching the parameters FindWithAggregatesOptions without user`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countPlacesWithCoordinatesAggregates({
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        search: "",
+        categories: [],
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_places")
+    expect(sql.values).toEqual(["-9,-9"])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(DISTINCT p.id) as "total"
+        FROM "places" p
+        WHERE
+          p.disabled is false 
+          AND array_length(p.categories, 1) > 0
+          AND "world" is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+
+  test(`should return the total number of places matching the parameters FindWithAggregatesOptions with search`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countPlacesWithCoordinatesAggregates({
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        search: "decentraland atlas",
+        categories: [],
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_places")
+    expect(sql.values).toEqual(["decentraland:*&atlas:*", "-9,-9"])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(DISTINCT p.id) as "total"
+        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+        WHERE
+          p.disabled is false 
+          AND array_length(p.categories, 1) > 0
+          AND "world" is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($2)
+          ) AND rank > 0
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+
+  test(`should return 0 if the search is not long enough`, async () => {
+    expect(
+      await PlaceModel.countPlacesWithCoordinatesAggregates({
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        user: "ABC",
+        search: "a",
+        categories: [],
+      })
+    ).toEqual(0)
+  })
+
+  test(`should return 0 with wrong user address`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.countPlacesWithCoordinatesAggregates({
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        user: "ABC",
+        search: "asdkad",
+        categories: [],
+      })
+    ).toEqual(0)
+    expect(namedQuery.mock.calls.length).toBe(0)
+  })
+})
