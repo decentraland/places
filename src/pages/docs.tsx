@@ -5,6 +5,7 @@ import ApiDetails from "decentraland-gatsby/dist/components/Docs/ApiDetails"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
 
 import Navigation from "../components/Layout/Navigation"
+import { mapPlaceResponseSchema } from "../entities/Map/schemas"
 import {
   getPlaceListQuerySchema,
   getPlaceParamsSchema,
@@ -109,6 +110,21 @@ export default function DocsPage() {
             query={getWorldListQuerySchema}
           />
           <ApiDetails title="Response" body={worldListResponseSchema} />
+        </ApiCard>
+
+        <ApiCard
+          id="maps"
+          method="GET"
+          path="/api/map"
+          description="Returns an object with each Place's base position as the key"
+        >
+          <ApiDetails
+            title="Request"
+            cors="*"
+            query={getPlaceListQuerySchema}
+          />
+          {/* TODO: Update ApiDetails component to render AJV patternProperties */}
+          <ApiDetails title="Response" body={mapPlaceResponseSchema} />
         </ApiCard>
       </Container>
     </>

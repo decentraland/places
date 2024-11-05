@@ -26,8 +26,10 @@ import { register } from "prom-client"
 
 import categoryRoute from "./entities/Category/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
+import mapRoute from "./entities/Map/routes"
 import placeRoute from "./entities/Place/routes"
 import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
+import { hotScenesUpdate } from "./entities/RealmProvider/tasks/hotScenesUpdate"
 import reportRoute from "./entities/Report/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
@@ -50,6 +52,7 @@ tasks.use(
 )
 
 tasks.use(checkPoisForCategoryUpdate)
+tasks.use(hotScenesUpdate)
 
 const app = express()
 app.set("x-powered-by", false)
@@ -71,6 +74,7 @@ app.use("/api", [
   placeRoute,
   worldRoute,
   reportRoute,
+  mapRoute,
 
   status(),
   handle(async () => {

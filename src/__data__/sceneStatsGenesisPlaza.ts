@@ -1,4 +1,4 @@
-import { SceneStatsMap } from "../api/DataTeam"
+import { SceneStatsMap } from "../entities/SceneStats/types"
 
 export const sceneStatsGenesisPlaza: SceneStatsMap = {
   "-9,-9": {
