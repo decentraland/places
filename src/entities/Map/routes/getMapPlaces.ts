@@ -8,8 +8,6 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getHotScenes } from "../../../modules/hotScenes"
-import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../../Place/model"
 import { getPlaceListQuerySchema } from "../../Place/schemas"
 import {
@@ -17,6 +15,8 @@ import {
   GetPlaceListQuery,
   PlaceListOrderBy,
 } from "../../Place/types"
+import { getHotScenes } from "../../RealmProvider/utils"
+import { getSceneStats } from "../../SceneStats/utils"
 import { DEFAULT_MAX_LIMIT } from "../types"
 import { placesWithCoordinatesAggregates } from "../utils"
 import { getMapPlacesMostActive } from "./getMapPlacesMostActive"

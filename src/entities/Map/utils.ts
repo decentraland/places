@@ -18,7 +18,10 @@ export function placesWithCoordinatesAggregates(
   for (const place of places) {
     const stats: SceneStats | undefined =
       sceneStats[place.base_position] ||
-      (place.positions || []).find((position) => sceneStats[position])
+      (place.positions || []).reduce<SceneStats | undefined>(
+        (acc, position) => acc || sceneStats[position],
+        undefined
+      )
 
     const hotScenePlaces = hotScenes.find((scene) =>
       scene.parcels

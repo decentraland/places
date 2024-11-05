@@ -9,10 +9,10 @@ import {
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { flat, sort } from "radash"
 
-import { getHotScenes } from "../../../modules/hotScenes"
-import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../../Place/model"
 import { FindWithAggregatesOptions, PlaceListOrderBy } from "../../Place/types"
+import { getHotScenes } from "../../RealmProvider/utils"
+import { getSceneStats } from "../../SceneStats/utils"
 import { DEFAULT_MAX_LIMIT } from "../types"
 import { placesWithCoordinatesAggregates } from "../utils"
 import { validateGetPlaceListQuery } from "./getMapPlaces"

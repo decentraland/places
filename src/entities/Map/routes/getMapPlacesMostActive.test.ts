@@ -3,18 +3,19 @@ import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Req
 import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
-import DataTeam from "../../../api/DataTeam"
-import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../../Place/model"
+import * as hotScenes from "../../RealmProvider/utils"
+import * as sceneStats from "../../SceneStats/utils"
 import { getMapPlaces } from "./getMapPlaces"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
-const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
-const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
+const catalystHotScenes = jest.spyOn(hotScenes, "getHotScenes")
+const catalystSceneStats = jest.spyOn(sceneStats, "getSceneStats")
 
 afterEach(() => {
   find.mockReset()
   catalystHotScenes.mockReset()
+  catalystSceneStats.mockReset()
 })
 
 test("should return a object of places with no query", async () => {

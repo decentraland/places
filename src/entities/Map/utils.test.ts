@@ -24,20 +24,18 @@ describe("get of AggregatePlaceAttributes", () => {
   })
 
   test("should return a place of type AggregatePlaceAttributes with user_visits when not match the base position", () => {
+    const place = {
+      ...placeGenesisPlazaWithAggregatedAttributes,
+      base_position: "-1,-1",
+    }
     const places = placesWithCoordinatesAggregates(
-      [
-        {
-          ...placeGenesisPlazaWithAggregatedAttributes,
-          base_position: "-1,-1",
-        },
-      ],
+      [place],
       [hotSceneGenesisPlaza],
       sceneStatsGenesisPlaza
     )
     expect(places).toEqual({
       ["-1,-1"]: {
-        ...placeGenesisPlazaWithAggregatedAttributes,
-        base_position: "-1,-1",
+        ...place,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits:
           sceneStatsGenesisPlaza[
