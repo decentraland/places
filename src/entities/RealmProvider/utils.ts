@@ -8,7 +8,7 @@ const DEFAULT_HOST_SCENE = [] as HotScene[]
 
 let memory = DEFAULT_HOST_SCENE
 
-class RealmProvider {
+export default class RealmProvider {
   static Url = env(
     "REALM_PROVIDER_URL",
     "https://realm-provider.decentraland.org/"
@@ -52,14 +52,14 @@ class RealmProvider {
   }
 }
 
-setInterval(async () => {
+export const fetchHotScenesAndUpdateCache = async () => {
   try {
     const response = await RealmProvider.get().getHotScenes()
     memory = response
   } catch (error) {
     memory = DEFAULT_HOST_SCENE
   }
-}, Time.Minute)
+}
 
 export const getHotScenes = () => {
   return memory

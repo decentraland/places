@@ -29,6 +29,7 @@ import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes
 import mapRoute from "./entities/Map/routes"
 import placeRoute from "./entities/Place/routes"
 import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
+import { hotScenesUpdate } from "./entities/RealmProvider/tasks/hotPlaces"
 import reportRoute from "./entities/Report/routes"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
@@ -51,6 +52,7 @@ tasks.use(
 )
 
 tasks.use(checkPoisForCategoryUpdate)
+tasks.use(hotScenesUpdate)
 
 const app = express()
 app.set("x-powered-by", false)
