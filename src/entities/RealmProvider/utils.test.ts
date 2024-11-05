@@ -1,7 +1,7 @@
 import fetch from "node-fetch"
 
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
-import RealmProvider, { getHotScenes } from "./utils"
+import RealmProvider from "./utils"
 
 jest.mock("node-fetch", () => jest.fn())
 jest.mock("decentraland-gatsby/dist/utils/env", () =>
