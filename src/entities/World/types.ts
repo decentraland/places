@@ -29,3 +29,13 @@ export type WorldListOptions = {
 export type FindWorldWithAggregatesOptions = WorldListOptions & {
   user?: string
 }
+
+export type WorldLivePerWorldProps = {
+  users: number
+  worldName: string
+}
+
+export type WorldLiveDataProps = {
+  perWorld: WorldLivePerWorldProps[]
+  totalUsers: number
+}

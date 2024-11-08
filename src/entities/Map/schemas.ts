@@ -1,6 +1,7 @@
 import schema from "decentraland-gatsby/dist/entities/Schema/schema"
 
 import { realmSchema } from "../Place/schemas"
+import { PlaceListOrderBy } from "../Place/types"
 
 export const mapPlaceSchema = schema({
   type: "object",
@@ -83,3 +84,82 @@ export const mapPlaceSchema = schema({
 })
 
 export const mapPlaceResponseSchema = schema.api(mapPlaceSchema)
+
+export const getAllPlacesListQuerySchema = schema({
+  type: "object",
+  required: [],
+  properties: {
+    limit: {
+      type: "string",
+      format: "uint",
+      nullable: true as any,
+    },
+    offset: {
+      type: "string",
+      format: "uint",
+      nullable: true as any,
+    },
+    positions: {
+      type: "array",
+      maxItems: 1000,
+      items: { type: "string", pattern: "^-?\\d{1,3},-?\\d{1,3}$" },
+      description: "Filter places in specific positions",
+      nullable: true as any,
+    },
+    names: {
+      type: "array",
+      maxItems: 1000,
+      items: { type: "string" },
+      description: "Filter worlds by names",
+      nullable: true as any,
+    },
+    only_favorites: {
+      type: "string",
+      format: "boolean",
+      description: "True if shows only favorite places",
+      nullable: true as any,
+    },
+    only_highlighted: {
+      type: "string",
+      format: "boolean",
+      description: "True if shows only highlighted places",
+      nullable: true as any,
+    },
+    order_by: {
+      type: "string",
+      description: "Order places by",
+      enum: [
+        PlaceListOrderBy.LIKE_SCORE_BEST,
+        PlaceListOrderBy.MOST_ACTIVE,
+        PlaceListOrderBy.UPDATED_AT,
+        PlaceListOrderBy.CREATED_AT,
+      ],
+      nullable: true as any,
+    },
+    order: {
+      type: "string",
+      description: "List order",
+      default: "desc",
+      enum: ["asc", "desc"],
+      nullable: true as any,
+    },
+    with_realms_detail: {
+      type: "string",
+      format: "boolean",
+      description: "Add the numbers of users in each Realm (experimental)",
+      nullable: true as any,
+    },
+    search: {
+      type: "string",
+      description:
+        "Filter places that contains a text expression, should have at least 3 characters otherwise the resultant list will be empty",
+      nullable: true as any,
+    },
+    categories: {
+      type: "array",
+      items: { type: "string" },
+      description: "Filter places by available categories",
+      nullable: true as any,
+    },
+  },
+})

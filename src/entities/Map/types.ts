@@ -1,4 +1,8 @@
-import { AggregatePlaceAttributes } from "../Place/types"
+import {
+  AggregatePlaceAttributes,
+  GetPlaceListQuery,
+  PlaceListOptions,
+} from "../Place/types"
 
 export type AggregateCoordinatePlaceAttributes = Pick<
   AggregatePlaceAttributes,
@@ -17,6 +21,18 @@ export type AggregateCoordinatePlaceAttributes = Pick<
   | "realms_detail"
 > & {
   positions?: string[]
+}
+
+export type GetAllPlaceListQuery = GetPlaceListQuery & {
+  names: string[]
+}
+
+export type AllPlacesListOptions = PlaceListOptions & {
+  names: string[]
+}
+
+export type FindAllPlacesWithAggregatesOptions = AllPlacesListOptions & {
+  user?: string
 }
 
 export const DEFAULT_MAX_LIMIT = 500
