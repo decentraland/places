@@ -47,7 +47,7 @@ test("should return a list of places with no query", async () => {
       },
       {
         ...allPlacesWithAggregatedAttributes[1],
-        user_count: worldsLiveData.totalUsers,
+        user_count: worldsLiveData.perWorld[0].users,
         // TODO: Get user visits from world stats
         user_visits: 0,
       },
@@ -115,7 +115,7 @@ test("should return a list of places with order by most_active", async () => {
     data: [
       {
         ...allPlacesWithAggregatedAttributes[1],
-        user_count: worldsLiveData.totalUsers,
+        user_count: worldsLiveData.perWorld[0].users,
         // TODO: Get user visits from world stats
         user_visits: 0,
       },
@@ -158,7 +158,7 @@ test("should return a list of places with Realm details", async () => {
       },
       {
         ...allPlacesWithAggregatedAttributes[1],
-        user_count: worldsLiveData.totalUsers,
+        user_count: worldsLiveData.perWorld[0].users,
         // TODO: Get user visits from world stats
         user_visits: 0,
       },
