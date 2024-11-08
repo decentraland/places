@@ -915,7 +915,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
-      ${limit(options.limit, { max: 100 })}
+      ${limit(options.limit, { max: DEFAULT_MAP_MAX_LIMIT })}
       ${offset(options.offset)}
     `
 

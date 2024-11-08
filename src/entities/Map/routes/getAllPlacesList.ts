@@ -15,6 +15,7 @@ import { getSceneStats } from "../../SceneStats/utils"
 import { getWorldsLiveData } from "../../World/utils"
 import { getAllPlacesListQuerySchema } from "../schemas"
 import {
+  DEFAULT_MAX_LIMIT,
   FindAllPlacesWithAggregatesOptions,
   GetAllPlaceListQuery,
 } from "../types"
@@ -61,7 +62,9 @@ export const getAllPlacesList = Router.memo(
     const options: FindAllPlacesWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }) ?? 0,
-      limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
+      limit:
+        numeric(query.limit, { min: 0, max: DEFAULT_MAX_LIMIT }) ??
+        DEFAULT_MAX_LIMIT,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
