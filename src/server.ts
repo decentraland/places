@@ -35,6 +35,7 @@ import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 import worldRoute from "./entities/World/routes"
+import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
 
 const tasks = tasksManager()
 tasks.use(
@@ -53,6 +54,7 @@ tasks.use(
 
 tasks.use(checkPoisForCategoryUpdate)
 tasks.use(hotScenesUpdate)
+tasks.use(worldsLiveDataUpdate)
 
 const app = express()
 app.set("x-powered-by", false)

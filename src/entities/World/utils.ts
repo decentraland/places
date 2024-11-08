@@ -1,5 +1,9 @@
-import { WorldLivePerWorldProps } from "../../modules/worldsLiveData"
 import { AggregatePlaceAttributes } from "../Place/types"
+import { WorldLiveDataProps, WorldLivePerWorldProps } from "./types"
+
+const DEFAULT_WORLD_LIVE_DATA = {} as WorldLiveDataProps
+
+let memory = DEFAULT_WORLD_LIVE_DATA
 
 export function worldsWithUserCount(
   worlds: AggregatePlaceAttributes[],
@@ -20,3 +24,18 @@ export function worldsWithUserCount(
     return worldWithAggregates
   })
 }
+
+export const fetchWorldsLiveDataAndUpdateCache = async (): Promise<void> => {
+  try {
+    const liveFetch = await fetch(
+      "https://worlds-content-server.decentraland.org/live-data"
+    )
+    const liveData = await liveFetch.json()
+    memory = liveData.data
+    console.log(memory)
+  } catch (error) {
+    memory = DEFAULT_WORLD_LIVE_DATA
+  }
+}
+
+export const getWorldsLiveData = () => memory
