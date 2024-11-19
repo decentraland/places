@@ -21,6 +21,7 @@ import isEthereumAddress from "validator/lib/isEthereumAddress"
 import {
   type AggregateCoordinatePlaceAttributes,
   DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
+  FindAllPlacesWithAggregatesOptions,
 } from "../Map/types"
 import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
@@ -810,6 +811,195 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
+    `
+    const results: { total: string }[] = await this.namedQuery(
+      "count_places",
+      query
+    )
+
+    return Number(results[0].total)
+  }
+
+  static async findAllPlacesWithAggregates(
+    options: FindAllPlacesWithAggregatesOptions
+  ): Promise<AggregatePlaceAttributes[]> {
+    const searchIsEmpty = options.search && options.search.length < 3
+    if (searchIsEmpty) {
+      return []
+    }
+
+    // The columns most_active, user_visits doesn't exists in the PlaceAttributes
+    const orderBy =
+      oneOf(options.order_by, [
+        PlaceListOrderBy.LIKE_SCORE_BEST,
+        PlaceListOrderBy.UPDATED_AT,
+        PlaceListOrderBy.CREATED_AT,
+      ]) ?? PlaceListOrderBy.LIKE_SCORE_BEST
+
+    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
+    const order = SQL.raw(
+      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p.deployed_at DESC`
+    )
+
+    let placesOrWorldsCondition = SQL``
+    if (options.positions.length > 0 && options.names.length > 0) {
+      placesOrWorldsCondition = SQL`AND (
+        p.base_position IN (
+          SELECT DISTINCT(base_position)
+          FROM ${table(PlacePositionModel)}
+          WHERE position IN ${values(options.positions)}
+        )
+        OR
+        p.world_name IN ${values(options.names)}
+      )`
+    } else if (options.positions.length > 0) {
+      placesOrWorldsCondition = SQL`AND p.base_position IN (
+        SELECT DISTINCT(base_position)
+        FROM ${table(PlacePositionModel)}
+        WHERE position IN ${values(options.positions)}
+      )`
+    } else if (options.names.length > 0) {
+      placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
+        options.names
+      )}`
+    }
+
+    const sql = SQL`
+      SELECT p.*
+      ${conditional(
+        !!options.user,
+        SQL`, uf."user" is not null as user_favorite, coalesce(ul."like",false) as "user_like", not coalesce(ul."like",true) as "user_dislike"`
+      )}
+      ${conditional(
+        !options.user,
+        SQL`, false as user_favorite, false as "user_like", false as "user_dislike"`
+      )}
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && !options.only_favorites,
+        SQL`LEFT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.user,
+        SQL`LEFT JOIN ${table(
+          UserLikesModel
+        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+      )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+      WHERE
+        p.disabled is false 
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        ${conditional(!!options.search, SQL`AND rank > 0`)}
+        ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
+      ORDER BY 
+      ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${order}
+      ${limit(options.limit, { max: DEFAULT_MAP_MAX_LIMIT })}
+      ${offset(options.offset)}
+    `
+
+    const queryResult = await this.namedQuery<
+      AggregatePlaceAttributes & { category_id?: string }
+    >("find_with_agregates", sql)
+
+    return queryResult
+  }
+
+  static async countAllPlaces(
+    options: Pick<
+      FindAllPlacesWithAggregatesOptions,
+      | "user"
+      | "only_favorites"
+      | "positions"
+      | "names"
+      | "only_highlighted"
+      | "search"
+      | "categories"
+    >
+  ) {
+    const isMissingEthereumAddress =
+      options.user && !isEthereumAddress(options.user)
+    const searchIsEmpty = options.search && options.search.length < 3
+
+    if (isMissingEthereumAddress || searchIsEmpty) {
+      return 0
+    }
+
+    let placesOrWorldsCondition = SQL``
+    if (options.positions.length > 0 && options.names.length > 0) {
+      placesOrWorldsCondition = SQL`AND (
+        p.base_position IN (
+          SELECT DISTINCT(base_position)
+          FROM ${table(PlacePositionModel)}
+          WHERE position IN ${values(options.positions)}
+        )
+        OR
+        p.world_name IN ${values(options.names)}
+      )`
+    } else if (options.positions.length > 0) {
+      placesOrWorldsCondition = SQL`AND p.base_position IN (
+        SELECT DISTINCT(base_position)
+        FROM ${table(PlacePositionModel)}
+        WHERE position IN ${values(options.positions)}
+      )`
+    } else if (options.names.length > 0) {
+      placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
+        options.names
+      )}`
+    }
+
+    const query = SQL`
+      SELECT
+        count(DISTINCT p.id) as total
+      FROM ${table(this)} p
+      ${conditional(
+        !!options.user && options.only_favorites,
+        SQL`RIGHT JOIN ${table(
+          UserFavoriteModel
+        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+      )}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+
+      WHERE
+        p."disabled" is false 
+        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
+        ${conditional(!!options.search, SQL` AND rank > 0`)}
+        ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
