@@ -1,3 +1,5 @@
+import env from "decentraland-gatsby/dist/utils/env"
+
 import { AggregatePlaceAttributes } from "../Place/types"
 import { WorldLiveDataProps, WorldLivePerWorldProps } from "./types"
 
@@ -28,11 +30,13 @@ export function worldsWithUserCount(
 export const fetchWorldsLiveDataAndUpdateCache = async (): Promise<void> => {
   try {
     const liveFetch = await fetch(
-      "https://worlds-content-server.decentraland.org/live-data"
+      env(
+        "WORLDS_LIVE_DATA",
+        "https://worlds-content-server.decentraland.org/live-data"
+      )
     )
     const liveData = await liveFetch.json()
     memory = liveData.data
-    console.log(memory)
   } catch (error) {
     memory = DEFAULT_WORLD_LIVE_DATA
   }
