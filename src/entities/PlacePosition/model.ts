@@ -2,11 +2,13 @@ import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   join,
+  limit,
+  offset,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import { PlaceAttributes } from "../Place/types"
+import { FindWithAggregatesOptions, PlaceAttributes } from "../Place/types"
 import { PlacePositionAttributes } from "./types"
 
 export default class PlacePositionModel extends Model<PlacePositionAttributes> {
@@ -31,6 +33,19 @@ export default class PlacePositionModel extends Model<PlacePositionAttributes> {
     const query = SQL`
       SELECT position, base_position
       FROM ${table(this)}
+    `
+
+    return this.namedQuery<PlacePositionAttributes>("find_all_positions", query)
+  }
+
+  static async findWithAggregates(
+    options: Pick<FindWithAggregatesOptions, "limit" | "offset">
+  ): Promise<PlacePositionAttributes[]> {
+    const query = SQL`
+      SELECT position, base_position
+      FROM ${table(this)}
+      ${limit(options.limit, { max: 500 })}
+      ${offset(options.offset)}
     `
 
     return this.namedQuery<PlacePositionAttributes>("find_all_positions", query)
