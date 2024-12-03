@@ -262,8 +262,10 @@ export default function IndexPage() {
 
       if (e.target.value) {
         newParams.search = e.target.value
+        newParams.order_by = PlaceListOrderBy.LIKE_SCORE_BEST
       } else {
         newParams.search = ""
+        newParams.order_by = PlaceListOrderBy.MOST_ACTIVE
       }
 
       setAllPlaces([])
