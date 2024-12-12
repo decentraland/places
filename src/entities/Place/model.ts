@@ -235,7 +235,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHEN p.base_position IN (
                 SELECT DISTINCT(base_position)
                 FROM ${table(PlacePositionModel)}
-                WHERE position IN ${values(options.hotScenesPositions!)}
+                WHERE position IN ${values(options.hotScenesPositions ?? [])}
               ) THEN 0
               ELSE 1
             END,`
