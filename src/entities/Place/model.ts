@@ -160,7 +160,20 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
     )
 
+    const filterMostActivePlaces =
+      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
+      !!options.hotScenesPositions &&
+      options.hotScenesPositions.length > 0
+
     const sql = SQL`
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`WITH most_active_places AS (
+              SELECT DISTINCT base_position
+              FROM "place_positions"
+              WHERE position IN ${values(options.hotScenesPositions || [])}
+            )`
+      )}
       SELECT p.*
       ${conditional(
         !!options.user,
@@ -177,6 +190,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`, not coalesce(ul."like",true) as "user_dislike"`
       )}
       ${conditional(!options.user, SQL`, false as "user_dislike"`)}
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
+      )}
       FROM ${table(this)} p
 
       ${conditional(
@@ -207,6 +224,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
 
       ${conditional(
+        filterMostActivePlaces,
+        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
+      )}
+
+      ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
           options.search || ""
@@ -227,6 +249,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
       ORDER BY 
+      ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
