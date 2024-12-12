@@ -227,6 +227,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
       ORDER BY 
+      ${conditional(
+        options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
+          !!options.hotScenesPositions &&
+          options.hotScenesPositions.length > 0,
+        SQL`CASE 
+              WHEN p.base_position IN (
+                SELECT DISTINCT(base_position)
+                FROM ${table(PlacePositionModel)}
+                WHERE position IN ${values(options.hotScenesPositions!)}
+              ) THEN 0
+              ELSE 1
+            END,`
+      )}
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}

@@ -93,6 +93,7 @@ export type PlaceListOptions = {
 
 export type FindWithAggregatesOptions = PlaceListOptions & {
   user?: string
+  hotScenesPositions?: string[]
 }
 
 export const unwantedThumbnailHash = [

@@ -52,17 +52,14 @@ export const getPlaceMostActiveList = Router.memo(
       return new ApiResponse([], { total: 0 })
     }
 
-    const positions = new Set(query.positions)
-
     const options: FindWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }) ?? 0,
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
-      positions: query.positions.length
-        ? hotScenesPositions.filter((position) => positions.has(position))
-        : hotScenesPositions,
+      positions: query.positions,
+      hotScenesPositions: hotScenesPositions,
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
       search: query.search,
