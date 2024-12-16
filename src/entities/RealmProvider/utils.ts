@@ -46,9 +46,12 @@ export default class RealmProvider {
     const timeoutId = setTimeout(() => controller.abort(), Time.Second * 10)
 
     try {
-      const response = await fetch(`${isLegeacy ? this.urlLegacy : this.url}hot-scenes`, {
-        signal: controller.signal as RequestInit["signal"],
-      })
+      const response = await fetch(
+        `${isLegeacy ? this.urlLegacy : this.url}hot-scenes`,
+        {
+          signal: controller.signal as RequestInit["signal"],
+        }
+      )
       if (!response.ok) {
         throw new Error(`Failed to fetch hot scenes: ${response.statusText}`)
       }
@@ -77,7 +80,8 @@ export const fetchHotScenesAndUpdateCache = async () => {
         const existingScene = sceneMap.get(key)!
         sceneMap.set(key, {
           ...existingScene,
-          usersTotalCount: existingScene.usersTotalCount + scene.usersTotalCount
+          usersTotalCount:
+            existingScene.usersTotalCount + scene.usersTotalCount,
         })
       } else {
         sceneMap.set(key, scene)
@@ -85,8 +89,8 @@ export const fetchHotScenesAndUpdateCache = async () => {
     }
 
     // Process both arrays
-    hotScenesLegacy.forEach(scene => processScene(scene, scenesMap))
-    hotScenes.forEach(scene => processScene(scene, scenesMap))
+    hotScenesLegacy.forEach((scene) => processScene(scene, scenesMap))
+    hotScenes.forEach((scene) => processScene(scene, scenesMap))
 
     memory = Array.from(scenesMap.values())
   } catch (error) {
