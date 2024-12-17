@@ -781,5 +781,6 @@ export const hotSceneGenesisPlaza: HotScene = {
     [10, 7],
     [10, 8],
     [10, 9],
-  ]
+  ],
+  realms: [],
 }
