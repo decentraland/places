@@ -13,7 +13,7 @@ export type HotScene = Pick<
   CatalystHotScene,
   "id" | "name" | "baseCoords" | "usersTotalCount" | "parcels"
 > & {
-  realms: Realm[]
+  realms?: Realm[]
 }
 
 export type PlaceAttributes = {

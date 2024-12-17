@@ -62,6 +62,20 @@ export default class RealmProvider {
   }
 }
 
+export const processScene = (scene: HotScene, sceneMap: Map<string, HotScene>) => {
+  const key = `${scene.baseCoords[0]},${scene.baseCoords[1]}`
+  if (sceneMap.has(key)) {
+    // If scene exists, sum the users count
+    const existingScene = sceneMap.get(key)!
+    sceneMap.set(key, {
+      ...existingScene,
+      usersTotalCount: existingScene.usersTotalCount + scene.usersTotalCount,
+    })
+  } else {
+    sceneMap.set(key, scene)
+  }
+}
+
 export const fetchHotScenesAndUpdateCache = async () => {
   try {
     const [hotScenesLegacy, hotScenes] = await Promise.all([
@@ -71,22 +85,6 @@ export const fetchHotScenesAndUpdateCache = async () => {
 
     // Create a Map to store scenes by their baseCoords
     const scenesMap = new Map<string, HotScene>()
-
-    // Process both arrays
-    const processScene = (scene: HotScene, sceneMap: Map<string, HotScene>) => {
-      const key = `${scene.baseCoords[0]},${scene.baseCoords[1]}`
-      if (sceneMap.has(key)) {
-        // If scene exists, sum the users count
-        const existingScene = sceneMap.get(key)!
-        sceneMap.set(key, {
-          ...existingScene,
-          usersTotalCount:
-            existingScene.usersTotalCount + scene.usersTotalCount,
-        })
-      } else {
-        sceneMap.set(key, scene)
-      }
-    }
 
     // Process both arrays
     hotScenesLegacy.forEach((scene) => processScene(scene, scenesMap))
