@@ -62,7 +62,10 @@ export default class RealmProvider {
   }
 }
 
-export const processScene = (scene: HotScene, sceneMap: Map<string, HotScene>) => {
+export const processScene = (
+  scene: HotScene,
+  sceneMap: Map<string, HotScene>
+) => {
   const key = `${scene.baseCoords[0]},${scene.baseCoords[1]}`
   if (sceneMap.has(key)) {
     // If scene exists, sum the users count
