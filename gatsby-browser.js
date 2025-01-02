@@ -22,13 +22,19 @@ import "decentraland-ui/dist/themes/alternative/light-theme.css"
 import "decentraland-gatsby/dist/variables.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "./src/theme.css"
-import Layout from "decentraland-gatsby/dist/components/Layout/Layout"
+import Layout2 from "decentraland-gatsby/dist/components/Layout/Layout2"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
 import ShareProvider from "decentraland-gatsby/dist/context/Share/ShareProvider"
 import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 import env from "decentraland-gatsby/dist/utils/env"
+
+import {
+  CssBaseline,
+  Experimental_CssVarsProvider as CssVarsProvider,
+  lightTheme,
+} from "decentraland-ui2"
 
 import { TrackingPlacesSearchProvider } from "./src/context/TrackingContext"
 
@@ -40,7 +46,12 @@ export const wrapRootElement = ({ element }) => (
   <AuthProvider sso={ssoUrl}>
     <TrackingPlacesSearchProvider>
       <FeatureFlagProvider applicationName={["places", "dapps"]}>
-        <ShareProvider>{element}</ShareProvider>
+        <ShareProvider>
+          <CssVarsProvider theme={lightTheme}>
+            <CssBaseline />
+            {element}
+          </CssVarsProvider>
+        </ShareProvider>
       </FeatureFlagProvider>
     </TrackingPlacesSearchProvider>
   </AuthProvider>
@@ -49,9 +60,9 @@ export const wrapRootElement = ({ element }) => (
 export const wrapPageElement = ({ element, props }) => {
   return (
     <IntlProvider {...props.pageContext.intl}>
-      <Layout {...props} activePage="explorer">
+      <Layout2 {...props} activePage="explorer">
         {element}
-      </Layout>
+      </Layout2>
     </IntlProvider>
   )
 }
