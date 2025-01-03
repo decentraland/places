@@ -6,9 +6,12 @@ on:
       - master
 
 jobs:
-
   build-push:
     runs-on: ubuntu-20.04
+
+    env:
+      NODE_OPTIONS: "--max_old_space_size=4096"
+
     outputs:
       registry-path: ${{ steps.push-to-quay.outputs.registry-path }}
       registry-paths: ${{ steps.push-to-quay.outputs.registry-paths }}
@@ -25,7 +28,7 @@ jobs:
         with:
           node-version: 18.x
           registry-url: https://registry.npmjs.org/
-          cache: 'npm'
+          cache: "npm"
 
       - name: installing
         run: npm install
