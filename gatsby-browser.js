@@ -22,6 +22,7 @@ import "decentraland-ui/dist/themes/alternative/light-theme.css"
 import "decentraland-gatsby/dist/variables.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "./src/theme.css"
+import EnhancedIntercom from "decentraland-gatsby/dist/components/Development/EnhancedIntercom"
 import Layout2 from "decentraland-gatsby/dist/components/Layout/Layout2"
 import AuthProvider from "decentraland-gatsby/dist/context/Auth/AuthProvider"
 import FeatureFlagProvider from "decentraland-gatsby/dist/context/FeatureFlag/FeatureFlagProvider"
@@ -47,6 +48,7 @@ export const wrapRootElement = ({ element }) => (
         </ShareProvider>
       </FeatureFlagProvider>
     </TrackingPlacesSearchProvider>
+    <EnhancedIntercom />
   </AuthProvider>
 )
 
