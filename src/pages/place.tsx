@@ -52,7 +52,9 @@ export default function PlacePage() {
     [location.search]
   )
 
-  const [placeRetrived, placeRetrivedState] = usePlaceFromParams(params)
+  const [placeRetrived, placeRetrivedState] = usePlaceFromParams(params, [
+    account,
+  ])
 
   const placeMemo = useMemo(
     () => (!placeRetrived ? [[]] : [[placeRetrived]]),
