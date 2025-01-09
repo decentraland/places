@@ -4,7 +4,10 @@ import isUUID from "validator/lib/isUUID"
 import Places from "../api/Places"
 import toCanonicalPosition from "../utils/position/toCanonicalPosition"
 
-export function usePlaceFromParams(params: URLSearchParams) {
+export function usePlaceFromParams(
+  params: URLSearchParams,
+  deps: React.DependencyList = []
+) {
   return useAsyncMemo(
     async () => {
       if (params.get("id")) {
@@ -32,7 +35,7 @@ export function usePlaceFromParams(params: URLSearchParams) {
 
       return null
     },
-    [params],
+    [params, ...deps],
     { callWithTruthyDeps: true, initialValue: null }
   )
 }
