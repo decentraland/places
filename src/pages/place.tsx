@@ -84,9 +84,6 @@ export default function PlacePage() {
     },
   ] = usePlacesManager(placeMemo)
 
-  console.log(" > placeMemo > ", placeMemo)
-  console.log(" > place > ", place)
-
   useEffect(() => {
     if (place) {
       setSelectedRate(getRating(place.content_rating))
