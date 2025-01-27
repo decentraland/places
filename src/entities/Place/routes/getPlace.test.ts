@@ -5,9 +5,9 @@ import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Req
 import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
-import DataTeam from "../../../api/DataTeam"
-import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceCategories from "../../PlaceCategories/model"
+import * as hotScenesModule from "../../RealmProvider/utils"
+import * as sceneStatsModule from "../../SceneStats/utils"
 import PlaceModel from "../model"
 import { getPlace } from "./getPlace"
 
@@ -15,11 +15,12 @@ const place_id = randomUUID()
 const findOne = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
 const findPC = jest.spyOn(PlaceCategories, "namedQuery")
-const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
+const catalystSceneStats = jest.spyOn(sceneStatsModule, "getSceneStats")
 
 afterEach(() => {
   findOne.mockReset()
   catalystHotScenes.mockReset()
+  catalystSceneStats.mockReset()
   findPC.mockReset()
 })
 test("should return 400 when UUID is incorrect", async () => {
