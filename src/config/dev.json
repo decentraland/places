@@ -3,6 +3,7 @@
   "GATSBY_DECENTRALAND_URL": "https://play.decentraland.zone",
   "GATSBY_LAND_URL": "https://api.decentraland.zone",
   "GATSBY_PLACES_URL": "https://places.decentraland.zone/api",
+  "GATSBY_PLACES_BASE_URL": "https://decentraland.zone/places/",
   "GATSBY_PROFILE_URL": "https://peer.decentraland.zone",
   "GATSBY_INTERCOM_APP_ID": "z0h94kay",
   "GATSBY_SENTRY_SRC": "https://js.sentry-cdn.com/bb04b48d542c5a48ad9f41ea2429a500.min.js",

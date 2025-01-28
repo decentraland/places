@@ -36,6 +36,6 @@ export function usePlaceFromParams(
       return null
     },
     [params, ...deps],
-    { callWithTruthyDeps: true, initialValue: null }
+    { initialValue: null }
   )
 }
