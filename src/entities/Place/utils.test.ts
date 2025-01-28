@@ -21,14 +21,14 @@ describe("Instance of URL", () => {
     const url = placeUrl(placeGenesisPlaza)
     expect(url).toBeInstanceOf(URL)
     expect(url.toString()).toBe(
-      "https://places.decentraland.org/places/place/?position=-9.-9"
+      "https://decentraland.org/places/place/?position=-9.-9"
     )
   })
 
   test("should return an URL instance of places", () => {
     const url = siteUrl()
     expect(url).toBeInstanceOf(URL)
-    expect(url.toString()).toBe("https://places.decentraland.org/places/")
+    expect(url.toString()).toBe("https://decentraland.org/places/")
   })
 })
 

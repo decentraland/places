@@ -19,21 +19,27 @@ const DECENTRALAND_URL =
 const CONTENT_SERVER_URL = env("PROFILE_URL", "https://peer.decentraland.org")
 
 export function placeUrl(place: PlaceAttributes) {
-  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  const target = new URL(
+    env("PLACES_BASE_URL", "https://decentraland.org/places")
+  )
   target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
   target.pathname = "/places/place/"
   return target
 }
 
 export function worldUrl(place: PlaceAttributes) {
-  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  const target = new URL(
+    env("PLACES_BASE_URL", "https://decentraland.org/places")
+  )
   target.searchParams.set("name", place.world_name!)
   target.pathname = `/places/world/`
   return target
 }
 
 export function siteUrl(pathname = "") {
-  const target = new URL(env("PLACES_URL", "https://places.decentraland.org"))
+  const target = new URL(
+    env("PLACES_BASE_URL", "https://decentraland.org/places")
+  )
   target.pathname = pathname ? `/places/${pathname}/` : "/places/"
   return target
 }
