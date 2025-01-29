@@ -28,7 +28,7 @@ export default function usePlacesManager(
       tracking: Record<string, string> = {}
     ) => {
       if (account === null) {
-        accountState.select()
+        accountState.authorize()
       } else if (place) {
         const favoritesResponse = await Places.get().updateFavorite(
           id,
@@ -55,7 +55,7 @@ export default function usePlacesManager(
 
   const likeDislikeHandler = async (id: string, like: boolean | null) => {
     if (account === null) {
-      accountState.select()
+      accountState.authorize()
     } else if (id) {
       const LikesResponse = await Places.get().updateLike(id, like)
       if (LikesResponse) {
