@@ -38,7 +38,7 @@ import worldRoute from "./entities/World/routes"
 import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
 
 const tasks = tasksManager()
-tasks.use(
+/* tasks.use(
   createSceneConsumerTask(
     new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
     {
@@ -50,7 +50,7 @@ tasks.use(
       VisibilityTimeout: 3 * 3600, // 3 hours
     }
   )
-)
+) */
 
 tasks.use(checkPoisForCategoryUpdate)
 tasks.use(hotScenesUpdate)
