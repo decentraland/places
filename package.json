@@ -21,7 +21,7 @@
     "decentraland-gatsby": "^6.28.2",
     "decentraland-ui": "^6.12.1",
     "decentraland-ui2": "^0.10.1",
-    "es6-shim": "^0.35.6",
+    "es6-shim": "^0.35.8",
     "express-fileupload": "^1.2.1",
     "gatsby": "4.23.0",
     "gatsby-plugin-image": "^2.13.0",
