@@ -95,6 +95,7 @@ app.use("/places", [
     allowedHeaders: "*",
   }),
   gatsby(resolve(__filename, "../../public"), {
+    crossOriginOpenerPolicy: "same-origin",
     contentSecurityPolicy: {
       fontSrc: [
         "https://decentraland.org",
