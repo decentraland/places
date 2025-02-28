@@ -161,9 +161,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
 
     const filterMostActivePlaces =
-      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
-      !!options.hotScenesPositions &&
-      options.hotScenesPositions.length > 0
+      !!options.hotScenesPositions && options.hotScenesPositions.length > 0
 
     const sql = SQL`
       ${conditional(
