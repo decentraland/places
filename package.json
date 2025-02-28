@@ -18,7 +18,7 @@
     "caniuse-lite": "^1.0.30001470",
     "core-js": "^3.22.2",
     "cssnano": "^5.0.10",
-    "decentraland-gatsby": "^6.37.0",
+    "decentraland-gatsby": "^6.39.0",
     "decentraland-ui": "^6.12.1",
     "es6-shim": "^0.35.8",
     "express-fileupload": "^1.2.1",
