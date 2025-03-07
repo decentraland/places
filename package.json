@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@dcl/schemas": "^13.9.0",
-    "@sentry/browser": "^7.120.3",
+    "@sentry/browser": "^9.5.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
     "autoprefixer": "^10.4.0",
