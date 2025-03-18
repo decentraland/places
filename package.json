@@ -9,7 +9,7 @@
     "npm": "8.* || 9.*"
   },
   "dependencies": {
-    "@dcl/schemas": "^13.9.0",
+    "@dcl/schemas": "^16.1.0",
     "@sentry/browser": "^7.120.3",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
