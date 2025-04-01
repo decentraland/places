@@ -19,6 +19,13 @@ import { diff, unique } from "radash"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 import {
+  AggregatePlaceAttributes,
+  FindWithAggregatesOptions,
+  HotScene,
+  PlaceAttributes,
+  PlaceListOrderBy,
+} from "./types"
+import {
   type AggregateCoordinatePlaceAttributes,
   DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
   FindAllPlacesWithAggregatesOptions,
@@ -31,13 +38,6 @@ import {
   FindWorldWithAggregatesOptions,
   WorldListOrderBy,
 } from "../World/types"
-import {
-  AggregatePlaceAttributes,
-  FindWithAggregatesOptions,
-  HotScene,
-  PlaceAttributes,
-  PlaceListOrderBy,
-} from "./types"
 
 export const MIN_USER_ACTIVITY = 100
 export const SUMMARY_ACTIVITY_RANGE = "7 days"
@@ -548,7 +548,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
 
       WHERE
-        p.disabled is false AND world is true
+        p.world is true
+        ${conditional(!!options.disabled, SQL`AND p.disabled is true`)}
+        ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
           SQL`AND world_name IN ${values(options.names)}`
@@ -567,7 +569,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names" | "search" | "categories"
+      "user" | "only_favorites" | "names" | "search" | "categories" | "disabled"
     >
   ) {
     const isMissingEthereumAddress =
@@ -602,8 +604,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )})) as rank`
       )}
       WHERE
-        p.disabled is false
-        AND p.world is true
+        p.world is true
+        ${conditional(!!options.disabled, SQL`AND p.disabled is true`)}
+        ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
           SQL`AND p.world_name IN ${values(options.names)}`
