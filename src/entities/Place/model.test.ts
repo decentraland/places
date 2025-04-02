@@ -605,7 +605,7 @@ describe(`findWorld`, () => {
           WHERE
             p.world is true
             AND p.disabled is false
-            AND world_name IN ($1)
+            AND LOWER(world_name) = ANY(SELECT LOWER(unnest($1)))
           ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
             LIMIT $2
             OFFSET $3
@@ -650,7 +650,7 @@ describe(`findWorld`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND world_name IN ($4)
+          AND LOWER(world_name) = ANY(SELECT LOWER(unnest($4)))
           AND rank > 0
         ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -697,7 +697,7 @@ describe(`findWorld`, () => {
         WHERE
           p.world is true
           AND p.disabled is true
-          AND world_name IN ($4)
+          AND LOWER(world_name) = ANY(SELECT LOWER(unnest($4)))
           AND rank > 0
         ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -749,7 +749,7 @@ describe(`countWorlds`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND p.world_name IN ($1)
+          AND LOWER(p.world_name) = ANY(SELECT LOWER(unnest($1)))
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -777,7 +777,7 @@ describe(`countWorlds`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND p.world_name IN ($2)
+          AND LOWER(p.world_name) = ANY(SELECT LOWER(unnest($2)))
           AND rank > 0
       `
         .trim()
