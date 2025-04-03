@@ -553,9 +553,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
-          SQL`AND LOWER(world_name) = ANY(SELECT LOWER(unnest(${values(
-            options.names
-          )})))`
+          SQL`AND LOWER(world_name) = ANY(ARRAY[${values(
+            options.names.map((name) => name.toLowerCase())
+          )}])`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
       ORDER BY
@@ -611,9 +611,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
-          SQL`AND LOWER(p.world_name) = ANY(SELECT LOWER(unnest(${values(
-            options.names
-          )})))`
+          SQL`AND LOWER(p.world_name) = ANY(ARRAY[${values(
+            options.names.map((name) => name.toLowerCase())
+          )}])`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
     `
