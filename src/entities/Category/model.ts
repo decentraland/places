@@ -5,13 +5,13 @@ import {
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import PlaceModel from "../Place/model"
-import PlaceCategories from "../PlaceCategories/model"
 import {
   CategoryAttributes,
   CategoryCountTargetOptions,
   CategoryWithPlaceCount,
 } from "./types"
+import PlaceModel from "../Place/model"
+import PlaceCategories from "../PlaceCategories/model"
 
 export default class CategoryModel extends Model<CategoryAttributes> {
   static tableName = "categories"

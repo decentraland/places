@@ -2,9 +2,9 @@ import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 
-import { categories as CategoryTranslations } from "../../intl/en.json"
 import CategoryModel from "./model"
 import { CategoryCountTargetOptions } from "./types"
+import { categories as CategoryTranslations } from "../../intl/en.json"
 
 export default routes((router) => {
   router.get("/categories", getCategoryList)
