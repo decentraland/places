@@ -49,7 +49,7 @@ export default React.memo(function ConfirmRatingModal(
         </Title>
         <Paragraph>
           {l(
-            `components.modal.confirmed_rating.description_${selectedRate.toLocaleLowerCase()}`,
+            `components.modal.confirmed_rating.description_${selectedRate.toLowerCase()}`,
             {
               scene_name: sceneName,
             }

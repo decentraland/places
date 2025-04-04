@@ -1,5 +1,3 @@
-import { entitySceneGenesisPlaza } from "../../__data__/entitySceneGenesisPlaza"
-import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import {
   createDeleteQuery,
   createInsertQuery,
@@ -10,6 +8,8 @@ import {
   validatePlacesWorlds,
 } from "./migration"
 import { PlaceAttributes } from "./types"
+import { entitySceneGenesisPlaza } from "../../__data__/entitySceneGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 
 export const attributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -157,7 +157,7 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
     const keys = attributes.filter((attr) => attr in place)
     const query = createUpdatePlacesAndWorldsQuery(place, keys)
     const deleteQuery =
-      "UPDATE places SET world_name=$1 WHERE world_name = 'paralax.dcl.eth'"
+      "UPDATE places SET world_name=$1 WHERE LOWER(world_name) = 'paralax.dcl.eth' and world is true"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )

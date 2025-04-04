@@ -33,9 +33,9 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
       (place.content_rating !== SceneContentRating.ADULT &&
         place.content_rating !== SceneContentRating.RESTRICTED)
     ) {
-      return SceneContentRating.TEEN.toLocaleLowerCase()
+      return SceneContentRating.TEEN.toLowerCase()
     }
-    return place.content_rating.toLocaleLowerCase()
+    return place.content_rating.toLowerCase()
   }, [place])
 
   return (

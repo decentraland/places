@@ -7,6 +7,7 @@ export type GetWorldListQuery = {
   order: string
   search: string
   categories: string[]
+  disabled: string
 }
 
 export enum WorldListOrderBy {
@@ -28,6 +29,7 @@ export type WorldListOptions = {
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {
   user?: string
+  disabled?: boolean
 }
 
 export type WorldLivePerWorldProps = {

@@ -7,13 +7,13 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import { MigrationBuilder } from "node-pg-migrate"
 
+import PlaceModel from "./model"
+import { PlaceAttributes } from "./types"
+import { getThumbnailFromDeployment } from "./utils"
 import getContentRating, {
   isDowngradingRating,
 } from "../../utils/rating/contentRating"
 import { notifyDowngradeRating } from "../Slack/utils"
-import PlaceModel from "./model"
-import { PlaceAttributes } from "./types"
-import { getThumbnailFromDeployment } from "./utils"
 
 export type PlacesStatic = {
   create: Array<Partial<PlaceAttributes>>
@@ -120,7 +120,11 @@ export function createUpdatePlacesAndWorldsQuery(
             ? `'${place.base_position}' = ANY("positions")`
             : ""
         }
-        ${place.world_name ? `world_name = '${place.world_name}'` : ""}
+        ${
+          place.world_name
+            ? `LOWER(world_name) = '${place.world_name.toLowerCase()}' and world is true`
+            : ""
+        }
       `
 }
 

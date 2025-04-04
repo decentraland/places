@@ -58,6 +58,12 @@ export const getWorldListQuerySchema = schema({
       description: "Filter worlds by categories",
       nullable: true as any,
     },
+    disabled: {
+      type: "string",
+      format: "boolean",
+      description: "True if shows also disabled worlds",
+      nullable: true as any,
+    },
   },
 })
 
