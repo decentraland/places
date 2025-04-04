@@ -6,8 +6,8 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import { bool } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getHotScenes } from "../../../modules/hotScenes"
-import { getSceneStats } from "../../../modules/sceneStats"
+import { getHotScenes } from "../../RealmProvider/utils"
+import { getSceneStats } from "../../SceneStats/utils"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
