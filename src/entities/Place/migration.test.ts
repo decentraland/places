@@ -157,7 +157,7 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
     const keys = attributes.filter((attr) => attr in place)
     const query = createUpdatePlacesAndWorldsQuery(place, keys)
     const deleteQuery =
-      "UPDATE places SET world_name=$1 WHERE LOWER(world_name) = 'paralax.dcl.eth'"
+      "UPDATE places SET world_name=$1 WHERE LOWER(world_name) = 'paralax.dcl.eth' and world is true"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
