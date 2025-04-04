@@ -122,7 +122,7 @@ export function createUpdatePlacesAndWorldsQuery(
         }
         ${
           place.world_name
-            ? `LOWER(world_name) = '${place.world_name.toLowerCase()}'`
+            ? `LOWER(world_name) = '${place.world_name.toLowerCase()}' and world is true`
             : ""
         }
       `
