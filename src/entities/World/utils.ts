@@ -1,7 +1,7 @@
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { AggregatePlaceAttributes } from "../Place/types"
 import { WorldLiveDataProps, WorldLivePerWorldProps } from "./types"
+import { AggregatePlaceAttributes } from "../Place/types"
 
 const DEFAULT_WORLD_LIVE_DATA = {} as WorldLiveDataProps
 
@@ -14,8 +14,7 @@ export function worldsWithUserCount(
   return worlds.map((world) => {
     const liveWorlds = worldLiveData.find(
       (liveData) =>
-        liveData.worldName.toLocaleLowerCase() ===
-        world.world_name!.toLocaleLowerCase()
+        liveData.worldName.toLowerCase() === world.world_name!.toLowerCase()
     )
 
     const worldWithAggregates = {
