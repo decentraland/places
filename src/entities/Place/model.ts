@@ -139,6 +139,32 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return queryResult[0]
   }
 
+  static async findByIds(placeIds: string[]): Promise<PlaceAttributes[]> {
+    const sql = SQL`
+      SELECT p.*
+      FROM ${table(this)} p
+      WHERE "p"."id" IN ${values(placeIds)}
+    `
+
+    const queryResult = await this.namedQuery("find_by_ids", sql)
+    return queryResult
+  }
+
+  static async countByIds(placeIds: string[]) {
+    const query = SQL`
+      SELECT
+        count(DISTINCT p.id) as "total"
+      FROM ${table(this)} p
+      WHERE "p"."id" IN ${values(placeIds)}
+    `
+    const results: { total: string }[] = await this.namedQuery(
+      "count_by_ids",
+      query
+    )
+
+    return Number(results[0].total)
+  }
+
   static async findWithAggregates(
     options: FindWithAggregatesOptions
   ): Promise<AggregatePlaceAttributes[]> {
