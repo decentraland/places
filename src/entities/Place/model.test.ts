@@ -1,3 +1,5 @@
+import PlaceModel from "./model"
+import { PlaceAttributes } from "./types"
 import { userLikeTrue } from "../../__data__/entities"
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
@@ -7,8 +9,6 @@ import {
   worldPlaceParalaxWithAggregated,
   worldPlaceTemplegame,
 } from "../../__data__/world"
-import PlaceModel from "./model"
-import { PlaceAttributes } from "./types"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -603,9 +603,9 @@ describe(`findWorld`, () => {
         SELECT p.* , false as user_favorite , false as user_like , false as user_dislike
         FROM "places" p
           WHERE
-            p.disabled is false
-            AND world is true
-            AND world_name IN ($1)
+            p.world is true
+            AND p.disabled is false
+            AND LOWER(world_name) = ANY(ARRAY[($1)])
           ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
             LIMIT $2
             OFFSET $3
@@ -648,9 +648,56 @@ describe(`findWorld`, () => {
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
         , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
         WHERE
-          p.disabled is false
-          AND world is true
-          AND world_name IN ($4)
+          p.world is true
+          AND p.disabled is false
+          AND LOWER(world_name) = ANY(ARRAY[($4)])
+          AND rank > 0
+        ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
+          LIMIT $5
+          OFFSET $6
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
+  test(`should return a list of worlds matching the parameters FindWithAggregatesOptions with disabled`, async () => {
+    namedQuery.mockResolvedValue([{ ...worldPlaceTemplegame, disabled: true }])
+    expect(
+      await PlaceModel.findWorld({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "decentraland",
+        categories: [],
+        disabled: true,
+      })
+    ).toEqual([{ ...worldPlaceTemplegame, disabled: true }])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_worlds")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "decentraland:*",
+      "templegame.dcl.eth",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
+        WHERE
+          p.world is true
+          AND p.disabled is true
+          AND LOWER(world_name) = ANY(ARRAY[($4)])
           AND rank > 0
         ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -700,9 +747,9 @@ describe(`countWorlds`, () => {
           count(*) as total
         FROM "places" p
         WHERE
-          p.disabled is false
-          AND p.world is true
-          AND p.world_name IN ($1)
+          p.world is true
+          AND p.disabled is false
+          AND LOWER(p.world_name) = ANY(ARRAY[($1)])
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -728,9 +775,9 @@ describe(`countWorlds`, () => {
           count(*) as total
         FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
         WHERE
-          p.disabled is false
-          AND p.world is true
-          AND p.world_name IN ($2)
+          p.world is true
+          AND p.disabled is false
+          AND LOWER(p.world_name) = ANY(ARRAY[($2)])
           AND rank > 0
       `
         .trim()
