@@ -12,21 +12,26 @@ export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
   getPlaceListQuerySchema
 )
 
-export const getPlaceStatusListById = Router.memo(
-  async (ctx: Context<{}, "url" | "request" | "params" | "body">) => {
-    const placeIds = ctx.body as string[]
-    if (placeIds.length > 100) {
-      throw new ErrorResponse(
-        Response.NotFound,
-        `Cannot request more than 100 places at once`
-      )
-    }
-
-    const [places, total] = await Promise.all([
-      PlaceModel.findByIds(placeIds),
-      PlaceModel.countByIds(placeIds),
-    ])
-
-    return new ApiResponse(places, { total })
+export const getPlaceStatusListById = Router.memo(async (ctx: Context) => {
+  const placeIds = await ctx.request.json()
+  if (!Array.isArray(placeIds)) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Invalid request body. Expected an array of place IDs.`
+    )
   }
-)
+
+  if (placeIds.length > 100) {
+    throw new ErrorResponse(
+      Response.NotFound,
+      `Cannot request more than 100 places at once`
+    )
+  }
+
+  const [places, total] = await Promise.all([
+    PlaceModel.findByIds(placeIds),
+    PlaceModel.countByIds(placeIds),
+  ])
+
+  return new ApiResponse(places, { total })
+})
