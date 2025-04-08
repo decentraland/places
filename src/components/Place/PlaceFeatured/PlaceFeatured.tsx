@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react"
 
 import { withPrefix } from "gatsby"
 
+import DownloadModal from "decentraland-gatsby/dist/components/Modal/DownloadModal"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { navigate } from "decentraland-gatsby/dist/plugins/intl/utils"
@@ -17,7 +18,6 @@ import { SegmentPlace } from "../../../modules/segment"
 import { placeClientOptions } from "../../../modules/utils"
 import { getImageUrl } from "../../../utils/image"
 import UserCount from "../../Label/UserCount/UserCount"
-import DownloadModal from "../../Modal/DownloadModal"
 
 import "./PlaceFeatured.css"
 
