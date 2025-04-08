@@ -152,7 +152,7 @@ export default React.memo(function WorldDescription(
       <DownloadModal
         open={showModal}
         onClose={() => setShowModal(false)}
-        onModalClick={handleModalClick}
+        onDownloadClick={handleModalClick}
       />
     </div>
   )

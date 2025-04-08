@@ -114,7 +114,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
       <DownloadModal
         open={showModal}
         onClose={() => setShowModal(false)}
-        onModalClick={handleModalClick}
+        onDownloadClick={handleModalClick}
       />
     </div>
   )
