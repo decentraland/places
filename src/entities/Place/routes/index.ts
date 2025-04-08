@@ -5,7 +5,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 import { getPlace } from "./getPlace"
 import { getPlaceCategories } from "./getPlaceCategories"
 import { getPlaceList } from "./getPlaceList"
-import { getPlaceListById } from "./getPlaceListById"
+import { getPlaceStateListById } from "./getPlaceStateListById"
 import { updateRating } from "./updateRating"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
@@ -29,8 +29,8 @@ export default routes((router) => {
   )
   router.get("/places/:place_id", getPlace)
   router.get("/places", getPlaceList)
-  router.post("/places", getPlaceListById)
   router.put("/places/:place_id/rating", updateRating)
   router.get("/places/:place_id/categories", getPlaceCategories)
   router.put("/places/:place_id/rating", updateRating)
+  router.post("/places/status", getPlaceStateListById)
 }, {})

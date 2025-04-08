@@ -141,7 +141,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
   static async findByIds(placeIds: string[]): Promise<PlaceAttributes[]> {
     const sql = SQL`
-      SELECT p.*
+      SELECT p.id, p."disabled"
       FROM ${table(this)} p
       WHERE "p"."id" IN ${values(placeIds)}
     `
@@ -153,7 +153,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countByIds(placeIds: string[]) {
     const query = SQL`
       SELECT
-        count(DISTINCT p.id) as "total"
+        count(p.id) as "total"
       FROM ${table(this)} p
       WHERE "p"."id" IN ${values(placeIds)}
     `
