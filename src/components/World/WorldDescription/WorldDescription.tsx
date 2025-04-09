@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from "react"
 
+import DownloadModal from "decentraland-gatsby/dist/components/Modal/DownloadModal"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
@@ -14,7 +15,6 @@ import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
 import ShareBox from "../../Button/ShareBox"
 import { Likes } from "../../Label/Likes/Likes"
-import DownloadModal from "../../Modal/DownloadModal"
 import WorldLabel from "../WorldLabel/WorldLabel"
 
 import "./WorldDescription.css"
@@ -151,8 +151,11 @@ export default React.memo(function WorldDescription(
       </div>
       <DownloadModal
         open={showModal}
+        title={l("components.modal.download.title")}
+        description={l("components.modal.download.description")}
+        buttonLabel={l("components.modal.download.button_label")}
         onClose={() => setShowModal(false)}
-        onModalClick={handleModalClick}
+        onDownloadClick={handleModalClick}
       />
     </div>
   )
