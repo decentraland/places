@@ -113,6 +113,9 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
       </Hero>
       <DownloadModal
         open={showModal}
+        title={l("components.modal.download.title")}
+        description={l("components.modal.download.description")}
+        buttonLabel={l("components.modal.download.button_label")}
         onClose={() => setShowModal(false)}
         onDownloadClick={handleModalClick}
       />
