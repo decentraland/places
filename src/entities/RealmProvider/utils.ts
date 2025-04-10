@@ -4,10 +4,9 @@ import fetch, { RequestInit } from "node-fetch"
 
 import { HotScene } from "../Place/types"
 
-const DEFAULT_HOST_SCENE = Object.freeze([]) as readonly HotScene[]
+const DEFAULT_HOST_SCENE = [] as HotScene[]
 
-// Single memory reference for the most recent hot scenes data
-let currentHotScenes: HotScene[] = [...DEFAULT_HOST_SCENE]
+let memory = DEFAULT_HOST_SCENE
 
 export default class RealmProvider {
   static Url = env(
@@ -55,14 +54,13 @@ export default class RealmProvider {
 
 export const fetchHotScenesAndUpdateCache = async () => {
   try {
-    const hotScenes = await RealmProvider.get().getHotScenes()
-    // Update the current hot scenes with new data
-    currentHotScenes = Array.from(hotScenes)
+    const response = await RealmProvider.get().getHotScenes()
+    memory = response
   } catch (error) {
-    currentHotScenes = [...DEFAULT_HOST_SCENE]
+    memory = DEFAULT_HOST_SCENE
   }
 }
 
-export const getHotScenes = (): HotScene[] => {
-  return [...currentHotScenes]
+export const getHotScenes = () => {
+  return memory
 }
