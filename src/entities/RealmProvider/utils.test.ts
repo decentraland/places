@@ -54,8 +54,8 @@ describe("RealmProvider", () => {
   })
 
   describe("fetchHotScenesAndUpdateCache", () => {
-    describe("when the scene is in both sources", () => {
-      it("should merge and cache hot scenes from both sources", async () => {
+    describe("when archipelago returns the hot scenes", () => {
+      it("should update the cache with the new hot scenes", async () => {
         mockFetch.mockResolvedValueOnce({
           ok: true,
           json: jest.fn().mockResolvedValueOnce([hotSceneGenesisPlaza]),
@@ -64,23 +64,6 @@ describe("RealmProvider", () => {
         const result = getHotScenes()
         expect(result).toHaveLength(1)
         expect(result[0].usersTotalCount).toBe(10)
-      })
-    })
-    describe("when the scene is in only one source", () => {
-      it("should keep separate scenes with different coordinates", async () => {
-        const scene = {
-          ...hotSceneGenesisPlaza,
-          baseCoords: [100, 100],
-          usersTotalCount: 1,
-        }
-        mockFetch.mockResolvedValueOnce({
-          ok: true,
-          json: jest.fn().mockResolvedValueOnce([scene]),
-        } as any)
-        await fetchHotScenesAndUpdateCache()
-        const result = getHotScenes()
-        expect(result).toHaveLength(1)
-        expect(result[0].usersTotalCount).toBe(1)
       })
     })
   })
