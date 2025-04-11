@@ -1,15 +1,11 @@
-import React, { useCallback, useState } from "react"
+import React, { useCallback } from "react"
 
-import DownloadModal from "decentraland-gatsby/dist/components/Modal/DownloadModal"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
-import env from "decentraland-gatsby/dist/utils/env"
 
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { launchDesktopApp } from "../../../modules/desktop"
 import { SegmentPlace } from "../../../modules/segment"
-import { placeClientOptions } from "../../../modules/utils"
 import { getImageUrl } from "../../../utils/image"
 import FavoriteBox from "../../Button/FavoriteBox"
 import JumpInPositionButton from "../../Button/JumpInPositionButton"
@@ -50,43 +46,17 @@ export default React.memo(function WorldDescription(
   const l = useFormatMessage()
 
   const track = useTrackContext()
-  const [showModal, setShowModal] = useState(false)
 
-  let hasDecentralandLauncher: null | boolean = null
-
-  const handleClick = useCallback(
-    async function (e: React.MouseEvent<HTMLButtonElement>) {
-      e.stopPropagation()
-      e.preventDefault()
-      if (event) {
-        hasDecentralandLauncher = await launchDesktopApp(
-          placeClientOptions(world)
-        )
-
-        !hasDecentralandLauncher && setShowModal(true)
-      }
-
+  const handleTrack = useCallback(
+    (data: Record<string, unknown>) => {
       track(SegmentPlace.JumpIn, {
         event: SegmentPlace.JumpIn,
         placeId: world?.id,
         place: dataPlace,
-        has_laucher: !!hasDecentralandLauncher,
+        has_launcher: data.has_launcher,
       })
     },
-    [world, track]
-  )
-
-  const handleModalClick = useCallback(
-    async function (e: React.MouseEvent<HTMLButtonElement>) {
-      e.stopPropagation()
-      e.preventDefault()
-
-      window.open(
-        env("DECENTRALAND_DOWNLOAD_URL", "https://decentraland.org/download"),
-        "_blank"
-      )
-    },
-    [track, hasDecentralandLauncher]
+    [world, track, dataPlace]
   )
 
   return (
@@ -136,7 +106,11 @@ export default React.memo(function WorldDescription(
                 }}
               />
             )}
-            <JumpInPositionButton loading={loading} onClick={handleClick} />
+            <JumpInPositionButton
+              loading={loading}
+              place={world}
+              onTrack={handleTrack}
+            />
             <div className="world-description__box-wrapper">
               <ShareBox onClick={onClickShare} loading={loading} />
               <FavoriteBox
@@ -149,14 +123,6 @@ export default React.memo(function WorldDescription(
           </div>
         </div>
       </div>
-      <DownloadModal
-        open={showModal}
-        title={l("components.modal.download.title")}
-        description={l("components.modal.download.description")}
-        buttonLabel={l("components.modal.download.button_label")}
-        onClose={() => setShowModal(false)}
-        onDownloadClick={handleModalClick}
-      />
     </div>
   )
 })

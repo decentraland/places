@@ -70,12 +70,6 @@
 
 .place-description
   .place-description__buttons-container
-  .jump-in-position.button {
-  height: 46px;
-}
-
-.place-description
-  .place-description__buttons-container
   .likes-container-wrapper {
   margin-bottom: 10px;
 }
