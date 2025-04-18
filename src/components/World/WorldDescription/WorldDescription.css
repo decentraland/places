@@ -70,12 +70,6 @@
 
 .world-description
   .world-description__buttons-container
-  .jump-in-position.button {
-  height: 46px;
-}
-
-.world-description
-  .world-description__buttons-container
   .likes-container-wrapper {
   margin-bottom: 10px;
 }

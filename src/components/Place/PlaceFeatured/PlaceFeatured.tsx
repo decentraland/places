@@ -11,8 +11,9 @@ import env from "decentraland-gatsby/dist/utils/env"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Hero } from "decentraland-ui/dist/components/Hero/Hero"
 
+import { launchDesktopApp } from "decentraland-ui2"
+
 import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { launchDesktopApp } from "../../../modules/desktop"
 import locations from "../../../modules/locations"
 import { SegmentPlace } from "../../../modules/segment"
 import { placeClientOptions } from "../../../modules/utils"
