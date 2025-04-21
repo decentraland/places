@@ -139,9 +139,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return queryResult[0]
   }
 
-  static async findByIds(placeIds: string[]): Promise<PlaceAttributes[]> {
+  static async findByIds(
+    placeIds: string[]
+  ): Promise<
+    Pick<
+      PlaceAttributes,
+      "id" | "disabled" | "world" | "world_name" | "base_position"
+    >[]
+  > {
     const sql = SQL`
-      SELECT p.id, p."disabled"
+      SELECT p.id, p."disabled", p."world", p."world_name", p."base_position"
       FROM ${table(this)} p
       WHERE "p"."id" IN ${values(placeIds)}
     `
