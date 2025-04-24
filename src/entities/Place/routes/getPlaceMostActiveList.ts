@@ -9,8 +9,8 @@ import {
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { flat, sort } from "radash"
 
-import { getHotScenes } from "../../RealmProvider/utils"
-import { getSceneStats } from "../../SceneStats/utils"
+import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { FindWithAggregatesOptions, PlaceListOrderBy } from "../types"
 import { placesWithUserCount, placesWithUserVisits } from "../utils"
@@ -60,7 +60,7 @@ export const getPlaceMostActiveList = Router.memo(
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
       hotScenesPositions: hotScenesPositions,
-      order_by: PlaceListOrderBy.UPDATED_AT,
+      order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,
       search: query.search,
       categories: query.categories,

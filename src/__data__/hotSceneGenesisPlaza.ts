@@ -4,7 +4,7 @@ export const hotSceneGenesisPlaza: HotScene = {
   id: "bafkreidw4inuymukjj4otmld76a5qo4sowc6lbqqk6h4dtci4yxv5qkjie",
   name: "Genesis Plaza",
   baseCoords: [-9, -9],
-  usersTotalCount: 10,
+  usersTotalCount: 25,
   parcels: [
     [-9, -9],
     [-9, -8],
@@ -387,5 +387,10 @@ export const hotSceneGenesisPlaza: HotScene = {
     [10, 8],
     [10, 9],
   ],
-  realms: [],
+  realms: [
+    {
+      serverName: "artemis",
+      usersCount: 25,
+    },
+  ],
 }
