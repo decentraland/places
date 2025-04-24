@@ -13,7 +13,7 @@ export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
 )
 
 export const getPlaceStatusListById = Router.memo(async (ctx: Context) => {
-  const placeIds = await ctx.request.json()
+  const placeIds: string[] = ctx.body
   if (!Array.isArray(placeIds)) {
     throw new ErrorResponse(
       Response.BadRequest,
