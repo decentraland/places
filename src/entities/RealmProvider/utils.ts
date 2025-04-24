@@ -10,8 +10,8 @@ let memory = DEFAULT_HOST_SCENE
 
 export default class RealmProvider {
   static Url = env(
-    "ARCHIPELAGO_URL",
-    "https://archipelago-ea-stats.decentraland.org/"
+    "REALM_PROVIDER_URL",
+    "https://realm-provider.decentraland.org/"
   )
   static Cache = new Map<string, RealmProvider>()
 

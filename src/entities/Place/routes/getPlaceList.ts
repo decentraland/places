@@ -8,8 +8,8 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getHotScenes } from "../../RealmProvider/utils"
-import { getSceneStats } from "../../SceneStats/utils"
+import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../model"
 import { getPlaceListQuerySchema } from "../schemas"
 import {
