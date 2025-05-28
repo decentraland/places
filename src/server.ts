@@ -66,6 +66,7 @@ app.use("/api", [
       /^http:\/\/localhost:[0-9]{1,10}$/,
       /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
       /https:\/\/dcl-preview\.vercel\.app/,
+      /https:\/\/([a-zA-Z0-9\-_])+-decentraland1\.vercel\.app/,
     ],
     allowedHeaders: "*",
   }),
@@ -91,6 +92,7 @@ app.use("/places", [
     corsOrigin: [
       /^http:\/\/localhost:[0-9]{1,10}$/,
       /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
+      /https:\/\/([a-zA-Z0-9\-_])+-decentraland1\.vercel\.app/,
     ],
     allowedHeaders: "*",
   }),

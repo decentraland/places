@@ -21,6 +21,7 @@ export default routes((router) => {
         /https:\/\/([a-zA-Z0-9\-_]+\.)*decentraland\.org/,
         /https:\/\/decentraland\.github\.io/,
         /https:\/\/([a-zA-Z0-9\-_]+\.)*pages\.dev/,
+        /https:\/\/([a-zA-Z0-9\-_])+-decentraland1\.vercel\.app/,
       ],
     })
   )
