@@ -3,6 +3,7 @@ import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { getPlace } from "./getPlace"
+import { getPlaceBasePositionList } from "./getPlaceBasePositionList"
 import { getPlaceCategories } from "./getPlaceCategories"
 import { getPlaceList } from "./getPlaceList"
 import { getPlaceStatusListById } from "./getPlaceStatusListById"
@@ -28,6 +29,7 @@ export default routes((router) => {
       ],
     })
   )
+  router.get("/places/positions", getPlaceBasePositionList)
   router.get("/places/:place_id", getPlace)
   router.get("/places", getPlaceList)
   router.put("/places/:place_id/rating", updateRating)
