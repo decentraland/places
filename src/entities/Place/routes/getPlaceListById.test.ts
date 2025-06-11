@@ -1,5 +1,3 @@
-import Logger from "decentraland-gatsby/dist/entities/Logger"
-import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
@@ -14,34 +12,17 @@ afterEach(() => {
   countByIds.mockReset()
 })
 
-function createContext(body: any): Context {
-  const request = new Request("/")
-  const url = new URL("https://localhost/")
-  return {
-    request,
-    url,
-    body,
-    query: {},
-    params: {},
-    routePath: "",
-    logger: new Logger("test"),
-    headers: {},
-    method: "GET",
-    path: "/",
-    hostname: "localhost",
-    protocol: "https",
-    secure: true,
-    ip: "127.0.0.1",
-    ips: ["127.0.0.1"],
-  }
-}
-
 test("should return a list of places by ids with no query", async () => {
   find.mockResolvedValueOnce([placeGenesisPlazaWithAggregatedAttributes])
   countByIds.mockResolvedValueOnce(1)
 
-  const ctx = createContext([placeGenesisPlazaWithAggregatedAttributes.id])
-  const placeResponse = await getPlaceListById(ctx)
+  const request = new Request("/")
+  const url = new URL("https://localhost/")
+  const placeResponse = await getPlaceListById({
+    request,
+    url,
+    body: [placeGenesisPlazaWithAggregatedAttributes.id],
+  } as any)
 
   expect(placeResponse.body).toEqual({
     ok: true,
@@ -56,11 +37,15 @@ test("should return a list of places by ids with query", async () => {
   find.mockResolvedValueOnce([placeGenesisPlazaWithAggregatedAttributes])
   countByIds.mockResolvedValueOnce(1)
 
-  const ctx = createContext([placeGenesisPlazaWithAggregatedAttributes.id])
-  ctx.url = new URL(
+  const request = new Request("/")
+  const url = new URL(
     "https://localhost/?limit=1&offset=1&order_by=like_rate&order=asc"
   )
-  const placeResponse = await getPlaceListById(ctx)
+  const placeResponse = await getPlaceListById({
+    request,
+    url,
+    body: [placeGenesisPlazaWithAggregatedAttributes.id],
+  } as any)
 
   expect(placeResponse.body).toEqual({
     ok: true,
@@ -72,8 +57,13 @@ test("should return a list of places by ids with query", async () => {
 })
 
 test("should return an empty list when no ids are provided", async () => {
-  const ctx = createContext(null)
-  const placeResponse = await getPlaceListById(ctx)
+  const request = new Request("/")
+  const url = new URL("https://localhost/")
+  const placeResponse = await getPlaceListById({
+    request,
+    url,
+    body: null,
+  } as any)
 
   expect(placeResponse.body).toEqual({
     ok: true,
@@ -85,22 +75,33 @@ test("should return an empty list when no ids are provided", async () => {
 })
 
 test("should return an error when a wrong value has been sent in the query", async () => {
-  const ctx = createContext([placeGenesisPlazaWithAggregatedAttributes.id])
-  ctx.url = new URL("https://localhost/?order_by=fake")
+  const request = new Request("/")
+  const url = new URL("https://localhost/?order_by=fake")
 
-  expect(async () => getPlaceListById(ctx)).rejects.toThrowError()
+  expect(async () =>
+    getPlaceListById({
+      request,
+      url,
+      body: [placeGenesisPlazaWithAggregatedAttributes.id],
+    } as any)
+  ).rejects.toThrowError()
 })
 
 test("should return a list of places by ids with authenticated user", async () => {
   find.mockResolvedValueOnce([placeGenesisPlazaWithAggregatedAttributes])
   countByIds.mockResolvedValueOnce(1)
 
-  const ctx = createContext([placeGenesisPlazaWithAggregatedAttributes.id])
-  ctx.request.headers.set(
+  const request = new Request("/")
+  request.headers.set(
     "Authorization",
     "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJhZGRyZXNzIjoiMHgxMjM0NTY3ODkwMTIzNDU2Nzg5MDEyMzQ1Njc4OTAxMjM0NTY3ODkwIn0.123"
   )
-  const placeResponse = await getPlaceListById(ctx)
+  const url = new URL("https://localhost/")
+  const placeResponse = await getPlaceListById({
+    request,
+    url,
+    body: [placeGenesisPlazaWithAggregatedAttributes.id],
+  } as any)
 
   expect(placeResponse.body).toEqual({
     ok: true,
