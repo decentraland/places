@@ -79,6 +79,12 @@ export const getPlaceListQuerySchema = schema({
       description: "Filter places by available categories",
       nullable: true as any,
     },
+    owner: {
+      type: "string",
+      description: "Filter places by owner address",
+      nullable: true as any,
+      pattern: "^0x[a-fA-F0-9]{40}$",
+    },
   },
 })
 

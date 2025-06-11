@@ -77,6 +77,7 @@ export type GetPlaceListQuery = {
   with_realms_detail: string
   search: string
   categories: string[]
+  owner?: string
 }
 
 export type PlaceListOptions = {
@@ -89,6 +90,7 @@ export type PlaceListOptions = {
   order: string
   search: string
   categories: string[]
+  owner?: string
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {
