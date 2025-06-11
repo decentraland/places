@@ -64,6 +64,12 @@ export const getWorldListQuerySchema = schema({
       description: "True if shows also disabled worlds",
       nullable: true as any,
     },
+    owner: {
+      type: "string",
+      description: "Filter worlds by owner address",
+      pattern: "^0x[a-fA-F0-9]{40}$",
+      nullable: true as any,
+    },
   },
 })
 
@@ -73,7 +79,7 @@ export const worldSchema = schema({
   properties: {
     id: {
       type: "string",
-      format: "uudi",
+      format: "uuid",
       description: "world id",
     },
     title: {

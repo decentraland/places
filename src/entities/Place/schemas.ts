@@ -126,7 +126,7 @@ export const placeSchema = schema({
   properties: {
     id: {
       type: "string",
-      format: "uudi",
+      format: "uuid",
       description: "place id",
     },
     title: {
