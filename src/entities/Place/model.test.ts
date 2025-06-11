@@ -292,6 +292,53 @@ describe(`findWithAggregates`, () => {
     ).toEqual([])
     expect(namedQuery.mock.calls.length).toBe(0)
   })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions with owner filter`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "",
+        categories: [],
+        owner: "0x1234567890123456789012345678901234567890",
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_agregates")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "-9,-9",
+      "0x1234567890123456789012345678901234567890",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
+          not coalesce(ul."like",true) as "user_dislike"
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
+          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+        ) AND p.owner = $4
+        ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
+          LIMIT $5
+          OFFSET $6
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
 })
 
 describe(`countPlaces`, () => {
@@ -382,6 +429,42 @@ describe(`countPlaces`, () => {
         categories: [],
       })
     ).toEqual(0)
+  })
+  test(`should return the total number of places matching the parameters FindWithAggregatesOptions with owner filter`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countPlaces({
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        search: "",
+        categories: [],
+        owner: "0x1234567890123456789012345678901234567890",
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_places")
+    expect(sql.values).toEqual([
+      "-9,-9",
+      "0x1234567890123456789012345678901234567890",
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(DISTINCT p.id) as "total"
+        FROM "places" p
+        WHERE
+          p."disabled" is false
+          AND "world" is false
+          AND p.base_position IN (
+            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+          )
+          AND p.owner = $2
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
   })
 })
 
@@ -724,6 +807,52 @@ describe(`findWorld`, () => {
     ).toEqual([])
     expect(namedQuery.mock.calls.length).toBe(0)
   })
+  test(`should return a list of worlds matching the parameters FindWorldWithAggregatesOptions with owner filter`, async () => {
+    namedQuery.mockResolvedValue([worldPlaceTemplegame])
+    expect(
+      await PlaceModel.findWorld({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "",
+        categories: [],
+        owner: "0x1234567890123456789012345678901234567890",
+      })
+    ).toEqual([worldPlaceTemplegame])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_worlds")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "templegame.dcl.eth",
+      "0x1234567890123456789012345678901234567890",
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        WHERE
+          p.world is true
+          AND p.disabled is false
+          AND LOWER(world_name) = ANY(ARRAY[($3)])
+          AND p.owner = $4
+        ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
+          LIMIT $5
+          OFFSET $6
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
 })
 
 describe(`countWorlds`, () => {
@@ -807,6 +936,39 @@ describe(`countWorlds`, () => {
       })
     ).toEqual(0)
     expect(namedQuery.mock.calls.length).toBe(0)
+  })
+  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions with owner filter`, async () => {
+    namedQuery.mockResolvedValue([{ total: 1 }])
+    expect(
+      await PlaceModel.countWorlds({
+        only_favorites: false,
+        names: ["templegame.dcl.eth"],
+        search: "",
+        categories: [],
+        owner: "0x1234567890123456789012345678901234567890",
+      })
+    ).toEqual(1)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("count_worlds")
+    expect(sql.values).toEqual([
+      "templegame.dcl.eth",
+      "0x1234567890123456789012345678901234567890",
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT
+          count(*) as total
+        FROM "places" p
+        WHERE
+          p.world is true
+          AND p.disabled is false
+          AND LOWER(p.world_name) = ANY(ARRAY[($1)])
+          AND p.owner = $2
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
   })
 })
 
