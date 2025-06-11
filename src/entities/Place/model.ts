@@ -282,6 +282,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
         ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
+        ${conditional(
+          !!options.ids,
+          SQL` AND p.id IN ${values(options.ids || [])}`
+        )}
       ORDER BY 
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}

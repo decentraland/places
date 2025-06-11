@@ -339,6 +339,53 @@ describe(`findWithAggregates`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
+
+  test(`should return a list of places matching the parameters FindWithAggregatesOptions with ids filter`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["-9,-9"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "",
+        categories: [],
+        ids: [placeGenesisPlaza.id],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("find_with_agregates")
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "-9,-9",
+      placeGenesisPlaza.id,
+      1,
+      0,
+    ])
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
+      `
+        SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
+          not coalesce(ul."like",true) as "user_dislike"
+        FROM "places" p
+        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
+          SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
+        ) AND p.id IN ($4)
+        ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
+          LIMIT $5
+          OFFSET $6
+      `
+        .trim()
+        .replace(/\s{2,}/gi, " ")
+    )
+  })
 })
 
 describe(`countPlaces`, () => {
