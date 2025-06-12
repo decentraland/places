@@ -53,6 +53,7 @@ export const getPlaceList = Router.memo(
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
+      owner: ctx.url.searchParams.get("owner"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -72,6 +73,7 @@ export const getPlaceList = Router.memo(
       order: query.order,
       search: query.search,
       categories: query.categories,
+      owner: query.owner,
     }
 
     const [data, total, sceneStats] = await Promise.all([

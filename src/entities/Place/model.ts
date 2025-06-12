@@ -281,6 +281,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
+        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
       ORDER BY 
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
@@ -304,6 +305,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_highlighted"
       | "search"
       | "categories"
+      | "owner"
     >
   ) {
     const isMissingEthereumAddress =
@@ -353,6 +355,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
+        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -403,7 +406,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         "dislikes" = c.count_dislikes,
         "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
                             ELSE c.count_active_likes / c.count_active_total::float
-                       END),
+                      END),
         "like_score" = (${PlaceModel.calculateLikeScoreStatement()})
       FROM counted c
       WHERE "id" = ${placeId}
@@ -591,6 +594,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           )}])`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
+        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
       ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -604,7 +608,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names" | "search" | "categories" | "disabled"
+      | "user"
+      | "only_favorites"
+      | "names"
+      | "search"
+      | "categories"
+      | "disabled"
+      | "owner"
     >
   ) {
     const isMissingEthereumAddress =
@@ -649,6 +659,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           )}])`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
+        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_worlds",

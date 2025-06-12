@@ -8,6 +8,7 @@ export type GetWorldListQuery = {
   search: string
   categories: string[]
   disabled: string
+  owner?: string
 }
 
 export enum WorldListOrderBy {
@@ -25,6 +26,7 @@ export type WorldListOptions = {
   order: string
   search: string
   categories: string[]
+  owner?: string
 }
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {

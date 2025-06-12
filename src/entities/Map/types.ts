@@ -23,7 +23,7 @@ export type AggregateCoordinatePlaceAttributes = Pick<
   positions?: string[]
 }
 
-export type GetAllPlaceListQuery = GetPlaceListQuery & {
+export type GetAllPlaceListQuery = Omit<GetPlaceListQuery, "owner"> & {
   names: string[]
 }
 
