@@ -56,24 +56,6 @@ test("should return a list of places by ids with query", async () => {
   expect(countByIds.mock.calls.length).toBe(1)
 })
 
-test("should return an empty list when no ids are provided", async () => {
-  const request = new Request("/")
-  const url = new URL("https://localhost/")
-  const placeResponse = await getPlaceListById({
-    request,
-    url,
-    body: null,
-  } as any)
-
-  expect(placeResponse.body).toEqual({
-    ok: true,
-    total: 0,
-    data: [],
-  })
-  expect(find.mock.calls.length).toBe(0)
-  expect(countByIds.mock.calls.length).toBe(0)
-})
-
 test("should return an error when a wrong value has been sent in the query", async () => {
   const request = new Request("/")
   const url = new URL("https://localhost/?order_by=fake")
@@ -110,4 +92,31 @@ test("should return a list of places by ids with authenticated user", async () =
   })
   expect(find.mock.calls.length).toBe(1)
   expect(countByIds.mock.calls.length).toBe(1)
+})
+
+test("should throw an error when body is not an array", async () => {
+  const request = new Request("/")
+  const url = new URL("https://localhost/")
+
+  await expect(
+    getPlaceListById({
+      request,
+      url,
+      body: "not-an-array",
+    } as any)
+  ).rejects.toThrow("Invalid request body. Expected an array of place IDs.")
+})
+
+test("should throw an error when requesting more than 100 places", async () => {
+  const request = new Request("/")
+  const url = new URL("https://localhost/")
+  const tooManyIds = Array.from({ length: 101 }, (_, i) => `id-${i}`)
+
+  await expect(
+    getPlaceListById({
+      request,
+      url,
+      body: tooManyIds,
+    } as any)
+  ).rejects.toThrow("Cannot request more than 100 places at once")
 })
