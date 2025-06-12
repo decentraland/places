@@ -375,7 +375,7 @@ describe(`findWithAggregates`, () => {
         FROM "places" p
         LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
-        WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
+        WHERE p."disabled" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         ) AND p.id IN ($4)
         ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
