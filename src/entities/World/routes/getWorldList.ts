@@ -40,7 +40,7 @@ export const getWorldList = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       categories: ctx.url.searchParams.getAll("categories"),
       disabled: ctx.url.searchParams.get("disabled"),
-      owner: ctx.url.searchParams.get("owner"),
+      owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
     })
 
     const userAuth = await withAuthOptional(ctx)
