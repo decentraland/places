@@ -51,6 +51,20 @@ export default function DocsPage() {
         </ApiCard>
 
         <ApiCard
+          id="get-places-by-ids"
+          method="POST"
+          path="/api/places"
+          description="Returns the list of the places by ids"
+        >
+          <ApiDetails
+            title="Request"
+            cors="*"
+            query={getPlaceListQuerySchema}
+          />
+          <ApiDetails title="Response" body={placeListResponseSchema} />
+        </ApiCard>
+
+        <ApiCard
           id="get-place"
           method="GET"
           path="/api/places/{place_id}"
