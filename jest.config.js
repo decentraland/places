@@ -5,4 +5,7 @@ module.exports = {
   fakeTimers: {
     enableGlobally: true,
   },
+  transformIgnorePatterns: [
+    "node_modules/(?!(decentraland-dapps|decentraland-gatsby|isbot)/)",
+  ],
 }
