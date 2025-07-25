@@ -5,7 +5,9 @@ module.exports = {
   fakeTimers: {
     enableGlobally: true,
   },
-  transformIgnorePatterns: [
-    "node_modules/(?!(decentraland-dapps|decentraland-gatsby|isbot)/)",
-  ],
+  moduleNameMapper: {
+    "^decentraland-dapps/dist/modules/analytics/utils$":
+      "<rootDir>/__mocks__/decentraland-dapps-analytics.js",
+    "^isbot$": "<rootDir>/__mocks__/isbot.js",
+  },
 }
