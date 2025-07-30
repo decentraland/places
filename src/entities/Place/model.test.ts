@@ -727,7 +727,7 @@ describe(`findWorld`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_worlds")
-    expect(sql.values).toEqual(["templegame.dcl.eth", 1, 0])
+    expect(sql.values).toEqual([["templegame.dcl.eth"], 1, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , false as user_favorite , false as user_like , false as user_dislike
@@ -735,7 +735,7 @@ describe(`findWorld`, () => {
           WHERE
             p.world is true
             AND p.disabled is false
-            AND LOWER(world_name) = ANY(ARRAY[($1)])
+            AND LOWER(world_name) = ANY($1)
           ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
             LIMIT $2
             OFFSET $3
@@ -766,7 +766,7 @@ describe(`findWorld`, () => {
       userLikeTrue.user,
       userLikeTrue.user,
       "decentraland:*",
-      "templegame.dcl.eth",
+      ["templegame.dcl.eth"],
       1,
       0,
     ])
@@ -780,7 +780,7 @@ describe(`findWorld`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND LOWER(world_name) = ANY(ARRAY[($4)])
+          AND LOWER(world_name) = ANY($4)
           AND rank > 0
         ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -813,7 +813,7 @@ describe(`findWorld`, () => {
       userLikeTrue.user,
       userLikeTrue.user,
       "decentraland:*",
-      "templegame.dcl.eth",
+      ["templegame.dcl.eth"],
       1,
       0,
     ])
@@ -827,7 +827,7 @@ describe(`findWorld`, () => {
         WHERE
           p.world is true
           AND p.disabled is true
-          AND LOWER(world_name) = ANY(ARRAY[($4)])
+          AND LOWER(world_name) = ANY($4)
           AND rank > 0
         ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -876,7 +876,7 @@ describe(`findWorld`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "templegame.dcl.eth",
+      ["templegame.dcl.eth"],
       "0x1234567890123456789012345678901234567890",
       1,
       0,
@@ -890,7 +890,7 @@ describe(`findWorld`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND LOWER(world_name) = ANY(ARRAY[($3)])
+          AND LOWER(world_name) = ANY($3)
           AND p.owner = $4
         ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
@@ -916,7 +916,7 @@ describe(`countWorlds`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual(["templegame.dcl.eth"])
+    expect(sql.values).toEqual([["templegame.dcl.eth"]])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -925,7 +925,7 @@ describe(`countWorlds`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND LOWER(p.world_name) = ANY(ARRAY[($1)])
+          AND LOWER(p.world_name) = ANY($1)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -944,7 +944,7 @@ describe(`countWorlds`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual(["decentraland:*", "templegame.dcl.eth"])
+    expect(sql.values).toEqual(["decentraland:*", ["templegame.dcl.eth"]])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -953,7 +953,7 @@ describe(`countWorlds`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND LOWER(p.world_name) = ANY(ARRAY[($2)])
+          AND LOWER(p.world_name) = ANY($2)
           AND rank > 0
       `
         .trim()
@@ -999,7 +999,7 @@ describe(`countWorlds`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_worlds")
     expect(sql.values).toEqual([
-      "templegame.dcl.eth",
+      ["templegame.dcl.eth"],
       "0x1234567890123456789012345678901234567890",
     ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
@@ -1010,7 +1010,7 @@ describe(`countWorlds`, () => {
         WHERE
           p.world is true
           AND p.disabled is false
-          AND LOWER(p.world_name) = ANY(ARRAY[($1)])
+          AND LOWER(p.world_name) = ANY($1)
           AND p.owner = $2
       `
         .trim()
