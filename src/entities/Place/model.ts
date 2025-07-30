@@ -596,9 +596,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
-          SQL`AND LOWER(world_name) = ANY(ARRAY[${values(
-            options.names.map((name) => name.toLowerCase())
-          )}])`
+          SQL`AND LOWER(world_name) = ANY(${options.names.map((name) =>
+            name.toLowerCase()
+          )})`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
@@ -661,9 +661,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
         ${conditional(
           options.names.length > 0,
-          SQL`AND LOWER(p.world_name) = ANY(ARRAY[${values(
-            options.names.map((name) => name.toLowerCase())
-          )}])`
+          SQL`AND LOWER(p.world_name) = ANY(${options.names.map((name) =>
+            name.toLowerCase()
+          )})`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
