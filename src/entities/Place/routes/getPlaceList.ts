@@ -17,6 +17,7 @@ import { getPlaceListQuerySchema } from "../schemas"
 import {
   FindWithAggregatesOptions,
   GetPlaceListQuery,
+  Permission,
   PlaceListOrderBy,
 } from "../types"
 import { placesWithUserCount, placesWithUserVisits } from "../utils"
@@ -84,12 +85,11 @@ export const getPlaceList = Router.memo(
     if (query.owner) {
       try {
         const catalystAPI = CatalystAPI.get()
-        const operatedLands = await catalystAPI.getOperatedLands(query.owner)
+        const operatedLands = await catalystAPI.getAllOperatedLands(query.owner)
 
-        if (operatedLands?.elements?.length > 0) {
-          // Convert operated lands coordinates to canonical positions
-          operatedPositions = operatedLands.elements
-            .map((land) => `${land.x},${land.y}`)
+        if (operatedLands && operatedLands.length > 0) {
+          operatedPositions = operatedLands
+            .map((land: Permission) => `${land.x},${land.y}`)
             .filter(Boolean) as string[]
         }
       } catch (error) {

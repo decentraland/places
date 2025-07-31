@@ -23,23 +23,41 @@ export default class CatalystAPI extends API {
     return this.from(env("CATALYST_URL", this.Url))
   }
 
-  async getOperatedLands(address: string) {
-    const { signal, abort } = new AbortController()
+  async getAllOperatedLands(address: string): Promise<Permission[]> {
+    const allElements: Permission[] = []
+    let pageNum = 0
+    const pageSize = 100 // Default page size, adjust if needed
+    let hasMorePages = true
 
-    const fetchOptions = new Options({ signal })
+    while (hasMorePages) {
+      const { signal, abort } = new AbortController()
+      const fetchOptions = new Options({ signal })
 
-    const timeoutId = setTimeout(() => {
-      abort()
-    }, Time.Second * 10)
+      const timeoutId = setTimeout(() => {
+        abort()
+      }, Time.Second * 10)
 
-    try {
-      const response = await this.fetch<Paginated<Permission>>(
-        `/users/${address}/permissions`,
-        fetchOptions
-      )
-      return response
-    } finally {
-      clearTimeout(timeoutId)
+      try {
+        const response = await this.fetch<Paginated<Permission>>(
+          `/users/${address}/permissions?pageNum=${pageNum}&pageSize=${pageSize}`,
+          fetchOptions
+        )
+
+        if (response.elements && response.elements.length > 0) {
+          allElements.push(...response.elements)
+        }
+
+        hasMorePages =
+          response.elements && response.elements.length === pageSize
+        pageNum++
+      } catch (error) {
+        console.error(`Error fetching operated lands page ${pageNum}:`, error)
+        break // return already fetched elements
+      } finally {
+        clearTimeout(timeoutId)
+      }
     }
+
+    return allElements
   }
 }

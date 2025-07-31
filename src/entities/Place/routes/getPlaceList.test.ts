@@ -169,12 +169,10 @@ test("should return 0 as total list when query onlyFavorites with no auth", asyn
 test("should return a list of places with owner parameter including operated lands", async () => {
   // Mock CatalystAPI to return operated lands
   const mockCatalystInstance = {
-    getOperatedLands: jest.fn().mockResolvedValue({
-      elements: [
-        { x: "-9", y: "-9" },
-        { x: "0", y: "0" },
-      ],
-    }),
+    getAllOperatedLands: jest.fn().mockResolvedValue([
+      { x: "-9", y: "-9" },
+      { x: "0", y: "0" },
+    ]),
   }
   catalystAPI.mockReturnValue(mockCatalystInstance as any)
 
@@ -210,7 +208,7 @@ test("should return a list of places with owner parameter including operated lan
 
   // Verify CatalystAPI was called
   expect(catalystAPI).toHaveBeenCalled()
-  expect(mockCatalystInstance.getOperatedLands).toHaveBeenCalledWith(
+  expect(mockCatalystInstance.getAllOperatedLands).toHaveBeenCalledWith(
     "0x1234567890123456789012345678901234567890"
   )
 
