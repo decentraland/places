@@ -89,7 +89,7 @@ export const getPlaceList = Router.memo(
         if (operatedLands?.elements?.length > 0) {
           // Convert operated lands coordinates to canonical positions
           operatedPositions = operatedLands.elements
-            .map((land) => toCanonicalPosition(`${land.x},${land.y}`))
+            .map((land) => `${land.x},${land.y}`)
             .filter(Boolean) as string[]
         }
       } catch (error) {
