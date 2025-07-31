@@ -8,8 +8,10 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
+import CatalystAPI from "../../../api/CatalystAPI"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
+import toCanonicalPosition from "../../../utils/position/toCanonicalPosition"
 import PlaceModel from "../model"
 import { getPlaceListQuerySchema } from "../schemas"
 import {
@@ -76,9 +78,35 @@ export const getPlaceList = Router.memo(
       owner: query.owner,
     }
 
+    // If owner parameter is provided, fetch operated lands from Catalyst API
+    let operatedPositions: string[] = []
+
+    if (query.owner) {
+      try {
+        const catalystAPI = CatalystAPI.get()
+        const operatedLands = await catalystAPI.getOperatedLands(query.owner)
+
+        if (operatedLands?.elements?.length > 0) {
+          // Convert operated lands coordinates to canonical positions
+          operatedPositions = operatedLands.elements
+            .map((land) => toCanonicalPosition(`${land.x},${land.y}`))
+            .filter(Boolean) as string[]
+        }
+      } catch (error) {
+        console.error("Error fetching operated lands:", error)
+        // Continue with normal flow even if Catalyst API fails
+      }
+    }
+
+    // Add operatedPositions to options for enhanced query
+    const enhancedOptions = {
+      ...options,
+      operatedPositions,
+    }
+
     const [data, total, sceneStats] = await Promise.all([
-      PlaceModel.findWithAggregates(options),
-      PlaceModel.countPlaces(options),
+      PlaceModel.findWithAggregates(enhancedOptions),
+      PlaceModel.countPlaces(enhancedOptions),
       getSceneStats(),
     ])
 
