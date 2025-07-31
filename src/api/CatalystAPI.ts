@@ -7,7 +7,7 @@ import { Paginated, Permission } from "../entities/Place/types"
 
 export default class CatalystAPI extends API {
   static Url =
-    env(`CATALYST_URL`, "https://peer.decentraland.org/") + "/lambdas"
+    env(`CATALYST_URL`, "https://peer-ap1.decentraland.zone/") + "/lambdas"
 
   static Cache = new Map<string, CatalystAPI>()
 
