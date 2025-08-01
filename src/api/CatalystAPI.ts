@@ -38,7 +38,7 @@ export default class CatalystAPI extends API {
 
       try {
         const response = await this.fetch<Paginated<Permission>>(
-          `/users/${address}/permissions?pageNum=${pageNum}&pageSize=${pageSize}`,
+          `/users/${address}/lands-permissions?pageNum=${pageNum}&pageSize=${pageSize}`,
           fetchOptions
         )
 
