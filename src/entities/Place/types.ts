@@ -5,6 +5,21 @@ import {
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+export type Permission = {
+  id: string
+  x: string
+  y: string
+  owner: string
+  updateOperator: string
+}
+
+export type Paginated<T> = {
+  totalAmount: number
+  pageNum: number
+  pageSize: number
+  elements: T[]
+}
+
 // NOTE: this is slightly different from the catalyst response
 export type Realm = Pick<CatalystRealm, "serverName" | "usersCount">
 
@@ -97,6 +112,7 @@ export type FindWithAggregatesOptions = PlaceListOptions & {
   user?: string
   hotScenesPositions?: string[]
   ids?: string[]
+  operatedPositions?: string[]
 }
 
 export const unwantedThumbnailHash = [

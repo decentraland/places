@@ -284,7 +284,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
               WHERE position IN ${values(options.positions)}
             )`
         )}
-        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
+        ${conditional(
+          !!options.owner,
+          SQL` AND (p.owner = ${options.owner} ${
+            options.operatedPositions?.length
+              ? SQL`OR p.base_position IN (
+                  SELECT DISTINCT(base_position)
+                  FROM ${table(PlacePositionModel)}
+                  WHERE position IN ${values(options.operatedPositions)}
+                )`
+              : SQL``
+          })`
+        )}
         ${conditional(
           !!options.ids,
           SQL` AND p.id IN ${values(options.ids || [])}`
@@ -313,6 +324,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "search"
       | "categories"
       | "owner"
+      | "operatedPositions"
     >
   ) {
     const isMissingEthereumAddress =
@@ -362,7 +374,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
-        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
+        ${conditional(
+          !!options.owner,
+          SQL` AND (p.owner = ${options.owner} ${
+            options.operatedPositions?.length
+              ? SQL`OR p.base_position IN (
+                  SELECT DISTINCT(base_position)
+                  FROM ${table(PlacePositionModel)}
+                  WHERE position IN ${values(options.operatedPositions)}
+                )`
+              : SQL``
+          })`
+        )}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
