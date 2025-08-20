@@ -625,6 +625,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
+        ${conditional(options.owner === null, SQL` AND p.owner IS NULL`)}
       ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -690,6 +691,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
+        ${conditional(options.owner == null, SQL` AND p.owner IS NULL`)}
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_worlds",

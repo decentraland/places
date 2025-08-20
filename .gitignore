@@ -81,3 +81,5 @@ static/light-theme.css
 static/semantic.min.css
 static/sw.js
 static/sw.js.map
+
+/bin/worlds-owner-repopulate-results*.json

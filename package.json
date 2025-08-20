@@ -107,6 +107,7 @@
     "send:snapshot-to-files": "ts-node bin/snapshotToFiles.ts",
     "send:files-to-sqs": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/filesToSqs.ts",
     "send:snapshot-to-sqs": "npm run send:snapshot-to-files && npm run send:files-to-sqs",
+    "repopulate:worlds-owner": "ts-node -r dotenv/config bin/repopulateWorldsOwner.ts",
     "develop": "gatsby develop --https -H 0.0.0.0",
     "format": "prettier --write '**/*.{ts,tsx,js,jsx,json,md,mdx,css}'",
     "start": "concurrently -c green,blue -n express,gatsby 'npm run serve' 'npm run develop'",

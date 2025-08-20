@@ -26,7 +26,7 @@ export type WorldListOptions = {
   order: string
   search: string
   categories: string[]
-  owner?: string
+  owner?: string | null
 }
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {
