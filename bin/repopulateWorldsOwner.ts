@@ -51,12 +51,7 @@ import { WorldAbout } from "../src/entities/CheckScenes/types"
 import { PlaceAttributes } from "../src/entities/Place/types"
 
 // Hardcoded database connection string - REPLACE WITH YOUR ACTUAL CONNECTION STRING
-const DATABASE_CONNECTION_STRING =
-  "postgres://places:CeD2O9GCbEevwJWto3yJCvOe@localhost:8020/places"
-
-// DEV: "postgres://places:v6m14nMdj3Dvv6T9DFy6s6BX@localhost:8020/places"
-
-// PRD: "postgres://places:CeD2O9GCbEevwJWto3yJCvOe@localhost:8020/places"
+const DATABASE_CONNECTION_STRING = ""
 
 // Direct database client
 let dbClient: Client | null = null
