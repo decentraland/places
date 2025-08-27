@@ -94,7 +94,7 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
           >
             {l("components.place_detail.about")}
           </Tabs.Tab>
-          {admin && !ff.flags[FeatureFlags.HideRating] && (
+          {admin && (
             <Tabs.Tab
               onClick={() => setActiveTab(PlaceDetailsTab.ContentModeration)}
               active={activeTab === PlaceDetailsTab.ContentModeration}
