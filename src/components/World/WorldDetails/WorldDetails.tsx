@@ -81,7 +81,7 @@ export default React.memo(function WorldDetails(props: WorldDetailsProps) {
           >
             {l("components.place_detail.about")}
           </Tabs.Tab>
-          {admin && !ff.flags[FeatureFlags.HideRating] && (
+          {admin && (
             <Tabs.Tab
               onClick={() => setActiveTab(WorldDetailsTab.ContentModeration)}
               active={activeTab === WorldDetailsTab.ContentModeration}

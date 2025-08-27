@@ -40,13 +40,12 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
 
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
-      {!ff.flags[FeatureFlags.HideRating] && (
-        <Stats title={l("components.place_stats.age_rating_label")}>
-          <Header className="place-stats__rating">
-            {l(`components.place_stats.age_rating_${rating}`)}
-          </Header>
-        </Stats>
-      )}
+      <Stats title={l("components.place_stats.age_rating_label")}>
+        <Header className="place-stats__rating">
+          {l(`components.place_stats.age_rating_${rating}`)}
+        </Header>
+      </Stats>
+
       {!hideUserCount && (
         <Stats title={l("components.place_stats.active")}>
           <Header>{shorterNumber(place?.user_count || 0)}</Header>
