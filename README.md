@@ -23,13 +23,23 @@ The service receives SQS messages containing entity IDs and content server URLs,
 
    ```bash
    touch .env.development
-   # Add: CONNECTION_STRING=postgres://postgres:postgres@localhost:5432/postgres
+   ```
+
+   Add to `.env.development`:
+
+   ```bash
+   CONNECTION_STRING=postgres://postgres:postgres@localhost:5432/postgres
+   AWS_REGION=us-east-1
+   AWS_ACCESS_KEY_ID=test
+   AWS_SECRET_ACCESS_KEY=test
+   QUEUE_URL=http://localhost:4566/000000000000/places_test
+   AWS_ENDPOINT=http://localhost:4566
    ```
 
 2. **Services**
 
    ```bash
-   docker-compose up -d
+   docker-compose up -d  # Starts PostgreSQL + LocalStack (SQS)
    npm install
    npm run migrate up
    ```
@@ -49,10 +59,12 @@ npm run test:sqs-message  # Send test message
 npm run serve            # Process messages
 ```
 
+> **Note:** The `docker-compose` automatically creates the LocalStack SQS queue. For manual LocalStack setup, see [SQS Setup](docs/sqs-setup.md).
+
 ## Documentation
 
 - **[Database Operations](docs/database-operations.md)** - Clear database and re-populate commands
-- **[SQS Setup](docs/sqs-setup.md)** - LocalStack installation and message testing
+- **[SQS Setup](docs/sqs-setup.md)** - Manual LocalStack setup and message format details
 - **[Project Structure](docs/project-structure.md)** - Gatsby + Node.js architecture
 
 ## Quick Commands
