@@ -68,10 +68,7 @@ export class SQSConsumer {
 
   async consume(taskRunner: (job: DeploymentToSqs) => Promise<any>) {
     try {
-      const response = await Promise.race([
-        this.sqs.receiveMessage(this.params).promise(),
-        delay(30 * 60 * 1000, "Timed out sqs.receiveMessage"),
-      ])
+      const response = await this.sqs.receiveMessage(this.params).promise()
       const finalReturn = []
       if (
         typeof response !== "string" &&
@@ -111,6 +108,9 @@ export class SQSConsumer {
                 ReceiptHandle: it.ReceiptHandle!,
               })
               .promise()
+              .catch(() => {
+                loggerExtended.error(`Error deleting message`)
+              })
           }
         }
       }

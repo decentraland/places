@@ -2,214 +2,227 @@
 
 [![Coverage Status](https://coveralls.io/repos/github/decentraland/places/badge.svg?branch=master)](https://coveralls.io/github/decentraland/places?branch=master)
 
-Brief description of this project.
+The Decentraland Places service manages and processes scene deployments, providing a gateway between content servers and the Places database. It handles SQS-based scene processing, user favorites, and provides APIs for the Decentraland ecosystem.
 
 ![decentraland](https://decentraland.org/images/fallback-hero.jpg)
 
-## Setup
+## Quick Start
 
-### environment setup
+### Prerequisites
 
-create a copy of `.env.example` and name it as `.env.development`
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+- [Node.js](https://nodejs.org/) (version specified in `.nvmrc`)
+- [npm](https://www.npmjs.com/) or [yarn](https://yarnpkg.com/)
 
+### Environment Setup
+
+1. **Create environment file:**
 ```bash
-  cp .env.example .env.development
+cp .env.example .env.development
 ```
 
-> to know more about this file see [the documentation](https://www.gatsbyjs.com/docs/how-to/local-development/environment-variables/#defining-environment-variables)
+2. **Configure environment variables** in `.env.development`:
+```bash
+# Database Configuration
+CONNECTION_STRING=postgres://postgres:postgres@localhost:5432/postgres
 
-if you are running this project locally you only need to check the following environment variables:
+# AWS/SQS Configuration for Local Development (LocalStack)
+AWS_REGION=us-east-1
+AWS_ACCESS_KEY_ID=test
+AWS_SECRET_ACCESS_KEY=test
+QUEUE_URL=http://localhost:4566/000000000000/places_test
+AWS_ENDPOINT=http://localhost:4566
 
-- `CONNECTION_STRING`: make sure it is point to a valid database
+# Application Configuration
+NODE_ENV=development
+PORT=4000
+```
 
-### database setup
+   > 📖 **More about environment variables:** See [Gatsby's documentation](https://www.gatsbyjs.com/docs/how-to/local-development/environment-variables/#defining-environment-variables)
 
-once you have a `CONNECTION_STRING` you can setup you database tables using the following command
+### Database & Services Setup
 
+1. **Start services** (PostgreSQL database + LocalStack for SQS):
+```bash
+docker-compose up -d
+```
+
+2. **Verify services are running:**
+```bash
+docker-compose ps
+```
+
+3. **Run database migrations:**
 ```bash
 npm run migrate up
 ```
 
-### clear database
+4. **Install dependencies:**
+   ```bash
+   npm install
+   ```
 
-to clear database to restart the project as is where new run the following SQL
+### Running the Application
 
-```SQL
-truncate places;
-truncate place_activities;
-truncate place_activity_daily;
-truncate entities_places;
-truncate tasks;
-update deployment_tracks set "from" = 0;
-```
-
-## Run
-
-once you setup this project you can start it using the following command
-
+Start the development server:
 ```bash
   npm start
 ```
 
-> Note 1: this project run over `https`, if it is your first time you might need to run it with `sudo`
+> **Note 1:** This project runs over `https`. If it's your first time, you might need to run with `sudo`  
+> **Note 2:** You can disable `https` by removing the `--https` flag in the `develop` script in `package.json`
 
-> Note 2: you can disabled `https` removing the `--https` flag in the `develop` script of your `package.json`
+### Verification
 
-## Project's structure
+Test the SQS integration:
+```bash
+# Send a test message to the queue
+npm run test:sqs-message
 
-You can find a full documentation about the project's structure in the [`decentraland-gatsby` repository](https://github.com/decentraland/decentraland-gatsby#project-structure)
+# Start the server to process messages
+npm run serve
+```
 
-### back and front ends
+You should see logs indicating successful message processing in the server output.
 
-this project runs gatsby as front-end and a nodejs server as back-end both connected through a proxy
+## Development
 
-- locally this proxy is defined in [`gatsby-config.js` (`proxy` prop)](https://www.gatsbyjs.com/docs/api-proxy/#gatsby-skip-here)
-- at servers this proxy is defined in `Pulumi.ts` (`servicePaths` prop)
+### Project Structure
 
-### routes
+This project follows the [`decentraland-gatsby` structure](https://github.com/decentraland/decentraland-gatsby#project-structure):
 
-**front-end** routes are defined using [gatsby routes](https://www.gatsbyjs.com/docs/reference/routing/creating-routes/#define-routes-in-srcpages) + [gatsby-plugin-intl](https://www.gatsbyjs.com/plugins/gatsby-plugin-intl/?=gatsby-plugin-intl), you can find each page in the `src/pages` directory
+- **Front-end & Back-end**: Gatsby front-end with Node.js back-end connected via proxy
+  - **Local**: Proxy defined in [`gatsby-config.js`](https://www.gatsbyjs.com/docs/api-proxy/#gatsby-skip-here) (`proxy` prop)
+  - **Production**: Proxy defined in `Pulumi.ts` (`servicePaths` prop)
 
-**back-end** routes are defined using `express` you can find each route in `src/entities/{Entity}/routes.ts` and those are imported ar `src/server.ts`
+- **Routing**:
+  - **Front-end**: [Gatsby routes](https://www.gatsbyjs.com/docs/reference/routing/creating-routes/#define-routes-in-srcpages) + [gatsby-plugin-intl](https://www.gatsbyjs.com/plugins/gatsby-plugin-intl/) in `src/pages/`
+  - **Back-end**: Express routes in `src/entities/{Entity}/routes.ts`, imported in `src/server.ts`
 
-## Re-Populate `place_positions`
+### SQS Testing & Development
 
+The service includes automated tools for testing SQS message processing:
+
+#### Quick Commands
+```bash
+# Send test message with default entity ID
+npm run test:sqs-message
+
+# Send test message with custom entity ID  
+npm run test:sqs-message bafkreiabc123...
+
+# Start server with auto-restart
+npm run serve
+
+# Debug mode with breakpoints
+npm run debug
+```
+
+> 📖 **Detailed SQS Testing Guide:** See [docs/sqs-testing.md](docs/sqs-testing.md) for comprehensive testing documentation
+
+### Database Operations
+
+#### Clear Database
+To restart the project with a clean database:
+
+```sql
+TRUNCATE places;
+TRUNCATE place_activities;
+TRUNCATE place_activity_daily;
+TRUNCATE entities_places;
+TRUNCATE tasks;
+UPDATE deployment_tracks SET "from" = 0;
+```
+
+#### Re-Populate Place Positions
 ```sql
 TRUNCATE "place_positions";
 INSERT INTO "place_positions" ("base_position", "position")
   SELECT p.base_position, unnest(p.positions) FROM places p
     WHERE p.disabled IS FALSE
-      AND p.world    IS FALSE
+      AND p.world IS FALSE;
 ```
 
-## Content Entity Scene
+## SQS Integration
 
-These are the entities that contain all the necessary information to create each of the Places. By means of a SQS queue the EntityId and the Url of the Content server are obtained in order to obtain the information. Next we are going to describe the steps to test this locally.
+### Overview
 
-### Install local SQS
+The Places service processes scene deployments through an SQS-based queue system. When scenes are deployed to Decentraland, notifications are sent via SQS containing entity IDs and content server URLs. The service fetches scene metadata and creates corresponding Place records in the database.
 
-To do this you will need [Localstack](https://docs.localstack.cloud/).
+### Message Format
 
-### Prerequisites
+SQS messages must follow this structure:
 
-Please make sure to install the following tools on your machine before moving ahead:
-
-```
-python (Python 3.7 up to 3.10 is supported)
-pip (Python package manager)
-docker
-```
-
-### Installation
-
-Install localstack using the Python package manager.
-
-```
-$ python3 -m pip install localstack
-```
-
-Then follow the steps to install the [awslocal](https://docs.localstack.cloud/user-guide/integrations/aws-cli/).
-
-### Run
-
-After opening the Docker, start the localstack
-
-```
-localstack start -d
-```
-
-Then create the sqs queue to use
-
-```
-awslocal sqs create-queue --queue-name places_test
-```
-
-This will return the url of the queue
-
-```
+```json
 {
-    "QueueUrl": "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test"
-}
-```
-
-### Usage
-
-The message to be received from the SQS must be sent using `awslocal`. This message must have the following format
-
-```
-{
-  "Message": {
     "entity": {
         "entityId": "bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy",
-        "authChain": "authChain"
+    "authChain": [
+      {
+        "type": "SIGNER", 
+        "payload": "0x1234567890abcdef1234567890abcdef12345678",
+        "signature": ""
+      }
+    ]
     },
     "contentServerUrls": ["https://peer.decentraland.org/content"]
-  }
 }
 ```
 
-And this must be sent as a message body like this using awslocal `awslocal sqs send-message --queue-url {queue-url} --message-body {message}` like:
+### Local Testing
 
-```
-$ awslocal sqs send-message --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test --message-body '{"Message":"{\"entity\":{\"entityId\":\"bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy\",\"authChain\":\"authChain\"},\"contentServerUrls\":[\"https://peer.decentraland.org/content\"]}"}'
-```
+The development environment uses [LocalStack](https://docs.localstack.cloud/) to simulate AWS SQS locally:
 
-This will answer with a JSON with the message id like
+1. **Automated Setup**: The `docker-compose.yml` automatically creates the required SQS queue
+2. **Test Messages**: Use `npm run test:sqs-message` to send test messages
+3. **Processing**: The server polls the queue every 10 seconds and processes messages automatically
 
-```
-{
-  "MD5OfMessageBody": "c2bdcb767c73f8afeac400d8f738749d",
-  "MessageId": "c17636c0-f37e-4c6f-a4ab-112fa250a8c6"
-}
-```
+### Processing Flow
 
-To return the messages set in the SQS, a curl command can be executed `http://localhost:4566/_aws/sqs/messages?QueueUrl={queue-url}` like:
+1. **Message Reception**: SQS consumer receives deployment notification
+2. **Content Fetching**: Service fetches scene metadata from content server
+3. **Data Processing**: Scene data is transformed into Place attributes
+4. **Database Storage**: Place record is created/updated in PostgreSQL
+5. **Message Cleanup**: SQS message is deleted after successful processing
 
-```
-$ curl -H "Accept: application/json" \
-    "http://localhost:4566/_aws/sqs/messages?QueueUrl=http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test"
-```
+> 📖 **Advanced SQS Operations:** See [docs/sqs-testing.md](docs/sqs-testing.md) for manual queue operations and debugging
 
-And the response should be something like
+## Advanced Operations
 
-```
-{
-  "ReceiveMessageResponse":{
-    "ReceiveMessageResult":{
-        "Message":{
-          "MessageId":"9a192624-b5b3-44e7-907e-0f5a5458ccb5",
-          "MD5OfBody":"c2bdcb767c73f8afeac400d8f738749d",
-          "Body":"{Message:{\\entity\\:{\\entityId\\:\\bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy\\,\\authChain\\:\\authChain\\},\\contentServerUrls\\:[\\https://peer.decentraland.org/content\\]}}",
-          "Attribute":[
-              {
-                "Name":"SenderId",
-                "Value":"000000000000"
-              },
-              {
-                "Name":"SentTimestamp",
-                "Value":"1679598003529"
-              },
-              {
-                "Name":"ApproximateReceiveCount",
-                "Value":"0"
-              },
-              {
-                "Name":"ApproximateFirstReceiveTimestamp",
-                "Value":"1679598013330"
-              }
-          ],
-          "ReceiptHandle":"SQS/BACKDOOR/ACCESS"
-        }
-    },
-    "ResponseMetadata":{
-        "RequestId":"DN4HZ3U16MG9FHFY2G48IXBZUI721VFFUQ9SWEZFKIS79VGMG7XN"
-    }
-  }
-}
-```
+### Production Deployment
 
-Finally to purge the SQS `awslocal sqs purge-queue --queue-url {queue_url}`
+When deploying to production environments:
 
-```
-$ awslocal sqs purge-queue --queue-url http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test
-```
+1. **Environment Variables**: Configure proper AWS credentials and SQS queue URLs
+2. **Database**: Ensure PostgreSQL is properly configured with connection pooling
+3. **Monitoring**: Set up logging and monitoring for SQS processing
+4. **Scaling**: Configure appropriate SQS visibility timeouts and dead letter queues
+
+### Monitoring
+
+Key metrics to monitor:
+- SQS message processing rate and latency
+- Database connection pool utilization  
+- Scene content server response times
+- Failed message processing (dead letter queues)
+
+### Troubleshooting
+
+#### Common Issues
+
+1. **SQS Messages Not Processing**:
+   - Check AWS credentials in environment variables
+   - Verify LocalStack/SQS connectivity
+   - Review server logs for consumer task execution
+
+2. **Database Connection Issues**:
+   - Verify `CONNECTION_STRING` in environment
+   - Check PostgreSQL service status
+   - Review migration status
+
+3. **Content Server Timeouts**:
+   - Monitor content server response times
+   - Check network connectivity to Decentraland infrastructure
+   - Review retry logic in processing code
+
+> 📖 **Detailed Troubleshooting:** See [docs/sqs-testing.md](docs/sqs-testing.md) for comprehensive debugging guides

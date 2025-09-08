@@ -40,14 +40,18 @@ import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
 const tasks = tasksManager()
 tasks.use(
   createSceneConsumerTask(
-    new SQS({ apiVersion: "latest", region: env("AWS_REGION") }),
+    new SQS({
+      apiVersion: "latest",
+      region: env("AWS_REGION"),
+      endpoint: env("AWS_ENDPOINT"),
+    }),
     {
       AttributeNames: ["SentTimestamp"],
       MaxNumberOfMessages: 10,
       MessageAttributeNames: ["All"],
       QueueUrl: env("QUEUE_URL")!,
       WaitTimeSeconds: 15,
-      VisibilityTimeout: 3 * 3600, // 3 hours
+      VisibilityTimeout: 600,
     }
   )
 )
