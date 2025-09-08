@@ -9,7 +9,7 @@ These are the entities that contain all the necessary information to create each
 Please make sure to install the following tools on your machine:
 
 - python (Python 3.7 up to 3.10 is supported)
-- pip (Python package manager)  
+- pip (Python package manager)
 - docker
 
 ## Installation
@@ -40,7 +40,7 @@ This will return the url of the queue:
 
 ```json
 {
-    "QueueUrl": "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test"
+  "QueueUrl": "http://sqs.us-east-1.localhost.localstack.cloud:4566/000000000000/places_test"
 }
 ```
 
@@ -52,8 +52,8 @@ The message to be received from the SQS must have the following format:
 {
   "Message": {
     "entity": {
-        "entityId": "bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy",
-        "authChain": "authChain"
+      "entityId": "bafkreietumuqvq6kyy5k3dnn4z57j45isf5e2rjn46w2hrcpfghwmausvy",
+      "authChain": "authChain"
     },
     "contentServerUrls": ["https://peer.decentraland.org/content"]
   }

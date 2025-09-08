@@ -10,7 +10,7 @@ Sends test messages to the local SQS queue.
 # Send message with default entity ID
 npm run test:sqs-message
 
-# Send message with custom entity ID  
+# Send message with custom entity ID
 npm run test:sqs-message bafkreiabc123...
 
 # View help
