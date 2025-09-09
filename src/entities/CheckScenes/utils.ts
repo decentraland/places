@@ -34,18 +34,22 @@ export async function fetchWorldInformation(
   worldName: string,
   url: string
 ): Promise<ContentEntityScene | undefined> {
-  const response = await fetch(`${url}/entities/active`, {
-    method: "POST",
-    body: JSON.stringify({
-      pointers: [worldName],
-    }),
-  })
+  try {
+    const response = await fetch(`${url}/entities/active`, {
+      method: "POST",
+      body: JSON.stringify({
+        pointers: [worldName],
+      }),
+    })
 
-  if (!response.ok) {
+    if (!response.ok) {
+      return undefined // prevent failing
+    }
+
+    return (await response.json())[0] as Promise<ContentEntityScene | undefined>
+  } catch (error) {
     return undefined // prevent failing
   }
-
-  return (await response.json())[0] as Promise<ContentEntityScene | undefined>
 }
 
 export async function getWorldAbout(
