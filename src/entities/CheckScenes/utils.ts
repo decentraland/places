@@ -11,12 +11,12 @@ import {
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { DeploymentTrackAttributes, WorldAbout } from "./types"
 import allCoordinates from "../../__data__/AllCoordinates.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
 import { PlaceAttributes } from "../Place/types"
 import PlacePositionModel from "../PlacePosition/model"
-import { DeploymentTrackAttributes, WorldAbout } from "./types"
 
 const ACCESS_KEY = env("AWS_ACCESS_KEY")
 const ACCESS_SECRET = env("AWS_ACCESS_SECRET")
@@ -28,6 +28,24 @@ interface ManifestResponse {
   roads: Pointer[]
   occupied: Pointer[]
   empty: Pointer[]
+}
+
+export async function fetchWorldInformation(
+  worldName: string,
+  url: string
+): Promise<ContentEntityScene | undefined> {
+  const response = await fetch(`${url}/entities/active`, {
+    method: "POST",
+    body: JSON.stringify({
+      pointers: [worldName],
+    }),
+  })
+
+  if (!response.ok) {
+    return undefined // prevent failing
+  }
+
+  return (await response.json())[0] as Promise<ContentEntityScene | undefined>
 }
 
 export async function getWorldAbout(
