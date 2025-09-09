@@ -14,7 +14,11 @@ import {
 } from "../../Slack/utils"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { getWorldAbout, updateGenesisCityManifest } from "../utils"
+import {
+  fetchWorldInformation,
+  getWorldAbout,
+  updateGenesisCityManifest,
+} from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import {
   ProcessEntitySceneResult,
@@ -67,6 +71,18 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       contentEntityScene.metadata.worldConfiguration.dclName) as string
 
     const worlds = await PlaceModel.findEnabledWorldName(worldName)
+
+    // fallback to get the owner of the world in case is missing
+    if (!worlds.length || !contentEntityScene.metadata.owner) {
+      const worldInformation = await fetchWorldInformation(
+        worldName,
+        job.contentServerUrls![0]
+      )
+
+      if (worldInformation) {
+        contentEntityScene.metadata.owner = worldInformation?.metadata?.owner
+      }
+    }
 
     if (!worlds.length) {
       const placefromContentEntity = createPlaceFromContentEntityScene(
