@@ -6,7 +6,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 import { Paginated, Permission } from "../entities/Place/types"
 
 export default class CatalystAPI extends API {
-  static Url = env(`CATALYST_URL`, "https://peerdecentraland.org/") + "/lambdas"
+  static Url = env(`CATALYST_URL`, "https://peer.decentraland.org/")
 
   static Cache = new Map<string, CatalystAPI>()
 
@@ -38,7 +38,7 @@ export default class CatalystAPI extends API {
 
       try {
         const response = await this.fetch<Paginated<Permission>>(
-          `/users/${address}/lands-permissions?pageNum=${pageNum}&pageSize=${pageSize}`,
+          `/lambdas/users/${address}/lands-permissions?pageNum=${pageNum}&pageSize=${pageSize}`,
           fetchOptions
         )
 
