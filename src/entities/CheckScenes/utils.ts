@@ -34,7 +34,7 @@ export async function getWorldAbout(
   url: string,
   worldName: string
 ): Promise<WorldAbout> {
-  const worldContentServer = await ContentServer.getInstanceFrom(url)
+  const worldContentServer = ContentServer.getInstanceFrom(url)
   return worldContentServer.fetch(`/world/${worldName}/about`)
 }
 
