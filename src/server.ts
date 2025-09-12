@@ -64,7 +64,6 @@ const app = express()
 app.set("x-powered-by", false)
 app.use(withLogs())
 app.use("/api", [
-  withDDosProtection(),
   withCors({
     corsOrigin: [
       /^http:\/\/localhost:[0-9]{1,10}$/,
