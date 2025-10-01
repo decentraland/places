@@ -1,7 +1,6 @@
 import { AuthChain } from "@dcl/schemas/dist/misc/auth-chain"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import delay from "decentraland-gatsby/dist/utils/promise/delay"
 
 import { notifyError } from "../../Slack/utils"
 
@@ -25,9 +24,7 @@ export class SQSConsumer {
     const published = await this.sqs
       .sendMessage({
         QueueUrl: this.params.QueueUrl,
-        MessageBody: JSON.stringify({
-          Message: JSON.stringify(job),
-        }),
+        MessageBody: JSON.stringify(job),
       })
       .promise()
 
@@ -45,9 +42,7 @@ export class SQSConsumer {
   async publishBatch(jobs: DeploymentToSqs[]) {
     const entries = jobs.map((job) => ({
       Id: job.entity.entityId,
-      MessageBody: JSON.stringify({
-        Message: JSON.stringify(job),
-      }),
+      MessageBody: JSON.stringify(job),
     }))
     const published = await this.sqs
       .sendMessageBatch({ QueueUrl: this.params.QueueUrl, Entries: entries })
@@ -77,7 +72,7 @@ export class SQSConsumer {
       ) {
         for (const it of response.Messages) {
           const message: TaskQueueMessage = { id: it.MessageId! }
-          const body = JSON.parse(JSON.parse(it.Body!).Message)
+          const body = JSON.parse(it.Body!)
           const loggerExtended = logger.extend({
             id: message.id,
             message: body,
