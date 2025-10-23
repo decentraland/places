@@ -330,7 +330,7 @@ describe(`findWithAggregates`, () => {
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
-        ) AND (p.owner = $4 )
+        ) AND (LOWER(p.owner) = $4 )
         ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
           LIMIT $5
           OFFSET $6
@@ -380,7 +380,7 @@ describe(`findWithAggregates`, () => {
         LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
-        ) AND (p.owner = $4 OR p.base_position IN (
+        ) AND (LOWER(p.owner) = $4 OR p.base_position IN (
           SELECT DISTINCT(base_position)
           FROM "place_positions"
           WHERE position IN ($5, $6)
@@ -561,7 +561,7 @@ describe(`countPlaces`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-          AND (p.owner = $2 )
+          AND (LOWER(p.owner) = $2 )
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -601,7 +601,7 @@ describe(`countPlaces`, () => {
           AND p.base_position IN (
             SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
           )
-          AND (p.owner = $2 OR p.base_position IN (
+          AND (LOWER(p.owner) = $2 OR p.base_position IN (
             SELECT DISTINCT(base_position)
             FROM "place_positions"
             WHERE position IN ($3, $4)
