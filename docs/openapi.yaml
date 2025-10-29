@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Decentraland Places API
   description: |
-    The Decentraland Places API provides programmatic access to scenes, worlds, and user interactions within the Decentraland metaverse.
+    The Decentraland Places API provides programmatic access to scenes, worlds, and user interactions within Decentraland.
 
     Overview
 
