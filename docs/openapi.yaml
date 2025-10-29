@@ -71,7 +71,6 @@ info:
     **Why This Matters:** This ensures user favorites, likes, and social data persist when scenes are updated,
     while creating new places when the scene fundamentally changes location.
 
-  version: 1.0.1
   contact:
     name: Decentraland Foundation
     url: https://decentraland.org
