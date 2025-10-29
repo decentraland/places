@@ -120,6 +120,7 @@ paths:
       tags:
         - Places
       summary: List places with filters
+      security: []
       description: |
         Retrieve a paginated list of places (scenes) in Genesis City with extensive filtering and sorting options.
 
@@ -293,6 +294,7 @@ paths:
       tags:
         - Places
       summary: Get specific places by IDs
+      security: []
       description: |
         Retrieve multiple specific places by their UUIDs in a single request.
         Maximum 100 place IDs per request.
@@ -375,6 +377,7 @@ paths:
       tags:
         - Places
       summary: Get a specific place by ID
+      security: []
       description: |
         Retrieve detailed information about a single place by its UUID.
 
@@ -422,6 +425,7 @@ paths:
       tags:
         - Places
       summary: Get categories for a place
+      security: []
       description: |
         Retrieve all categories assigned to a specific place.
 
@@ -463,6 +467,8 @@ paths:
       tags:
         - Places
       summary: Update place content rating 🔒
+      security:
+        - BearerAuth: []
       description: |
         Update the content rating for a place. **Requires authentication.**
 
@@ -574,6 +580,8 @@ paths:
       tags:
         - Likes
       summary: Like, dislike, or remove vote 🔒
+      security:
+        - BearerAuth: []
       description: |
         Vote on a place quality. **Requires authentication.**
 
@@ -640,6 +648,7 @@ paths:
       tags:
         - Places
       summary: Get lightweight place status
+      security: []
       description: |
         Retrieve basic status information for multiple places (up to 100).
 
@@ -698,6 +707,7 @@ paths:
       tags:
         - Worlds
       summary: List Decentraland Worlds
+      security: []
       description: |
         Retrieve a paginated list of Decentraland Worlds with filtering and sorting.
 
@@ -814,6 +824,7 @@ paths:
       tags:
         - Worlds
       summary: Get all world names
+      security: []
       description: |
         Retrieve a simple list of all registered world names.
 
@@ -841,16 +852,19 @@ paths:
                     description: List of world names
               example:
                 ok: true
-                data:
+                  data:
                   - "art-gallery-world"
                   - "concert-venue"
                   - "gaming-arena"
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /map:
     get:
       tags:
         - Map
       summary: Get places for map display
+      security: []
       description: |
         Retrieve places organized by coordinates, optimized for map visualization.
 
@@ -953,12 +967,17 @@ paths:
                     title: "Genesis Plaza"
                     base_position: "0,0"
                     user_count: 42
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /map/places:
     get:
       tags:
         - Map
       summary: Get all places and worlds for map
+      security: []
       description: |
         Retrieve both Genesis City places AND Decentraland Worlds in a single query.
 
@@ -1066,12 +1085,17 @@ paths:
                   total:
                     type: integer
                     description: Total count of places and worlds
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /categories:
     get:
       tags:
         - Categories
       summary: List all categories
+      security: []
       description: |
         Retrieve all active categories with item counts.
 
@@ -1133,12 +1157,18 @@ paths:
                     count: 89
                     i18n:
                       en: "Game"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /report:
     post:
       tags:
         - Report
       summary: Get signed S3 upload URL 🔒
+      security:
+        - BearerAuth: []
       description: |
         Generate a pre-signed S3 URL for uploading content reports. **Requires authentication.**
 
