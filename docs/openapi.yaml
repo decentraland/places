@@ -1,10 +1,11 @@
 openapi: 3.0.3
 info:
+  version: 1.0.0
   title: Decentraland Places API
   description: |
     The Decentraland Places API provides programmatic access to scenes, worlds, and user interactions within Decentraland.
 
-    Overview
+    ### Overview
 
     This API allows you to discover places in Genesis City and Decentraland Worlds, search for content, manage user favorites and ratings, and retrieve user activity data.
 
