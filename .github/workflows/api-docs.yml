@@ -1,10 +1,9 @@
 name: API Docs
 
 on:
-  pull_request:
-    paths: ['docs/**']
   push:
     branches: [master]  
+    paths: ['docs/**']
 
 jobs:
   build:
