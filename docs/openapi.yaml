@@ -8,9 +8,7 @@ info:
 
     This API allows you to discover places in Genesis City and Decentraland Worlds, search for content, manage user favorites and ratings, and retrieve user activity data.
 
-    Authentication
-
-    Some endpoints require authentication using Decentraland's authentication system with Bearer tokens:
+    Authentication: Some endpoints require authentication using Decentraland's authentication system with Bearer tokens:
 
     ```
     Authorization: Bearer <your-decentraland-auth-token>
