@@ -461,6 +461,10 @@ paths:
                     count: 45
                     i18n:
                       en: "Art Gallery"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /places/{place_id}/rating:
     put:
@@ -481,8 +485,6 @@ paths:
 
         **Note:** Only authorized moderators can change ratings.
       operationId: updatePlaceRating
-      security:
-        - BearerAuth: []
       parameters:
         - name: place_id
           in: path
@@ -595,8 +597,6 @@ paths:
 
         **Idempotent:** Setting the same vote multiple times has no additional effect.
       operationId: updateLike
-      security:
-        - BearerAuth: []
       parameters:
         - name: place_id
           in: path
@@ -852,10 +852,12 @@ paths:
                     description: List of world names
               example:
                 ok: true
-                  data:
+                data:
                   - "art-gallery-world"
                   - "concert-venue"
                   - "gaming-arena"
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '500':
           $ref: '#/components/responses/InternalServerError'
 
@@ -1182,8 +1184,6 @@ paths:
 
         **Security:** The signed URL is temporary and scoped to the authenticated user.
       operationId: getReportSignedUrl
-      security:
-        - BearerAuth: []
       responses:
         '200':
           description: Signed URL generated successfully
