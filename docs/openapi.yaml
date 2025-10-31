@@ -3,9 +3,8 @@ info:
   version: 1.0.0
   title: Decentraland Places API
   description: |
+    ## Overview
     The Decentraland Places API provides programmatic access to scenes, worlds, and user interactions within Decentraland.
-
-    ### Overview
 
     This API allows you to discover places in Genesis City and Decentraland Worlds, search for content, manage user favorites and ratings, and retrieve user activity data.
 
@@ -17,11 +16,8 @@ info:
 
     Endpoints requiring authentication are marked with a 🔒 icon.
 
-    Rate Limiting
-
-    API requests may be rate-limited. Implement exponential backoff for retries and cache responses when possible.
-
-    Response Format
+    
+    ### Response Format
 
     All responses follow a consistent structure:
 
@@ -42,7 +38,7 @@ info:
     }
     ```
 
-    Coordinates Format
+    ### Coordinates Format
 
     Parcel coordinates are represented as comma-separated integers: `"x,y"` (e.g., `"-23,-96"`).
     Valid range: `-150` to `150` for both x and y coordinates.
