@@ -88,7 +88,8 @@ docker-compose up -d     # Start services
 - Provides API for querying places (scene coordinates, world names, metadata)
 - Supports Gatsby frontend integration for place discovery interface
 
-**Communication Pattern:** 
+**Communication Pattern:**
+
 - Event-driven via AWS SQS (deployment notifications)
 - Synchronous HTTP API (place queries)
 
