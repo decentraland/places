@@ -17,7 +17,7 @@ import "balloon-css/balloon.min.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "decentraland-ui/dist/themes/base-theme.css"
 // eslint-disable-next-line css-import-order/css-import-order
-import "decentraland-ui/dist/themes/alternative/light-theme.css"
+import "decentraland-ui/dist/themes/alternative/dark-theme.css"
 // eslint-disable-next-line css-import-order/css-import-order
 import "decentraland-gatsby/dist/variables.css"
 // eslint-disable-next-line css-import-order/css-import-order
@@ -31,7 +31,7 @@ import { IntlProvider } from "decentraland-gatsby/dist/plugins/intl"
 import segment from "decentraland-gatsby/dist/utils/development/segment"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { DclThemeProvider, lightTheme } from "decentraland-ui2"
+import { DclThemeProvider, darkTheme } from "decentraland-ui2"
 
 import { TrackingPlacesSearchProvider } from "./src/context/TrackingContext"
 
@@ -44,7 +44,7 @@ export const wrapRootElement = ({ element }) => (
     <TrackingPlacesSearchProvider>
       <FeatureFlagProvider applicationName={["places", "dapps"]}>
         <ShareProvider>
-          <DclThemeProvider theme={lightTheme}>{element}</DclThemeProvider>
+          <DclThemeProvider theme={darkTheme}>{element}</DclThemeProvider>
         </ShareProvider>
       </FeatureFlagProvider>
     </TrackingPlacesSearchProvider>
