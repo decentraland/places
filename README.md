@@ -76,7 +76,7 @@ npm run test:sqs-message # Test SQS integration
 docker-compose up -d     # Start services
 ```
 
-## 🤖 AI Agent Context
+## AI Agent Context
 
 **Service Purpose:** Processes Catalyst scene and World deployments to maintain a searchable database of Decentraland places. Fetches entity metadata from Catalyst content servers and creates Place records for discovery, search, and navigation features.
 
