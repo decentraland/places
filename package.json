@@ -17,7 +17,7 @@
     "aws-sdk": "^2.1002.0",
     "core-js": "^3.22.2",
     "cssnano": "^5.0.10",
-    "decentraland-gatsby": "^7.5.0",
+    "decentraland-gatsby": "^7.8.0",
     "decentraland-ui": "^6.14.0",
     "es6-shim": "^0.35.8",
     "express-fileupload": "^1.2.1",
