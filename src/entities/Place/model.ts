@@ -286,7 +286,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.owner,
-          SQL` AND (p.owner = ${options.owner} ${
+          SQL` AND (LOWER(p.owner) = ${options.owner} ${
             options.operatedPositions?.length
               ? SQL`OR p.base_position IN (
                   SELECT DISTINCT(base_position)
@@ -376,7 +376,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(
           !!options.owner,
-          SQL` AND (p.owner = ${options.owner} ${
+          SQL` AND (LOWER(p.owner) = ${options.owner} ${
             options.operatedPositions?.length
               ? SQL`OR p.base_position IN (
                   SELECT DISTINCT(base_position)

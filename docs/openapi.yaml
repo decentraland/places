@@ -1,0 +1,1801 @@
+openapi: 3.0.3
+info:
+  version: 1.0.0
+  title: Decentraland Places API
+  description: |
+    ## Overview
+    The Decentraland Places API provides programmatic access to scenes, worlds, and user interactions within Decentraland.
+
+    This API allows you to discover places in Genesis City and Decentraland Worlds, search for content, manage user favorites and ratings, and retrieve user activity data.
+
+    Authentication: Some endpoints require authentication using Decentraland's authentication system with Bearer tokens:
+
+    ```
+    Authorization: Bearer <your-decentraland-auth-token>
+    ```
+
+    Endpoints requiring authentication are marked with a 🔒 icon.
+
+    
+    ### Response Format
+
+    All responses follow a consistent structure:
+
+    **Success Response:**
+    ```json
+    {
+      "ok": true,
+      "data": [...],
+      "total": 100
+    }
+    ```
+
+    **Error Response:**
+    ```json
+    {
+      "ok": false,
+      "error": "Error message description"
+    }
+    ```
+
+    ### Coordinates Format
+
+    Parcel coordinates are represented as comma-separated integers: `"x,y"` (e.g., `"-23,-96"`).
+    Valid range: `-150` to `150` for both x and y coordinates.
+
+    Place ID Semantics
+
+    Each place has a persistent UUID that follows specific rules across scene redeployments:
+
+    **UUID Preservation Rules:**
+
+    A new scene deployment will **keep the same UUID** if it meets one of these criteria:
+    - The new scene parcels contain **every parcel** from the previous scene (allows growing)
+    - The new scene has the **same base parcel** as the previous scene (allows reshaping/shrinking)
+
+    A new deployment gets a **new UUID** when:
+    - Moving to completely different parcels with a different base parcel
+    - Shrinking without preserving the base parcel
+
+    **Examples:**
+    - ✅ Same UUID: Expanding from 1 to 4 parcels (contains all previous)
+    - ✅ Same UUID: Reshaping the scene but keeping the same base parcel
+    - ✅ Same UUID: Shrinking but maintaining the same base parcel
+    - ❌ New UUID: Moving to entirely different parcels with different base
+    - ❌ New UUID: Shrinking and changing the base parcel
+
+    **Why This Matters:** This ensures user favorites, likes, and social data persist when scenes are updated,
+    while creating new places when the scene fundamentally changes location.
+
+  contact:
+    name: Decentraland Foundation
+    url: https://decentraland.org
+    email: dev@decentraland.org
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://places.decentraland.org/api
+    description: Production server
+  - url: http://localhost:4000/api
+    description: Development server
+
+tags:
+  - name: Places
+    description: |
+      Operations for discovering and managing places (scenes) in Genesis City.
+      Places are deployable scenes located at specific parcel coordinates in the main Decentraland world.
+  - name: Worlds
+    description: |
+      Operations for Decentraland Worlds - privately owned virtual spaces that exist outside Genesis City.
+      Worlds can be accessed via unique URLs and have their own rules and configurations.
+  - name: Map
+    description: |
+      Specialized endpoints for map applications that need coordinate-based queries and bulk place data.
+      Optimized for displaying places on a visual map interface.
+  - name: Categories
+    description: |
+      Discover place and world categories (e.g., art-gallery, social, game).
+      Categories help users find content based on their interests.
+  - name: Favorites
+    description: |
+      User favorite management (requires authentication).
+      Users can save their favorite places for quick access.
+  - name: Likes
+    description: |
+      User rating system for places (requires authentication).
+      Users can like or dislike places to help others discover quality content.
+  - name: Report
+    description: |
+      Generate signed URLs for uploading content reports (requires authentication).
+
+paths:
+  /places:
+    get:
+      tags:
+        - Places
+      summary: List places with filters
+      security: []
+      description: |
+        Retrieve a paginated list of places (scenes) in Genesis City with extensive filtering and sorting options.
+
+        **Common Use Cases:**
+        - Get most popular places: `?order_by=like_score&limit=20`
+        - Search by name: `?search=casino`
+        - Find places at coordinates: `?positions=-23,-96`
+        - Get user's favorites: `?only_favorites=true` (requires auth)
+
+        **Performance Tips:**
+        - Use pagination (limit/offset) for large result sets
+        - Cache results when possible
+        - Use `with_realms_detail=true` only when you need real-time user counts
+      operationId: getPlaces
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of places to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+          example: 20
+        - name: offset
+          in: query
+          description: Number of places to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          example: 0
+        - name: positions
+          in: query
+          description: |
+            Filter by specific parcel coordinates. Format: `"x,y"` (e.g., `"-23,-96"`).
+            Can specify multiple positions to get places at any of those coordinates.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: '^-?\d{1,3},-?\d{1,3}$'
+            maxItems: 1000
+          style: form
+          explode: true
+          example: ["-23,-96", "-22,-96"]
+        - name: only_favorites
+          in: query
+          description: |
+            Show only the authenticated user's favorite places.
+            Requires authentication. Returns empty list if not authenticated.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: only_highlighted
+          in: query
+          description: Show only places marked as highlighted by moderators
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: order_by
+          in: query
+          description: |
+            Sort places by this field:
+            - `like_score`: VP-weighted like ratio (default, best quality)
+            - `most_active`: Current user count (trending now)
+            - `updated_at`: Recently updated content
+            - `created_at`: Newly created places
+            - `user_visits`: Most visited in last 30 days
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, updated_at, created_at, user_visits]
+            default: like_score
+          example: most_active
+        - name: order
+          in: query
+          description: Sort direction (ascending or descending)
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+          example: desc
+        - name: with_realms_detail
+          in: query
+          description: |
+            Include real-time realm and user count details. **Experimental feature.**
+            Adds `realms_detail` array with per-realm user counts and active parcels.
+            Note: Slightly slower response time.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: true
+        - name: search
+          in: query
+          description: |
+            Full-text search in place title, description, and owner.
+            Minimum 3 characters required. Returns empty array if too short.
+          required: false
+          schema:
+            type: string
+            minLength: 3
+          example: "casino"
+        - name: categories
+          in: query
+          description: |
+            Filter by categories (e.g., "art-gallery", "social", "game").
+            Get available categories from `/categories` endpoint.
+            Multiple categories return places matching ANY category (OR logic).
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+          example: ["art-gallery", "social"]
+        - name: owner
+          in: query
+          description: |
+            Filter by owner's Ethereum address (case-insensitive).
+            Must be a valid Ethereum address format.
+          required: false
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+          example: "0x1234567890123456789012345678901234567890"
+      responses:
+        '200':
+          description: Successfully retrieved places
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceListResponse'
+              example:
+                ok: true
+                total: 150
+                data:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Art Gallery"
+                    description: "Contemporary digital art exhibition"
+                    image: "https://peer.decentraland.org/content/contents/QmXYZ..."
+                    owner: "0xabcdef1234567890abcdef1234567890abcdef12"
+                    positions: ["-23,-96", "-22,-96"]
+                    base_position: "-23,-96"
+                    content_rating: "E"
+                    likes: 45
+                    dislikes: 3
+                    like_score: 0.92
+                    favorites: 12
+                    user_count: 8
+                    user_visits: 234
+                    categories: ["art-gallery"]
+                    user_like: false
+                    user_dislike: false
+                    user_favorite: false
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+    post:
+      tags:
+        - Places
+      summary: Get specific places by IDs
+      security: []
+      description: |
+        Retrieve multiple specific places by their UUIDs in a single request.
+        Maximum 100 place IDs per request.
+
+        **Use Cases:**
+        - Fetch details for a known set of places
+        - Resolve place IDs from external sources
+        - Batch operations for better performance
+
+        **Note:** Results are returned in the same order as requested IDs when available.
+      operationId: getPlacesByIds
+      parameters:
+        - name: offset
+          in: query
+          description: Number of results to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of results (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+        - name: order_by
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum: [like_score, updated_at, created_at]
+            default: like_score
+        - name: order
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          description: Optional text search filter (minimum 3 characters)
+          required: false
+          schema:
+            type: string
+            minLength: 3
+      requestBody:
+        required: true
+        description: Array of place UUIDs to retrieve
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+              minItems: 1
+              maxItems: 100
+            example:
+              - "550e8400-e29b-41d4-a716-446655440000"
+              - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        '200':
+          description: Successfully retrieved places
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /places/{place_id}:
+    get:
+      tags:
+        - Places
+      summary: Get a specific place by ID
+      security: []
+      description: |
+        Retrieve detailed information about a single place by its UUID.
+
+        Returns 404 if the place doesn't exist or has been disabled.
+
+        **Performance:** This endpoint includes aggregated user data (likes, favorites, visits).
+      operationId: getPlace
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: Unique identifier (UUID) of the place
+          schema:
+            type: string
+            format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        - name: with_realms_detail
+          in: query
+          description: Include real-time realm and user distribution data
+          required: false
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Place found and returned successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceResponse'
+              example:
+                ok: true
+                data:
+                  id: "550e8400-e29b-41d4-a716-446655440000"
+                  title: "Genesis Plaza"
+                  description: "The main plaza of Decentraland"
+                  base_position: "0,0"
+                  user_count: 42
+                  categories: ["social", "event"]
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /places/{place_id}/categories:
+    get:
+      tags:
+        - Places
+      summary: Get categories for a place
+      security: []
+      description: |
+        Retrieve all categories assigned to a specific place.
+
+        Categories are automatically assigned based on scene tags and can also be manually curated.
+      operationId: getPlaceCategories
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+              example:
+                ok: true
+                data:
+                  - name: "art-gallery"
+                    active: true
+                    count: 45
+                    i18n:
+                      en: "Art Gallery"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /places/{place_id}/rating:
+    put:
+      tags:
+        - Places
+      summary: Update place content rating 🔒
+      security:
+        - BearerAuth: []
+      description: |
+        Update the content rating for a place. **Requires authentication.**
+
+        Content ratings help users filter appropriate content:
+        - **PR** (Pre-Teen): Suitable for ages 10+
+        - **E** (Everyone): Suitable for all ages
+        - **T** (Teen): Suitable for ages 13+
+        - **A** (Adult): Suitable for ages 18+, may contain mature content
+        - **R** (Restricted): Adults only, explicit content
+
+        **Note:** Only authorized moderators can change ratings.
+      operationId: updatePlaceRating
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to rate
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRatingBody'
+            example:
+              content_rating: "T"
+              comment: "Contains mild fantasy violence"
+      responses:
+        '200':
+          description: Rating updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - user not authorized to update ratings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /places/{place_id}/favorites:
+    patch:
+      tags:
+        - Favorites
+      summary: Add/remove place from favorites 🔒
+      description: |
+        Add or remove a place from the authenticated user's favorites list.
+
+        **Idempotent:** Calling this endpoint with the same favorite status multiple times has the same effect as calling it once.
+
+        Returns updated favorite count for the place and current user status.
+      operationId: updateFavorite
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateFavoriteBody'
+            examples:
+              addFavorite:
+                summary: Add to favorites
+                value:
+                  favorites: true
+              removeFavorite:
+                summary: Remove from favorites
+                value:
+                  favorites: false
+      responses:
+        '200':
+          description: Favorite status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FavoriteResponse'
+              example:
+                ok: true
+                data:
+                  favorites: 13
+                  user_favorite: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /places/{place_id}/likes:
+    patch:
+      tags:
+        - Likes
+      summary: Like, dislike, or remove vote 🔒
+      security:
+        - BearerAuth: []
+      description: |
+        Vote on a place quality. **Requires authentication.**
+
+        **Vote Options:**
+        - `like: true` - Upvote the place (recommend it)
+        - `like: false` - Downvote the place (not recommended)
+        - `like: null` - Remove your vote
+
+        **Voting Power:** Votes are weighted by user's Decentraland voting power (VP) from Snapshot.
+        Users with more VP have stronger influence on the `like_score`.
+
+        **Idempotent:** Setting the same vote multiple times has no additional effect.
+      operationId: updateLike
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateLikeBody'
+            examples:
+              like:
+                summary: Like (upvote)
+                value:
+                  like: true
+              dislike:
+                summary: Dislike (downvote)
+                value:
+                  like: false
+              removeVote:
+                summary: Remove vote
+                value:
+                  like: null
+      responses:
+        '200':
+          description: Vote updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LikeResponse'
+              example:
+                ok: true
+                data:
+                  likes: 47
+                  dislikes: 3
+                  user_like: true
+                  user_dislike: false
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /places/status:
+    post:
+      tags:
+        - Places
+      summary: Get lightweight place status
+      security: []
+      description: |
+        Retrieve basic status information for multiple places (up to 100).
+
+        **Lightweight Alternative:** Returns only essential fields (ID, title, position, disabled status).
+        Use this instead of full place details when you only need to check if places exist or are enabled.
+
+        **Performance:** Faster than full place queries, suitable for status checks.
+      operationId: getPlacesStatus
+      requestBody:
+        required: true
+        description: Array of place UUIDs to check
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+              minItems: 1
+              maxItems: 100
+            example:
+              - "550e8400-e29b-41d4-a716-446655440000"
+              - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        '200':
+          description: Status retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PlaceStatus'
+                  total:
+                    type: integer
+                    description: Number of places found
+              example:
+                ok: true
+                total: 2
+                data:
+                  - id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Art Gallery"
+                    base_position: "-23,-96"
+                    disabled: false
+                    world: false
+                    world_name: null
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /worlds:
+    get:
+      tags:
+        - Worlds
+      summary: List Decentraland Worlds
+      security: []
+      description: |
+        Retrieve a paginated list of Decentraland Worlds with filtering and sorting.
+
+        **Worlds vs Places:** Worlds are privately owned virtual spaces accessed via unique URLs,
+        while Places are scenes in Genesis City at specific coordinates.
+
+        **Common Queries:**
+        - Most active worlds: `?order_by=most_active`
+        - Search by name: `?search=party`
+        - Specific worlds: `?names=world-name-1&names=world-name-2`
+      operationId: getWorlds
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of worlds to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+        - name: offset
+          in: query
+          description: Number of worlds to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: names
+          in: query
+          description: |
+            Filter by specific world names (exact match, case-insensitive).
+            Multiple names return worlds matching ANY name (OR logic).
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            maxItems: 1000
+          style: form
+          explode: true
+          example: ["my-world", "art-space"]
+        - name: only_favorites
+          in: query
+          description: Show only authenticated user's favorite worlds (requires auth)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: order_by
+          in: query
+          description: |
+            Sort worlds by:
+            - `like_score`: Best rated (VP-weighted, default)
+            - `most_active`: Current user count
+            - `created_at`: Newest first
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, created_at]
+            default: like_score
+        - name: order
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          description: Full-text search in world title, description (min 3 chars)
+          required: false
+          schema:
+            type: string
+            minLength: 3
+        - name: categories
+          in: query
+          description: Filter by categories
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: disabled
+          in: query
+          description: Include disabled/opt-out worlds in results
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: owner
+          in: query
+          description: Filter by owner's Ethereum address
+          required: false
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+      responses:
+        '200':
+          description: Worlds retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorldListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /world_names:
+    get:
+      tags:
+        - Worlds
+      summary: Get all world names
+      security: []
+      description: |
+        Retrieve a simple list of all registered world names.
+
+        **Use Cases:**
+        - Autocomplete for world search
+        - Validation of world name existence
+        - Browse all available worlds
+
+        **Performance:** Lightweight endpoint, returns only names as strings.
+      operationId: getWorldNames
+      responses:
+        '200':
+          description: World names retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: string
+                    description: List of world names
+              example:
+                ok: true
+                data:
+                  - "art-gallery-world"
+                  - "concert-venue"
+                  - "gaming-arena"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /map:
+    get:
+      tags:
+        - Map
+      summary: Get places for map display
+      security: []
+      description: |
+        Retrieve places organized by coordinates, optimized for map visualization.
+
+        **Map Response Format:** Returns an object with coordinates as keys and place data as values,
+        making it easy to display places on a coordinate grid.
+
+        **Use Case:** Building interactive maps of Genesis City showing which places exist at each parcel.
+
+        **Performance:** Higher limit (1000 default) for bulk map loading.
+      operationId: getMapPlaces
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of places (default 1000, suitable for maps)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 2000
+            default: 1000
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: positions
+          in: query
+          description: Filter by specific coordinates
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: '^-?\d{1,3},-?\d{1,3}$'
+          style: form
+          explode: true
+        - name: only_favorites
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: only_highlighted
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: order_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, updated_at, created_at]
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: with_realms_detail
+          in: query
+          description: Include real-time realm data for each place
+          required: false
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 3
+        - name: categories
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: Map data retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MapPlaceResponse'
+              example:
+                ok: true
+                total: 2
+                data:
+                  "-23,-96":
+                    id: "550e8400-e29b-41d4-a716-446655440000"
+                    title: "Art Gallery"
+                    base_position: "-23,-96"
+                    user_count: 5
+                  "0,0":
+                    id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+                    title: "Genesis Plaza"
+                    base_position: "0,0"
+                    user_count: 42
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /map/places:
+    get:
+      tags:
+        - Map
+      summary: Get all places and worlds for map
+      security: []
+      description: |
+        Retrieve both Genesis City places AND Decentraland Worlds in a single query.
+
+        **Combined Data:** Merges places and worlds into one result set for comprehensive map display.
+
+        **Use Case:** Applications that need to show all available content (places + worlds) on a single map interface.
+
+        **Higher Limits:** Default limit of 2000 to accommodate both places and worlds.
+      operationId: getAllMapPlaces
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum results (default 2000 for places + worlds)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 5000
+            default: 2000
+        - name: offset
+          in: query
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: positions
+          in: query
+          description: Filter places by coordinates
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: '^-?\d{1,3},-?\d{1,3}$'
+          style: form
+          explode: true
+        - name: names
+          in: query
+          description: Filter worlds by names
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: only_favorites
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: only_highlighted
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: order_by
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, updated_at, created_at]
+        - name: order
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+        - name: with_realms_detail
+          in: query
+          required: false
+          schema:
+            type: boolean
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+            minLength: 3
+        - name: categories
+          in: query
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+      responses:
+        '200':
+          description: Combined places and worlds retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Place'
+                    description: Array containing both places and worlds
+                  total:
+                    type: integer
+                    description: Total count of places and worlds
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: List all categories
+      security: []
+      description: |
+        Retrieve all active categories with item counts.
+
+        **Categories help users discover:**
+        - Art galleries and museums
+        - Social hangout spots
+        - Games and interactive experiences
+        - Event venues
+        - Shopping and commerce
+        - Educational content
+
+        **Counts:** Each category includes the number of places/worlds tagged with it.
+
+        **Filtering:** Use the `target` parameter to get counts for only places, only worlds, or both.
+      operationId: getCategories
+      parameters:
+        - name: target
+          in: query
+          description: |
+            Filter category counts by type:
+            - `all`: Count both places and worlds (default)
+            - `places`: Count only Genesis City places
+            - `worlds`: Count only Decentraland Worlds
+          required: false
+          schema:
+            type: string
+            enum: [all, places, worlds]
+            default: all
+          example: places
+      responses:
+        '200':
+          description: Categories retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Category'
+              example:
+                ok: true
+                data:
+                  - name: "art-gallery"
+                    active: true
+                    count: 45
+                    i18n:
+                      en: "Art Gallery"
+                  - name: "social"
+                    active: true
+                    count: 128
+                    i18n:
+                      en: "Social"
+                  - name: "game"
+                    active: true
+                    count: 89
+                    i18n:
+                      en: "Game"
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /report:
+    post:
+      tags:
+        - Report
+      summary: Get signed S3 upload URL 🔒
+      security:
+        - BearerAuth: []
+      description: |
+        Generate a pre-signed S3 URL for uploading content reports. **Requires authentication.**
+
+        **Use Case:** Users can report inappropriate content or issues. This endpoint provides a secure
+        upload URL that expires after 60 seconds.
+
+        **Process:**
+        1. Call this endpoint to get a signed URL
+        2. PUT your report JSON directly to the signed URL
+        3. Report is stored privately for moderation review
+
+        **Security:** The signed URL is temporary and scoped to the authenticated user.
+      operationId: getReportSignedUrl
+      responses:
+        '200':
+          description: Signed URL generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      signed_url:
+                        type: string
+                        format: uri
+                        description: Pre-signed S3 URL for PUT upload (expires in 60s)
+              example:
+                ok: true
+                data:
+                  signed_url: "https://s3.amazonaws.com/bucket/path?signature=..."
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Decentraland authentication token obtained from the Decentraland SDK or auth services.
+
+        To authenticate:
+        1. Use Decentraland's authentication SDK in your application
+        2. Get the auth token from the SDK
+        3. Include in requests: `Authorization: Bearer <token>`
+
+  schemas:
+    Place:
+      type: object
+      description: |
+        A place (scene) in Genesis City or a Decentraland World.
+
+        **Place ID Persistence:** The UUID is preserved across scene redeployments when:
+        - New deployment contains all previous parcels (growing)
+        - New deployment keeps the same base parcel (reshaping/shrinking)
+
+        The UUID changes when the scene moves to different parcels with a different base.
+        This ensures favorites, likes, and social data persist through scene updates.
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: |
+            Persistent unique identifier for the place. This UUID is maintained across scene
+            redeployments as long as the scene keeps the same base parcel or contains all
+            previous parcels. See "Place ID Semantics" in the API description for details.
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          maxLength: 50
+          description: Display name of the place
+          nullable: true
+          example: "Art Gallery"
+        description:
+          type: string
+          maxLength: 5000
+          description: Long-form description of the place content
+          nullable: true
+          example: "A contemporary art gallery featuring digital sculptures and interactive installations."
+        image:
+          type: string
+          format: uri
+          description: URL to the place thumbnail/preview image (from navmapThumbnail or generated)
+          nullable: true
+          example: "https://peer.decentraland.org/content/contents/QmXYZ..."
+        owner:
+          type: string
+          maxLength: 42
+          description: Ethereum address of the place owner
+          nullable: true
+          example: "0xabcdef1234567890abcdef1234567890abcdef12"
+        positions:
+          type: array
+          description: |
+            All parcel coordinates occupied by this place. Places can span multiple parcels.
+            **UUID Preservation:** If a new deployment contains all these parcels plus additional ones,
+            the Place UUID is preserved (scene growth). However, if parcels are removed or changed,
+            the UUID may change unless the base_position remains the same.
+          items:
+            type: string
+            pattern: '^-?\d{1,3},-?\d{1,3}$'
+          example: ["-23,-96", "-22,-96", "-23,-95"]
+        base_position:
+          type: string
+          pattern: '^-?\d{1,3},-?\d{1,3}$'
+          description: |
+            Primary/spawn coordinate for the place. This is the main parcel where users spawn
+            when entering the scene. **Important:** The base parcel is key to Place ID persistence -
+            keeping the same base parcel across deployments preserves the Place UUID and all
+            associated user data (favorites, likes, etc.).
+          example: "-23,-96"
+        contact_name:
+          type: string
+          maxLength: 5000
+          description: Contact person name for the place
+          nullable: true
+          example: "John Doe"
+        contact_email:
+          type: string
+          maxLength: 5000
+          description: Contact email for the place
+          nullable: true
+          example: "contact@example.com"
+        content_rating:
+          type: string
+          maxLength: 1
+          description: |
+            Age appropriateness rating:
+            - PR: Pre-Teen (10+)
+            - E: Everyone (all ages)
+            - T: Teen (13+)
+            - A: Adult (18+)
+            - R: Restricted (18+, explicit)
+          enum: [PR, E, T, A, R]
+          example: "T"
+        likes:
+          type: integer
+          minimum: 0
+          description: Total number of likes received
+          example: 45
+        dislikes:
+          type: integer
+          minimum: 0
+          description: Total number of dislikes received
+          example: 3
+        like_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: |
+            Quality score (0-1) based on VP-weighted likes/dislikes.
+            Higher score = better quality. Null if insufficient votes.
+          nullable: true
+          example: 0.92
+        like_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+          description: Simple like ratio (likes / total votes), not VP-weighted
+          nullable: true
+          example: 0.94
+        favorites:
+          type: integer
+          minimum: 0
+          description: Number of users who favorited this place
+          example: 12
+        disabled:
+          type: boolean
+          description: True if place is disabled (not shown publicly)
+          example: false
+        disabled_at:
+          type: string
+          format: date-time
+          description: Timestamp when place was disabled
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          description: When the place was first created
+          example: "2023-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: Last update to place metadata
+          example: "2023-06-20T14:45:00Z"
+        deployed_at:
+          type: string
+          format: date-time
+          description: Last scene deployment timestamp
+          example: "2023-06-20T14:45:00Z"
+        user_like:
+          type: boolean
+          description: True if authenticated user liked this place
+          example: false
+        user_dislike:
+          type: boolean
+          description: True if authenticated user disliked this place
+          example: false
+        user_favorite:
+          type: boolean
+          description: True if authenticated user favorited this place
+          example: true
+        user_count:
+          type: integer
+          minimum: 0
+          description: Current number of users in the place (real-time)
+          example: 8
+        user_visits:
+          type: integer
+          minimum: 0
+          description: Total unique users who visited in the last 30 days
+          example: 234
+        categories:
+          type: array
+          description: Categories/tags assigned to this place
+          items:
+            type: string
+          example: ["art-gallery", "social"]
+        realms_detail:
+          type: array
+          description: Per-realm user distribution (only if with_realms_detail=true)
+          items:
+            $ref: '#/components/schemas/Realm'
+
+    World:
+      type: object
+      description: A Decentraland World - privately owned virtual space
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique world identifier
+        title:
+          type: string
+          maxLength: 50
+          description: World name
+          nullable: true
+        description:
+          type: string
+          maxLength: 5000
+          description: World description
+          nullable: true
+        image:
+          type: string
+          format: uri
+          description: World thumbnail URL
+          nullable: true
+        owner:
+          type: string
+          maxLength: 42
+          description: Owner's Ethereum address
+          nullable: true
+        positions:
+          type: array
+          description: Coordinate placeholders (worlds don't use Genesis City coordinates)
+          items:
+            type: string
+            pattern: '^-?\d{1,3},-?\d{1,3}$'
+        base_position:
+          type: string
+          pattern: '^-?\d{1,3},-?\d{1,3}$'
+          description: Base coordinate placeholder
+        contact_name:
+          type: string
+          maxLength: 5000
+          nullable: true
+        contact_email:
+          type: string
+          maxLength: 5000
+          nullable: true
+        content_rating:
+          type: string
+          maxLength: 5000
+          description: Content rating
+          nullable: true
+        likes:
+          type: integer
+          minimum: 0
+        dislikes:
+          type: integer
+          minimum: 0
+        like_score:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        like_rate:
+          type: number
+          minimum: 0
+          maximum: 1
+          nullable: true
+        favorites:
+          type: integer
+          minimum: 0
+        disabled:
+          type: boolean
+          description: True if world opted out of listing
+        disabled_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+        deployed_at:
+          type: string
+          format: date-time
+        user_like:
+          type: boolean
+        user_dislike:
+          type: boolean
+        user_favorite:
+          type: boolean
+        user_count:
+          type: integer
+          minimum: 0
+          description: Current users in the world
+        user_visits:
+          type: integer
+          minimum: 0
+          description: Visits in last 30 days
+
+    Realm:
+      type: object
+      description: A Decentraland realm (server) with real-time user data
+      properties:
+        serverName:
+          type: string
+          description: Human-readable realm server name
+          example: "unicorn"
+        url:
+          type: string
+          format: uri
+          description: Realm connection URL
+          example: "https://realm-provider.decentraland.org/main"
+        usersCount:
+          type: integer
+          minimum: 0
+          description: Total users currently in this realm
+          example: 145
+        userParcels:
+          type: array
+          description: Coordinates where users are located in this realm
+          items:
+            type: array
+            minItems: 2
+            maxItems: 2
+            items:
+              type: integer
+            description: "[x, y] coordinate pair"
+          example: [[-23, -96], [0, 0], [-22, -95]]
+
+    Category:
+      type: object
+      description: A content category for organizing places and worlds
+      properties:
+        name:
+          type: string
+          description: Unique category identifier (slug)
+          example: "art-gallery"
+        active:
+          type: boolean
+          description: Whether this category is currently active/visible
+          example: true
+        count:
+          type: integer
+          minimum: 0
+          description: Number of places/worlds in this category
+          example: 45
+        i18n:
+          type: object
+          description: Internationalized display labels
+          properties:
+            en:
+              type: string
+              description: English display name
+              example: "Art Gallery"
+
+    PlaceStatus:
+      type: object
+      description: Lightweight place status information
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        title:
+          type: string
+          nullable: true
+          example: "Art Gallery"
+        base_position:
+          type: string
+          example: "-23,-96"
+        disabled:
+          type: boolean
+          description: True if place is not publicly visible
+          example: false
+        world:
+          type: boolean
+          description: True if this is a world, false if Genesis City place
+          example: false
+        world_name:
+          type: string
+          nullable: true
+          description: World name if this is a world
+          example: null
+
+    UpdateRatingBody:
+      type: object
+      required:
+        - content_rating
+      properties:
+        content_rating:
+          type: string
+          enum: [PR, E, T, A, R]
+          description: |
+            New content rating:
+            - **PR** (Pre-Teen): Ages 10+
+            - **E** (Everyone): All ages
+            - **T** (Teen): Ages 13+
+            - **A** (Adult): Ages 18+, mature content
+            - **R** (Restricted): Adults only, explicit content
+          example: "T"
+        comment:
+          type: string
+          description: Optional explanation for the rating change (for moderation log)
+          example: "Updated due to new interactive content"
+
+    UpdateFavoriteBody:
+      type: object
+      required:
+        - favorites
+      properties:
+        favorites:
+          type: boolean
+          description: |
+            Set to true to add place to favorites, false to remove.
+            Idempotent - safe to call multiple times.
+          example: true
+
+    UpdateLikeBody:
+      type: object
+      properties:
+        like:
+          type: boolean
+          nullable: true
+          description: |
+            Vote value:
+            - `true`: Like/upvote (recommend)
+            - `false`: Dislike/downvote (not recommended)
+            - `null`: Remove your vote
+          example: true
+
+    PlaceResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          $ref: '#/components/schemas/Place'
+
+    PlaceListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Place'
+        total:
+          type: integer
+          description: Total number of places matching the query (for pagination)
+          example: 150
+
+    WorldListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/World'
+        total:
+          type: integer
+          description: Total number of worlds matching the query
+          example: 42
+
+    MapPlaceResponse:
+      type: object
+      description: Places indexed by coordinates for map display
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+          description: Object with coordinates as keys and place data as values
+          additionalProperties:
+            $ref: '#/components/schemas/Place'
+          example:
+            "-23,-96":
+              id: "550e8400-e29b-41d4-a716-446655440000"
+              title: "Art Gallery"
+            "0,0":
+              id: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+              title: "Genesis Plaza"
+        total:
+          type: integer
+          description: Total number of unique coordinates with places
+          example: 2
+
+    FavoriteResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            favorites:
+              type: integer
+              minimum: 0
+              description: Updated total favorite count for the place
+              example: 13
+            user_favorite:
+              type: boolean
+              description: Current user's favorite status
+              example: true
+
+    LikeResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: true
+        data:
+          type: object
+          properties:
+            likes:
+              type: integer
+              minimum: 0
+              description: Updated total like count
+              example: 47
+            dislikes:
+              type: integer
+              minimum: 0
+              description: Updated total dislike count
+              example: 3
+            user_like:
+              type: boolean
+              description: True if user liked the place
+              example: true
+            user_dislike:
+              type: boolean
+              description: True if user disliked the place
+              example: false
+
+    Error:
+      type: object
+      description: Standard error response
+      properties:
+        ok:
+          type: boolean
+          description: Always false for errors
+          example: false
+        error:
+          type: string
+          description: Human-readable error message
+          example: "Invalid request parameters"
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid parameters or malformed request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            invalidParams:
+              summary: Invalid query parameters
+              value:
+                ok: false
+                error: "Invalid request parameters"
+            invalidBody:
+              summary: Invalid request body
+              value:
+                ok: false
+                error: "Request body must be an array of UUIDs"
+
+    Unauthorized:
+      description: Unauthorized - Missing or invalid authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            ok: false
+            error: "Authentication required"
+
+    NotFound:
+      description: Resource not found - Place/world doesn't exist or is disabled
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            ok: false
+            error: "Place not found"
+
+    InternalServerError:
+      description: Internal server error - Something went wrong on the server
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            ok: false
+            error: "Internal server error"
