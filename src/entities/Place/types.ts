@@ -58,6 +58,7 @@ export type PlaceAttributes = {
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
   categories: string[]
+  creator_address: string | null
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {

@@ -85,7 +85,7 @@ export function processContentEntityScene(
 export function createPlaceFromContentEntityScene(
   contentEntityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {},
-  options: { url?: string } = {}
+  options: { url?: string; creator?: string | null } = {}
 ) {
   const now = new Date()
   const title = contentEntityScene?.metadata?.display?.title || null
@@ -160,6 +160,7 @@ export function createPlaceFromContentEntityScene(
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
     textsearch: undefined,
     categories: [],
+    creator_address: options.creator || null,
   }
 
   placeParsed.textsearch = PlaceModel.textsearch(placeParsed)
