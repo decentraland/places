@@ -51,6 +51,9 @@ export const getAllPlacesList = Router.memo(
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
+      creator_address: ctx.url.searchParams
+        .get("creator_address")
+        ?.toLowerCase(),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -73,6 +76,7 @@ export const getAllPlacesList = Router.memo(
       order: query.order,
       search: query.search,
       categories: query.categories,
+      creator_address: query.creator_address,
     }
 
     const hotScenes = getHotScenes()

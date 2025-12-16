@@ -20,6 +20,7 @@ import {
   updateGenesisCityManifest,
 } from "../utils"
 import { DeploymentToSqs } from "./consumer"
+import { extractCreatorAddress } from "./extractCreatorAddress"
 import {
   ProcessEntitySceneResult,
   createPlaceFromContentEntityScene,
@@ -45,6 +46,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world",
   "world_name",
   "textsearch",
+  "creator_address",
 ]
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
@@ -53,6 +55,12 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (!contentEntityScene) {
     return null
   }
+
+  // Extract creator address from scene.json
+  const creatorAddress = await extractCreatorAddress(
+    contentEntityScene,
+    job.contentServerUrls![0]
+  )
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
@@ -92,7 +100,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
         },
-        { url: job.contentServerUrls![0] }
+        { url: job.contentServerUrls![0], creator: creatorAddress }
       )
       placesToProcess = {
         new: placefromContentEntity,
@@ -129,7 +137,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
         },
-        { url: job.contentServerUrls![0] }
+        { url: job.contentServerUrls![0], creator: creatorAddress }
       )
 
       let rating = null

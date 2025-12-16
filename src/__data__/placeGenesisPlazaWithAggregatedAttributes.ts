@@ -415,4 +415,5 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     world_name: null,
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
     textsearch: undefined,
+    creator_address: null,
   }

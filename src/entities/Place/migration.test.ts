@@ -9,7 +9,10 @@ import {
 } from "./migration"
 import { PlaceAttributes } from "./types"
 import { entitySceneGenesisPlaza } from "../../__data__/entitySceneGenesisPlaza"
-import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
+import {
+  newPlaceGenesisPlaza,
+  placeGenesisPlaza,
+} from "../../__data__/placeGenesisPlaza"
 
 export const attributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -26,6 +29,7 @@ export const attributes: Array<keyof PlaceAttributes> = [
   "highlighted",
   "disabled",
   "disabled_at",
+  "creator_address",
 ]
 
 test("silly test", () => {
@@ -103,8 +107,8 @@ describe("createInsertQuery", () => {
     const insertQuery =
       "INSERT INTO places \
       (title,description,image,highlighted_image,owner,positions,\
-        base_position,world_name,contact_name,contact_email,content_rating,highlighted,disabled,disabled_at) \
-      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)"
+        base_position,world_name,contact_name,contact_email,content_rating,highlighted,disabled,disabled_at,creator_address) \
+      VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       insertQuery.replace(/\n|\r|\s/g, "")
     )
@@ -118,7 +122,7 @@ describe("createUpdateQuery", () => {
       "UPDATE places SET \
        title=$1, description=$2, image=$3, highlighted_image=$4, owner=$5, positions=$6, \
        base_position=$7, world_name=$8, contact_name=$9, contact_email=$10, content_rating=$11, highlighted=$12, \
-       disabled=$13, disabled_at=$14 \
+       disabled=$13, disabled_at=$14, creator_address=$15 \
        WHERE positions &&'{\"-9,-9\"}'"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       updateQuery.replace(/\n|\r|\s/g, "")
@@ -170,9 +174,10 @@ describe("createPlaceFromDefaultPlaces", () => {
       { base_position: "-9,-9" },
     ])
 
+    console.log(data)
     expect(data).toEqual([
       {
-        ...placeGenesisPlaza,
+        ...newPlaceGenesisPlaza,
         contact_name: data[0].contact_name,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,

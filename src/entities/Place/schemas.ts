@@ -85,6 +85,12 @@ export const getPlaceListQuerySchema = schema({
       nullable: true as any,
       pattern: "^0x[a-fA-F0-9]{40}$",
     },
+    creator_address: {
+      type: "string",
+      description: "Filter places by creator address",
+      nullable: true as any,
+      pattern: "^0x[a-fA-F0-9]{40}$",
+    },
   },
 })
 
@@ -270,6 +276,14 @@ export const placeSchema = schema({
       type: "array",
       description: "A list of the Place's categories",
       items: { type: "string" },
+    },
+    creator_address: {
+      type: "string",
+      minLength: 0,
+      maxLength: 42,
+      description: "The creator's wallet address",
+      pattern: "^0x[a-fA-F0-9]{40}$",
+      nullable: true as any,
     },
   },
 })
