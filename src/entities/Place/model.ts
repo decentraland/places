@@ -1025,6 +1025,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
+        ${conditional(
+          !!options.creator_address,
+          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
+        )}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -1049,6 +1053,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_highlighted"
       | "search"
       | "categories"
+      | "creator_address"
     >
   ) {
     const isMissingEthereumAddress =
@@ -1113,6 +1118,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(!!options.search, SQL` AND rank > 0`)}
         ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
+        ${conditional(
+          !!options.creator_address,
+          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
+        )}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
