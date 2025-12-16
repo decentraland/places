@@ -297,6 +297,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           })`
         )}
         ${conditional(
+          !!options.creator_address,
+          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
+        )}
+        ${conditional(
           !!options.ids,
           SQL` AND p.id IN ${values(options.ids || [])}`
         )}
@@ -325,6 +329,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "categories"
       | "owner"
       | "operatedPositions"
+      | "creator_address"
     >
   ) {
     const isMissingEthereumAddress =
@@ -385,6 +390,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
                 )`
               : SQL``
           })`
+        )}
+        ${conditional(
+          !!options.creator_address,
+          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
     `
     const results: { total: string }[] = await this.namedQuery(

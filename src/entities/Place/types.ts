@@ -94,6 +94,7 @@ export type GetPlaceListQuery = {
   search: string
   categories: string[]
   owner?: string
+  creator_address?: string
 }
 
 export type PlaceListOptions = {
@@ -107,6 +108,7 @@ export type PlaceListOptions = {
   search: string
   categories: string[]
   owner?: string
+  creator_address?: string
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {
