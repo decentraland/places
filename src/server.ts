@@ -38,27 +38,27 @@ import worldRoute from "./entities/World/routes"
 import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
 
 const tasks = tasksManager()
-// tasks.use(
-//   createSceneConsumerTask(
-//     new SQS({
-//       apiVersion: "latest",
-//       region: env("AWS_REGION"),
-//       endpoint: env("AWS_ENDPOINT"),
-//     }),
-//     {
-//       AttributeNames: ["SentTimestamp"],
-//       MaxNumberOfMessages: 10,
-//       MessageAttributeNames: ["All"],
-//       QueueUrl: env("QUEUE_URL")!,
-//       WaitTimeSeconds: 15,
-//       VisibilityTimeout: 600,
-//     }
-//   )
-// )
+tasks.use(
+  createSceneConsumerTask(
+    new SQS({
+      apiVersion: "latest",
+      region: env("AWS_REGION"),
+      endpoint: env("AWS_ENDPOINT"),
+    }),
+    {
+      AttributeNames: ["SentTimestamp"],
+      MaxNumberOfMessages: 10,
+      MessageAttributeNames: ["All"],
+      QueueUrl: env("QUEUE_URL")!,
+      WaitTimeSeconds: 15,
+      VisibilityTimeout: 600,
+    }
+  )
+)
 
-// tasks.use(checkPoisForCategoryUpdate)
-// tasks.use(hotScenesUpdate)
-// tasks.use(worldsLiveDataUpdate)
+tasks.use(checkPoisForCategoryUpdate)
+tasks.use(hotScenesUpdate)
+tasks.use(worldsLiveDataUpdate)
 
 const app = express()
 app.set("x-powered-by", false)
