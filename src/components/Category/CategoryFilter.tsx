@@ -21,7 +21,8 @@ export const CategoryFilter = (props: CategoryFilterProps) => {
   const l = useFormatMessage()
 
   const handleClick = useCallback(
-    (e) => onChange && onChange(e, { active: !active, category }),
+    (e: React.MouseEvent<HTMLSpanElement, MouseEvent>) =>
+      onChange && onChange(e, { active: !active, category }),
     [active, onChange, category]
   )
   return (
@@ -32,10 +33,15 @@ export const CategoryFilter = (props: CategoryFilterProps) => {
       ])}
       onClick={handleClick}
     >
-      <Filter>
-        {l(`categories.${category}`)}
-        {active && <span className="category-filter__icon">{actionIcon}</span>}
-      </Filter>
+      {
+        // @ts-expect-error decentraland-ui types missing children
+        <Filter>
+          {l(`categories.${category}`)}
+          {active && (
+            <span className="category-filter__icon">{actionIcon}</span>
+          )}
+        </Filter>
+      }
     </span>
   )
 }
