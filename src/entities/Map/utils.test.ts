@@ -1,12 +1,12 @@
+import {
+  allPlacesWithAggregates,
+  placesWithCoordinatesAggregates,
+} from "./utils"
 import { allPlacesWithAggregatedAttributes } from "../../__data__/allPlacesWithAggregatedAttributes"
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
 import { worldsLiveData } from "../../__data__/worldsLiveData"
-import {
-  allPlacesWithAggregates,
-  placesWithCoordinatesAggregates,
-} from "./utils"
 
 describe("get of AggregatePlaceAttributes", () => {
   test("should return a place of type AggregateCoordinatePlaceAttributes", () => {
@@ -16,7 +16,7 @@ describe("get of AggregatePlaceAttributes", () => {
       sceneStatsGenesisPlaza
     )
     expect(places).toEqual({
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits:
@@ -59,7 +59,7 @@ describe("get of AggregatePlaceAttributes", () => {
       { withRealmsDetail: true }
     )
     expect(places).toEqual({
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
         user_visits:

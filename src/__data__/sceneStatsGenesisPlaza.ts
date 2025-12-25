@@ -1,7 +1,7 @@
 import { SceneStatsMap } from "../entities/SceneStats/types"
 
 export const sceneStatsGenesisPlaza: SceneStatsMap = {
-  "-9,-9": {
+  "0,0": {
     yesterday: {
       users: 1506,
       sessions: 1961,

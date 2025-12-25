@@ -64,7 +64,7 @@ test("should return place if the module found it", async () => {
     data: {
       ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
-      user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+      user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
     },
   })
   expect(findOne.mock.calls.length).toBe(1)
@@ -94,7 +94,7 @@ test("should return place with Realms detail", async () => {
     data: {
       ...placeGenesisPlazaWithAggregatedAttributes,
       user_count: hotSceneGenesisPlaza.usersTotalCount,
-      user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+      user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       realms_detail: hotSceneGenesisPlaza.realms,
     },
   })
