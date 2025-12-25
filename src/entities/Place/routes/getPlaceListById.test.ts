@@ -56,17 +56,24 @@ test("should return a list of places by ids with query", async () => {
   expect(countByIds.mock.calls.length).toBe(1)
 })
 
-test("should return an error when a wrong value has been sent in the query", async () => {
+test("should use default order_by when an invalid value is sent in the query", async () => {
+  find.mockResolvedValueOnce([placeGenesisPlazaWithAggregatedAttributes])
+  countByIds.mockResolvedValueOnce(1)
+
   const request = new Request("/")
   const url = new URL("https://localhost/?order_by=fake")
 
-  expect(async () =>
-    getPlaceListById({
-      request,
-      url,
-      body: [placeGenesisPlazaWithAggregatedAttributes.id],
-    } as any)
-  ).rejects.toThrowError()
+  const placeResponse = await getPlaceListById({
+    request,
+    url,
+    body: [placeGenesisPlazaWithAggregatedAttributes.id],
+  } as any)
+
+  expect(placeResponse.body).toEqual({
+    ok: true,
+    total: 1,
+    data: [placeGenesisPlazaWithAggregatedAttributes],
+  })
 })
 
 test("should return a list of places by ids with authenticated user", async () => {
