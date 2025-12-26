@@ -88,9 +88,7 @@ erDiagram
     places ||--o{ place_categories : "has"
     categories ||--o{ place_categories : "tagged with"
     places ||--o{ user_favorites : "favorited by"
-    users ||--o{ user_favorites : "favorites"
     places ||--o{ user_likes : "rated by"
-    users ||--o{ user_likes : "rates"
     places ||--o{ place_positions : "occupies"
 ```
 
