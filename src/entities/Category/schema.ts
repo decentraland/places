@@ -18,10 +18,6 @@ const placeCategoryScheme: AjvObjectSchema = {
       description:
         "Whether the category can be displayed in the listing or not",
     },
-    places_counter: {
-      type: "number",
-      description: "Sum of places with this category",
-    },
     created_at: {
       description: "the time the category was created",
       type: "string",
