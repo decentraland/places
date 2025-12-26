@@ -27,7 +27,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 ## Technology Stack
 
 - **Runtime**: Node.js 18.x (see `.nvmrc`)
-- **Framework**: Express.js (API) + Gatsby 4.x (Frontend)
+- **Framework**: Express.js (API) + Gatsby 4.x (Frontend) + React 18.x
 - **Language**: TypeScript 4.7.x
 - **Database**: PostgreSQL with `node-pg-migrate` for migrations
 - **Message Queue**: AWS SQS (LocalStack for local development)
