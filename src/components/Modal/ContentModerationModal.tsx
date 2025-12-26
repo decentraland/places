@@ -41,12 +41,14 @@ export default React.memo(function ContentModerationModal(
   const l = useFormatMessage()
 
   const handleAction = useCallback(
-    (e) => onActionClick && onActionClick(e, props),
+    (e: React.MouseEvent<HTMLButtonElement>) =>
+      onActionClick && onActionClick(e, props),
     [onActionClick]
   )
 
   const handleClose = useCallback(
-    (e) => onClose && onClose(e, { ...props, open: false }),
+    (e: React.MouseEvent<HTMLButtonElement>) =>
+      onClose && onClose(e, { ...props, open: false }),
     [onClose]
   )
 

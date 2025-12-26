@@ -452,6 +452,7 @@ export default function IndexPage() {
               </div>
             )}
             {!isMobile && (
+              // @ts-expect-error decentraland-ui types missing children
               <HeaderMenu stackable>
                 <HeaderMenu.Left>
                   <SearchInput

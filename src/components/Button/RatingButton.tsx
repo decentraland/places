@@ -21,7 +21,8 @@ export default React.memo(function RatingButton(props: RatingButtonProps) {
   const rating = props.rating.toLowerCase()
 
   const handleOnClick = useCallback(
-    (e) => onChangeRating && onChangeRating(e, props),
+    (e: React.MouseEvent<HTMLDivElement>) =>
+      onChangeRating && onChangeRating(e, props),
     [props, onChangeRating]
   )
   return (

@@ -60,7 +60,7 @@ describe("validatePlacesWorlds", () => {
 describe("createPlaceFromEntityScene", () => {
   test("should return a place with the correct data", async () => {
     const place = createPlaceFromEntityScene(entitySceneGenesisPlaza, {
-      base_position: "-9,-9",
+      base_position: "0,0",
     })
     expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
       ...placeGenesisPlaza,
@@ -83,7 +83,7 @@ describe("createPlaceFromEntityScene", () => {
         },
       },
       {
-        base_position: "-9,-9",
+        base_position: "0,0",
       }
     )
     expect({ ...place, deployed_at: placeGenesisPlaza.deployed_at }).toEqual({
@@ -113,13 +113,13 @@ describe("createInsertQuery", () => {
 
 describe("createUpdateQuery", () => {
   test("should return a query with the correct query string", async () => {
-    const query = createUpdateQuery("-9,-9", attributes)
+    const query = createUpdateQuery("0,0", attributes)
     const updateQuery =
       "UPDATE places SET \
        title=$1, description=$2, image=$3, highlighted_image=$4, owner=$5, positions=$6, \
        base_position=$7, world_name=$8, contact_name=$9, contact_email=$10, content_rating=$11, highlighted=$12, \
        disabled=$13, disabled_at=$14 \
-       WHERE positions &&'{\"-9,-9\"}'"
+       WHERE positions &&'{\"0,0\"}'"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       updateQuery.replace(/\n|\r|\s/g, "")
     )
@@ -128,9 +128,9 @@ describe("createUpdateQuery", () => {
 
 describe("createDeleteQuery", () => {
   test("should return a query with the correct query string", async () => {
-    const query = createDeleteQuery(["-9,-9", "-10,-10"])
+    const query = createDeleteQuery(["0,0", "-10,-10"])
     const deleteQuery =
-      'DELETE FROM places WHERE positions && \'{"-9,-9","-10,-10"}\''
+      'DELETE FROM places WHERE positions && \'{"0,0","-10,-10"}\''
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
@@ -140,12 +140,12 @@ describe("createDeleteQuery", () => {
 describe("createUpdatePlacesAndWorldsQuery", () => {
   test("should return a query with the correct query string for updating a Place", async () => {
     const place = {
-      base_position: "-9,-9",
+      base_position: "0,0",
     }
     const keys = attributes.filter((attr) => attr in place)
     const query = createUpdatePlacesAndWorldsQuery(place, keys)
     const deleteQuery =
-      "UPDATE places SET base_position=$1 WHERE '-9,-9' = ANY(\"positions\")"
+      "UPDATE places SET base_position=$1 WHERE '0,0' = ANY(\"positions\")"
     expect(query.replace(/\n|\r|\s/g, "")).toEqual(
       deleteQuery.replace(/\n|\r|\s/g, "")
     )
@@ -166,9 +166,7 @@ describe("createUpdatePlacesAndWorldsQuery", () => {
 
 describe("createPlaceFromDefaultPlaces", () => {
   test("should return a place", async () => {
-    const data = await createPlaceFromDefaultPlaces([
-      { base_position: "-9,-9" },
-    ])
+    const data = await createPlaceFromDefaultPlaces([{ base_position: "0,0" }])
 
     expect(data).toEqual([
       {
