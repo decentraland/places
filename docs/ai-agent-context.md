@@ -81,11 +81,11 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 ## Database Notes
 
 - **Primary Keys**: UUIDs for places, Ethereum addresses (text, 42 chars) for users
-- **Indexing**: Optimized indexes on `disabled + positions` for place queries, `active + places_counter` for categories
+- **Indexing**: Optimized indexes on `disabled + positions` for place queries, `active` for categories
 - **Full-Text Search**: PostgreSQL `textsearch` column with tsvector on title, description, owner for place discovery
 - **Soft Deletes**: Places use `disabled` boolean and `disabled_at` timestamp (not physically deleted)
 - **Timestamps**: All tables include `created_at` and `updated_at` with timezone support
-- **User Interactions**: Composite keys on `(user_address, place_id)` for likes and favorites tables
+- **User Interactions**: Composite keys on `(place_id, user)` for likes and favorites tables
 - **Category Relationships**: Many-to-many via `place_categories` pivot table with automatic POI categorization
 - **Migrations**: Managed via `node-pg-migrate` with configuration in `package.json`, using `.env.development` for connection
 
@@ -96,7 +96,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 - `categories`: Place categories with name, active status, i18n translations
 - `place_categories`: Many-to-many relationships between places and categories
 - `user_favorites`: User's favorited places with timestamps
-- `user_likes`: User likes/dislikes with like_vp (voting power) weighting
+- `user_likes`: User likes/dislikes with VP-weighted scoring
 
 ## Project Structure
 

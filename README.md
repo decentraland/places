@@ -18,6 +18,7 @@
 - [Testing](#testing)
 - [Troubleshooting](#troubleshooting)
 - [AI Agent Context](#ai-agent-context)
+- [Additional Documentation](#additional-documentation)
 
 ## Features
 
@@ -187,8 +188,8 @@ Create a `.env.development` file in the project root with the following variable
 | `AWS_ACCESS_KEY`                   | AWS access key for S3 report uploads          | -                                    | `AKIA...`                                 |
 | `AWS_ACCESS_SECRET`                | AWS secret key for S3 report uploads          | -                                    | `xxx...`                                  |
 | `AWS_BUCKET_NAME`                  | S3 bucket name for content moderation reports | -                                    | `content-moderation-bucket`               |
-| `BOOSTRAP_USER`                    | Initial admin user wallet address             | -                                    | `0x...`                                   |
-| `BOOSTRAP_CATALYST`                | Default Catalyst server URL                   | -                                    | `https://peer.decentraland.org`           |
+| `BOOTSTRAP_USER`                   | Initial admin user wallet address             | -                                    | `0x...`                                   |
+| `BOOTSTRAP_CATALYST`               | Default Catalyst server URL                   | -                                    | `https://peer.decentraland.org`           |
 | `PLACES_URL`                       | Places API base URL                           | -                                    | `https://localhost:8000/api`              |
 | `PLACES_ROOT_URL`                  | Places frontend base URL                      | -                                    | `https://localhost:8000`                  |
 | `PLACES_BASE_URL`                  | Public-facing places URL                      | `https://decentraland.org/places`    | -                                         |
@@ -522,6 +523,8 @@ For detailed information about the service architecture, key concepts, and techn
 
 ## Additional Documentation
 
+- **[OpenAPI Specification](docs/openapi.yaml)** - Complete REST API documentation with schemas, examples, and authentication details
+- **[Database Schemas](docs/database-schemas.md)** - Detailed database schema documentation with ERD diagram, constraints, and business rules
 - **[Database Operations](docs/database-operations.md)** - Commands for clearing and re-populating the database
 - **[SQS Setup](docs/sqs-setup.md)** - Manual LocalStack setup and SQS message format details
 - **[Project Structure](docs/project-structure.md)** - Gatsby + Node.js architecture overview
