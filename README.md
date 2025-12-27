@@ -75,3 +75,7 @@ npm run migrate up       # Database migrations
 npm run test:sqs-message # Test SQS integration
 docker-compose up -d     # Start services
 ```
+
+## AI Agent Context
+
+For detailed AI Agent context, see [docs/ai-agent-context.md](docs/ai-agent-context.md).
