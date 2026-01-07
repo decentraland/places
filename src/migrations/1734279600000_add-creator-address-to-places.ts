@@ -11,8 +11,10 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       type: Type.Address,
     },
   })
+  pgm.addIndex(PlaceModel.tableName, "creator_address")
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
+  pgm.dropIndex(PlaceModel.tableName, "creator_address")
   pgm.dropColumn(PlaceModel.tableName, "creator_address")
 }

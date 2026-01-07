@@ -81,8 +81,8 @@ export function createPlaceFromEntityScene(
     world_name: null,
     categories: [],
     textsearch: undefined,
-    ...data,
     creator_address: null,
+    ...data,
   }
 
   return placeParsed
