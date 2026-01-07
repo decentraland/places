@@ -445,6 +445,7 @@ export default function WorldsPage() {
               </div>
             )}
             {!isMobile && (
+              // @ts-expect-error decentraland-ui types missing children
               <HeaderMenu stackable>
                 <HeaderMenu.Left>
                   <SearchInput

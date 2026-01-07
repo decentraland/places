@@ -41,7 +41,7 @@ test("should return a list of places with no query", async () => {
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })
@@ -76,7 +76,7 @@ test("should return a list of places with query", async () => {
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })
@@ -108,7 +108,7 @@ test("should return a list of places with order by most_active", async () => {
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })
@@ -140,7 +140,7 @@ test("should return a list of places with Realm details", async () => {
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         realms_detail: hotSceneGenesisPlaza.realms,
       },
     ],
@@ -201,7 +201,7 @@ test("should return a list of places with owner parameter including operated lan
       {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })

@@ -1,5 +1,6 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 
+import { getAllPlacesList } from "./getAllPlacesList"
 import { allPlacesWithAggregatedAttributes } from "../../../__data__/allPlacesWithAggregatedAttributes"
 import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
@@ -8,7 +9,6 @@ import PlaceModel from "../../Place/model"
 import * as hotScenes from "../../RealmProvider/utils"
 import * as sceneStats from "../../SceneStats/utils"
 import * as worldsUtils from "../../World/utils"
-import { getAllPlacesList } from "./getAllPlacesList"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenes, "getHotScenes")
@@ -43,7 +43,7 @@ test("should return a list of places with no query", async () => {
       {
         ...allPlacesWithAggregatedAttributes[0],
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
       {
         ...allPlacesWithAggregatedAttributes[1],
@@ -71,7 +71,7 @@ test("should return a list of places with query", async () => {
   worldsContentServerLiveData.mockReturnValueOnce(worldsLiveData)
   const request = new Request("/")
   const url = new URL(
-    "https://localhost/?position=-9,-9&limit=1&offset=1&order_by=like_rate&order=asc"
+    "https://localhost/?position=0,0&limit=1&offset=1&order_by=like_rate&order=asc"
   )
   const placeResponse = await getAllPlacesList({
     request,
@@ -85,7 +85,7 @@ test("should return a list of places with query", async () => {
       {
         ...allPlacesWithAggregatedAttributes[0],
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })
@@ -122,7 +122,7 @@ test("should return a list of places with order by most_active", async () => {
       {
         ...allPlacesWithAggregatedAttributes[0],
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
       },
     ],
   })
@@ -153,7 +153,7 @@ test("should return a list of places with Realm details", async () => {
       {
         ...allPlacesWithAggregatedAttributes[0],
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         realms_detail: hotSceneGenesisPlaza.realms,
       },
       {

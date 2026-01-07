@@ -86,6 +86,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
       }}
     >
       <div className="place-featured__overlay" />
+      {/* @ts-expect-error decentraland-ui types missing children */}
       <Hero>
         <Hero.Header>
           <div className="place-featured__label-container">

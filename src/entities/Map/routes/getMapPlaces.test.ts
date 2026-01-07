@@ -1,12 +1,12 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 
+import { getMapPlaces } from "./getMapPlaces"
 import { hotSceneGenesisPlaza } from "../../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza"
 import PlaceModel from "../../Place/model"
 import * as hotScenes from "../../RealmProvider/utils"
 import * as sceneStats from "../../SceneStats/utils"
-import { getMapPlaces } from "./getMapPlaces"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenes, "getHotScenes")
@@ -37,10 +37,10 @@ test("should return a object of places with no query", async () => {
     ok: true,
     total: 1,
     data: {
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         positions: undefined,
       },
     },
@@ -62,7 +62,7 @@ test("should return a object of places with query", async () => {
   )
   const request = new Request("/")
   const url = new URL(
-    "https://localhost/?position=-9,-9&limit=1&offset=1&order_by=like_rate&order=asc"
+    "https://localhost/?position=0,0&limit=1&offset=1&order_by=like_rate&order=asc"
   )
   const placeResponse = await getMapPlaces({
     request,
@@ -73,10 +73,10 @@ test("should return a object of places with query", async () => {
     ok: true,
     total: 1,
     data: {
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         positions: undefined,
       },
     },
@@ -106,10 +106,10 @@ test("should return a object of places with order by most_active", async () => {
     ok: true,
     total: 1,
     data: {
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         positions: undefined,
       },
     },
@@ -139,10 +139,10 @@ test("should return a object of places with Realm details", async () => {
     ok: true,
     total: 1,
     data: {
-      ["-9,-9"]: {
+      ["0,0"]: {
         ...placeGenesisPlazaWithAggregatedAttributes,
         user_count: hotSceneGenesisPlaza.usersTotalCount,
-        user_visits: sceneStatsGenesisPlaza["-9,-9"].last_30d.users,
+        user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
         realms_detail: hotSceneGenesisPlaza.realms,
         positions: undefined,
       },

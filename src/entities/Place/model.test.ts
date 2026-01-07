@@ -47,13 +47,13 @@ describe(`findEnabledByPositions`, () => {
   })
   test(`should return a list of places matching the parameters sent`, async () => {
     namedQuery.mockResolvedValue([placeGenesisPlaza])
-    expect(await PlaceModel.findEnabledByPositions(["-9,-9"])).toEqual([
+    expect(await PlaceModel.findEnabledByPositions(["0,0"])).toEqual([
       placeGenesisPlaza,
     ])
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_enabled_by_positions")
-    expect(sql.values).toEqual(["-9,-9"])
+    expect(sql.values).toEqual(["0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT * FROM "places"
@@ -154,7 +154,7 @@ describe(`findWithAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         search: "",
@@ -164,7 +164,7 @@ describe(`findWithAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual(["-9,-9", 1, 0])
+    expect(sql.values).toEqual(["0,0", 1, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
@@ -191,7 +191,7 @@ describe(`findWithAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -205,7 +205,7 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "-9,-9",
+      "0,0",
       1,
       0,
     ])
@@ -235,7 +235,7 @@ describe(`findWithAggregates`, () => {
         limit: 1000,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -250,7 +250,7 @@ describe(`findWithAggregates`, () => {
       userLikeTrue.user,
       userLikeTrue.user,
       "decentraland:*&atlas:*",
-      "-9,-9",
+      "0,0",
       100,
       0,
     ])
@@ -283,7 +283,7 @@ describe(`findWithAggregates`, () => {
         limit: 1000,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -302,7 +302,7 @@ describe(`findWithAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -317,7 +317,7 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "-9,-9",
+      "0,0",
       "0x1234567890123456789012345678901234567890",
       1,
       0,
@@ -349,7 +349,7 @@ describe(`findWithAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -365,7 +365,7 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "-9,-9",
+      "0,0",
       "0x1234567890123456789012345678901234567890",
       "12,14",
       "-4,34",
@@ -403,7 +403,7 @@ describe(`findWithAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -418,7 +418,7 @@ describe(`findWithAggregates`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "-9,-9",
+      "0,0",
       placeGenesisPlaza.id,
       1,
       0,
@@ -450,7 +450,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "",
         categories: [],
       })
@@ -458,7 +458,7 @@ describe(`countPlaces`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual(["-9,-9"])
+    expect(sql.values).toEqual(["0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -481,7 +481,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "decentraland atlas",
         categories: [],
       })
@@ -489,7 +489,7 @@ describe(`countPlaces`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual(["decentraland:*&atlas:*", "-9,-9"])
+    expect(sql.values).toEqual(["decentraland:*&atlas:*", "0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -512,7 +512,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         user: "ABC",
         search: "asdads",
         categories: [],
@@ -525,7 +525,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         user: "ABC",
         search: "",
         categories: [],
@@ -538,7 +538,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "",
         categories: [],
         owner: "0x1234567890123456789012345678901234567890",
@@ -548,7 +548,7 @@ describe(`countPlaces`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
     expect(sql.values).toEqual([
-      "-9,-9",
+      "0,0",
       "0x1234567890123456789012345678901234567890",
     ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
@@ -575,7 +575,7 @@ describe(`countPlaces`, () => {
       await PlaceModel.countPlaces({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "",
         categories: [],
         owner: "0x1234567890123456789012345678901234567890",
@@ -586,7 +586,7 @@ describe(`countPlaces`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
     expect(sql.values).toEqual([
-      "-9,-9",
+      "0,0",
       "0x1234567890123456789012345678901234567890",
       "12,14",
       "-4,34",
@@ -706,7 +706,7 @@ describe(`findWithHotScenes`, () => {
           only_favorites: false,
 
           only_highlighted: false,
-          positions: ["-9,-9"],
+          positions: ["0,0"],
           order_by: "created_at",
           order: "desc",
           search: "",
@@ -723,7 +723,7 @@ describe(`findWithHotScenes`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_agregates")
-    expect(sql.values).toEqual(["-9,-9", 100, 0])
+    expect(sql.values).toEqual(["0,0", 100, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.* , false as user_favorite , false as "user_like" , false as "user_dislike"
@@ -1171,7 +1171,7 @@ describe(`findWithCoordinatesAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         search: "de",
@@ -1189,7 +1189,7 @@ describe(`findWithCoordinatesAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         search: "",
@@ -1199,7 +1199,7 @@ describe(`findWithCoordinatesAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("find_with_coordinates_aggregates")
-    expect(sql.values).toEqual(["-9,-9", 1, 0])
+    expect(sql.values).toEqual(["0,0", 1, 0])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , false as user_favorite , false as user_like , false as user_dislike
@@ -1228,7 +1228,7 @@ describe(`findWithCoordinatesAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -1242,7 +1242,7 @@ describe(`findWithCoordinatesAggregates`, () => {
     expect(sql.values).toEqual([
       userLikeTrue.user,
       userLikeTrue.user,
-      "-9,-9",
+      "0,0",
       1,
       0,
     ])
@@ -1276,7 +1276,7 @@ describe(`findWithCoordinatesAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -1291,7 +1291,7 @@ describe(`findWithCoordinatesAggregates`, () => {
       userLikeTrue.user,
       userLikeTrue.user,
       "decentraland:*&atlas:*",
-      "-9,-9",
+      "0,0",
       1,
       0,
     ])
@@ -1327,7 +1327,7 @@ describe(`findWithCoordinatesAggregates`, () => {
         limit: 1,
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         order_by: "created_at",
         order: "desc",
         user: userLikeTrue.user,
@@ -1343,7 +1343,7 @@ describe(`findWithCoordinatesAggregates`, () => {
       userLikeTrue.user,
       "art",
       "decentraland:*&atlas:*",
-      "-9,-9",
+      "0,0",
       1,
       0,
     ])
@@ -1357,7 +1357,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
       await PlaceModel.countPlacesWithCoordinatesAggregates({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "",
         categories: [],
       })
@@ -1365,7 +1365,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual(["-9,-9"])
+    expect(sql.values).toEqual(["0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -1390,7 +1390,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
       await PlaceModel.countPlacesWithCoordinatesAggregates({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         search: "decentraland atlas",
         categories: [],
       })
@@ -1398,7 +1398,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
     expect(namedQuery.mock.calls.length).toBe(1)
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("count_places")
-    expect(sql.values).toEqual(["decentraland:*&atlas:*", "-9,-9"])
+    expect(sql.values).toEqual(["decentraland:*&atlas:*", "0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
         SELECT
@@ -1422,7 +1422,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
       await PlaceModel.countPlacesWithCoordinatesAggregates({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         user: "ABC",
         search: "a",
         categories: [],
@@ -1436,7 +1436,7 @@ describe(`countPlacesWithCoordinatesAggregates`, () => {
       await PlaceModel.countPlacesWithCoordinatesAggregates({
         only_favorites: false,
         only_highlighted: false,
-        positions: ["-9,-9"],
+        positions: ["0,0"],
         user: "ABC",
         search: "asdkad",
         categories: [],

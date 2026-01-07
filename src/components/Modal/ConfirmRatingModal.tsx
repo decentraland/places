@@ -26,7 +26,8 @@ export default React.memo(function ConfirmRatingModal(
   const l = useFormatMessage()
 
   const handleClose = useCallback(
-    (e) => onClose && onClose(e, { ...props, open: false }),
+    (e: React.MouseEvent<HTMLButtonElement>) =>
+      onClose && onClose(e, { ...props, open: false }),
     [onClose]
   )
 
