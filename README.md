@@ -37,57 +37,7 @@
 - AWS SQS - Message queue for deployment notifications
 - PostgreSQL - Primary data store
 
-## API Documentation
-
-The service exposes a comprehensive REST API under `/api`. Full API documentation is available in the [OpenAPI specification](docs/openapi.yaml).
-
-### Quick Reference
-
-| Category         | Endpoints                                            | Description                                                                                     |
-| ---------------- | ---------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **Places**       | `/api/places`, `/api/places/:id`                     | List, search, and retrieve Genesis City scenes with filtering by position, category, popularity |
-| **Worlds**       | `/api/worlds`, `/api/world_names`                    | Discover and query Decentraland Worlds (private virtual spaces)                                 |
-| **Map**          | `/api/map`, `/api/map/places`                        | Coordinate-based queries optimized for map visualization                                        |
-| **Categories**   | `/api/categories`                                    | Browse available categories (art-gallery, social, game, etc.)                                   |
-| **Interactions** | `/api/places/:id/likes`, `/api/places/:id/favorites` | User ratings and favorites (requires authentication)                                            |
-| **Reports**      | `/api/report`                                        | Generate signed URLs for content moderation reports (requires authentication)                   |
-| **Social**       | `/places/place/`, `/places/world/`                   | Metadata injection for social media sharing                                                     |
-
-### Common Query Parameters
-
-- `limit` / `offset` - Pagination (max 100 for places/worlds, higher for maps)
-- `order_by` - Sort by: `like_score`, `most_active`, `user_visits`, `created_at`, `updated_at`
-- `search` - Full-text search in titles and descriptions (min 3 characters)
-- `categories[]` - Filter by categories (multiple allowed)
-- `positions[]` - Filter by parcel coordinates (format: `"x,y"`)
-- `only_favorites` - Show only user favorites (requires authentication)
-
-### Response Format
-
-All API responses follow a consistent structure:
-
-```json
-{
-  "ok": true,
-  "data": [...],
-  "total": 100
-}
-```
-
-Error responses return:
-
-```json
-{
-  "ok": false,
-  "error": "Error message"
-}
-```
-
-### Authentication
-
-Some endpoints require authentication using Decentraland's wallet-based authentication with Bearer tokens. See the [OpenAPI specification](docs/openapi.yaml) for detailed authentication requirements and endpoint documentation.
-
-### Interactive Documentation
+### API Documentation
 
 For complete API documentation including:
 
@@ -319,48 +269,6 @@ Tests are written using **Jest** and **TypeScript**, organized by entity in `src
 ### Testing Standards
 
 This project follows the [Decentraland Testing Standards](https://docs.decentraland.org/contributor/contributor-guides/testing-standards), which emphasize:
-
-- **Clarity**: Tests should be self-documenting and comprehensible
-- **Maintainability**: Tests should adapt easily when requirements evolve
-- **Isolation**: Each test operates independently without side effects
-- **Coverage**: Critical paths and edge cases require thorough testing
-- **Value**: Tests should provide genuine confidence in code functionality
-
-#### Key Principles
-
-- **Structure**: Use `describe` for contexts (with "when"/"and") and `it` for behaviors (with "should")
-- **Setup**: Use `beforeEach` for test setup, `afterEach` for cleanup
-- **Isolation**: Each test must be independent with proper mock cleanup
-- **Mocking**: Use `jest.fn()` for mocks, scope mocks to specific describe blocks
-- **Behavior Testing**: Test what the code does, not how it does it
-
-**Example:**
-
-```typescript
-describe("when processing a deployment message", () => {
-  let mockMessage: SQSMessage
-
-  beforeEach(() => {
-    mockMessage = createMockSQSMessage()
-  })
-
-  afterEach(() => {
-    jest.resetAllMocks()
-  })
-
-  describe("and the deployment is valid", () => {
-    it("should create a new place record", async () => {
-      // test implementation
-    })
-  })
-
-  describe("and the deployment is invalid", () => {
-    it("should log an error and skip the message", async () => {
-      // test implementation
-    })
-  })
-})
-```
 
 For project-specific testing guidelines, see [Testing Standards](.cursor/rules/dcl-testing.mdc).
 
