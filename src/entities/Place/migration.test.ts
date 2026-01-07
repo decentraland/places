@@ -9,10 +9,7 @@ import {
 } from "./migration"
 import { PlaceAttributes } from "./types"
 import { entitySceneGenesisPlaza } from "../../__data__/entitySceneGenesisPlaza"
-import {
-  newPlaceGenesisPlaza,
-  placeGenesisPlaza,
-} from "../../__data__/placeGenesisPlaza"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 
 export const attributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -175,7 +172,7 @@ describe("createPlaceFromDefaultPlaces", () => {
     console.log(data)
     expect(data).toEqual([
       {
-        ...newPlaceGenesisPlaza,
+        ...placeGenesisPlaza,
         contact_name: data[0].contact_name,
         created_at: data[0].created_at,
         updated_at: data[0].updated_at,
