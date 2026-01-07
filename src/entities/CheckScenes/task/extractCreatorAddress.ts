@@ -2,57 +2,6 @@ import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import fetch from "node-fetch"
 
 type SceneJson = {
-  display?: {
-    title?: string
-    description?: string
-    navmapThumbnail?: string
-    favicon?: string
-  }
-  contact?: {
-    name?: string
-    email?: string
-  }
-  owner?: string
-  scene?: {
-    parcels?: string[]
-    base?: string
-  }
-  communications?: {
-    type?: string
-    signalling?: string
-  }
-  policy?: {
-    contentRating?: string
-    fly?: boolean
-    voiceEnabled?: boolean
-    blacklist?: string[]
-  }
-  main?: string
-  tags?: string[]
-  spawnPoints?: Array<{
-    name?: string
-    default?: boolean
-    position?: { x: number[]; y: number[]; z: number[] }
-    cameraTarget?: { x: number; y: number; z: number }
-  }>
-  requiredPermissions?: string[]
-  featureToggles?: Record<string, boolean>
-  worldConfiguration?: Record<string, any>
-  source?: {
-    version?: number
-    origin?: string
-    projectId?: string
-    point?: { x: number; y: number }
-    rotation?: string
-    layout?: { rows: number; cols: number }
-  }
-  _baseUrl?: string
-  _mappings?: Record<string, string>
-  _entityId?: string
-  _sceneId?: string
-  _timestamp?: number
-  _pointers?: string[]
-  _deploymentSource?: string
   creator?: string
 }
 
