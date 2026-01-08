@@ -56,7 +56,7 @@ See the **[OpenAPI Specification](docs/openapi.yaml)** which can be viewed with 
 
 The database schema includes the following main tables:
 
-- `places` - Main table storing scene and world information
+- `places` - Main table storing scene and world information (includes creator_address for creator-based queries)
 - `users` - Registered users with permissions
 - `categories` - Place categories for organization
 - `place_categories` - Many-to-many relationship between places and categories

@@ -105,6 +105,7 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     world_name: null,
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
     textsearch: undefined,
+    creator_address: null,
   },
   {
     id: "a7ce87fa-df3c-4a2f-bca6-bd2fe794d51a",
@@ -136,5 +137,6 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     world_name: "test.dcl.eth",
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
     textsearch: undefined,
+    creator_address: null,
   },
 ]

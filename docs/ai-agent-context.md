@@ -61,6 +61,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **Hot Scenes**: Places with active users, tracked via Catalyst realm provider with real-time user counts
 - **User Visits**: Unique users who visited a place in the last 30 days
 - **Highlighted Places**: Featured places with special promotion status
+- **Creator Address**: Ethereum address of the scene creator, extracted from scene metadata during deployment processing, indexed for efficient creator-based queries (used by tipping systems)
 
 ## API Specification
 
@@ -73,6 +74,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 - **Interactions**: `/api/places/:id/likes`, `/api/places/:id/favorites` (authentication required)
 - **Reports**: `/api/report` (authentication required, returns S3 signed URL)
 - **Social**: `/places/place/`, `/places/world/` (metadata injection for social sharing)
+- **Creator Queries**: `/api/places?creator_address=0x...` (lookup places by scene creator for tipping integration)
 
 **Authentication**: Bearer token authentication using Decentraland wallet signatures. Admin endpoints require additional permissions.
 
@@ -91,7 +93,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 
 **Key Tables**:
 
-- `places`: Main table with UUID, title, description, positions[], base_position, owner, content_rating, disabled, user_count, user_visits, like metrics
+- `places`: Main table with UUID, title, description, positions[], base_position, owner, creator_address, content_rating, disabled, user_count, user_visits, like metrics
 - `users`: Registered users with Ethereum addresses and permissions
 - `categories`: Place categories with name, active status, i18n translations
 - `place_categories`: Many-to-many relationships between places and categories

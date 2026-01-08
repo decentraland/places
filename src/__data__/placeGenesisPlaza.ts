@@ -101,4 +101,5 @@ export const placeGenesisPlaza: PlaceAttributes = {
   deployed_at: new Date("2022-11-14T17:22:05.307Z"),
   textsearch: undefined,
   categories: [],
+  creator_address: null,
 }

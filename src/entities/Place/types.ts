@@ -58,6 +58,7 @@ export type PlaceAttributes = {
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
   categories: string[]
+  creator_address: string | null
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {
@@ -93,6 +94,7 @@ export type GetPlaceListQuery = {
   search: string
   categories: string[]
   owner?: string
+  creator_address?: string
 }
 
 export type PlaceListOptions = {
@@ -106,6 +108,7 @@ export type PlaceListOptions = {
   search: string
   categories: string[]
   owner?: string
+  creator_address?: string
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {
