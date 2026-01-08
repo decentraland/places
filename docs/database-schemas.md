@@ -12,6 +12,7 @@ erDiagram
         text description
         text image
         text owner
+        text creator_address
         varchar_15_array positions
         varchar_15 base_position
         text contact_name
@@ -119,6 +120,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 | image             | TEXT          | YES      | NULL    | Place thumbnail image URL from navmapThumbnail                         |
 | highlighted_image | TEXT          | YES      | NULL    | Special featured image for highlighted/promoted places                 |
 | owner             | TEXT          | YES      | NULL    | Ethereum address of the place owner (0x...)                            |
+| creator_address   | TEXT          | YES      | NULL    | Ethereum address of the scene creator (0x...), extracted from metadata |
 | positions         | VARCHAR(15)[] | NO       | {}      | Array of parcel coordinates (e.g., ['52,12', '52,13'])                 |
 | base_position     | VARCHAR(15)   | NO       | -       | Primary parcel coordinate (spawn point, key for UUID persistence)      |
 | contact_name      | TEXT          | YES      | NULL    | Contact person name                                                    |
@@ -152,6 +154,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 - `(base_position)` WHERE disabled is false and world is false - Fast position lookups for scenes
 - `(updated_at)` WHERE disabled is false and world is false - Recently updated places
 - `(like_rate)` WHERE disabled is false and world is false - Popular places ranking
+- `(creator_address)` - Fast lookups by scene creator for tipping and creator queries
 
 ### Constraints
 
@@ -167,6 +170,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 - **Full-Text Search**: `textsearch` column is automatically updated via triggers on title, description, and owner changes
 - **Categories Denormalization**: The `categories` array is denormalized from `place_categories` for query performance
 - **World vs Scene**: `world=true` places use `world_name` for identification, `world=false` places use `positions` and `base_position`
+- **Creator Address**: Extracted from scene metadata during deployment processing, used for creator-based queries (e.g., tipping system integration)
 
 ---
 
