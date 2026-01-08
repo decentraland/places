@@ -36,7 +36,6 @@ const SelectedCategoriesNavbar = ({
         filtersIcon={<Close width="20" height="20" />}
       />
       <span className="clear-all-filter-btn" onClick={onClickClearAll}>
-        {/* @ts-expect-error decentraland-ui types missing children */}
         <Filter>
           <Trash width="20" height="20" /> <p>{l("pages.places.clear_all")}</p>
         </Filter>

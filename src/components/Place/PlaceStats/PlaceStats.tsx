@@ -40,7 +40,6 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
 
   return (
     <div className={TokenList.join(["place-stats", loading && "loading"])}>
-      {/* @ts-expect-error decentraland-ui types missing children */}
       <Stats title={l("components.place_stats.age_rating_label")}>
         <Header className="place-stats__rating">
           {l(`components.place_stats.age_rating_${rating}`)}
@@ -48,27 +47,22 @@ export default React.memo(function PlaceStats(props: PlaceStatsProps) {
       </Stats>
 
       {!hideUserCount && (
-        // @ts-expect-error decentraland-ui types missing children
         <Stats title={l("components.place_stats.active")}>
           <Header>{shorterNumber(place?.user_count || 0)}</Header>
         </Stats>
       )}
-      {/* @ts-expect-error decentraland-ui types missing children */}
       <Stats title={l("components.place_stats.favorites")}>
         <Header>{shorterNumber(place?.favorites || 0)}</Header>
       </Stats>
       {!place?.world && (
-        // @ts-expect-error decentraland-ui types missing children
         <Stats title={l("components.place_stats.visits")}>
           <Header>{shorterNumber(place?.user_visits || 0)}</Header>
         </Stats>
       )}
-      {/* @ts-expect-error decentraland-ui types missing children */}
       <Stats title={l("components.place_stats.updated")}>
         {Time.from(place?.deployed_at).format("D/MM/YYYY")}
       </Stats>
       {poi && (
-        // @ts-expect-error decentraland-ui types missing children
         <Stats
           title={l("components.place_stats.point_of_interest")}
           className="place-stats__point-of-interest"
