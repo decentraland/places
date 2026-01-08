@@ -33,15 +33,10 @@ export const CategoryFilter = (props: CategoryFilterProps) => {
       ])}
       onClick={handleClick}
     >
-      {
-        // @ts-expect-error decentraland-ui types missing children
-        <Filter>
-          {l(`categories.${category}`)}
-          {active && (
-            <span className="category-filter__icon">{actionIcon}</span>
-          )}
-        </Filter>
-      }
+      <Filter>
+        {l(`categories.${category}`)}
+        {active && <span className="category-filter__icon">{actionIcon}</span>}
+      </Filter>
     </span>
   )
 }
