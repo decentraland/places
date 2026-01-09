@@ -32,7 +32,8 @@ export type ProcessEntitySceneResult =
 
 export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
-  places: PlaceAttributes[]
+  places: PlaceAttributes[],
+  options: { url?: string; creator?: string | null } = {}
 ): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
   const newDeployedPlace = findNewDeployedPlace(contentEntityScene, places)
@@ -40,8 +41,11 @@ export function processContentEntityScene(
     return null
   }
   if (!samePlace) {
-    const placefromContentEntity =
-      createPlaceFromContentEntityScene(contentEntityScene)
+    const placefromContentEntity = createPlaceFromContentEntityScene(
+      contentEntityScene,
+      {},
+      options
+    )
     return {
       new: placefromContentEntity,
       rating: {
@@ -59,7 +63,8 @@ export function processContentEntityScene(
 
   const placefromContentEntity = createPlaceFromContentEntityScene(
     contentEntityScene,
-    samePlace
+    samePlace,
+    options
   )
 
   let rating = null
