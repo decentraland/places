@@ -164,7 +164,10 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const places = await PlaceModel.findEnabledByPositions(
       contentEntityScene.pointers
     )
-    placesToProcess = processContentEntityScene(contentEntityScene, places)
+    placesToProcess = processContentEntityScene(contentEntityScene, places, {
+      url: job.contentServerUrls![0],
+      creator: creatorAddress,
+    })
   }
 
   if (!placesToProcess) {
