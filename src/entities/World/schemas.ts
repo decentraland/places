@@ -214,6 +214,14 @@ export const worldSchema = schema({
       description:
         "The number of users that had visited the world in the last 30 days",
     },
+    creator_address: {
+      type: "string",
+      minLength: 0,
+      maxLength: 42,
+      description: "The creator's wallet address",
+      pattern: "^0x[a-fA-F0-9]{40}$",
+      nullable: true as any,
+    },
   },
 })
 

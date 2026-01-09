@@ -1496,6 +1496,12 @@ components:
           type: integer
           minimum: 0
           description: Visits in last 30 days
+        creator_address:
+          type: string
+          maxLength: 42
+          description: The creator's wallet address
+          pattern: '^0x[a-fA-F0-9]{40}$'
+          nullable: true
 
     Realm:
       type: object
