@@ -11,43 +11,34 @@ import {
 import CatalystAPI from "../../../api/CatalystAPI"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
-import toCanonicalPosition from "../../../utils/position/toCanonicalPosition"
-import PlaceModel from "../model"
-import { getPlaceListQuerySchema } from "../schemas"
+import PlaceModel from "../../Place/model"
+import { Permission, PlaceListOrderBy } from "../../Place/types"
+import { getWorldsLiveData } from "../../World/utils"
+import { getUnifiedDestinationsListQuerySchema } from "../schemas"
 import {
-  FindWithAggregatesOptions,
-  GetPlaceListQuery,
-  Permission,
-  PlaceListOrderBy,
+  FindUnifiedDestinationsOptions,
+  GetUnifiedDestinationsListQuery,
 } from "../types"
-import { placesWithUserCount, placesWithUserVisits } from "../utils"
-import { getPlaceMostActiveList } from "./getPlaceMostActiveList"
-import { getPlaceUserVisitsList } from "./getPlaceUserVisitsList"
+import { destinationsWithAggregates } from "../utils"
 
-export const validateGetPlaceListQuery = Router.validator<GetPlaceListQuery>(
-  getPlaceListQuerySchema
-)
+export const validateGetUnifiedDestinationsListQuery =
+  Router.validator<GetUnifiedDestinationsListQuery>(
+    getUnifiedDestinationsListQuerySchema
+  )
 
-export const getPlaceList = Router.memo(
+export const getUnifiedDestinationsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
-    if (ctx.url.searchParams.get("order_by") === PlaceListOrderBy.MOST_ACTIVE) {
-      return getPlaceMostActiveList(ctx)
-    } else if (
-      ctx.url.searchParams.get("order_by") === PlaceListOrderBy.USER_VISITS
-    ) {
-      return getPlaceUserVisitsList(ctx)
-    }
-
-    const query = await validateGetPlaceListQuery({
+    const query = await validateGetUnifiedDestinationsListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
+      names: ctx.url.searchParams.getAll("names"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
-      only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       order_by:
         oneOf(ctx.url.searchParams.get("order_by"), [
           PlaceListOrderBy.LIKE_SCORE_BEST,
+          PlaceListOrderBy.MOST_ACTIVE,
           PlaceListOrderBy.UPDATED_AT,
           PlaceListOrderBy.CREATED_AT,
         ]) || PlaceListOrderBy.LIKE_SCORE_BEST,
@@ -60,6 +51,8 @@ export const getPlaceList = Router.memo(
       creator_address: ctx.url.searchParams
         .get("creator_address")
         ?.toLowerCase(),
+      only_worlds: ctx.url.searchParams.get("only_worlds"),
+      only_places: ctx.url.searchParams.get("only_places"),
       sdk: ctx.url.searchParams.get("sdk"),
     })
 
@@ -69,19 +62,22 @@ export const getPlaceList = Router.memo(
       return new ApiResponse([], { total: 0 })
     }
 
-    const options: FindWithAggregatesOptions = {
+    const options: FindUnifiedDestinationsOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }) ?? 0,
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
+      names: query.names,
       order_by: query.order_by,
       order: query.order,
       search: query.search,
       categories: query.categories,
       owner: query.owner,
       creator_address: query.creator_address,
+      only_worlds: !!bool(query.only_worlds),
+      only_places: !!bool(query.only_places),
       sdk: query.sdk,
     }
 
@@ -110,19 +106,37 @@ export const getPlaceList = Router.memo(
       operatedPositions,
     }
 
+    const hotScenes = getHotScenes()
+
+    // Get positions from hot scenes for most active filtering
+    const hotScenesPositions =
+      query.order_by === PlaceListOrderBy.MOST_ACTIVE
+        ? hotScenes
+            .map((scene) => scene.parcels.map((parcel) => parcel.join(",")))
+            .flat()
+        : []
+
+    const finalOptions = {
+      ...enhancedOptions,
+      hotScenesPositions,
+    }
+
     const [data, total, sceneStats] = await Promise.all([
-      PlaceModel.findWithAggregates(enhancedOptions),
-      PlaceModel.countPlaces(enhancedOptions),
+      PlaceModel.findUnifiedDestinationsWithAggregates(finalOptions),
+      PlaceModel.countUnifiedDestinations(finalOptions),
       getSceneStats(),
     ])
 
-    const hotScenes = getHotScenes()
+    const worldsLiveData = getWorldsLiveData()
 
-    const response = placesWithUserVisits(
-      placesWithUserCount(data, hotScenes, {
+    const response = destinationsWithAggregates(
+      data,
+      hotScenes,
+      sceneStats,
+      worldsLiveData,
+      {
         withRealmsDetail: !!bool(query.with_realms_detail),
-      }),
-      sceneStats
+      }
     )
 
     return new ApiResponse(response, { total })

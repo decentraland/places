@@ -8,38 +8,36 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
+import { getDestinationsMostActiveList } from "./getDestinationsMostActiveList"
+import CatalystAPI from "../../../api/CatalystAPI"
+import { getHotScenes } from "../../../modules/hotScenes"
+import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../../Place/model"
-import { PlaceListOrderBy } from "../../Place/types"
-import { getHotScenes } from "../../RealmProvider/utils"
-import { getSceneStats } from "../../SceneStats/utils"
+import { Permission, PlaceListOrderBy } from "../../Place/types"
 import { getWorldsLiveData } from "../../World/utils"
-import { getAllPlacesListQuerySchema } from "../schemas"
+import { getDestinationsListQuerySchema } from "../schemas"
 import {
-  DEFAULT_MAX_LIMIT,
-  FindAllPlacesWithAggregatesOptions,
-  GetAllPlaceListQuery,
+  FindDestinationsWithAggregatesOptions,
+  GetDestinationsListQuery,
 } from "../types"
-import { allPlacesWithAggregates } from "../utils"
-import { getAllPlacesMostActiveList } from "./getAllPlacesMostActiveList"
+import { destinationsWithAggregates } from "../utils"
 
-export const validateGetPlaceListQuery = Router.validator<GetAllPlaceListQuery>(
-  getAllPlacesListQuerySchema
-)
+export const validateGetDestinationsListQuery =
+  Router.validator<GetDestinationsListQuery>(getDestinationsListQuerySchema)
 
-export const getAllPlacesList = Router.memo(
+export const getDestinationsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
     if (ctx.url.searchParams.get("order_by") === PlaceListOrderBy.MOST_ACTIVE) {
-      return getAllPlacesMostActiveList(ctx)
+      return getDestinationsMostActiveList(ctx)
     }
 
-    const query = await validateGetPlaceListQuery({
+    const query = await validateGetDestinationsListQuery({
+      positions: ctx.url.searchParams.getAll("positions"),
+      world_names: ctx.url.searchParams.getAll("world_names"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
-      only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
-      positions: ctx.url.searchParams.getAll("positions"),
-      names: ctx.url.searchParams.getAll("names"),
       order_by:
         oneOf(ctx.url.searchParams.get("order_by"), [
           PlaceListOrderBy.LIKE_SCORE_BEST,
@@ -51,10 +49,12 @@ export const getAllPlacesList = Router.memo(
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
+      owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
       creator_address: ctx.url.searchParams
         .get("creator_address")
         ?.toLowerCase(),
-      sdk: ctx.url.searchParams.get("sdk"),
+      only_worlds: ctx.url.searchParams.get("only_worlds"),
+      only_places: ctx.url.searchParams.get("only_places"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -63,34 +63,59 @@ export const getAllPlacesList = Router.memo(
       return new ApiResponse([], { total: 0 })
     }
 
-    const options: FindAllPlacesWithAggregatesOptions = {
+    const options: FindDestinationsWithAggregatesOptions = {
       user: userAuth?.address,
       offset: numeric(query.offset, { min: 0 }) ?? 0,
-      limit:
-        numeric(query.limit, { min: 0, max: DEFAULT_MAX_LIMIT }) ??
-        DEFAULT_MAX_LIMIT,
+      limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
-      names: query.names,
+      world_names: query.world_names,
       order_by: query.order_by,
       order: query.order,
       search: query.search,
       categories: query.categories,
+      owner: query.owner,
       creator_address: query.creator_address,
-      sdk: query.sdk,
+      only_worlds: !!bool(query.only_worlds),
+      only_places: !!bool(query.only_places),
     }
+
+    // If owner parameter is provided, fetch operated lands from Catalyst API
+    let operatedPositions: string[] = []
+
+    if (query.owner) {
+      try {
+        const catalystAPI = CatalystAPI.get()
+        const operatedLands = await catalystAPI.getAllOperatedLands(query.owner)
+
+        if (operatedLands && operatedLands.length > 0) {
+          operatedPositions = operatedLands
+            .map((land: Permission) => `${land.x},${land.y}`)
+            .filter(Boolean) as string[]
+        }
+      } catch (error) {
+        console.error("Error fetching operated lands:", error)
+        // Continue with normal flow even if Catalyst API fails
+      }
+    }
+
+    // Add operatedPositions to options for enhanced query
+    const enhancedOptions = {
+      ...options,
+      operatedPositions,
+    }
+
+    const [data, total, sceneStats] = await Promise.all([
+      PlaceModel.findDestinationsWithAggregates(enhancedOptions),
+      PlaceModel.countDestinations(enhancedOptions),
+      getSceneStats(),
+    ])
 
     const hotScenes = getHotScenes()
     const worldsLiveData = getWorldsLiveData()
 
-    const [data, total, sceneStats] = await Promise.all([
-      PlaceModel.findAllPlacesWithAggregates(options),
-      PlaceModel.countAllPlaces(options),
-      getSceneStats(),
-    ])
-
-    const response = allPlacesWithAggregates(
+    const response = destinationsWithAggregates(
       data,
       hotScenes,
       sceneStats,

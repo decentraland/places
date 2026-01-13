@@ -33,7 +33,7 @@ export type ProcessEntitySceneResult =
 export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[],
-  options: { url?: string; creator?: string | null } = {}
+  options: { url?: string; creator?: string | null; sdk?: string | null } = {}
 ): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
   const newDeployedPlace = findNewDeployedPlace(contentEntityScene, places)
@@ -90,7 +90,7 @@ export function processContentEntityScene(
 export function createPlaceFromContentEntityScene(
   contentEntityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {},
-  options: { url?: string; creator?: string | null } = {}
+  options: { url?: string; creator?: string | null; sdk?: string | null } = {}
 ) {
   const now = new Date()
   const title = contentEntityScene?.metadata?.display?.title || null
@@ -166,6 +166,7 @@ export function createPlaceFromContentEntityScene(
     textsearch: undefined,
     categories: [],
     creator_address: options.creator || null,
+    sdk: options.sdk || null,
   }
 
   placeParsed.textsearch = PlaceModel.textsearch(placeParsed)

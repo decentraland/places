@@ -59,6 +59,8 @@ export type PlaceAttributes = {
   textsearch: SQLStatement | string | null | undefined
   categories: string[]
   creator_address: string | null
+  /** SDK/runtime version of the scene from scene.json runtimeVersion field (e.g., "7" for SDK7) */
+  sdk: string | null
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {
@@ -95,6 +97,7 @@ export type GetPlaceListQuery = {
   categories: string[]
   owner?: string
   creator_address?: string
+  sdk?: string
 }
 
 export type PlaceListOptions = {
@@ -109,6 +112,7 @@ export type PlaceListOptions = {
   categories: string[]
   owner?: string
   creator_address?: string
+  sdk?: string
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {

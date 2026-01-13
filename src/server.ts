@@ -36,6 +36,7 @@ import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 import worldRoute from "./entities/World/routes"
 import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
+import destinationRoute from "./entities/Destination/routes"
 
 const tasks = tasksManager()
 tasks.use(
@@ -81,6 +82,7 @@ app.use("/api", [
   worldRoute,
   reportRoute,
   mapRoute,
+  destinationRoute,
 
   status(),
   handle(async () => {

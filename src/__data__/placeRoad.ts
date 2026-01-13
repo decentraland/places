@@ -30,4 +30,5 @@ export const placeRoad: PlaceAttributes = {
   textsearch: undefined,
   categories: [],
   creator_address: null,
+  sdk: null,
 }

@@ -39,6 +39,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   textsearch: undefined,
   categories: [],
   creator_address: null,
+  sdk: null,
 }
 
 export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
@@ -73,6 +74,7 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   textsearch: undefined,
   categories: [],
   creator_address: null,
+  sdk: null,
 }
 
 export const worldContentEntitySceneParalax: ContentEntityScene = {
@@ -280,4 +282,5 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   textsearch: undefined,
   categories: [],
   creator_address: null,
+  sdk: null,
 }

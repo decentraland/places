@@ -252,6 +252,16 @@ paths:
             type: string
             pattern: '^0x[a-fA-F0-9]{40}$'
           example: "0x1234567890123456789012345678901234567890"
+        - name: sdk
+          in: query
+          description: |
+            Filter by SDK version (exact match).
+            Value is matched against the `runtimeVersion` from scene.json.
+            Example: `7` for SDK7 scenes.
+          required: false
+          schema:
+            type: string
+          example: "7"
       responses:
         '200':
           description: Successfully retrieved places
@@ -812,6 +822,180 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/WorldListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /destinations/unified:
+    get:
+      tags:
+        - Places
+        - Worlds
+      summary: List unified destinations (places + worlds)
+      security: []
+      description: |
+        Retrieve a paginated list of both places and worlds with enhanced filtering.
+        
+        **Key Features:**
+        - Combines Genesis City places and Decentraland Worlds in a single response
+        - **Highlighted destinations are always returned first**, regardless of other sorting
+        - Filter places by exact coordinates (positions)
+        - Filter worlds by name using LIKE matching (partial match)
+        - Filter by SDK version (exact match)
+        
+        **Common Use Cases:**
+        - Get all destinations: `?limit=50`
+        - Filter worlds by name pattern: `?names=art&names=gallery`
+        - Filter by SDK7: `?sdk=7`
+        - Get only places: `?only_places=true`
+        - Get only worlds: `?only_worlds=true`
+      operationId: getUnifiedDestinations
+      parameters:
+        - name: limit
+          in: query
+          description: Maximum number of destinations to return (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+        - name: offset
+          in: query
+          description: Number of destinations to skip for pagination
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: positions
+          in: query
+          description: |
+            Filter places by specific parcel coordinates (exact match).
+            Format: `"x,y"` (e.g., `"-23,-96"`).
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+              pattern: '^-?\d{1,3},-?\d{1,3}$'
+            maxItems: 1000
+          style: form
+          explode: true
+        - name: names
+          in: query
+          description: |
+            Filter worlds by name using LIKE matching (partial match, case-insensitive).
+            Example: `names=art` matches "art-gallery", "digital-art", etc.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+            maxItems: 1000
+          style: form
+          explode: true
+        - name: only_favorites
+          in: query
+          description: Show only authenticated user's favorites (requires auth)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_highlighted
+          in: query
+          description: Show only highlighted/featured destinations
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: order_by
+          in: query
+          description: |
+            Sort destinations by:
+            - `like_score`: VP-weighted like ratio (default)
+            - `most_active`: Current user count
+            - `updated_at`: Recently updated
+            - `created_at`: Newest first
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, updated_at, created_at]
+            default: like_score
+        - name: order
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: with_realms_detail
+          in: query
+          description: Include real-time realm and user count details
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: search
+          in: query
+          description: Full-text search in title, description, owner (min 3 chars)
+          required: false
+          schema:
+            type: string
+            minLength: 3
+        - name: categories
+          in: query
+          description: Filter by categories
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+          style: form
+          explode: true
+        - name: owner
+          in: query
+          description: Filter by owner's Ethereum address
+          required: false
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+        - name: creator_address
+          in: query
+          description: Filter by creator's Ethereum address
+          required: false
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+        - name: only_worlds
+          in: query
+          description: Show only worlds (excludes places)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_places
+          in: query
+          description: Show only places (excludes worlds)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: sdk
+          in: query
+          description: |
+            Filter by SDK version (exact match).
+            Example: `7` for SDK7 scenes.
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Unified destinations retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceListResponse'
         '400':
           $ref: '#/components/responses/BadRequest'
 
@@ -1395,6 +1579,11 @@ components:
           description: Per-realm user distribution (only if with_realms_detail=true)
           items:
             $ref: '#/components/schemas/Realm'
+        sdk:
+          type: string
+          description: SDK/runtime version (e.g., "7" for SDK7)
+          nullable: true
+          example: "7"
 
     World:
       type: object
@@ -1502,6 +1691,11 @@ components:
           description: The creator's wallet address
           pattern: '^0x[a-fA-F0-9]{40}$'
           nullable: true
+        sdk:
+          type: string
+          description: SDK/runtime version (e.g., "7" for SDK7)
+          nullable: true
+          example: "7"
 
     Realm:
       type: object

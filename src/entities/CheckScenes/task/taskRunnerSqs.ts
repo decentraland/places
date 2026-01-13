@@ -20,7 +20,7 @@ import {
   updateGenesisCityManifest,
 } from "../utils"
 import { DeploymentToSqs } from "./consumer"
-import { extractCreatorAddress } from "./extractCreatorAddress"
+import { extractSceneJsonData } from "./extractSceneJsonData"
 import {
   ProcessEntitySceneResult,
   createPlaceFromContentEntityScene,
@@ -47,6 +47,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world_name",
   "textsearch",
   "creator_address",
+  "sdk",
 ]
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
@@ -56,8 +57,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     return null
   }
 
-  // Extract creator address from scene.json
-  const creatorAddress = await extractCreatorAddress(
+  // Extract creator address and SDK version from scene.json
+  const sceneJsonData = await extractSceneJsonData(
     contentEntityScene,
     job.contentServerUrls![0]
   )
@@ -100,7 +101,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
         },
-        { url: job.contentServerUrls![0], creator: creatorAddress }
+        {
+          url: job.contentServerUrls![0],
+          creator: sceneJsonData.creator,
+          sdk: sceneJsonData.runtimeVersion,
+        }
       )
       placesToProcess = {
         new: placefromContentEntity,
@@ -137,7 +142,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
               ?.optOut,
         },
-        { url: job.contentServerUrls![0], creator: creatorAddress }
+        {
+          url: job.contentServerUrls![0],
+          creator: sceneJsonData.creator,
+          sdk: sceneJsonData.runtimeVersion,
+        }
       )
 
       let rating = null
@@ -166,7 +175,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     )
     placesToProcess = processContentEntityScene(contentEntityScene, places, {
       url: job.contentServerUrls![0],
-      creator: creatorAddress,
+      creator: sceneJsonData.creator,
+      sdk: sceneJsonData.runtimeVersion,
     })
   }
 

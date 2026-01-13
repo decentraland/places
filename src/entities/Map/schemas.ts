@@ -167,5 +167,10 @@ export const getAllPlacesListQuerySchema = schema({
       nullable: true as any,
       pattern: "^0x[a-fA-F0-9]{40}$",
     },
+    sdk: {
+      type: "string",
+      description: "Filter by SDK/runtime version (e.g., \"7\" for SDK7)",
+      nullable: true as any,
+    },
   },
 })
