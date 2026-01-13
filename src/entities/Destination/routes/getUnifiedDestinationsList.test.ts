@@ -9,8 +9,8 @@ import { worldsLiveData } from "../../../__data__/worldsLiveData"
 import CatalystAPI from "../../../api/CatalystAPI"
 import DataTeam from "../../../api/DataTeam"
 import * as hotScenesModule from "../../../modules/hotScenes"
-import * as worldUtilsModule from "../../World/utils"
 import PlaceModel from "../../Place/model"
+import * as worldUtilsModule from "../../World/utils"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")

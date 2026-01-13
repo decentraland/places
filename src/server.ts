@@ -26,6 +26,7 @@ import { register } from "prom-client"
 
 import categoryRoute from "./entities/Category/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
+import destinationRoute from "./entities/Destination/routes"
 import mapRoute from "./entities/Map/routes"
 import placeRoute from "./entities/Place/routes"
 import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
@@ -36,7 +37,6 @@ import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
 import worldRoute from "./entities/World/routes"
 import { worldsLiveDataUpdate } from "./entities/World/tasks/worldsLiveData"
-import destinationRoute from "./entities/Destination/routes"
 
 const tasks = tasksManager()
 tasks.use(
