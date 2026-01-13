@@ -225,4 +225,3 @@ export const destinationResponseSchema = schema.api(destinationSchema)
 export const destinationListResponseSchema = schema.api(
   schema.array(destinationSchema)
 )
-

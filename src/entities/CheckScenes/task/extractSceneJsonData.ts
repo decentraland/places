@@ -49,4 +49,3 @@ export async function extractSceneJsonData(
     return { creator: null, runtimeVersion: null }
   }
 }
-

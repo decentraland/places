@@ -28,4 +28,3 @@ export default routes((router) => {
   router.get("/destinations", getDestinationsList)
   router.get("/destinations/unified", getUnifiedDestinationsList)
 }, {})
-

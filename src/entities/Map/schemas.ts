@@ -169,7 +169,7 @@ export const getAllPlacesListQuerySchema = schema({
     },
     sdk: {
       type: "string",
-      description: "Filter by SDK/runtime version (e.g., \"7\" for SDK7)",
+      description: 'Filter by SDK/runtime version (e.g., "7" for SDK7)',
       nullable: true as any,
     },
   },
