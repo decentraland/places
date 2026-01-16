@@ -6,8 +6,8 @@ import {
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import { PlaceAttributes } from "../Place/types"
 import { PlacePositionAttributes } from "./types"
+import { PlaceAttributes } from "../Place/types"
 
 export default class PlacePositionModel extends Model<PlacePositionAttributes> {
   static tableName = "place_positions"

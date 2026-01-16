@@ -1,13 +1,13 @@
 import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
-import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
-import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
-import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import {
   createPlaceFromContentEntityScene,
   processContentEntityScene,
 } from "./processContentEntityScene"
+import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
+import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
+import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
+import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 
 describe("createPlaceFromContentEntityScene", () => {
   test("should accept a contentEntityScene and return a formatted place", async () => {

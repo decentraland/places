@@ -60,6 +60,7 @@ export const getPlaceList = Router.memo(
       creator_address: ctx.url.searchParams
         .get("creator_address")
         ?.toLowerCase(),
+      sdk: ctx.url.searchParams.get("sdk"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -81,6 +82,7 @@ export const getPlaceList = Router.memo(
       categories: query.categories,
       owner: query.owner,
       creator_address: query.creator_address,
+      sdk: query.sdk,
     }
 
     // If owner parameter is provided, fetch operated lands from Catalyst API

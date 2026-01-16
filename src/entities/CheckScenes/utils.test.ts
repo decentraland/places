@@ -1,3 +1,9 @@
+import {
+  findNewDeployedPlace,
+  findSamePlace,
+  getWorldAbout,
+  isSameWorld,
+} from "./utils"
 import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
@@ -8,12 +14,6 @@ import {
   worldContentEntitySceneParalax,
   worldPlaceParalax,
 } from "../../__data__/world"
-import {
-  findNewDeployedPlace,
-  findSamePlace,
-  getWorldAbout,
-  isSameWorld,
-} from "./utils"
 
 describe("isNewPlace", () => {
   test("should return the place found if not new place with same base position", async () => {

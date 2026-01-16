@@ -1,13 +1,13 @@
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
-import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
-import { contentEntitySceneMusicFestivalStage } from "../../__data__/contentEntitySceneMusicFestivalStage"
-import { contentEntitySceneSteamPunkDCQuest } from "../../__data__/contentEntitySceneSteamPunkDCQuest"
-import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import getContentRating, {
   isDowngradingRating,
   isUpgradingRating,
 } from "./contentRating"
+import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
+import { contentEntitySceneMusicFestivalStage } from "../../__data__/contentEntitySceneMusicFestivalStage"
+import { contentEntitySceneSteamPunkDCQuest } from "../../__data__/contentEntitySceneSteamPunkDCQuest"
+import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 
 describe("Validate rating", () => {
   test(`Without a rating in the list of ratings return RP`, () => {

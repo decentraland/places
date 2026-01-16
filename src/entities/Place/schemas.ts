@@ -91,6 +91,11 @@ export const getPlaceListQuerySchema = schema({
       nullable: true as any,
       pattern: "^0x[a-fA-F0-9]{40}$",
     },
+    sdk: {
+      type: "string",
+      description: "Filter places by SDK version (e.g., '7' for SDK7 scenes)",
+      nullable: true as any,
+    },
   },
 })
 
@@ -283,6 +288,11 @@ export const placeSchema = schema({
       maxLength: 42,
       description: "The creator's wallet address",
       pattern: "^0x[a-fA-F0-9]{40}$",
+      nullable: true as any,
+    },
+    sdk: {
+      type: "string",
+      description: "SDK/runtime version of the scene",
       nullable: true as any,
     },
   },

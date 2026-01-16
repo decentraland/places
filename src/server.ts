@@ -26,6 +26,7 @@ import { register } from "prom-client"
 
 import categoryRoute from "./entities/Category/routes"
 import { createSceneConsumerTask } from "./entities/CheckScenes/task/checkScenes"
+import destinationRoute from "./entities/Destination/routes"
 import mapRoute from "./entities/Map/routes"
 import placeRoute from "./entities/Place/routes"
 import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
@@ -81,6 +82,7 @@ app.use("/api", [
   worldRoute,
   reportRoute,
   mapRoute,
+  destinationRoute,
 
   status(),
   handle(async () => {

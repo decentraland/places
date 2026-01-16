@@ -4,15 +4,15 @@ import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/Ap
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
-import PlaceModel from "../Place/model"
-import { getPlace } from "../Place/routes/getPlace"
-import { fetchScore } from "../Snapshot/utils"
 import UserFavoriteModel from "./model"
 import {
   updateUserFavoriteBodySchema,
   updateUserFavoriteParamsSchema,
 } from "./schema"
 import { UpdateUserFavoriteBody, UpdateUserFavoriteParams } from "./types"
+import PlaceModel from "../Place/model"
+import { getPlace } from "../Place/routes/getPlace"
+import { fetchScore } from "../Snapshot/utils"
 
 export default routes((router) => {
   router.patch("/places/:place_id/favorites", updateFavorites)

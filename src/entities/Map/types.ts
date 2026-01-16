@@ -29,6 +29,7 @@ export type GetAllPlaceListQuery = Omit<GetPlaceListQuery, "owner"> & {
 
 export type AllPlacesListOptions = PlaceListOptions & {
   names: string[]
+  sdk?: string
 }
 
 export type FindAllPlacesWithAggregatesOptions = AllPlacesListOptions & {

@@ -1,5 +1,5 @@
-import { categoriesWithPlacesCount } from "../../__data__/categories"
 import CategoryModel from "./model"
+import { categoriesWithPlacesCount } from "../../__data__/categories"
 
 const find = jest.spyOn(CategoryModel, "namedQuery")
 

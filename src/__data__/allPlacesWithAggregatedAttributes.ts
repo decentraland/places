@@ -106,6 +106,8 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
     textsearch: undefined,
     creator_address: null,
+    sdk: null,
+    ranking: 0,
   },
   {
     id: "a7ce87fa-df3c-4a2f-bca6-bd2fe794d51a",
@@ -138,5 +140,7 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
     textsearch: undefined,
     creator_address: null,
+    sdk: null,
+    ranking: 0,
   },
 ]

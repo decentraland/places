@@ -2,11 +2,11 @@ import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
+import { CategoryFilterProps } from "./CategoryFilter"
+import { CategoryFilters } from "./CategoryFilters"
 import { Category } from "../../entities/Category/types"
 import { Check } from "../Icon/Check"
 import { NewLabel } from "../Label/NewLabel/NewLabel"
-import { CategoryFilterProps } from "./CategoryFilter"
-import { CategoryFilters } from "./CategoryFilters"
 
 import "./CategoryList.css"
 
