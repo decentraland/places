@@ -75,9 +75,9 @@ describe("getDestinationsList", () => {
         })
 
         expect(commsGatekeeperGet).toHaveBeenCalled()
-        expect(
-          mockCommsInstance.getSceneRoomParticipants
-        ).toHaveBeenCalledWith("0,0")
+        expect(mockCommsInstance.getSceneRoomParticipants).toHaveBeenCalledWith(
+          "0,0"
+        )
       })
     })
 
@@ -89,9 +89,7 @@ describe("getDestinationsList", () => {
           getSceneRoomParticipants: jest.fn().mockResolvedValue([]),
           getWorldRoomParticipants: jest
             .fn()
-            .mockResolvedValue([
-              "0xabc1234567890abcdef1234567890abcdef12345",
-            ]),
+            .mockResolvedValue(["0xabc1234567890abcdef1234567890abcdef12345"]),
         }
         commsGatekeeperGet.mockReturnValue(mockCommsInstance as any)
 
@@ -126,9 +124,9 @@ describe("getDestinationsList", () => {
         })
 
         expect(commsGatekeeperGet).toHaveBeenCalled()
-        expect(
-          mockCommsInstance.getWorldRoomParticipants
-        ).toHaveBeenCalledWith("test.dcl.eth")
+        expect(mockCommsInstance.getWorldRoomParticipants).toHaveBeenCalledWith(
+          "test.dcl.eth"
+        )
       })
     })
 
@@ -264,4 +262,3 @@ describe("getDestinationsList", () => {
     })
   })
 })
-

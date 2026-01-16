@@ -132,27 +132,27 @@ Create a `.env.development` file in the project root with the following variable
 
 #### Optional Environment Variables
 
-| Variable                           | Description                                   | Default                              | Example                                   |
-| ---------------------------------- | --------------------------------------------- | ------------------------------------ | ----------------------------------------- |
-| `AWS_ENDPOINT`                     | AWS endpoint override (for LocalStack)        | -                                    | `http://localhost:4566`                   |
-| `AWS_ACCESS_KEY`                   | AWS access key for S3 report uploads          | -                                    | `AKIA...`                                 |
-| `AWS_ACCESS_SECRET`                | AWS secret key for S3 report uploads          | -                                    | `xxx...`                                  |
-| `AWS_BUCKET_NAME`                  | S3 bucket name for content moderation reports | -                                    | `content-moderation-bucket`               |
-| `BOOTSTRAP_USER`                   | Initial admin user wallet address             | -                                    | `0x...`                                   |
-| `BOOTSTRAP_CATALYST`               | Default Catalyst server URL                   | -                                    | `https://peer.decentraland.org`           |
-| `PLACES_URL`                       | Places API base URL                           | -                                    | `https://localhost:8000/api`              |
-| `PLACES_ROOT_URL`                  | Places frontend base URL                      | -                                    | `https://localhost:8000`                  |
-| `PLACES_BASE_URL`                  | Public-facing places URL                      | `https://decentraland.org/places`    | -                                         |
-| `DECENTRALAND_URL`                 | Decentraland play URL                         | -                                    | `https://play.decentraland.org`           |
-| `PROFILE_URL`                      | Content server URL for profiles               | `https://peer.decentraland.org`      | -                                         |
-| `REALM_PROVIDER_URL`               | Realm provider API for hot scenes data        | -                                    | `https://realm-provider.decentraland.org` |
-| `DATA_TEAM_URL`                    | Data team CDN URL for stats                   | `https://cdn-data.decentraland.org/` | -                                         |
-| `CATALYST_URL`                     | Default Catalyst API URL                      | -                                    | `https://peer.decentraland.org`           |
+| Variable                           | Description                                   | Default                                     | Example                                      |
+| ---------------------------------- | --------------------------------------------- | ------------------------------------------- | -------------------------------------------- |
+| `AWS_ENDPOINT`                     | AWS endpoint override (for LocalStack)        | -                                           | `http://localhost:4566`                      |
+| `AWS_ACCESS_KEY`                   | AWS access key for S3 report uploads          | -                                           | `AKIA...`                                    |
+| `AWS_ACCESS_SECRET`                | AWS secret key for S3 report uploads          | -                                           | `xxx...`                                     |
+| `AWS_BUCKET_NAME`                  | S3 bucket name for content moderation reports | -                                           | `content-moderation-bucket`                  |
+| `BOOTSTRAP_USER`                   | Initial admin user wallet address             | -                                           | `0x...`                                      |
+| `BOOTSTRAP_CATALYST`               | Default Catalyst server URL                   | -                                           | `https://peer.decentraland.org`              |
+| `PLACES_URL`                       | Places API base URL                           | -                                           | `https://localhost:8000/api`                 |
+| `PLACES_ROOT_URL`                  | Places frontend base URL                      | -                                           | `https://localhost:8000`                     |
+| `PLACES_BASE_URL`                  | Public-facing places URL                      | `https://decentraland.org/places`           | -                                            |
+| `DECENTRALAND_URL`                 | Decentraland play URL                         | -                                           | `https://play.decentraland.org`              |
+| `PROFILE_URL`                      | Content server URL for profiles               | `https://peer.decentraland.org`             | -                                            |
+| `REALM_PROVIDER_URL`               | Realm provider API for hot scenes data        | -                                           | `https://realm-provider.decentraland.org`    |
+| `DATA_TEAM_URL`                    | Data team CDN URL for stats                   | `https://cdn-data.decentraland.org/`        | -                                            |
+| `CATALYST_URL`                     | Default Catalyst API URL                      | -                                           | `https://peer.decentraland.org`              |
 | `COMMS_GATEKEEPER_URL`             | Comms Gatekeeper API for connected users      | `https://comms-gatekeeper.decentraland.org` | `https://comms-gatekeeper.decentraland.zone` |
-| `SLACK_WEBHOOK`                    | Slack webhook for notifications               | -                                    | `https://hooks.slack.com/...`             |
-| `CONTENT_MODERATION_SLACK_WEBHOOK` | Slack webhook for moderation alerts           | -                                    | `https://hooks.slack.com/...`             |
-| `ADMIN_ADDRESSES`                  | Comma-separated admin wallet addresses        | -                                    | `0x...,0x...`                             |
-| `NEW_ROLLOUT`                      | Enable new features rollout                   | `false`                              | `true`                                    |
+| `SLACK_WEBHOOK`                    | Slack webhook for notifications               | -                                           | `https://hooks.slack.com/...`                |
+| `CONTENT_MODERATION_SLACK_WEBHOOK` | Slack webhook for moderation alerts           | -                                           | `https://hooks.slack.com/...`                |
+| `ADMIN_ADDRESSES`                  | Comma-separated admin wallet addresses        | -                                           | `0x...,0x...`                                |
+| `NEW_ROLLOUT`                      | Enable new features rollout                   | `false`                                     | `true`                                       |
 
 #### Gatsby-Specific Variables
 

@@ -49,12 +49,13 @@ export function destinationsWithAggregates(
       destination.realms_detail = hotScenePlaces?.realms || []
     }
 
-    const result: AggregatePlaceAttributes & { connected_addresses?: string[] } =
-      {
-        ...destination,
-        user_visits: user_visits,
-        user_count: user_count,
-      }
+    const result: AggregatePlaceAttributes & {
+      connected_addresses?: string[]
+    } = {
+      ...destination,
+      user_visits: user_visits,
+      user_count: user_count,
+    }
 
     // Add connected_addresses if requested
     if (options?.withConnectedUsers && options.connectedUsersMap) {

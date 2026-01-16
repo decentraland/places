@@ -22,4 +22,3 @@ export async function down(pgm: MigrationBuilder): Promise<void> {
   pgm.dropIndex("places", "ranking", { name: "places_ranking_idx" })
   pgm.dropColumn("places", "ranking")
 }
-
