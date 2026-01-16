@@ -825,30 +825,33 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
-  /destinations/unified:
+  /destinations:
     get:
       tags:
         - Places
         - Worlds
-      summary: List unified destinations (places + worlds)
+      summary: List destinations (places + worlds)
       security: []
       description: |
-        Retrieve a paginated list of both places and worlds with enhanced filtering.
+        Retrieve a paginated list of both places and worlds with comprehensive filtering options.
         
         **Key Features:**
         - Combines Genesis City places and Decentraland Worlds in a single response
         - **Highlighted destinations are always returned first**, regardless of other sorting
         - Filter places by exact coordinates (positions)
-        - Filter worlds by name using LIKE matching (partial match)
+        - Filter worlds by exact name (world_names) or LIKE matching (names)
         - Filter by SDK version (exact match)
+        - Include connected user wallet addresses (with_connected_users)
         
         **Common Use Cases:**
         - Get all destinations: `?limit=50`
+        - Filter worlds by exact name: `?world_names=mycoolworld.dcl.eth`
         - Filter worlds by name pattern: `?names=art&names=gallery`
         - Filter by SDK7: `?sdk=7`
         - Get only places: `?only_places=true`
         - Get only worlds: `?only_worlds=true`
-      operationId: getUnifiedDestinations
+        - Include connected users: `?with_connected_users=true`
+      operationId: getDestinations
       parameters:
         - name: limit
           in: query
@@ -878,6 +881,19 @@ paths:
             items:
               type: string
               pattern: '^-?\d{1,3},-?\d{1,3}$'
+            maxItems: 1000
+          style: form
+          explode: true
+        - name: world_names
+          in: query
+          description: |
+            Filter worlds by exact name match.
+            Example: `world_names=mycoolworld.dcl.eth`
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
             maxItems: 1000
           style: form
           explode: true
@@ -932,6 +948,15 @@ paths:
         - name: with_realms_detail
           in: query
           description: Include real-time realm and user count details
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with_connected_users
+          in: query
+          description: |
+            Include the list of connected user wallet addresses for each destination.
+            When enabled, adds `connected_addresses` array to each destination.
           required: false
           schema:
             type: boolean
@@ -991,7 +1016,7 @@ paths:
             type: string
       responses:
         '200':
-          description: Unified destinations retrieved successfully
+          description: Destinations retrieved successfully
           content:
             application/json:
               schema:
@@ -1517,6 +1542,12 @@ components:
           description: Simple like ratio (likes / total votes), not VP-weighted
           nullable: true
           example: 0.94
+        ranking:
+          type: number
+          description: External ranking value for custom ordering
+          nullable: true
+          default: 0
+          example: 0.75
         favorites:
           type: integer
           minimum: 0
@@ -1584,6 +1615,15 @@ components:
           description: SDK/runtime version (e.g., "7" for SDK7)
           nullable: true
           example: "7"
+        connected_addresses:
+          type: array
+          description: |
+            List of wallet addresses currently connected to this place.
+            Only included when `with_connected_users=true` query parameter is set.
+          items:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+          example: ["0x1234567890abcdef1234567890abcdef12345678", "0xabcdef1234567890abcdef1234567890abcdef12"]
 
     World:
       type: object
@@ -1652,6 +1692,11 @@ components:
           minimum: 0
           maximum: 1
           nullable: true
+        ranking:
+          type: number
+          description: External ranking value for custom ordering
+          nullable: true
+          default: 0
         favorites:
           type: integer
           minimum: 0
@@ -1696,6 +1741,14 @@ components:
           description: SDK/runtime version (e.g., "7" for SDK7)
           nullable: true
           example: "7"
+        connected_addresses:
+          type: array
+          description: |
+            List of wallet addresses currently connected to this world.
+            Only included when `with_connected_users=true` query parameter is set.
+          items:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
 
     Realm:
       type: object

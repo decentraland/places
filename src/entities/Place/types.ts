@@ -61,6 +61,8 @@ export type PlaceAttributes = {
   creator_address: string | null
   /** SDK/runtime version of the scene from scene.json runtimeVersion field (e.g., "7" for SDK7) */
   sdk: string | null
+  /** Ranking score for ordering places */
+  ranking: number | null
 }
 
 export type AggregatePlaceAttributes = PlaceAttributes & {

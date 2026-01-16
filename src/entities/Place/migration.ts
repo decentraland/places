@@ -83,6 +83,7 @@ export function createPlaceFromEntityScene(
     textsearch: undefined,
     creator_address: null,
     sdk: null,
+    ranking: 0,
     ...data,
   }
 

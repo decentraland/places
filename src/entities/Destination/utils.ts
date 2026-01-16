@@ -2,6 +2,8 @@ import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import { AggregatePlaceAttributes, HotScene } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
+export type ConnectedUsersMap = Map<string, string[]>
+
 export function destinationsWithAggregates(
   destinations: AggregatePlaceAttributes[],
   hotScenes: HotScene[],
@@ -9,6 +11,8 @@ export function destinationsWithAggregates(
   worldsLiveData: WorldLiveDataProps,
   options?: {
     withRealmsDetail: boolean
+    withConnectedUsers: boolean
+    connectedUsersMap?: ConnectedUsersMap
   }
 ) {
   return destinations.map((destination) => {
@@ -45,10 +49,22 @@ export function destinationsWithAggregates(
       destination.realms_detail = hotScenePlaces?.realms || []
     }
 
-    return {
-      ...destination,
-      user_visits: user_visits,
-      user_count: user_count,
+    const result: AggregatePlaceAttributes & { connected_addresses?: string[] } =
+      {
+        ...destination,
+        user_visits: user_visits,
+        user_count: user_count,
+      }
+
+    // Add connected_addresses if requested
+    if (options?.withConnectedUsers && options.connectedUsersMap) {
+      // Use world_name for worlds, base_position for places
+      const key = destination.world
+        ? destination.world_name || ""
+        : destination.base_position
+      result.connected_addresses = options.connectedUsersMap.get(key) || []
     }
+
+    return result
   })
 }

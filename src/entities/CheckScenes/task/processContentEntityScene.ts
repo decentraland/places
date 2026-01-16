@@ -167,6 +167,7 @@ export function createPlaceFromContentEntityScene(
     categories: [],
     creator_address: options.creator || null,
     sdk: options.sdk || null,
+    ranking: 0,
   }
 
   placeParsed.textsearch = PlaceModel.textsearch(placeParsed)

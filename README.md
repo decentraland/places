@@ -148,6 +148,7 @@ Create a `.env.development` file in the project root with the following variable
 | `REALM_PROVIDER_URL`               | Realm provider API for hot scenes data        | -                                    | `https://realm-provider.decentraland.org` |
 | `DATA_TEAM_URL`                    | Data team CDN URL for stats                   | `https://cdn-data.decentraland.org/` | -                                         |
 | `CATALYST_URL`                     | Default Catalyst API URL                      | -                                    | `https://peer.decentraland.org`           |
+| `COMMS_GATEKEEPER_URL`             | Comms Gatekeeper API for connected users      | `https://comms-gatekeeper.decentraland.org` | `https://comms-gatekeeper.decentraland.zone` |
 | `SLACK_WEBHOOK`                    | Slack webhook for notifications               | -                                    | `https://hooks.slack.com/...`             |
 | `CONTENT_MODERATION_SLACK_WEBHOOK` | Slack webhook for moderation alerts           | -                                    | `https://hooks.slack.com/...`             |
 | `ADMIN_ADDRESSES`                  | Comma-separated admin wallet addresses        | -                                    | `0x...,0x...`                             |

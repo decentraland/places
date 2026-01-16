@@ -417,4 +417,5 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     textsearch: undefined,
     creator_address: null,
     sdk: null,
+    ranking: 0,
   }

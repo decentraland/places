@@ -31,4 +31,5 @@ export const placeRoad: PlaceAttributes = {
   categories: [],
   creator_address: null,
   sdk: null,
+  ranking: 0,
 }

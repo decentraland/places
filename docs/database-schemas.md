@@ -132,6 +132,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 | favorites         | INTEGER       | NO       | 0       | Count of user favorites                                                |
 | like_rate         | NUMERIC       | YES      | NULL    | Computed like rate percentage (not VP-weighted)                        |
 | like_score        | NUMERIC       | YES      | NULL    | Computed VP-weighted like score for ranking (0-1)                      |
+| ranking           | FLOAT         | YES      | 0       | External ranking value for custom ordering                             |
 | highlighted       | BOOLEAN       | NO       | false   | Featured place flag for promotion                                      |
 | disabled          | BOOLEAN       | NO       | false   | Soft delete flag (hidden from public listing)                          |
 | disabled_at       | TIMESTAMPTZ   | YES      | NULL    | When the place was disabled                                            |

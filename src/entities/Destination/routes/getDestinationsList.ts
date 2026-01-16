@@ -8,32 +8,88 @@ import {
   oneOf,
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
-import { getDestinationsMostActiveList } from "./getDestinationsMostActiveList"
 import CatalystAPI from "../../../api/CatalystAPI"
+import CommsGatekeeper from "../../../api/CommsGatekeeper"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
 import PlaceModel from "../../Place/model"
-import { Permission, PlaceListOrderBy } from "../../Place/types"
+import { AggregatePlaceAttributes, Permission, PlaceListOrderBy } from "../../Place/types"
 import { getWorldsLiveData } from "../../World/utils"
 import { getDestinationsListQuerySchema } from "../schemas"
 import {
   FindDestinationsWithAggregatesOptions,
   GetDestinationsListQuery,
 } from "../types"
-import { destinationsWithAggregates } from "../utils"
+import { ConnectedUsersMap, destinationsWithAggregates } from "../utils"
+
+/**
+ * Fetches connected users for a list of destinations from comms-gatekeeper.
+ * Returns a map where keys are pointer/parcel (for places) or world_name (for worlds),
+ * and values are arrays of wallet addresses.
+ */
+async function fetchConnectedUsersForDestinations(
+  destinations: AggregatePlaceAttributes[]
+): Promise<ConnectedUsersMap> {
+  const connectedUsersMap: ConnectedUsersMap = new Map()
+  const commsGatekeeper = CommsGatekeeper.get()
+
+  // Separate worlds and places
+  const worlds = destinations.filter((d) => d.world && d.world_name)
+  const places = destinations.filter((d) => !d.world)
+
+  // Fetch in parallel for better performance
+  const fetchPromises: Promise<void>[] = []
+
+  // Fetch world participants
+  for (const world of worlds) {
+    fetchPromises.push(
+      commsGatekeeper
+        .getWorldRoomParticipants(world.world_name!)
+        .then((addresses) => {
+          connectedUsersMap.set(world.world_name!, addresses)
+        })
+        .catch((error) => {
+          console.error(
+            `Error fetching participants for world ${world.world_name}:`,
+            error
+          )
+          connectedUsersMap.set(world.world_name!, [])
+        })
+    )
+  }
+
+  // Fetch scene participants (using base_position as the pointer identifier)
+  for (const place of places) {
+    fetchPromises.push(
+      commsGatekeeper
+        .getSceneRoomParticipants(place.base_position)
+        .then((addresses) => {
+          connectedUsersMap.set(place.base_position, addresses)
+        })
+        .catch((error) => {
+          console.error(
+            `Error fetching participants for place ${place.base_position}:`,
+            error
+          )
+          connectedUsersMap.set(place.base_position, [])
+        })
+    )
+  }
+
+  await Promise.all(fetchPromises)
+
+  return connectedUsersMap
+}
 
 export const validateGetDestinationsListQuery =
   Router.validator<GetDestinationsListQuery>(getDestinationsListQuerySchema)
 
 export const getDestinationsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
-    if (ctx.url.searchParams.get("order_by") === PlaceListOrderBy.MOST_ACTIVE) {
-      return getDestinationsMostActiveList(ctx)
-    }
-
     const query = await validateGetDestinationsListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
       world_names: ctx.url.searchParams.getAll("world_names"),
+      names: ctx.url.searchParams.getAll("names"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
@@ -41,12 +97,14 @@ export const getDestinationsList = Router.memo(
       order_by:
         oneOf(ctx.url.searchParams.get("order_by"), [
           PlaceListOrderBy.LIKE_SCORE_BEST,
+          PlaceListOrderBy.MOST_ACTIVE,
           PlaceListOrderBy.UPDATED_AT,
           PlaceListOrderBy.CREATED_AT,
         ]) || PlaceListOrderBy.LIKE_SCORE_BEST,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
+      with_connected_users: ctx.url.searchParams.get("with_connected_users"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
       owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
@@ -55,6 +113,7 @@ export const getDestinationsList = Router.memo(
         ?.toLowerCase(),
       only_worlds: ctx.url.searchParams.get("only_worlds"),
       only_places: ctx.url.searchParams.get("only_places"),
+      sdk: ctx.url.searchParams.get("sdk"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -62,6 +121,8 @@ export const getDestinationsList = Router.memo(
     if (bool(query.only_favorites) && !userAuth?.address) {
       return new ApiResponse([], { total: 0 })
     }
+
+    const hotScenes = getHotScenes()
 
     const options: FindDestinationsWithAggregatesOptions = {
       user: userAuth?.address,
@@ -71,6 +132,7 @@ export const getDestinationsList = Router.memo(
       only_highlighted: !!bool(query.only_highlighted),
       positions: query.positions,
       world_names: query.world_names,
+      names: query.names,
       order_by: query.order_by,
       order: query.order,
       search: query.search,
@@ -79,6 +141,7 @@ export const getDestinationsList = Router.memo(
       creator_address: query.creator_address,
       only_worlds: !!bool(query.only_worlds),
       only_places: !!bool(query.only_places),
+      sdk: query.sdk,
     }
 
     // If owner parameter is provided, fetch operated lands from Catalyst API
@@ -100,10 +163,19 @@ export const getDestinationsList = Router.memo(
       }
     }
 
-    // Add operatedPositions to options for enhanced query
+    // Get positions from hot scenes for MOST_ACTIVE ordering
+    const hotScenesPositions =
+      query.order_by === PlaceListOrderBy.MOST_ACTIVE
+        ? hotScenes
+            .map((scene) => scene.parcels.map((parcel) => parcel.join(",")))
+            .flat()
+        : []
+
+    // Add operatedPositions and hotScenesPositions to options for enhanced query
     const enhancedOptions = {
       ...options,
       operatedPositions,
+      hotScenesPositions,
     }
 
     const [data, total, sceneStats] = await Promise.all([
@@ -111,9 +183,15 @@ export const getDestinationsList = Router.memo(
       PlaceModel.countDestinations(enhancedOptions),
       getSceneStats(),
     ])
-
-    const hotScenes = getHotScenes()
     const worldsLiveData = getWorldsLiveData()
+
+    // Fetch connected users if requested
+    const withConnectedUsers = !!bool(query.with_connected_users)
+    let connectedUsersMap: ConnectedUsersMap | undefined
+
+    if (withConnectedUsers && data.length > 0) {
+      connectedUsersMap = await fetchConnectedUsersForDestinations(data)
+    }
 
     const response = destinationsWithAggregates(
       data,
@@ -122,6 +200,8 @@ export const getDestinationsList = Router.memo(
       worldsLiveData,
       {
         withRealmsDetail: !!bool(query.with_realms_detail),
+        withConnectedUsers,
+        connectedUsersMap,
       }
     )
 

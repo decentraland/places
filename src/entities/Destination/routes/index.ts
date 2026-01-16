@@ -3,7 +3,6 @@ import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { getDestinationsList } from "./getDestinationsList"
-import { getUnifiedDestinationsList } from "./getUnifiedDestinationsList"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
@@ -26,5 +25,4 @@ export default routes((router) => {
     })
   )
   router.get("/destinations", getDestinationsList)
-  router.get("/destinations/unified", getUnifiedDestinationsList)
 }, {})

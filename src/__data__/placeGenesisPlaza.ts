@@ -103,4 +103,5 @@ export const placeGenesisPlaza: PlaceAttributes = {
   categories: [],
   creator_address: null,
   sdk: null,
+  ranking: 0,
 }
