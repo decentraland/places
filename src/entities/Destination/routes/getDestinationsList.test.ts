@@ -31,13 +31,13 @@ describe("getDestinationsList", () => {
     describe("and destinations include places", () => {
       it("should return destinations with connected_addresses for places", async () => {
         const mockCommsInstance = {
-          getSceneRoomParticipants: jest
+          getSceneParticipants: jest
             .fn()
             .mockResolvedValue([
               "0x1234567890abcdef1234567890abcdef12345678",
               "0xabcdef1234567890abcdef1234567890abcdef12",
             ]),
-          getWorldRoomParticipants: jest.fn().mockResolvedValue([]),
+          getWorldParticipants: jest.fn().mockResolvedValue([]),
         }
         commsGatekeeperGet.mockReturnValue(mockCommsInstance as any)
 
@@ -75,7 +75,7 @@ describe("getDestinationsList", () => {
         })
 
         expect(commsGatekeeperGet).toHaveBeenCalled()
-        expect(mockCommsInstance.getSceneRoomParticipants).toHaveBeenCalledWith(
+        expect(mockCommsInstance.getSceneParticipants).toHaveBeenCalledWith(
           "0,0"
         )
       })
@@ -86,8 +86,8 @@ describe("getDestinationsList", () => {
         const worldDestination = allPlacesWithAggregatedAttributes[1] // world with world_name: "test.dcl.eth"
 
         const mockCommsInstance = {
-          getSceneRoomParticipants: jest.fn().mockResolvedValue([]),
-          getWorldRoomParticipants: jest
+          getSceneParticipants: jest.fn().mockResolvedValue([]),
+          getWorldParticipants: jest
             .fn()
             .mockResolvedValue(["0xabc1234567890abcdef1234567890abcdef12345"]),
         }
@@ -124,7 +124,7 @@ describe("getDestinationsList", () => {
         })
 
         expect(commsGatekeeperGet).toHaveBeenCalled()
-        expect(mockCommsInstance.getWorldRoomParticipants).toHaveBeenCalledWith(
+        expect(mockCommsInstance.getWorldParticipants).toHaveBeenCalledWith(
           "test.dcl.eth"
         )
       })
@@ -133,8 +133,8 @@ describe("getDestinationsList", () => {
     describe("and destinations have no connected users", () => {
       it("should return destinations with empty connected_addresses array", async () => {
         const mockCommsInstance = {
-          getSceneRoomParticipants: jest.fn().mockResolvedValue([]),
-          getWorldRoomParticipants: jest.fn().mockResolvedValue([]),
+          getSceneParticipants: jest.fn().mockResolvedValue([]),
+          getWorldParticipants: jest.fn().mockResolvedValue([]),
         }
         commsGatekeeperGet.mockReturnValue(mockCommsInstance as any)
 
@@ -162,10 +162,10 @@ describe("getDestinationsList", () => {
     describe("and comms-gatekeeper returns an error", () => {
       it("should return destinations with empty connected_addresses array", async () => {
         const mockCommsInstance = {
-          getSceneRoomParticipants: jest
+          getSceneParticipants: jest
             .fn()
             .mockRejectedValue(new Error("Connection failed")),
-          getWorldRoomParticipants: jest
+          getWorldParticipants: jest
             .fn()
             .mockRejectedValue(new Error("Connection failed")),
         }

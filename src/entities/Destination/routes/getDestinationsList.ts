@@ -48,7 +48,7 @@ async function fetchConnectedUsersForDestinations(
   for (const world of worlds) {
     fetchPromises.push(
       commsGatekeeper
-        .getWorldRoomParticipants(world.world_name!)
+        .getWorldParticipants(world.world_name!)
         .then((addresses) => {
           connectedUsersMap.set(world.world_name!, addresses)
         })
@@ -66,7 +66,7 @@ async function fetchConnectedUsersForDestinations(
   for (const place of places) {
     fetchPromises.push(
       commsGatekeeper
-        .getSceneRoomParticipants(place.base_position)
+        .getSceneParticipants(place.base_position)
         .then((addresses) => {
           connectedUsersMap.set(place.base_position, addresses)
         })
