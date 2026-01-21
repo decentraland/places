@@ -91,7 +91,7 @@ export const validateGetDestinationsListQuery =
 export const getDestinationsList = Router.memo(
   async (ctx: Context<{}, "url" | "request">) => {
     const query = await validateGetDestinationsListQuery({
-      positions: ctx.url.searchParams.getAll("positions"),
+      pointer: ctx.url.searchParams.getAll("pointer"),
       world_names: ctx.url.searchParams.getAll("world_names"),
       names: ctx.url.searchParams.getAll("names"),
       offset: ctx.url.searchParams.get("offset"),
@@ -134,7 +134,7 @@ export const getDestinationsList = Router.memo(
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
-      positions: query.positions,
+      positions: query.pointer,
       world_names: query.world_names,
       names: query.names,
       order_by: query.order_by,

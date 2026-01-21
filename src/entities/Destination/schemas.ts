@@ -17,7 +17,7 @@ export const getDestinationsListQuerySchema = schema({
       format: "uint",
       nullable: true as any,
     },
-    positions: {
+    pointer: {
       type: "array",
       maxItems: 1000,
       items: { type: "string", pattern: "^-?\\d{1,3},-?\\d{1,3}$" },
@@ -120,7 +120,7 @@ export const getDestinationsListQuerySchema = schema({
     },
     sdk: {
       type: "string",
-      description: "Filter by SDK version (exact match)",
+      description: "Filter by SDK version (includes places with null SDK)",
       nullable: true as any,
     },
   },

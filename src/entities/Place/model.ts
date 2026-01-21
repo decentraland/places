@@ -301,7 +301,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
         ${conditional(
           !!options.ids,
           SQL` AND p.id IN ${values(options.ids || [])}`
@@ -398,7 +398,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -1033,7 +1033,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -1128,7 +1128,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -1332,9 +1332,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
       ORDER BY 
       p.highlighted DESC,
+      p.ranking DESC NULLS LAST,
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -1430,7 +1431,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND p.sdk = ${options.sdk}`)}
+        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_destinations",
@@ -1490,11 +1491,17 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     // Combine hot scene places and worlds
     const allDestinations = [...hotSceneDestinations, ...worldDestinations]
 
-    // Sort highlighted items first, then by activity/order
+    // Sort highlighted items first, then by ranking, then by activity/order
     allDestinations.sort((a, b) => {
       // Highlighted items come first
       if (a.highlighted !== b.highlighted) {
         return a.highlighted ? -1 : 1
+      }
+      // Then sort by ranking (higher ranking first, nulls last)
+      const aRanking = a.ranking ?? -Infinity
+      const bRanking = b.ranking ?? -Infinity
+      if (aRanking !== bRanking) {
+        return bRanking - aRanking
       }
       // Then sort by user_count (activity) if available
       const aCount = a.user_count ?? 0

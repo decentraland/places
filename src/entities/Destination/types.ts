@@ -1,10 +1,9 @@
 import { AggregatePlaceAttributes, PlaceListOrderBy } from "../Place/types"
 
 /**
- * Common destination filter fields (same types in query and options)
+ * Common filter fields shared between query and internal options
  */
-type BaseDestinationFields = {
-  positions: string[]
+type CommonFilterFields = {
   world_names: string[]
   names: string[]
   order_by: string
@@ -17,9 +16,10 @@ type BaseDestinationFields = {
 }
 
 /**
- * Query parameters (strings from URL)
+ * Query parameters (strings from URL) - uses 'pointer' for public API
  */
-export type GetDestinationsListQuery = BaseDestinationFields & {
+export type GetDestinationsListQuery = CommonFilterFields & {
+  pointer: string[]
   limit: string
   offset: string
   only_favorites: string
@@ -31,9 +31,10 @@ export type GetDestinationsListQuery = BaseDestinationFields & {
 }
 
 /**
- * Parsed options (proper types)
+ * Parsed options (proper types) - uses 'positions' for internal model compatibility
  */
-export type DestinationsListOptions = BaseDestinationFields & {
+export type DestinationsListOptions = CommonFilterFields & {
+  positions: string[]
   offset: number
   limit: number
   only_favorites: boolean
