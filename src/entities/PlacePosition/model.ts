@@ -2,11 +2,13 @@ import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   join,
+  limit,
+  offset,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
-import { PlaceAttributes } from "../Place/types"
+import { FindWithAggregatesOptions, PlaceAttributes } from "../Place/types"
 import { PlacePositionAttributes } from "./types"
 
 export default class PlacePositionModel extends Model<PlacePositionAttributes> {
@@ -25,6 +27,42 @@ export default class PlacePositionModel extends Model<PlacePositionAttributes> {
     `
 
     return this.namedQuery<string>("find_base_positions", query)
+  }
+
+  static async findAll(): Promise<PlacePositionAttributes[]> {
+    const query = SQL`
+      SELECT position, base_position
+      FROM ${table(this)}
+    `
+
+    return this.namedQuery<PlacePositionAttributes>("find_all_positions", query)
+  }
+
+  static async findWithAggregates(
+    options: Pick<FindWithAggregatesOptions, "limit" | "offset">
+  ): Promise<PlacePositionAttributes[]> {
+    const query = SQL`
+      SELECT position, base_position
+      FROM ${table(this)}
+      ${limit(options.limit, { max: 500 })}
+      ${offset(options.offset)}
+    `
+
+    return this.namedQuery<PlacePositionAttributes>("find_all_positions", query)
+  }
+
+  static async count(): Promise<number> {
+    const query = SQL`
+      SELECT count(position) as total
+      FROM ${table(this)}
+    `
+
+    const results = await this.namedQuery<{ total: string }>(
+      "find_all_positions",
+      query
+    )
+
+    return Number(results[0].total)
   }
 
   static async removePositions(positions: string[]): Promise<number> {
