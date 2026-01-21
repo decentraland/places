@@ -301,7 +301,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
         ${conditional(
           !!options.ids,
           SQL` AND p.id IN ${values(options.ids || [])}`
@@ -398,7 +401,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -1033,7 +1039,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -1128,7 +1137,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -1332,7 +1344,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
       ORDER BY 
       p.highlighted DESC,
       p.ranking DESC NULLS LAST,
@@ -1431,7 +1446,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.creator_address,
           SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
         )}
-        ${conditional(!!options.sdk, SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`)}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_destinations",
