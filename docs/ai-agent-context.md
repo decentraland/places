@@ -70,7 +70,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 
 - **Places**: `/api/places`, `/api/places/:id`, `/api/places/status`, `/api/places/:id/categories`, `/api/places/:id/rating`
 - **Worlds**: `/api/worlds`, `/api/world_names`
-- **Destinations**: `/api/destinations`, `/api/destinations/unified` (combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are always returned first regardless of sort order)
+- **Destinations**: `/api/destinations` (combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are always returned first regardless of sort order)
 - **Map**: `/api/map`, `/api/map/places` (coordinate-based queries with higher limits)
 - **Categories**: `/api/categories` (with optional `target` filter for places/worlds/all)
 - **Interactions**: `/api/places/:id/likes`, `/api/places/:id/favorites` (authentication required)
