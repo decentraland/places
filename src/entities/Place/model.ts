@@ -1386,11 +1386,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "sdk"
     >
   ) {
-    const isMissingEthereumAddress =
-      options.user && !isEthereumAddress(options.user)
     const searchIsEmpty = options.search && options.search.length < 3
 
-    if (isMissingEthereumAddress || searchIsEmpty) {
+    if (searchIsEmpty) {
       return 0
     }
 
