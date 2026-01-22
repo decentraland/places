@@ -1,5 +1,5 @@
-import { userLikeFalse, userLikeTrue } from "../../__data__/entities"
 import UserLikesModel from "./model"
+import { userLikeFalse, userLikeTrue } from "../../__data__/entities"
 
 const find = jest.spyOn(UserLikesModel, "findOne")
 const create = jest.spyOn(UserLikesModel, "createOne")

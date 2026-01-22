@@ -2,14 +2,14 @@ import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import Land from "decentraland-gatsby/dist/utils/api/Land"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
-import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import {
   AggregatePlaceAttributes,
   HotScene,
   PlaceAttributes,
   unwantedThumbnailHash,
 } from "./types"
+import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
+import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 
 const DECENTRALAND_URL =
   process.env.GATSBY_DECENTRALAND_URL ||

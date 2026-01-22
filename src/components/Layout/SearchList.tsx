@@ -2,11 +2,11 @@ import React from "react"
 
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
+import NoResults from "./NoResults"
+import OverviewList from "./OverviewList"
 import { AggregatePlaceAttributes } from "../../entities/Place/types"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
-import NoResults from "./NoResults"
-import OverviewList from "./OverviewList"
 
 import "./SearchList.css"
 import "./OverviewList.css"

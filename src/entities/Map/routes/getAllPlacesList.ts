@@ -54,6 +54,7 @@ export const getAllPlacesList = Router.memo(
       creator_address: ctx.url.searchParams
         .get("creator_address")
         ?.toLowerCase(),
+      sdk: ctx.url.searchParams.get("sdk"),
     })
 
     const userAuth = await withAuthOptional(ctx)
@@ -77,6 +78,7 @@ export const getAllPlacesList = Router.memo(
       search: query.search,
       categories: query.categories,
       creator_address: query.creator_address,
+      sdk: query.sdk,
     }
 
     const hotScenes = getHotScenes()

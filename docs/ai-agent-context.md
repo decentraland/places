@@ -62,6 +62,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **User Visits**: Unique users who visited a place in the last 30 days
 - **Highlighted Places**: Featured places with special promotion status
 - **Creator Address**: Ethereum address of the scene creator, extracted from scene metadata during deployment processing, indexed for efficient creator-based queries (used by tipping systems)
+- **SDK Version**: Runtime version extracted from `runtimeVersion` in scene.json during deployment, used for filtering scenes by SDK version (e.g., SDK7 vs legacy)
 
 ## API Specification
 
@@ -69,12 +70,14 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 
 - **Places**: `/api/places`, `/api/places/:id`, `/api/places/status`, `/api/places/:id/categories`, `/api/places/:id/rating`
 - **Worlds**: `/api/worlds`, `/api/world_names`
+- **Destinations**: `/api/destinations` (combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are always returned first, followed by ranking value, then by specified sort order)
 - **Map**: `/api/map`, `/api/map/places` (coordinate-based queries with higher limits)
 - **Categories**: `/api/categories` (with optional `target` filter for places/worlds/all)
 - **Interactions**: `/api/places/:id/likes`, `/api/places/:id/favorites` (authentication required)
 - **Reports**: `/api/report` (authentication required, returns S3 signed URL)
 - **Social**: `/places/place/`, `/places/world/` (metadata injection for social sharing)
 - **Creator Queries**: `/api/places?creator_address=0x...` (lookup places by scene creator for tipping integration)
+- **SDK Filtering**: `/api/places?sdk=7` (filter by SDK version, exact match)
 
 **Authentication**: Bearer token authentication using Decentraland wallet signatures. Admin endpoints require additional permissions.
 
@@ -93,7 +96,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 
 **Key Tables**:
 
-- `places`: Main table with UUID, title, description, positions[], base_position, owner, creator_address, content_rating, disabled, user_count, user_visits, like metrics
+- `places`: Main table with UUID, title, description, positions[], base_position, owner, creator_address, sdk, content_rating, disabled, user_count, user_visits, like metrics
 - `users`: Registered users with Ethereum addresses and permissions
 - `categories`: Place categories with name, active status, i18n translations
 - `place_categories`: Many-to-many relationships between places and categories
