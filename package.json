@@ -19,6 +19,7 @@
     "core-js": "^3.22.2",
     "cssnano": "^5.0.10",
     "decentraland-gatsby": "^7.13.0",
+    "decentraland-ui2": "^1.2.1",
     "es6-shim": "^0.35.8",
     "express-fileupload": "^1.2.1",
     "gatsby": "4.23.0",
@@ -93,7 +94,7 @@
     "typescript": "^4.7.2",
     "workbox-cli": "^6.5.2"
   },
-    "overrides": {
+  "overrides": {
     "@dcl/schemas": "^22.2.0"
   },
   "keywords": [
