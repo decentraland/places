@@ -102,4 +102,6 @@ export const placeGenesisPlaza: PlaceAttributes = {
   textsearch: undefined,
   categories: [],
   creator_address: null,
+  sdk: null,
+  ranking: 0,
 }

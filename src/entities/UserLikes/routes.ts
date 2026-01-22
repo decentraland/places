@@ -6,15 +6,15 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
-import PlaceModel from "../Place/model"
-import { fetchScore } from "../Snapshot/utils"
-import UserLikesModel from "../UserLikes/model"
 import { updateUserLikeBodySchema, updateUserLikeParamsSchema } from "./schema"
 import {
   UpdateUserLikeBody,
   UpdateUserLikeParams,
   UserLikeAttributes,
 } from "./types"
+import PlaceModel from "../Place/model"
+import { fetchScore } from "../Snapshot/utils"
+import UserLikesModel from "../UserLikes/model"
 
 export default routes((router) => {
   router.patch("/places/:place_id/likes", updateLike)

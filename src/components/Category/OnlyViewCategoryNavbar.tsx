@@ -2,8 +2,8 @@ import React from "react"
 
 import { Back } from "decentraland-ui/dist/components/Back/Back"
 
-import { Close } from "../Icon/Close"
 import { CategoryFilter, CategoryFilterProps } from "./CategoryFilter"
+import { Close } from "../Icon/Close"
 
 import "./OnlyViewCategoryNavbar.css"
 

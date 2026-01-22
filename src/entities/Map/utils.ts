@@ -1,7 +1,7 @@
+import { AggregateCoordinatePlaceAttributes } from "./types"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import { AggregatePlaceAttributes, HotScene } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
-import { AggregateCoordinatePlaceAttributes } from "./types"
 
 export function placesWithCoordinatesAggregates(
   places: AggregateCoordinatePlaceAttributes[],

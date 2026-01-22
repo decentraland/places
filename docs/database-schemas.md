@@ -34,6 +34,7 @@ erDiagram
         timestamptz deployed_at
         tsvector textsearch
         numeric like_score
+        text sdk
     }
 
     users {
@@ -131,6 +132,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 | favorites         | INTEGER       | NO       | 0       | Count of user favorites                                                |
 | like_rate         | NUMERIC       | YES      | NULL    | Computed like rate percentage (not VP-weighted)                        |
 | like_score        | NUMERIC       | YES      | NULL    | Computed VP-weighted like score for ranking (0-1)                      |
+| ranking           | FLOAT         | YES      | 0       | External ranking value for custom ordering                             |
 | highlighted       | BOOLEAN       | NO       | false   | Featured place flag for promotion                                      |
 | disabled          | BOOLEAN       | NO       | false   | Soft delete flag (hidden from public listing)                          |
 | disabled_at       | TIMESTAMPTZ   | YES      | NULL    | When the place was disabled                                            |
@@ -139,6 +141,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 | deployed_at       | TIMESTAMPTZ   | NO       | now()   | When the place was last deployed                                       |
 | textsearch        | TSVECTOR      | YES      | NULL    | Full-text search vector for title, description, owner                  |
 | categories        | VARCHAR(50)[] | NO       | {}      | Array of category names (denormalized for performance)                 |
+| sdk               | TEXT          | YES      | NULL    | SDK/runtime version from scene.json runtimeVersion field (e.g., "7")   |
 | created_at        | TIMESTAMPTZ   | NO       | now()   | Record creation timestamp                                              |
 | updated_at        | TIMESTAMPTZ   | NO       | now()   | Last update timestamp                                                  |
 
@@ -171,6 +174,7 @@ Main table containing all places (scenes in Genesis City and Decentraland Worlds
 - **Categories Denormalization**: The `categories` array is denormalized from `place_categories` for query performance
 - **World vs Scene**: `world=true` places use `world_name` for identification, `world=false` places use `positions` and `base_position`
 - **Creator Address**: Extracted from scene metadata during deployment processing, used for creator-based queries (e.g., tipping system integration)
+- **SDK Version**: Extracted from `runtimeVersion` in scene.json during deployment, used for filtering by SDK version (e.g., SDK7 scenes)
 
 ---
 

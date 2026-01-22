@@ -1,7 +1,7 @@
 import React from "react"
 
-import { Category } from "../../entities/Category/types"
 import { CategoryFilter, CategoryFilterProps } from "./CategoryFilter"
+import { Category } from "../../entities/Category/types"
 
 type CategoryFiltersProps = {
   categories: Category[]
