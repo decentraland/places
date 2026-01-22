@@ -9,6 +9,7 @@
     "npm": "8.* || 9.*"
   },
   "dependencies": {
+    "@contentful/rich-text-react-renderer": "^16.1.6",
     "@dcl/hooks": "^1.0.0",
     "@dcl/schemas": "^22.2.0",
     "@sentry/browser": "^7.120.3",
@@ -34,6 +35,7 @@
     "gatsby-source-filesystem": "^4.1.0",
     "gatsby-transformer-sharp": "^4.1.0",
     "html-escaper": "^3.0.3",
+    "lottie-react": "^2.4.1",
     "node-pg-migrate": "^6.0.0",
     "pg": "^8.13.1",
     "postcss": "^8.3.11",
