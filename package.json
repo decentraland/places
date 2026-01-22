@@ -10,7 +10,7 @@
   },
   "dependencies": {
     "@dcl/hooks": "^1.0.0",
-    "@dcl/schemas": "^18.1.0",
+    "@dcl/schemas": "^22.2.0",
     "@sentry/browser": "^7.120.3",
     "@well-known-components/pushable-channel": "^1.0.3",
     "abort-controller": "^3.0.0",
