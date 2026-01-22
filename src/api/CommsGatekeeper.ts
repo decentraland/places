@@ -13,7 +13,7 @@ export type SceneParticipantsResponse = {
 export default class CommsGatekeeper extends API {
   static Url = env(
     `COMMS_GATEKEEPER_URL`,
-    "https://comms-gatekeeper.decentraland.org"
+    "https://comms-gatekeeper.decentraland.zone"
   )
 
   static Cache = new Map<string, CommsGatekeeper>()

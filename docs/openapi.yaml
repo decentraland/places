@@ -832,9 +832,14 @@ paths:
         - Places
         - Worlds
       summary: List destinations (places + worlds)
-      security: []
+      security:
+        - {}
+        - BearerAuth: []
       description: |
         Retrieve a paginated list of both places and worlds with comprehensive filtering options.
+        
+        **Authentication:** Optional. When authenticated, enables `only_favorites` filtering and populates
+        `user_like`, `user_dislike`, and `user_favorite` fields in responses.
         
         **Key Features:**
         - Combines Genesis City places and Decentraland Worlds in a single response
@@ -874,7 +879,7 @@ paths:
         - name: pointer
           in: query
           description: |
-            Filter places by specific parcel coordinates (exact match).
+            Filter places by specific parcel coordinates (exact match).  Worlds are excluded.
             Format: `"x,y"` (e.g., `"-23,-96"`).
           required: false
           schema:
@@ -913,7 +918,9 @@ paths:
           explode: true
         - name: only_favorites
           in: query
-          description: Show only authenticated user's favorites (requires auth)
+          description: |
+            Show only the authenticated user's favorite destinations.
+            Returns empty list if not authenticated.
           required: false
           schema:
             type: boolean
