@@ -71,7 +71,7 @@ export function toPlacesOptions(params: URLSearchParams): PlacesPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
-    categories: [...new Set(params.getAll("categories"))] ?? [],
+    categories: [...new Set(params.getAll("categories"))] as string[],
     only_view_category: params.get("only_view_category") ?? "",
   }
 }
@@ -89,7 +89,7 @@ export function toWorldsOptions(params: URLSearchParams): WorldsPageOptions {
       oneOf(params.get("order"), ["asc", "desc"]) ?? pageOptionsDefault.order,
     page: numeric(params.get("page"), { min: 1 }) ?? pageOptionsDefault.page,
     search: params.get("search") ?? "",
-    categories: [...new Set(params.getAll("categories"))] ?? [],
+    categories: [...new Set(params.getAll("categories"))] as string[],
     only_view_category: params.get("only_view_category") ?? "",
   }
 }
