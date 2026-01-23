@@ -47,6 +47,7 @@ export type FindDestinationsWithAggregatesOptions = DestinationsListOptions & {
   user?: string
   operatedPositions?: string[]
   hotScenesPositions?: string[]
+  ids?: string[]
 }
 
 export { PlaceListOrderBy as DestinationsListOrderBy }
