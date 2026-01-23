@@ -1348,6 +1348,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.sdk,
           SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
         )}
+        ${conditional(
+          !!options.ids,
+          SQL` AND p.id IN ${values(options.ids || [])}`
+        )}
       ORDER BY 
       p.highlighted DESC,
       p.ranking DESC NULLS LAST,
@@ -1384,6 +1388,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_worlds"
       | "only_places"
       | "sdk"
+      | "ids"
     >
   ) {
     const searchIsEmpty = options.search && options.search.length < 3
@@ -1447,6 +1452,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(
           !!options.sdk,
           SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+        )}
+        ${conditional(
+          !!options.ids,
+          SQL` AND p.id IN ${values(options.ids || [])}`
         )}
     `
     const results: { total: string }[] = await this.namedQuery(

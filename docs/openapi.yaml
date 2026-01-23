@@ -1033,6 +1033,147 @@ paths:
         '400':
           $ref: '#/components/responses/BadRequest'
 
+    post:
+      tags:
+        - Places
+        - Worlds
+      summary: Get specific destinations by IDs
+      security:
+        - {}
+        - BearerAuth: []
+      description: |
+        Retrieve multiple specific destinations (places and/or worlds) by their UUIDs in a single request.
+        Maximum 100 destination IDs per request.
+
+        **Authentication:** Optional. When authenticated, enables `only_favorites` filtering and populates
+        `user_like`, `user_dislike`, and `user_favorite` fields in responses.
+
+        **Use Cases:**
+        - Fetch details for a known set of destinations
+        - Resolve destination IDs from external sources
+        - Batch operations for better performance
+
+        **Note:** Results are returned in the same order as requested IDs when available.
+        All query parameters from the GET endpoint are supported for additional filtering.
+      operationId: getDestinationsByIds
+      parameters:
+        - name: offset
+          in: query
+          description: Number of results to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - name: limit
+          in: query
+          description: Maximum number of results (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100
+            default: 100
+        - name: order_by
+          in: query
+          description: Sort field
+          required: false
+          schema:
+            type: string
+            enum: [like_score, most_active, updated_at, created_at]
+            default: like_score
+        - name: order
+          in: query
+          description: Sort direction
+          required: false
+          schema:
+            type: string
+            enum: [asc, desc]
+            default: desc
+        - name: search
+          in: query
+          description: Optional text search filter (minimum 3 characters)
+          required: false
+          schema:
+            type: string
+            minLength: 3
+        - name: with_connected_users
+          in: query
+          description: Include connected user wallet addresses for each destination
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with_realms_detail
+          in: query
+          description: Include real-time realm data for each place
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_favorites
+          in: query
+          description: |
+            Show only the authenticated user's favorite destinations.
+            Returns empty list if not authenticated.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_highlighted
+          in: query
+          description: Show only highlighted destinations
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_worlds
+          in: query
+          description: Show only worlds (excludes places)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: only_places
+          in: query
+          description: Show only places (excludes worlds)
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: sdk
+          in: query
+          description: |
+            Filter by SDK version.
+            Places with null SDK values are also included.
+          required: false
+          schema:
+            type: string
+      requestBody:
+        required: true
+        description: Array of destination UUIDs to retrieve
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+                format: uuid
+              minItems: 1
+              maxItems: 100
+            example:
+              - "550e8400-e29b-41d4-a716-446655440000"
+              - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+      responses:
+        '200':
+          description: Successfully retrieved destinations
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
   /world_names:
     get:
       tags:

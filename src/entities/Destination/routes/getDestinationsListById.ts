@@ -1,6 +1,8 @@
 import { withAuthOptional } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
+import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
+import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 import {
   bool,
@@ -28,8 +30,24 @@ import {
 export const validateGetDestinationsListQuery =
   Router.validator<GetDestinationsListQuery>(getDestinationsListQuerySchema)
 
-export const getDestinationsList = Router.memo(
-  async (ctx: Context<{}, "url" | "request">) => {
+export const getDestinationsListById = Router.memo(
+  async (ctx: Context<{}, "url" | "request" | "body">) => {
+    const destinationIds = ctx.body
+
+    if (!Array.isArray(destinationIds)) {
+      throw new ErrorResponse(
+        Response.BadRequest,
+        `Invalid request body. Expected an array of destination IDs.`
+      )
+    }
+
+    if (destinationIds.length > 100) {
+      throw new ErrorResponse(
+        Response.BadRequest,
+        `Cannot request more than 100 destinations at once`
+      )
+    }
+
     const query = await validateGetDestinationsListQuery({
       pointer: ctx.url.searchParams.getAll("pointer"),
       world_names: ctx.url.searchParams.getAll("world_names"),
@@ -86,6 +104,7 @@ export const getDestinationsList = Router.memo(
       only_worlds: !!bool(query.only_worlds),
       only_places: !!bool(query.only_places),
       sdk: query.sdk,
+      ids: destinationIds,
     }
 
     // If owner parameter is provided, fetch operated lands from Catalyst API
