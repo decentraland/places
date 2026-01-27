@@ -10,6 +10,11 @@ export type SceneParticipantsResponse = {
   }
 }
 
+type CachedParticipants = {
+  addresses: string[]
+  expiresAt: number
+}
+
 export default class CommsGatekeeper extends API {
   static Url = env(
     `COMMS_GATEKEEPER_URL`,
@@ -17,6 +22,10 @@ export default class CommsGatekeeper extends API {
   )
 
   static Cache = new Map<string, CommsGatekeeper>()
+
+  // Cache for participant addresses with 5-minute TTL
+  private static participantsCache = new Map<string, CachedParticipants>()
+  private static readonly CACHE_TTL_MS = Time.Minute * 5 // 5 minutes
 
   static from(url: string) {
     if (!this.Cache.has(url)) {
@@ -37,8 +46,16 @@ export default class CommsGatekeeper extends API {
    */
   async getSceneParticipants(
     pointer: string,
-    realmName: string = "main"
+    realmName = "main"
   ): Promise<string[]> {
+    const cacheKey = `scene:${pointer}:${realmName}`
+    const cached = CommsGatekeeper.participantsCache.get(cacheKey)
+
+    // Return cached value if it exists and hasn't expired
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.addresses
+    }
+
     const { signal, abort } = new AbortController()
     const fetchOptions = new Options({ signal })
 
@@ -55,7 +72,15 @@ export default class CommsGatekeeper extends API {
         `/scene-participants?${params}`,
         fetchOptions
       )
-      return response.data.addresses
+      const addresses = response.data.addresses
+
+      // Cache the result with expiration
+      CommsGatekeeper.participantsCache.set(cacheKey, {
+        addresses,
+        expiresAt: Date.now() + CommsGatekeeper.CACHE_TTL_MS,
+      })
+
+      return addresses
     } catch (error) {
       console.error(
         `Error fetching scene participants for pointer ${pointer}:`,
@@ -74,6 +99,14 @@ export default class CommsGatekeeper extends API {
    * @returns List of wallet addresses connected to the room
    */
   async getWorldParticipants(worldName: string): Promise<string[]> {
+    const cacheKey = `world:${worldName}`
+    const cached = CommsGatekeeper.participantsCache.get(cacheKey)
+
+    // Return cached value if it exists and hasn't expired
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.addresses
+    }
+
     const { signal, abort } = new AbortController()
     const fetchOptions = new Options({ signal })
 
@@ -87,7 +120,15 @@ export default class CommsGatekeeper extends API {
         `/scene-participants?${params}`,
         fetchOptions
       )
-      return response.data.addresses
+      const addresses = response.data.addresses
+
+      // Cache the result with expiration
+      CommsGatekeeper.participantsCache.set(cacheKey, {
+        addresses,
+        expiresAt: Date.now() + CommsGatekeeper.CACHE_TTL_MS,
+      })
+
+      return addresses
     } catch (error) {
       console.error(
         `Error fetching world participants for ${worldName}:`,
