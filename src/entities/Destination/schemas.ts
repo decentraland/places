@@ -82,7 +82,7 @@ export const getDestinationsListQuerySchema = schema({
         "Include the list of connected user wallet addresses for each destination (connected_addresses property)",
       nullable: true as any,
     },
-    with_live: {
+    with_live_events: {
       type: "string",
       format: "boolean",
       description:

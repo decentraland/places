@@ -265,7 +265,7 @@ describe("getDestinationsList", () => {
     })
   })
 
-  describe("when called with with_live=true", () => {
+  describe("when called with with_live_events=true", () => {
     describe("and the destination has a live event", () => {
       let mockEventsInstance: any
 
@@ -297,7 +297,7 @@ describe("getDestinationsList", () => {
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
         const request = new Request("/")
-        const url = new URL("https://localhost/?with_live=true")
+        const url = new URL("https://localhost/?with_live_events=true")
         const response = await getDestinationsList({
           request,
           url,
@@ -339,7 +339,7 @@ describe("getDestinationsList", () => {
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
         const request = new Request("/")
-        const url = new URL("https://localhost/?with_live=true")
+        const url = new URL("https://localhost/?with_live_events=true")
         const response = await getDestinationsList({
           request,
           url,
@@ -350,7 +350,7 @@ describe("getDestinationsList", () => {
     })
   })
 
-  describe("when called without with_live parameter", () => {
+  describe("when called without with_live_events parameter", () => {
     it("should not include live property in response", async () => {
       find.mockResolvedValueOnce(
         Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])

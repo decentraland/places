@@ -51,7 +51,7 @@ export const getDestinationsList = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       with_connected_users: ctx.url.searchParams.get("with_connected_users"),
-      with_live: ctx.url.searchParams.get("with_live"),
+      with_live_events: ctx.url.searchParams.get("with_live_events"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
       owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
@@ -141,7 +141,7 @@ export const getDestinationsList = Router.memo(
     }
 
     // Fetch live events if requested
-    const withLiveEvents = !!bool(query.with_live)
+    const withLiveEvents = !!bool(query.with_live_events)
     let liveEventsMap: LiveEventsMap | undefined
 
     if (withLiveEvents && data.length > 0) {
