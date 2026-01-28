@@ -8,6 +8,7 @@ import { sceneStatsGenesisPlaza } from "../../../__data__/sceneStatsGenesisPlaza
 import { worldsLiveData } from "../../../__data__/worldsLiveData"
 import CommsGatekeeper from "../../../api/CommsGatekeeper"
 import DataTeam from "../../../api/DataTeam"
+import Events from "../../../api/Events"
 import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../../Place/model"
 import * as worldUtilsModule from "../../World/utils"
@@ -17,6 +18,7 @@ const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 const getWorldsLiveDataMock = jest.spyOn(worldUtilsModule, "getWorldsLiveData")
 const commsGatekeeperGet = jest.spyOn(CommsGatekeeper, "get")
+const eventsGet = jest.spyOn(Events, "get")
 
 afterEach(() => {
   find.mockReset()
@@ -24,6 +26,7 @@ afterEach(() => {
   catalystSceneStats.mockReset()
   getWorldsLiveDataMock.mockReset()
   commsGatekeeperGet.mockReset()
+  eventsGet.mockReset()
 })
 
 describe("getDestinationsList", () => {
@@ -259,6 +262,115 @@ describe("getDestinationsList", () => {
 
       expect(response.body.data).toEqual([])
       expect(commsGatekeeperGet).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("when called with with_live_events=true", () => {
+    describe("and the destination has a live event", () => {
+      let mockEventsInstance: any
+
+      beforeEach(() => {
+        mockEventsInstance = {
+          hasLiveEvent: jest.fn().mockResolvedValue(true),
+          checkLiveEventsForDestinations: jest
+            .fn()
+            .mockImplementation(async (destinationIds: string[]) => {
+              const map = new Map<string, boolean>()
+              for (const id of destinationIds) {
+                map.set(id, true)
+              }
+              return map
+            }),
+        }
+        eventsGet.mockReturnValue(mockEventsInstance)
+      })
+
+      it("should return destinations with live=true", async () => {
+        find.mockResolvedValueOnce(
+          Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+        )
+        find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
+        catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+        catalystSceneStats.mockResolvedValueOnce(
+          Promise.resolve(sceneStatsGenesisPlaza)
+        )
+        getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
+
+        const request = new Request("/")
+        const url = new URL("https://localhost/?with_live_events=true")
+        const response = await getDestinationsList({
+          request,
+          url,
+        })
+
+        expect(response.body.data[0].live).toBe(true)
+        expect(eventsGet).toHaveBeenCalled()
+      })
+    })
+
+    describe("and the destination has no live event", () => {
+      let mockEventsInstance: any
+
+      beforeEach(() => {
+        mockEventsInstance = {
+          hasLiveEvent: jest.fn().mockResolvedValue(false),
+          checkLiveEventsForDestinations: jest
+            .fn()
+            .mockImplementation(async (destinationIds: string[]) => {
+              const map = new Map<string, boolean>()
+              for (const id of destinationIds) {
+                map.set(id, false)
+              }
+              return map
+            }),
+        }
+        eventsGet.mockReturnValue(mockEventsInstance)
+      })
+
+      it("should return destinations with live=false", async () => {
+        find.mockResolvedValueOnce(
+          Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+        )
+        find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
+        catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+        catalystSceneStats.mockResolvedValueOnce(
+          Promise.resolve(sceneStatsGenesisPlaza)
+        )
+        getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
+
+        const request = new Request("/")
+        const url = new URL("https://localhost/?with_live_events=true")
+        const response = await getDestinationsList({
+          request,
+          url,
+        })
+
+        expect(response.body.data[0].live).toBe(false)
+      })
+    })
+  })
+
+  describe("when called without with_live_events parameter", () => {
+    it("should not include live property in response", async () => {
+      find.mockResolvedValueOnce(
+        Promise.resolve([placeGenesisPlazaWithAggregatedAttributes])
+      )
+      find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
+      catalystHotScenes.mockReturnValueOnce([hotSceneGenesisPlaza])
+      catalystSceneStats.mockResolvedValueOnce(
+        Promise.resolve(sceneStatsGenesisPlaza)
+      )
+      getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
+
+      const request = new Request("/")
+      const url = new URL("https://localhost/")
+      const response = await getDestinationsList({
+        request,
+        url,
+      })
+
+      expect(response.body.data[0]).not.toHaveProperty("live")
+      expect(eventsGet).not.toHaveBeenCalled()
     })
   })
 })
