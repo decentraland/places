@@ -82,6 +82,13 @@ export const getDestinationsListQuerySchema = schema({
         "Include the list of connected user wallet addresses for each destination (connected_addresses property)",
       nullable: true as any,
     },
+    with_live: {
+      type: "string",
+      format: "boolean",
+      description:
+        "Include whether the destination has a live event (live property). Data is cached for 5 minutes.",
+      nullable: true as any,
+    },
     search: {
       type: "string",
       description:

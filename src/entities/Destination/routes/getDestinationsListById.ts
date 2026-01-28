@@ -23,8 +23,10 @@ import {
 } from "../types"
 import {
   ConnectedUsersMap,
+  LiveEventsMap,
   destinationsWithAggregates,
   fetchConnectedUsersForDestinations,
+  fetchLiveEventsForDestinations,
 } from "../utils"
 
 export const validateGetDestinationsListQuery =
@@ -67,6 +69,7 @@ export const getDestinationsListById = Router.memo(
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
       with_connected_users: ctx.url.searchParams.get("with_connected_users"),
+      with_live: ctx.url.searchParams.get("with_live"),
       search: ctx.url.searchParams.get("search"),
       categories: ctx.url.searchParams.getAll("categories"),
       owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
@@ -156,6 +159,14 @@ export const getDestinationsListById = Router.memo(
       connectedUsersMap = await fetchConnectedUsersForDestinations(data)
     }
 
+    // Fetch live events if requested
+    const withLiveEvents = !!bool(query.with_live)
+    let liveEventsMap: LiveEventsMap | undefined
+
+    if (withLiveEvents && data.length > 0) {
+      liveEventsMap = await fetchLiveEventsForDestinations(data)
+    }
+
     const response = destinationsWithAggregates(
       data,
       hotScenes,
@@ -165,6 +176,8 @@ export const getDestinationsListById = Router.memo(
         withRealmsDetail: !!bool(query.with_realms_detail),
         withConnectedUsers,
         connectedUsersMap,
+        withLiveEvents,
+        liveEventsMap,
       }
     )
 
