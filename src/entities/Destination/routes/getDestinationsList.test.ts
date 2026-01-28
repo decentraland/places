@@ -272,15 +272,15 @@ describe("getDestinationsList", () => {
       beforeEach(() => {
         mockEventsInstance = {
           hasLiveEvent: jest.fn().mockResolvedValue(true),
-          checkLiveEventsForDestinations: jest.fn().mockImplementation(
-            async (destinationIds: string[]) => {
+          checkLiveEventsForDestinations: jest
+            .fn()
+            .mockImplementation(async (destinationIds: string[]) => {
               const map = new Map<string, boolean>()
               for (const id of destinationIds) {
                 map.set(id, true)
               }
               return map
-            }
-          ),
+            }),
         }
         eventsGet.mockReturnValue(mockEventsInstance)
       })
@@ -314,15 +314,15 @@ describe("getDestinationsList", () => {
       beforeEach(() => {
         mockEventsInstance = {
           hasLiveEvent: jest.fn().mockResolvedValue(false),
-          checkLiveEventsForDestinations: jest.fn().mockImplementation(
-            async (destinationIds: string[]) => {
+          checkLiveEventsForDestinations: jest
+            .fn()
+            .mockImplementation(async (destinationIds: string[]) => {
               const map = new Map<string, boolean>()
               for (const id of destinationIds) {
                 map.set(id, false)
               }
               return map
-            }
-          ),
+            }),
         }
         eventsGet.mockReturnValue(mockEventsInstance)
       })

@@ -141,4 +141,3 @@ export default class Events extends API {
     return liveEventsMap
   }
 }
-
