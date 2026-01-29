@@ -46,9 +46,9 @@ describe("Events API", () => {
         expect(result.get("place-2")).toBe(false)
       })
 
-      it("should call the events API with list=live query param", () => {
+      it("should call the events API search endpoint with list=live query param", () => {
         expect(fetchMock).toHaveBeenCalledWith(
-          "/events?list=live",
+          "/events/search?list=live",
           expect.anything()
         )
       })
