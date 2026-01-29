@@ -3,57 +3,83 @@ import Events from "./Events"
 describe("Events API", () => {
   let fetchMock: jest.SpyInstance
 
-  afterEach(() => {
-    fetchMock?.mockRestore()
-    jest.clearAllMocks()
-    // Clear cache between tests
+  beforeEach(() => {
+    // Clear both caches before each test
+    ;(Events as any).Cache.clear()
     ;(Events as any).liveEventCache.clear()
   })
 
-  describe("when checking if a destination has a live event", () => {
-    describe("and the API returns live events", () => {
-      let result: boolean
+  afterEach(() => {
+    fetchMock?.mockRestore()
+    jest.clearAllMocks()
+  })
+
+  describe("when checking live events for multiple destinations", () => {
+    describe("and the API returns live events for some destinations", () => {
+      let result: Map<string, boolean>
 
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
           ok: true,
-          data: [{ id: "event-1", live: true }],
+          data: {
+            events: [
+              { id: "event-1", place_id: "place-1", live: true },
+              { id: "event-world", place_id: "world-id", live: true },
+            ],
+            total: 2,
+          },
         })
 
-        result = await Events.get().hasLiveEvent("destination-123")
+        result = await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+          "world-id",
+        ])
       })
 
-      it("should return true", () => {
-        expect(result).toBe(true)
+      it("should return true for destinations with live events", () => {
+        expect(result.get("place-1")).toBe(true)
+        expect(result.get("world-id")).toBe(true)
       })
 
-      it("should call the events API with correct parameters", () => {
+      it("should return false for destinations without live events", () => {
+        expect(result.get("place-2")).toBe(false)
+      })
+
+      it("should call the events API with list=live query param", () => {
         expect(fetchMock).toHaveBeenCalledWith(
-          "/events?places_ids=destination-123&list=live",
+          "/events?list=live",
           expect.anything()
         )
       })
     })
 
     describe("and the API returns no live events", () => {
-      let result: boolean
+      let result: Map<string, boolean>
 
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
           ok: true,
-          data: [],
+          data: {
+            events: [],
+            total: 0,
+          },
         })
 
-        result = await Events.get().hasLiveEvent("destination-456")
+        result = await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+        ])
       })
 
-      it("should return false", () => {
-        expect(result).toBe(false)
+      it("should return false for all destinations", () => {
+        expect(result.get("place-1")).toBe(false)
+        expect(result.get("place-2")).toBe(false)
       })
     })
 
     describe("and the API call fails", () => {
-      let result: boolean
+      let result: Map<string, boolean>
       let consoleErrorSpy: jest.SpyInstance
 
       beforeEach(async () => {
@@ -62,20 +88,24 @@ describe("Events API", () => {
           .spyOn(Events.get(), "fetch")
           .mockRejectedValueOnce(new Error("Network error"))
 
-        result = await Events.get().hasLiveEvent("destination-error")
+        result = await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+        ])
       })
 
       afterEach(() => {
         consoleErrorSpy.mockRestore()
       })
 
-      it("should return false", () => {
-        expect(result).toBe(false)
+      it("should return false for all destinations", () => {
+        expect(result.get("place-1")).toBe(false)
+        expect(result.get("place-2")).toBe(false)
       })
 
       it("should log the error", () => {
         expect(consoleErrorSpy).toHaveBeenCalledWith(
-          "Error checking live events for destination destination-error:",
+          "Error checking live events for destinations:",
           expect.any(Error)
         )
       })
@@ -85,58 +115,91 @@ describe("Events API", () => {
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
           ok: true,
-          data: [{ id: "event-1", live: true }],
+          data: {
+            events: [{ id: "event-1", place_id: "place-1", live: true }],
+            total: 1,
+          },
         })
 
         // First call - should fetch
-        await Events.get().hasLiveEvent("destination-cached")
+        await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+        ])
         // Second call - should use cache
-        await Events.get().hasLiveEvent("destination-cached")
+        await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+        ])
       })
 
       it("should only call the API once", () => {
         expect(fetchMock).toHaveBeenCalledTimes(1)
       })
     })
-  })
 
-  describe("when checking live events for multiple destinations", () => {
-    let result: Map<string, boolean>
+    describe("and requesting new IDs alongside cached IDs", () => {
+      let result: Map<string, boolean>
 
-    beforeEach(async () => {
-      fetchMock = jest
-        .spyOn(Events.get(), "fetch")
-        // First call for place-1
-        .mockResolvedValueOnce({
-          ok: true,
-          data: [{ id: "event-1", live: true }],
-        })
-        // Second call for place-2
-        .mockResolvedValueOnce({
-          ok: true,
-          data: [],
-        })
-        // Third call for world-id
-        .mockResolvedValueOnce({
-          ok: true,
-          data: [{ id: "event-world", live: true }],
-        })
+      beforeEach(async () => {
+        fetchMock = jest
+          .spyOn(Events.get(), "fetch")
+          // First call for place-1, place-2
+          .mockResolvedValueOnce({
+            ok: true,
+            data: {
+              events: [{ id: "event-1", place_id: "place-1", live: true }],
+              total: 1,
+            },
+          })
+          // Second call for only place-3 (place-1 and place-2 are cached)
+          .mockResolvedValueOnce({
+            ok: true,
+            data: {
+              events: [{ id: "event-3", place_id: "place-3", live: true }],
+              total: 1,
+            },
+          })
 
-      result = await Events.get().checkLiveEventsForDestinations([
-        "place-1",
-        "place-2",
-        "world-id",
-      ])
+        // First call - fetch place-1, place-2
+        await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+        ])
+        // Second call - place-1 and place-2 are cached, only fetch place-3
+        result = await Events.get().checkLiveEventsForDestinations([
+          "place-1",
+          "place-2",
+          "place-3",
+        ])
+      })
+
+      it("should only fetch uncached IDs", () => {
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+      })
+
+      it("should return correct live status for all IDs", () => {
+        expect(result.get("place-1")).toBe(true) // from cache
+        expect(result.get("place-2")).toBe(false) // from cache
+        expect(result.get("place-3")).toBe(true) // freshly fetched
+      })
     })
 
-    it("should return a map with live status for each destination", () => {
-      expect(result.get("place-1")).toBe(true)
-      expect(result.get("place-2")).toBe(false)
-      expect(result.get("world-id")).toBe(true)
-    })
+    describe("and an empty array is passed", () => {
+      let result: Map<string, boolean>
 
-    it("should call the API for each destination", () => {
-      expect(fetchMock).toHaveBeenCalledTimes(3)
+      beforeEach(async () => {
+        fetchMock = jest.spyOn(Events.get(), "fetch")
+        result = await Events.get().checkLiveEventsForDestinations([])
+      })
+
+      it("should return an empty map", () => {
+        expect(result.size).toBe(0)
+      })
+
+      it("should not call the API", () => {
+        expect(fetchMock).not.toHaveBeenCalled()
+      })
     })
   })
 })

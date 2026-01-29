@@ -271,7 +271,6 @@ describe("getDestinationsList", () => {
 
       beforeEach(() => {
         mockEventsInstance = {
-          hasLiveEvent: jest.fn().mockResolvedValue(true),
           checkLiveEventsForDestinations: jest
             .fn()
             .mockImplementation(async (destinationIds: string[]) => {
@@ -313,7 +312,6 @@ describe("getDestinationsList", () => {
 
       beforeEach(() => {
         mockEventsInstance = {
-          hasLiveEvent: jest.fn().mockResolvedValue(false),
           checkLiveEventsForDestinations: jest
             .fn()
             .mockImplementation(async (destinationIds: string[]) => {
