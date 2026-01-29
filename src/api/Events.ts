@@ -23,11 +23,14 @@ export type Event = {
 
 export type EventsResponse = {
   ok: boolean
-  data: Event[]
+  data: {
+    events: Event[]
+    total: number
+  }
 }
 
 type CachedLiveStatus = {
-  hasLiveEvent: boolean
+  isLive: boolean
   expiresAt: number
 }
 
@@ -36,11 +39,11 @@ type CachedLiveStatus = {
  * Provides methods to check for live events associated with places/worlds.
  */
 export default class Events extends API {
-  static Url = env("EVENTS_API_URL", "https://events.decentraland.org/api")
+  static Url = env("EVENTS_API_URL", "https://events.decentraland.zone/api")
 
   static Cache = new Map<string, Events>()
 
-  // Cache for live event status with 5-minute TTL
+  // Per-ID cache for live event status with 5-minute TTL
   private static liveEventCache = new Map<string, CachedLiveStatus>()
   private static readonly CACHE_TTL_MS = Time.Minute * 5 // 5 minutes
 
@@ -56,63 +59,10 @@ export default class Events extends API {
   }
 
   /**
-   * Check if a destination (place or world) has any live events.
-   * Both places and worlds use the same `places_ids` filter since they share the same table.
-   * Results are cached for 5 minutes.
-   *
-   * @param destinationId - The destination UUID (place or world) to check for live events
-   * @returns true if there's at least one live event, false otherwise
-   */
-  async hasLiveEvent(destinationId: string): Promise<boolean> {
-    const cacheKey = `destination:${destinationId}:live`
-    const cached = Events.liveEventCache.get(cacheKey)
-
-    // Return cached value if it exists and hasn't expired
-    if (cached && cached.expiresAt > Date.now()) {
-      return cached.hasLiveEvent
-    }
-
-    const controller = new AbortController()
-    const { signal } = controller
-    const fetchOptions = new Options({ signal })
-
-    const timeoutId = setTimeout(() => {
-      controller.abort()
-    }, Time.Second * 10)
-
-    try {
-      const params = new URLSearchParams({
-        places_ids: destinationId,
-        list: "live",
-      })
-      const response = await this.fetch<EventsResponse>(
-        `/events?${params}`,
-        fetchOptions
-      )
-      const hasLiveEvent =
-        response.ok && response.data && response.data.length > 0
-
-      // Cache the result with expiration
-      Events.liveEventCache.set(cacheKey, {
-        hasLiveEvent,
-        expiresAt: Date.now() + Events.CACHE_TTL_MS,
-      })
-
-      return hasLiveEvent
-    } catch (error) {
-      console.error(
-        `Error checking live events for destination ${destinationId}:`,
-        error
-      )
-      return false
-    } finally {
-      clearTimeout(timeoutId)
-    }
-  }
-
-  /**
    * Batch check for live events for multiple destinations.
+   * Uses POST with body { placeIds: [...] } as required by the events API.
    * Works for both places and worlds since they share the same table.
+   * Results are cached per-ID for 5 minutes.
    *
    * @param destinationIds - Array of destination UUIDs (places or worlds) to check
    * @returns Map where keys are destination IDs and values indicate live event status
@@ -122,22 +72,84 @@ export default class Events extends API {
   ): Promise<Map<string, boolean>> {
     const liveEventsMap = new Map<string, boolean>()
 
-    const fetchPromises: Promise<void>[] = []
-
-    for (const id of destinationIds) {
-      fetchPromises.push(
-        this.hasLiveEvent(id)
-          .then((hasLive) => {
-            liveEventsMap.set(id, hasLive)
-          })
-          .catch(() => {
-            liveEventsMap.set(id, false)
-          })
-      )
+    if (destinationIds.length === 0) {
+      return liveEventsMap
     }
 
-    await Promise.all(fetchPromises)
+    // Check cache for each ID, collect uncached IDs
+    const uncachedIds: string[] = []
+    const now = Date.now()
 
-    return liveEventsMap
+    for (const id of destinationIds) {
+      const cached = Events.liveEventCache.get(id)
+      if (cached && cached.expiresAt > now) {
+        liveEventsMap.set(id, cached.isLive)
+      } else {
+        uncachedIds.push(id)
+      }
+    }
+
+    // If all IDs were cached, return early
+    if (uncachedIds.length === 0) {
+      return liveEventsMap
+    }
+
+    const controller = new AbortController()
+    const { signal } = controller
+    const fetchOptions = new Options({
+      signal,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        placeIds: uncachedIds,
+      }),
+    })
+
+    const timeoutId = setTimeout(() => {
+      controller.abort()
+    }, Time.Second * 10)
+
+    try {
+      const response = await this.fetch<EventsResponse>(
+        `/events?list=live`,
+        fetchOptions
+      )
+
+      // Initialize uncached IDs as false (no live event)
+      for (const id of uncachedIds) {
+        liveEventsMap.set(id, false)
+      }
+
+      // Mark destinations that have live events
+      if (response.ok && response.data?.events) {
+        for (const event of response.data.events) {
+          if (event.place_id && uncachedIds.includes(event.place_id)) {
+            liveEventsMap.set(event.place_id, true)
+          }
+        }
+      }
+
+      // Cache each result individually
+      const expiresAt = now + Events.CACHE_TTL_MS
+      for (const id of uncachedIds) {
+        Events.liveEventCache.set(id, {
+          isLive: liveEventsMap.get(id) ?? false,
+          expiresAt,
+        })
+      }
+
+      return liveEventsMap
+    } catch (error) {
+      console.error(`Error checking live events for destinations:`, error)
+      // Return false for uncached IDs on error
+      for (const id of uncachedIds) {
+        liveEventsMap.set(id, false)
+      }
+      return liveEventsMap
+    } finally {
+      clearTimeout(timeoutId)
+    }
   }
 }
