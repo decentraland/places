@@ -113,7 +113,7 @@ export default class Events extends API {
 
     try {
       const response = await this.fetch<EventsResponse>(
-        `/events?list=live`,
+        `/events/search?list=live`,
         fetchOptions
       )
 
