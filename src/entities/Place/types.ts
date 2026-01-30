@@ -133,3 +133,7 @@ export type UpdateRatingBody = {
   content_rating: SceneContentRating
   comment?: string
 }
+
+export type UpdateHighlightBody = {
+  highlighted: boolean
+}

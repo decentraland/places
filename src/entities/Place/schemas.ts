@@ -318,3 +318,16 @@ export const updateRatingBodySchema = schema({
     },
   },
 })
+
+export const updateHighlightBodySchema = schema({
+  type: "object",
+  description: "Highlight update body",
+  additionalProperties: false,
+  required: ["highlighted"],
+  properties: {
+    highlighted: {
+      type: "boolean",
+      description: "Whether the place should be highlighted",
+    },
+  },
+})

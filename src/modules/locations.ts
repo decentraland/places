@@ -147,5 +147,6 @@ export default {
     API.url(GATSBY_BASE_URL, "/favorites/places", fromPlacesOptions(options)),
   favoritesWorlds: (options: Partial<PlacesPageOptions>) =>
     API.url(GATSBY_BASE_URL, "/favorites/worlds", fromPlacesOptions(options)),
+  adminHighlights: () => API.url(GATSBY_BASE_URL, "/admin/highlights/"),
   docs: () => API.url("/docs/"),
 }
