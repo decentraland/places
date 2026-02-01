@@ -210,20 +210,22 @@ export default function AdminHighlightsPage() {
           </Tabs.Tab>
         </Tabs>
 
-        <HeaderMenu stackable className="admin-highlights-page__header">
-          <HeaderMenu.Left>
-            <SearchInput
-              placeholder={l("pages.admin.highlights.search_placeholder")}
-              onChange={handleSearchChange}
-              defaultValue={search}
-            />
-          </HeaderMenu.Left>
-          <HeaderMenu.Right>
-            <span className="admin-highlights-page__count">
-              {totalPlaces} {l("pages.admin.highlights.results")}
-            </span>
-          </HeaderMenu.Right>
-        </HeaderMenu>
+        <div className="admin-highlights-page__header">
+          <HeaderMenu stackable>
+            <HeaderMenu.Left>
+              <SearchInput
+                placeholder={l("pages.admin.highlights.search_placeholder")}
+                onChange={handleSearchChange}
+                defaultValue={search}
+              />
+            </HeaderMenu.Left>
+            <HeaderMenu.Right>
+              <span className="admin-highlights-page__count">
+                {totalPlaces} {l("pages.admin.highlights.results")}
+              </span>
+            </HeaderMenu.Right>
+          </HeaderMenu>
+        </div>
 
         {loadingPlaces && places.length === 0 && (
           <Loader active size="massive" />
