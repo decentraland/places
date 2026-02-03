@@ -22,7 +22,7 @@ beforeEach(() => {
   jest.clearAllMocks()
 })
 
-describe("updateHighlight", () => {
+describe("when updating the highlight status of a place", () => {
   describe("when user is not authenticated", () => {
     it("should throw unauthorized error", async () => {
       mockWithAuth.mockRejectedValueOnce(new Error("Unauthorized"))
