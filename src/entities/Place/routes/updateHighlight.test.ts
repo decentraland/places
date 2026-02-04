@@ -20,13 +20,26 @@ const updatePlace = jest.spyOn(PlaceModel, "updatePlace")
 
 beforeEach(() => {
   jest.clearAllMocks()
+  mockWithAuth.mockResolvedValue({
+    address: adminAddress,
+    metadata: {},
+  } as any)
+  ;(isAdmin as jest.Mock).mockReturnValue(true)
+  findByIdWithAggregates.mockResolvedValue({
+    ...placeGenesisPlazaWithAggregatedAttributes,
+    id: place_id,
+    highlighted: false,
+  } as any)
+  updatePlace.mockResolvedValue([] as any)
 })
 
 describe("when updating the highlight status of a place", () => {
   describe("when user is not authenticated", () => {
-    it("should throw unauthorized error", async () => {
-      mockWithAuth.mockRejectedValueOnce(new Error("Unauthorized"))
+    beforeEach(() => {
+      mockWithAuth.mockRejectedValue(new Error("Unauthorized"))
+    })
 
+    it("should throw unauthorized error", async () => {
       const request = new Request("/", { method: "PUT" })
 
       await expect(() =>
@@ -40,13 +53,15 @@ describe("when updating the highlight status of a place", () => {
   })
 
   describe("when user is authenticated but not admin", () => {
-    it("should throw forbidden error", async () => {
-      mockWithAuth.mockResolvedValueOnce({
+    beforeEach(() => {
+      mockWithAuth.mockResolvedValue({
         address: nonAdminAddress,
         metadata: {},
       } as any)
       ;(isAdmin as jest.Mock).mockReturnValue(false)
+    })
 
+    it("should throw forbidden error", async () => {
       const request = new Request("/", { method: "PUT" })
 
       await expect(() =>
@@ -60,18 +75,12 @@ describe("when updating the highlight status of a place", () => {
   })
 
   describe("when user is admin", () => {
-    beforeEach(() => {
-      mockWithAuth.mockResolvedValue({
-        address: adminAddress,
-        metadata: {},
-      } as any)
-      ;(isAdmin as jest.Mock).mockReturnValue(true)
-    })
-
     describe("and place does not exist", () => {
-      it("should throw not found error", async () => {
-        findByIdWithAggregates.mockResolvedValueOnce(null as any)
+      beforeEach(() => {
+        findByIdWithAggregates.mockResolvedValue(null as any)
+      })
 
+      it("should throw not found error", async () => {
         const request = new Request("/", { method: "PUT" })
 
         await expect(() =>
@@ -85,17 +94,6 @@ describe("when updating the highlight status of a place", () => {
     })
 
     describe("and place exists", () => {
-      const existingPlace = {
-        ...placeGenesisPlazaWithAggregatedAttributes,
-        id: place_id,
-        highlighted: false,
-      }
-
-      beforeEach(() => {
-        findByIdWithAggregates.mockResolvedValue(existingPlace as any)
-        updatePlace.mockResolvedValue([] as any)
-      })
-
       it("should update place highlight to true", async () => {
         const request = new Request("/", { method: "PUT" })
 
@@ -138,12 +136,6 @@ describe("when updating the highlight status of a place", () => {
 
   describe("when place_id is invalid", () => {
     it("should throw validation error", async () => {
-      mockWithAuth.mockResolvedValue({
-        address: adminAddress,
-        metadata: {},
-      } as any)
-      ;(isAdmin as jest.Mock).mockReturnValue(true)
-
       const request = new Request("/", { method: "PUT" })
 
       await expect(() =>
@@ -158,12 +150,6 @@ describe("when updating the highlight status of a place", () => {
 
   describe("when body is invalid", () => {
     it("should throw validation error for missing highlighted field", async () => {
-      mockWithAuth.mockResolvedValue({
-        address: adminAddress,
-        metadata: {},
-      } as any)
-      ;(isAdmin as jest.Mock).mockReturnValue(true)
-
       const request = new Request("/", { method: "PUT" })
 
       await expect(() =>
