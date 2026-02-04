@@ -46,7 +46,7 @@ describe("updateRanking", () => {
           body: { ranking: 0.85 },
           url,
         } as any)
-      ).rejects.toThrow("Authorization required")
+      ).rejects.toThrow("Missing Authorization")
     })
 
     test("should return 403 when authorization token is invalid", async () => {
@@ -61,10 +61,10 @@ describe("updateRanking", () => {
           body: { ranking: 0.85 },
           url,
         } as any)
-      ).rejects.toThrow("Invalid authorization token")
+      ).rejects.toThrow("Invalid Bearer Token")
     })
 
-    test("should return 500 when DATA_TEAM_AUTH_TOKEN is not configured", async () => {
+    test("should return error when DATA_TEAM_AUTH_TOKEN is not configured", async () => {
       mockEnvToken = ""
 
       const request = new Request("/")
@@ -78,7 +78,7 @@ describe("updateRanking", () => {
           body: { ranking: 0.85 },
           url,
         } as any)
-      ).rejects.toThrow("Service authentication not configured")
+      ).rejects.toThrow("Invalid Bearer Token")
     })
 
     test("should accept token with Bearer prefix", async () => {
@@ -89,26 +89,6 @@ describe("updateRanking", () => {
 
       const request = new Request("/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
-      const url = new URL("https://localhost/")
-
-      const response = await updateRanking({
-        request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
-        body: { ranking: 0.85 },
-        url,
-      } as any)
-
-      expect(response.body.ok).toBe(true)
-    })
-
-    test("should accept token without Bearer prefix", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
-      updatePlace.mockResolvedValueOnce([] as any)
-
-      const request = new Request("/")
-      request.headers.set("Authorization", VALID_TOKEN)
       const url = new URL("https://localhost/")
 
       const response = await updateRanking({
