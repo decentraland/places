@@ -60,7 +60,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **Content Rating**: Age-appropriate classification - PR (10+), E (all ages), T (13+), A (18+), R (18+ explicit)
 - **Hot Scenes**: Places with active users, tracked via Catalyst realm provider with real-time user counts
 - **User Visits**: Unique users who visited a place in the last 30 days
-- **Highlighted Places**: Featured places with special promotion status
+- **Highlighted Places**: Featured places with special promotion status, managed via admin UI at `/admin/highlights/`
 - **Creator Address**: Ethereum address of the scene creator, extracted from scene metadata during deployment processing, indexed for efficient creator-based queries (used by tipping systems)
 - **SDK Version**: Runtime version extracted from `runtimeVersion` in scene.json during deployment, used for filtering scenes by SDK version (e.g., SDK7 vs legacy)
 
@@ -68,7 +68,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 
 The service exposes a REST API under `/api` with comprehensive documentation in [OpenAPI 3.0 format](openapi.yaml). Key endpoint categories:
 
-- **Places**: `/api/places`, `/api/places/:id`, `/api/places/status`, `/api/places/:id/categories`, `/api/places/:id/rating` (POST `/api/places` accepts array of place IDs in body)
+- **Places**: `/api/places`, `/api/places/:id`, `/api/places/status`, `/api/places/:id/categories`, `/api/places/:id/rating`, `/api/places/:id/highlight` (admin only) (POST `/api/places` accepts array of place IDs in body)
 - **Worlds**: `/api/worlds`, `/api/world_names`
 - **Destinations**: `/api/destinations` (GET: combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are always returned first, followed by ranking value, then by specified sort order. POST: accepts array of destination IDs in body, maximum 100 IDs per request, supports all GET query parameters for additional filtering)
 - **Map**: `/api/map`, `/api/map/places` (coordinate-based queries with higher limits)
