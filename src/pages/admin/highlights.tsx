@@ -61,17 +61,14 @@ export default function AdminHighlightsPage() {
       only_highlighted: activeTab === "highlighted" ? true : undefined,
     }
 
-    if (activeTab === "worlds") {
-      const worldsFetch = await Places.get().getWorlds(searchOptions)
-      response.data = worldsFetch.data
-      response.ok = worldsFetch.ok
-      response.total = worldsFetch.total
-    } else {
-      const placesFetch = await Places.get().getPlaces(searchOptions)
-      response.data = placesFetch.data
-      response.ok = placesFetch.ok
-      response.total = placesFetch.total
-    }
+    const fetchFunction =
+      activeTab === "worlds"
+        ? Places.get().getWorlds.bind(Places.get())
+        : Places.get().getPlaces.bind(Places.get())
+    const fetchResponse = await fetchFunction(searchOptions)
+    response.data = fetchResponse.data
+    response.ok = fetchResponse.ok
+    response.total = fetchResponse.total
 
     if (offset === 0) {
       setPlaces(response.data)
