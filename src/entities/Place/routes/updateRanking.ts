@@ -27,7 +27,7 @@ export async function updateRanking(
   ctx: Context<{ place_id: string }, "request" | "body" | "params">
 ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
   const token = env("DATA_TEAM_AUTH_TOKEN", "")
-  await withBearerToken({ tokens: token ? [token] : [] })(ctx)
+  await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
 
   const params = await validateUpdateRankingParams(ctx.params)
   const body = await validateUpdateRankingBody(ctx.body)
