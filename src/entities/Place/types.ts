@@ -137,3 +137,7 @@ export type UpdateRatingBody = {
 export type UpdateRankingBody = {
   ranking: number | null
 }
+
+export type UpdateHighlightBody = {
+  highlighted: boolean
+}

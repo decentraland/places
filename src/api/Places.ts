@@ -198,6 +198,15 @@ export default class Places extends API {
     )
   }
 
+  async updateHighlight(placeId: string, highlighted: boolean) {
+    return this.fetch<AggregatePlaceAttributes>(
+      `/places/${placeId}/highlight`,
+      this.options({ method: "PUT" })
+        .json({ highlighted })
+        .authorization({ sign: true })
+    )
+  }
+
   async getCategories(
     target: CategoryCountTargetOptions = CategoryCountTargetOptions.ALL
   ) {

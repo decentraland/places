@@ -1,0 +1,50 @@
+.admin-place-card {
+  position: relative;
+}
+
+.admin-place-card--highlighted {
+  border: 2px solid var(--primary);
+}
+
+.admin-place-card__cover {
+  position: relative;
+  display: block;
+}
+
+.admin-place-card__badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: var(--primary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-place-card__world-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: var(--secondary);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.admin-place-card__info {
+  display: flex;
+  gap: 16px;
+  color: var(--secondary-text);
+  font-size: 12px;
+}
+
+.admin-place-card__actions {
+  display: flex;
+  justify-content: flex-end;
+}

@@ -617,6 +617,68 @@ paths:
                 ok: false
                 error: "Service authentication not configured"
 
+  /places/{place_id}/highlight:
+    put:
+      tags:
+        - Places
+      summary: Update place highlight status 🔒 (Admin only)
+      security:
+        - BearerAuth: []
+      description: |
+        Update the highlight status for a place. **Requires authentication and admin privileges.**
+
+        Highlighted places receive special promotion and appear at the top of listings.
+        This endpoint is only available to administrators.
+
+        **Use Cases:**
+        - Feature exceptional places on the overview page
+        - Promote seasonal or event-related places
+        - Curate the best content for new users
+      operationId: updatePlaceHighlight
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to highlight/unhighlight
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHighlightBody'
+            examples:
+              highlight:
+                summary: Add highlight
+                value:
+                  highlighted: true
+              unhighlight:
+                summary: Remove highlight
+                value:
+                  highlighted: false
+      responses:
+        '200':
+          description: Highlight status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - user is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                error: "Only admin allowed to update highlight"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /places/{place_id}/favorites:
     patch:
       tags:
@@ -1810,6 +1872,12 @@ components:
           nullable: true
           default: 0
           example: 0.75
+        highlighted:
+          type: boolean
+          description: |
+            True if this place is highlighted/featured by administrators.
+            Highlighted places appear at the top of listing endpoints.
+          example: false
         favorites:
           type: integer
           minimum: 0
@@ -1959,6 +2027,9 @@ components:
           description: External ranking value for custom ordering
           nullable: true
           default: 0
+        highlighted:
+          type: boolean
+          description: True if this world is highlighted/featured by administrators
         favorites:
           type: integer
           minimum: 0
@@ -2130,6 +2201,18 @@ components:
             Ranking score for ordering places. Higher values appear first in listings
             (after highlighted places). Set to null to remove ranking.
           example: 0.85
+
+    UpdateHighlightBody:
+      type: object
+      required:
+        - highlighted
+      properties:
+        highlighted:
+          type: boolean
+          description: |
+            Set to true to highlight the place (feature it), false to remove highlight.
+            Only administrators can update this field.
+          example: true
 
     UpdateFavoriteBody:
       type: object

@@ -4,6 +4,7 @@ import NavigationMenu from "decentraland-gatsby/dist/components/Layout/Navigatio
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useTrackLinkContext from "decentraland-gatsby/dist/context/Track/useTrackLinkContext"
+import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
 import { PlaceListOrderBy } from "../../entities/Place/types"
@@ -19,6 +20,7 @@ export enum NavigationTab {
   Places = "places",
   Worlds = "worlds",
   Favorites = "favorites",
+  Admin = "admin",
 }
 
 export type NavigationProps = {
@@ -30,6 +32,7 @@ export default function Navigation(props: NavigationProps) {
   const [account] = useAuthContext()
   const track = useTrackLinkContext()
   const [ff] = useFeatureFlagContext()
+  const admin = isAdmin(account)
 
   return (
     <NavigationMenu
@@ -67,6 +70,14 @@ export default function Navigation(props: NavigationProps) {
               href={locations.favorites()}
             >
               {l("navigation.favorites")}
+            </NavigationMenu.Item>
+          )}
+          {admin && (
+            <NavigationMenu.Item
+              active={props.activeTab === NavigationTab.Admin}
+              href={locations.adminHighlights()}
+            >
+              {l("navigation.admin")}
             </NavigationMenu.Item>
           )}
           <NavigationMenu.Item

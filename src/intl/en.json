@@ -15,6 +15,7 @@
     "places": "Genesis City",
     "favorites": "Favorites",
     "worlds": "Worlds",
+    "admin": "Admin",
     "faq": "FAQ",
     "faq_target": "https://docs.decentraland.org/player/FAQs/places/",
     "search": {
@@ -22,6 +23,7 @@
       "places": "Search Genesis City...",
       "worlds": "Search Worlds...",
       "favorites": "Search Favorites...",
+      "admin": "Search places...",
       "default": "Search..."
     }
   },
@@ -32,6 +34,14 @@
       "share": "share",
       "join": "join",
       "find_out_more": "find out more"
+    },
+    "admin_place_card": {
+      "highlighted": "Highlighted",
+      "world": "World",
+      "favorites": "Favorites",
+      "likes": "Likes",
+      "add_highlight": "Add Highlight",
+      "remove_highlight": "Remove Highlight"
     },
     "place_stats": {
       "active": "active",
@@ -173,6 +183,21 @@
       "banner": {
         "title": "Decentraland Worlds",
         "description": "Personal 3D space separate from Genesis City, where you can unleash your creativity, host events, and more!"
+      }
+    },
+    "admin": {
+      "highlights": {
+        "title": "Manage Highlights",
+        "description": "Select places and worlds to be highlighted on the overview page.",
+        "tab_all": "All Places",
+        "tab_highlighted": "Highlighted",
+        "tab_worlds": "Worlds",
+        "search_placeholder": "Search places...",
+        "results": "results",
+        "no_results": "No places found",
+        "show_more": "Show More",
+        "access_denied": "Access Denied",
+        "admin_only": "Only administrators can access this page."
       }
     }
   },
