@@ -319,6 +319,21 @@ export const updateRatingBodySchema = schema({
   },
 })
 
+export const updateRankingBodySchema = schema({
+  type: "object",
+  description: "Ranking update body",
+  additionalProperties: false,
+  required: ["ranking"],
+  properties: {
+    ranking: {
+      type: "number",
+      nullable: true as any,
+      description:
+        "Ranking score for ordering places (higher values appear first). Set to null to remove ranking.",
+    },
+  },
+})
+
 export const updateHighlightBodySchema = schema({
   type: "object",
   description: "Highlight update body",

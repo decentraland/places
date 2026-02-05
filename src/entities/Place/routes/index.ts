@@ -8,6 +8,7 @@ import { getPlaceList } from "./getPlaceList"
 import { getPlaceListById } from "./getPlaceListById"
 import { getPlaceStatusListById } from "./getPlaceStatusListById"
 import { updateHighlight } from "./updateHighlight"
+import { updateRanking } from "./updateRanking"
 import { updateRating } from "./updateRating"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
@@ -34,8 +35,8 @@ export default routes((router) => {
   router.get("/places", getPlaceList)
   router.post("/places", getPlaceListById)
   router.put("/places/:place_id/rating", updateRating)
+  router.put("/places/:place_id/ranking", updateRanking)
   router.put("/places/:place_id/highlight", updateHighlight)
   router.get("/places/:place_id/categories", getPlaceCategories)
-  router.put("/places/:place_id/rating", updateRating)
   router.post("/places/status", getPlaceStatusListById)
 }, {})
