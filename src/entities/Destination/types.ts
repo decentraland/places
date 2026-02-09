@@ -28,6 +28,7 @@ export type GetDestinationsListQuery = CommonFilterFields & {
   only_places: string
   with_realms_detail: string
   with_connected_users: string
+  with_live_events: string
 }
 
 /**
