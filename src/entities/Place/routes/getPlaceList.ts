@@ -40,6 +40,7 @@ export const getPlaceList = Router.memo(
 
     const query = await validateGetPlaceListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
+      names: ctx.url.searchParams.getAll("names"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
