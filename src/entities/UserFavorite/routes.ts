@@ -15,7 +15,7 @@ import { getPlace } from "../Place/routes/getPlace"
 import { fetchScore } from "../Snapshot/utils"
 
 export default routes((router) => {
-  router.patch("/places/:place_id/favorites", updateFavorites)
+  router.patch("/places/:entity_id/favorites", updateFavorites)
 })
 
 export const validateGetPlaceParams =
@@ -26,7 +26,7 @@ export const validateGetPlaceBody = Router.validator<UpdateUserFavoriteBody>(
 )
 
 async function updateFavorites(
-  ctx: Context<{ place_id: string }, "request" | "url" | "params" | "body">
+  ctx: Context<{ entity_id: string }, "request" | "url" | "params" | "body">
 ) {
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
@@ -46,23 +46,23 @@ async function updateFavorites(
     })
   }
 
-  const placeUserData = {
-    place_id: params.place_id,
+  const entityUserData = {
+    entity_id: params.entity_id,
     user: userAuth.address,
   }
 
   if (body.favorites) {
     const data = {
-      ...placeUserData,
+      ...entityUserData,
       user_activity,
       created_at: now,
     }
     await UserFavoriteModel.create(data)
   } else {
-    await UserFavoriteModel.delete(placeUserData)
+    await UserFavoriteModel.delete(entityUserData)
   }
 
-  await PlaceModel.updateFavorites(params.place_id)
+  await PlaceModel.updateFavorites(params.entity_id)
 
   return new ApiResponse({
     favorites: body.favorites ? place.favorites + 1 : place.favorites - 1,

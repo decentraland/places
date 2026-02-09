@@ -4,7 +4,7 @@ import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 
 import NoResults from "./NoResults"
 import OverviewList from "./OverviewList"
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../entities/shared/types"
 import locations from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
 
@@ -14,14 +14,14 @@ import "./OverviewList.css"
 export type SearchListProps = {
   isLoadingPlaces: boolean
   isLoadingWorlds: boolean
-  placeResultList?: AggregatePlaceAttributes[]
+  placeResultList?: AggregateBaseEntityAttributes[]
   placeTotalResults?: number
-  worldResultList?: AggregatePlaceAttributes[]
+  worldResultList?: AggregateBaseEntityAttributes[]
   worldTotalResults?: number
   search: string
   handleFavorite: (
     id: string,
-    place: AggregatePlaceAttributes,
+    place: AggregateBaseEntityAttributes,
     tracking: Record<string, string>
   ) => void
   handlingFavorite: Set<string>

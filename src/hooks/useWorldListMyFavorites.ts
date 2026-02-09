@@ -2,10 +2,10 @@ import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
 import Places from "../api/Places"
-import { AggregatePlaceAttributes } from "../entities/Place/types"
+import { AggregateWorldAttributes } from "../entities/World/types"
 
 const defaultResult = {
-  data: [] as AggregatePlaceAttributes[],
+  data: [] as AggregateWorldAttributes[],
   ok: true,
   total: 0,
 }

@@ -15,7 +15,10 @@ import {
 } from "../entities/Place/types"
 import { UpdateUserFavoriteResponse } from "../entities/UserFavorite/types"
 import { UpdateUserLikeResponse } from "../entities/UserLikes/types"
-import { WorldListOptions } from "../entities/World/types"
+import {
+  AggregateWorldAttributes,
+  WorldListOptions,
+} from "../entities/World/types"
 
 export default class Places extends API {
   static Url = env(`PLACES_URL`, `https://places.decentraland.org/api`)
@@ -34,14 +37,21 @@ export default class Places extends API {
     return this.from(env("PLACES_URL", this.Url))
   }
 
-  static parsePlace(place: AggregatePlaceAttributes): AggregatePlaceAttributes {
+  static parse<
+    T extends {
+      created_at: Date
+      updated_at: Date
+      disabled_at: Date | null
+      disabled: boolean
+    }
+  >(entity: T): T {
     return {
-      ...place,
-      created_at: Time.date(place.created_at),
-      updated_at: Time.date(place.updated_at),
-      disabled_at: Time.date(place.disabled_at),
-      disabled: Boolean(place.disabled),
-    } as AggregatePlaceAttributes
+      ...entity,
+      created_at: Time.date(entity.created_at),
+      updated_at: Time.date(entity.updated_at),
+      disabled_at: Time.date(entity.disabled_at),
+      disabled: Boolean(entity.disabled),
+    } as T
   }
 
   async fetch<T extends Record<string, any>>(
@@ -57,7 +67,7 @@ export default class Places extends API {
     options: Options = new Options({})
   ): Promise<AggregatePlaceAttributes[]> {
     const result = (await this.fetch(url, options)) as any
-    return (result || []).map(Places.parsePlace)
+    return (result || []).map(Places.parse<AggregatePlaceAttributes>)
   }
 
   async fetchOne(
@@ -65,7 +75,7 @@ export default class Places extends API {
     options: Options = new Options({})
   ): Promise<AggregatePlaceAttributes> {
     const result = (await this.fetch(url, options)) as any
-    return Places.parsePlace(result)
+    return Places.parse<AggregatePlaceAttributes>(result)
   }
 
   async getPlaceById(placeId: string) {
@@ -73,6 +83,14 @@ export default class Places extends API {
       `/places/${placeId}`,
       this.options().authorization({ sign: true, optional: true })
     )
+  }
+
+  async getWorldById(worldId: string) {
+    const result = (await this.fetch(
+      `/worlds/${worldId}`,
+      this.options().authorization({ sign: true, optional: true })
+    )) as AggregateWorldAttributes
+    return Places.parse<AggregateWorldAttributes>(result)
   }
 
   async updateFavorite(placeId: string, favorites: boolean) {
@@ -115,7 +133,7 @@ export default class Places extends API {
 
     return {
       ...result,
-      data: result.data.map(Places.parsePlace),
+      data: result.data.map(Places.parse<AggregatePlaceAttributes>),
       total: Number(result.total),
     }
   }
@@ -166,7 +184,7 @@ export default class Places extends API {
     const query = options ? API.searchParams(options).toString() : ""
     const result = await super.fetch<{
       ok: true
-      data: AggregatePlaceAttributes[]
+      data: AggregateWorldAttributes[]
       total: number
     }>(
       `/worlds?${query}`,
@@ -175,7 +193,7 @@ export default class Places extends API {
 
     return {
       ...result,
-      data: result.data.map(Places.parsePlace),
+      data: result.data.map(Places.parse<AggregateWorldAttributes>),
       total: Number(result.total),
     }
   }
@@ -186,6 +204,34 @@ export default class Places extends API {
     search?: string
   }) {
     return this.getWorlds({ only_favorites: true, ...options })
+  }
+
+  async updateWorldFavorite(worldId: string, favorites: boolean) {
+    return this.fetch<UpdateUserFavoriteResponse>(
+      `/worlds/${worldId}/favorites`,
+      this.options({ method: "PATCH" })
+        .json({ favorites })
+        .authorization({ sign: true })
+    )
+  }
+
+  async updateWorldLike(worldId: string, like: boolean | null) {
+    return this.fetch<UpdateUserLikeResponse>(
+      `/worlds/${worldId}/likes`,
+      this.options({ method: "PATCH" })
+        .json({ like })
+        .authorization({ sign: true })
+    )
+  }
+
+  async updateWorldRating(
+    worldId: string,
+    params: { content_rating: SceneContentRating; comment?: string }
+  ) {
+    return this.fetch<AggregateWorldAttributes>(
+      `/worlds/${worldId}/rating`,
+      this.options({ method: "PUT" }).json(params).authorization({ sign: true })
+    )
   }
 
   async updateRating(

@@ -4,7 +4,7 @@ import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackCont
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../../entities/shared/types"
 import { SegmentPlace } from "../../../modules/segment"
 import { getImageUrl } from "../../../utils/image"
 import FavoriteBox from "../../Button/FavoriteBox"
@@ -15,8 +15,11 @@ import WorldLabel from "../WorldLabel/WorldLabel"
 
 import "./WorldDescription.css"
 
+/** Type that can be either a world from the worlds table or a place with world=true */
+export type WorldData = AggregateBaseEntityAttributes
+
 export type WorldDescriptionProps = {
-  world: AggregatePlaceAttributes
+  world: WorldData
   onClickFavorite: (e: React.MouseEvent<HTMLButtonElement>) => void
   onClickLike: (e: React.MouseEvent<HTMLButtonElement>) => {}
   onClickDislike: (e: React.MouseEvent<HTMLButtonElement>) => {}

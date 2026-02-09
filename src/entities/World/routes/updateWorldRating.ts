@@ -13,25 +13,33 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import { notifyUpgradingRating } from "../../Slack/utils"
-import PlaceModel from "../model"
-import { getPlaceParamsSchema, updateRatingBodySchema } from "../schemas"
+import WorldModel from "../model"
 import {
-  AggregatePlaceAttributes,
-  GetPlaceParams,
-  UpdateRatingBody,
-} from "../types"
+  updateWorldRatingBodySchema,
+  updateWorldRatingParamsSchema,
+} from "../schemas"
+import { AggregateWorldAttributes } from "../types"
 
-const validateUpdateRatingParams = createValidator<GetPlaceParams>(
-  getPlaceParamsSchema as AjvObjectSchema
+export type UpdateWorldRatingParams = {
+  world_id: string
+}
+
+export type UpdateWorldRatingBody = {
+  content_rating: SceneContentRating
+  comment?: string
+}
+
+const validateUpdateRatingParams = createValidator<UpdateWorldRatingParams>(
+  updateWorldRatingParamsSchema as AjvObjectSchema
 )
 
-const validateUpdateRatingBody = createValidator<UpdateRatingBody>(
-  updateRatingBodySchema as AjvObjectSchema
+const validateUpdateRatingBody = createValidator<UpdateWorldRatingBody>(
+  updateWorldRatingBodySchema as AjvObjectSchema
 )
 
-export async function updateRating(
-  ctx: Context<{ place_id: string }, "request" | "body" | "params">
-): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
+export async function updateWorldRating(
+  ctx: Context<{ world_id: string }, "request" | "body" | "params">
+): Promise<ApiResponse<AggregateWorldAttributes, {}>> {
   const userAuth = await withAuth(ctx)
   const params = await validateUpdateRatingParams(ctx.params)
   const body = await validateUpdateRatingBody(ctx.body)
@@ -43,24 +51,27 @@ export async function updateRating(
     )
   }
 
-  const place = await PlaceModel.findByIdWithAggregates(ctx.params.place_id, {
+  const world = await WorldModel.findByIdWithAggregates(ctx.params.world_id, {
     user: userAuth.address,
   })
 
-  if (!place) {
+  if (!world) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found place "${params.place_id}"`
+      `Not found world "${params.world_id}"`
     )
   }
 
-  const newPlace = { ...place, content_rating: body.content_rating }
-  Promise.all([
-    PlaceModel.updatePlace(newPlace, ["content_rating"]),
+  const newWorld = { ...world, content_rating: body.content_rating }
+  await Promise.all([
+    WorldModel.upsertWorld({
+      world_name: world.world_name!,
+      content_rating: body.content_rating,
+    }),
     PlaceContentRatingModel.create({
       id: randomUUID(),
-      entity_id: place.id,
-      original_rating: place.content_rating,
+      entity_id: world.id,
+      original_rating: world.content_rating,
       update_rating: body.content_rating,
       moderator: userAuth.address,
       comment: body.comment || null,
@@ -69,14 +80,11 @@ export async function updateRating(
   ])
 
   if (
-    place.content_rating &&
-    isUpgradingRating(
-      body.content_rating,
-      place.content_rating as SceneContentRating
-    )
+    world.content_rating &&
+    isUpgradingRating(body.content_rating, world.content_rating)
   ) {
-    notifyUpgradingRating(place, "Content Moderator", body.content_rating)
+    notifyUpgradingRating(world, "Content Moderator", body.content_rating)
   }
 
-  return new ApiResponse(newPlace)
+  return new ApiResponse(newWorld as AggregateWorldAttributes)
 }

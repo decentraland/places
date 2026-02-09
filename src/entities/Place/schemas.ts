@@ -96,6 +96,14 @@ export const getPlaceListQuerySchema = schema({
       description: "Filter places by SDK version (e.g., '7' for SDK7 scenes)",
       nullable: true as any,
     },
+    names: {
+      type: "array",
+      maxItems: 1000,
+      items: { type: "string" },
+      description:
+        "Filter places belonging to a world by its name (e.g., 'myworld.dcl.eth')",
+      nullable: true as any,
+    },
   },
 })
 

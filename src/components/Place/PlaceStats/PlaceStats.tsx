@@ -1,6 +1,5 @@
 import React, { useMemo } from "react"
 
-import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
@@ -10,14 +9,13 @@ import { Stats } from "decentraland-ui/dist/components/Stats/Stats"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
-import { FeatureFlags } from "../../../modules/ff"
+import { AggregateBaseEntityAttributes } from "../../../entities/shared/types"
 import shorterNumber from "../../../utils/number/sortenNumber"
 
 import "./PlaceStats.css"
 
-export type PlaceStatsProps = {
-  place?: AggregatePlaceAttributes
+export interface PlaceStatsProps {
+  place?: AggregateBaseEntityAttributes
   poi?: boolean
   loading?: boolean
   hideUserCount?: boolean
@@ -26,7 +24,6 @@ export type PlaceStatsProps = {
 export default React.memo(function PlaceStats(props: PlaceStatsProps) {
   const { place, loading, poi, hideUserCount } = props
   const l = useFormatMessage()
-  const [ff] = useFeatureFlagContext()
   const rating = useMemo(() => {
     if (
       !place ||

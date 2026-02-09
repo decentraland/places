@@ -8,7 +8,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Modal, ModalProps } from "decentraland-ui/dist/components/Modal/Modal"
 
-import { PlaceAttributes } from "../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../entities/shared/types"
 import RateFlagAdult from "../../images/rating-flag-adult.svg"
 import RateFlagRestricted from "../../images/rating-flag-restricted.svg"
 import RateFlagTeen from "../../images/rating-flag-teen.svg"
@@ -22,7 +22,7 @@ const RateImage = {
 }
 
 export type ContentModerationModalProps = ModalProps & {
-  place: PlaceAttributes
+  place: AggregateBaseEntityAttributes
   selectedRate: SceneContentRating
 }
 

@@ -1,3 +1,30 @@
+import { BaseAggregateAttributes, BaseEntityAttributes } from "../shared/types"
+
+/**
+ * World-specific attributes that extend the base entity.
+ *
+ * Note on ID and world_name:
+ * - `id` is the lowercased world name (e.g., "foo.dcl.eth"), making IDs predictable
+ * - `world_name` (from BaseEntityAttributes) stores the original casing for display purposes
+ * - In practice, world names are typically lowercase, but we preserve the original value
+ */
+export type WorldAttributes = BaseEntityAttributes & {
+  show_in_places: boolean
+  single_player: boolean
+  skybox_time: number | null
+}
+
+/**
+ * World attributes with user-specific aggregate data.
+ * Inherits common aggregate properties (user_visits, world, contact_name, base_position, deployed_at)
+ * from BaseAggregateAttributes.
+ */
+export type AggregateWorldAttributes = WorldAttributes & BaseAggregateAttributes
+
+export type GetWorldParams = {
+  world_id: string
+}
+
 export type GetWorldListQuery = {
   limit: string
   offset: string

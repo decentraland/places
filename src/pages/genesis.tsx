@@ -46,8 +46,8 @@ import {
   AggregatePlaceAttributes,
   PlaceListOrderBy,
 } from "../entities/Place/types"
+import useEntitiesManager from "../hooks/useEntitiesManager"
 import usePlaceCategoriesManager from "../hooks/usePlaceCategoriesManager"
-import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, {
   PlacesPageOptions,
@@ -221,7 +221,7 @@ export default function IndexPage() {
   const placesMemo = useMemo(() => [allPlaces], [allPlaces])
 
   const [[places], { handleFavorite, handlingFavorite }] =
-    usePlacesManager(placesMemo)
+    useEntitiesManager(placesMemo)
 
   const loading = loadingPlaces
 

@@ -2,7 +2,7 @@ import SQS from "aws-sdk/clients/sqs"
 import { Task } from "decentraland-gatsby/dist/entities/Task"
 
 import { SQSConsumer } from "./consumer"
-import { taskRunnerSqs } from "./taskRunnerSqs"
+import { taskRunnerDispatcher } from "./taskRunnerDispatcher"
 
 export function createSceneConsumerTask(
   sqs: SQS,
@@ -19,7 +19,7 @@ export function createSceneConsumerTask(
     task: async (ctx) => {
       const logger = ctx.logger
       logger.log("Start scenes_consumer")
-      const sqsConsumed = await consumer.consume(taskRunnerSqs)
+      const sqsConsumed = await consumer.consume(taskRunnerDispatcher)
 
       if (!sqsConsumed) {
         logger.log(`Check the logs`)

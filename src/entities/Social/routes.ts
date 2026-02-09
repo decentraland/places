@@ -14,6 +14,8 @@ import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import PlaceModel from "../Place/model"
 import { AggregatePlaceAttributes, PlaceListOrderBy } from "../Place/types"
 import { placeUrl, siteUrl, worldUrl } from "../Place/utils"
+import WorldModel from "../World/model"
+import { AggregateWorldAttributes } from "../World/types"
 
 export default routes((router) => {
   router.get("/place/", handleRaw(injectPlaceMetadata, "html"))
@@ -79,40 +81,26 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
 }
 
 export async function injectWorldMetadata(req: Request, res: Response) {
-  const worldName = String(req.query.name || "")
-  const id = String(req.query.id || "")
+  const worldId = String(req.query.id || req.query.name || "").toLowerCase()
   const page = await readFile(req)
 
-  let place: AggregatePlaceAttributes | null = null
-  if (id && isUUID(id)) {
-    place = await PlaceModel.findByIdWithAggregates(id, {
+  let world: AggregateWorldAttributes | null = null
+  if (worldId) {
+    world = await WorldModel.findByIdWithAggregates(worldId, {
       user: undefined,
     })
-  } else if (worldName) {
-    place = (
-      await PlaceModel.findWorld({
-        names: [worldName],
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        order_by: PlaceListOrderBy.LIKE_SCORE_BEST,
-        order: "asc",
-        search: "",
-        categories: [],
-      })
-    )[0]
   }
 
-  if (place) {
-    const url = worldUrl(place)
+  if (world) {
+    const url = worldUrl(world)
     res.set("link", `<${url.toString()}>; rel=canonical`)
 
     return replaceHelmetMetadata(page.toString(), {
       ...(copies.social.place as any),
-      title: escape(place.title || "") + " | Decentraland Place",
-      description: escape((place.description || "").trim()),
-      image: place.image || "",
-      url: placeUrl(place),
+      title: escape(world.title || "") + " | Decentraland Place",
+      description: escape((world.description || "").trim()),
+      image: world.image || "",
+      url: worldUrl(world),
       "twitter:card": "summary_large_image",
     })
   }

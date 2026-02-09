@@ -22,8 +22,8 @@ import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
 
 import Navigation from "../../components/Layout/Navigation"
 import PlaceList from "../../components/Place/PlaceList/PlaceList"
+import useEntitiesManager from "../../hooks/useEntitiesManager"
 import { usePlaceListMyFavorites } from "../../hooks/usePlaceListMyFavorites"
-import usePlacesManager from "../../hooks/usePlacesManager"
 import { FeatureFlags } from "../../modules/ff"
 import locations, { toPlacesOptions } from "../../modules/locations"
 import { SegmentPlace } from "../../modules/segment"
@@ -62,7 +62,7 @@ export default function FavoritesPage() {
   )
 
   const [[myFavoritesList], { handleFavorite, handlingFavorite }] =
-    usePlacesManager(placesMemo)
+    useEntitiesManager(placesMemo)
 
   const handleChangePage = useCallback(
     (e: React.SyntheticEvent<any>, props: { activePage?: number | string }) => {

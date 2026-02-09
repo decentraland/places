@@ -24,8 +24,8 @@ import ConfirmRatingModal from "../components/Modal/ConfirmRatingModal"
 import ContentModerationModal from "../components/Modal/ContentModerationModal"
 import PlaceDescription from "../components/Place/PlaceDescription/PlaceDescription"
 import PlaceDetails from "../components/Place/PlaceDetails/PlaceDetails"
+import useEntitiesManager from "../hooks/useEntitiesManager"
 import { usePlaceFromParams } from "../hooks/usePlaceFromParams"
-import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
 import { getRating } from "../modules/rating"
@@ -82,7 +82,7 @@ export default function PlacePage() {
       handlingDislike,
       handleRating,
     },
-  ] = usePlacesManager(placeMemo)
+  ] = useEntitiesManager(placeMemo)
 
   useEffect(() => {
     if (place) {

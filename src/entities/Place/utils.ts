@@ -10,6 +10,7 @@ import {
 } from "./types"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
+import { AnyEntityAttributes } from "../shared/entityTypes"
 
 const DECENTRALAND_URL =
   process.env.GATSBY_DECENTRALAND_URL ||
@@ -27,11 +28,11 @@ export function placeUrl(place: PlaceAttributes) {
   return target
 }
 
-export function worldUrl(place: PlaceAttributes) {
+export function worldUrl(entity: AnyEntityAttributes) {
   const target = new URL(
     env("PLACES_BASE_URL", "https://decentraland.org/places")
   )
-  target.searchParams.set("name", place.world_name!)
+  target.searchParams.set("name", entity.world_name!)
   target.pathname = `/places/world/`
   return target
 }

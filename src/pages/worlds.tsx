@@ -41,11 +41,13 @@ import { CategoryModal } from "../components/Modal/CategoryModal"
 import PlaceList from "../components/Place/PlaceList/PlaceList"
 import { TrackingPlacesSearchContext } from "../context/TrackingContext"
 import { CategoryCountTargetOptions } from "../entities/Category/types"
-import { AggregatePlaceAttributes } from "../entities/Place/types"
 import { getWorldListQuerySchema } from "../entities/World/schemas"
-import { WorldListOrderBy } from "../entities/World/types"
+import {
+  AggregateWorldAttributes,
+  WorldListOrderBy,
+} from "../entities/World/types"
+import useEntitiesManager from "../hooks/useEntitiesManager"
 import usePlaceCategoriesManager from "../hooks/usePlaceCategoriesManager"
-import usePlacesManager from "../hooks/usePlacesManager"
 import { FeatureFlags } from "../modules/ff"
 import locations, {
   WorldsPageOptions,
@@ -74,7 +76,7 @@ export default function WorldsPage() {
   const [showBanner, setShowBanner] = useState(true)
 
   const [totalWorlds, setTotalWorlds] = useState(0)
-  const [allWorlds, setAllWorlds] = useState<AggregatePlaceAttributes[]>([])
+  const [allWorlds, setAllWorlds] = useState<AggregateWorldAttributes[]>([])
 
   const [isCategoriesModalVisible, setIsCategoriesModalVisible] =
     useState(false)
@@ -101,7 +103,7 @@ export default function WorldsPage() {
 
     let response = {
       total: 0,
-      data: [] as AggregatePlaceAttributes[],
+      data: [] as AggregateWorldAttributes[],
       ok: false,
     }
 
@@ -216,7 +218,7 @@ export default function WorldsPage() {
   const worldsMemo = useMemo(() => [allWorlds], [allWorlds])
 
   const [[places], { handleFavorite, handlingFavorite }] =
-    usePlacesManager(worldsMemo)
+    useEntitiesManager(worldsMemo)
 
   const loading = loadingWorlds
 

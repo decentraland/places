@@ -5,6 +5,8 @@ import {
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { BaseAggregateAttributes, BaseEntityAttributes } from "../shared/types"
+
 export type Permission = {
   id: string
   x: string
@@ -31,33 +33,22 @@ export type HotScene = Pick<
   realms: Realm[]
 }
 
-export type PlaceAttributes = {
-  id: string
-  title: string | null
-  description: string | null
-  image: string | null
+/**
+ * Place-specific attributes that extend the base entity.
+ * Note: world_name is inherited from BaseEntityAttributes.
+ */
+export type PlaceAttributes = BaseEntityAttributes & {
   highlighted_image: string | null
-  owner: string | null
   positions: string[]
   base_position: string
   contact_name: string | null
   contact_email: string | null
-  content_rating: SceneContentRating
-  likes: number
-  dislikes: number
-  favorites: number
-  like_rate: number | null
-  like_score: number | null
   highlighted: boolean
-  disabled: boolean
-  disabled_at: Date | null
-  created_at: Date
-  updated_at: Date
   world: boolean
-  world_name: string | null
+  /** Foreign key to the worlds table for world scenes */
+  world_id: string | null
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
-  categories: string[]
   creator_address: string | null
   /** SDK/runtime version of the scene from scene.json runtimeVersion field (e.g., "7" for SDK7) */
   sdk: string | null
@@ -65,14 +56,14 @@ export type PlaceAttributes = {
   ranking: number | null
 }
 
-export type AggregatePlaceAttributes = PlaceAttributes & {
-  user_like: boolean
-  user_dislike: boolean
-  user_favorite: boolean
-  user_count?: number
-  user_visits?: number
-  realms_detail?: Realm[]
-}
+/**
+ * Place attributes with user-specific aggregate data.
+ * Inherits common aggregate properties from BaseAggregateAttributes.
+ */
+export type AggregatePlaceAttributes = PlaceAttributes &
+  BaseAggregateAttributes & {
+    realms_detail?: Realm[]
+  }
 
 export type GetPlaceParams = {
   place_id: string
@@ -100,6 +91,7 @@ export type GetPlaceListQuery = {
   owner?: string
   creator_address?: string
   sdk?: string
+  names?: string[]
 }
 
 export type PlaceListOptions = {
@@ -115,6 +107,7 @@ export type PlaceListOptions = {
   owner?: string
   creator_address?: string
   sdk?: string
+  names?: string[]
 }
 
 export type FindWithAggregatesOptions = PlaceListOptions & {

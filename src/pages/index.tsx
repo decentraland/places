@@ -20,6 +20,8 @@ import PlaceFeatured from "../components/Place/PlaceFeatured/PlaceFeatured"
 import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { DecentralandCategories } from "../entities/Category/types"
 import { PlaceListOrderBy } from "../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../entities/shared/types"
+import useEntitiesManager from "../hooks/useEntitiesManager"
 import usePlaceCategories from "../hooks/usePlaceCategories"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
 import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
@@ -28,7 +30,6 @@ import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
 import { usePlaceListPois } from "../hooks/usePlaceListPois"
 import { usePlaceListSearch } from "../hooks/usePlaceListSearch"
-import usePlacesManager from "../hooks/usePlacesManager"
 import { useWorldList } from "../hooks/useWorldList"
 import { useWorldListSearch } from "../hooks/useWorldListSearch"
 import { FeatureFlags } from "../modules/ff"
@@ -78,7 +79,7 @@ export default function OverviewPage() {
     [placeSearch.data, worldSearch.data]
   )
 
-  const placesMemo = useMemo(
+  const placesMemo: AggregateBaseEntityAttributes[][] = useMemo(
     () => [
       placeListHighlighted,
       placeListFeatured,
@@ -114,7 +115,7 @@ export default function OverviewPage() {
       worldsList,
     ],
     { handleFavorite, handlingFavorite },
-  ] = usePlacesManager(placesMemo)
+  ] = useEntitiesManager(placesMemo)
 
   const [ff] = useFeatureFlagContext()
 

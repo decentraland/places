@@ -3,7 +3,6 @@ import React, { useCallback, useMemo, useState } from "react"
 import ReactMarkdown from "react-markdown"
 
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
-import useFeatureFlagContext from "decentraland-gatsby/dist/context/FeatureFlag/useFeatureFlagContext"
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -21,7 +20,6 @@ import {
   AggregatePlaceAttributes,
   PlaceListOrderBy,
 } from "../../../entities/Place/types"
-import { FeatureFlags } from "../../../modules/ff"
 import locations from "../../../modules/locations"
 import { getPois } from "../../../modules/pois"
 import { getRating } from "../../../modules/rating"
@@ -48,7 +46,6 @@ export default React.memo(function PlaceDetails(props: PlaceDetailsProps) {
   const [pois] = useAsyncMemo(getPois)
   const [activeTab, setActiveTab] = useState(PlaceDetailsTab.About)
 
-  const [ff] = useFeatureFlagContext()
   const [account] = useAuthContext()
   const admin = isAdmin(account)
 

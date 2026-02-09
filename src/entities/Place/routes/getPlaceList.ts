@@ -83,6 +83,7 @@ export const getPlaceList = Router.memo(
       owner: query.owner,
       creator_address: query.creator_address,
       sdk: query.sdk,
+      names: query.names,
     }
 
     // If owner parameter is provided, fetch operated lands from Catalyst API

@@ -18,7 +18,7 @@ describe("UserLikesModel", () => {
     const newLike = await UserLikesModel.like(
       {
         user: "0x8Cff6832174091DAe86F0244e3Fd92d4CeD2Fe07",
-        place_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
+        entity_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
       },
       { like: true, user_activity: 0 }
     )
@@ -38,7 +38,7 @@ describe("UserLikesModel", () => {
     const updateLike = await UserLikesModel.like(
       {
         user: "0x8Cff6832174091DAe86F0244e3Fd92d4CeD2Fe07",
-        place_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
+        entity_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
       },
       { like: false, user_activity: 0 }
     )
@@ -56,7 +56,7 @@ describe("UserLikesModel", () => {
     const newLike = await UserLikesModel.like(
       {
         user: "0x8Cff6832174091DAe86F0244e3Fd92d4CeD2Fe07",
-        place_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
+        entity_id: "67b4c5c3-6b2c-4521-9253-cc3a3f8ce138",
       },
       { like: true, user_activity: 0 }
     )

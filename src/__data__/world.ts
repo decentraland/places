@@ -4,7 +4,6 @@ import {
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
-import { WorldAbout } from "../entities/CheckScenes/types"
 import {
   AggregatePlaceAttributes,
   PlaceAttributes,
@@ -35,6 +34,7 @@ export const worldPlaceParalax: PlaceAttributes = {
   highlighted_image: null,
   world: true,
   world_name: "paralax.dcl.eth",
+  world_id: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
   textsearch: undefined,
   categories: [],
@@ -68,10 +68,12 @@ export const worldPlaceParalaxWithAggregated: AggregatePlaceAttributes = {
   highlighted_image: null,
   world: true,
   world_name: "paralax.dcl.eth",
+  world_id: "paralax.dcl.eth",
   deployed_at: new Date("2023-03-28T13:05:45.437Z"),
   user_favorite: false,
   user_like: false,
   user_dislike: false,
+  user_visits: 0,
   textsearch: undefined,
   categories: [],
   creator_address: null,
@@ -156,37 +158,6 @@ export const worldContentEntitySceneParalax: ContentEntityScene = {
     worldConfiguration: {
       name: "paralax.dcl.eth",
     },
-  },
-}
-
-export const worldAboutParalax: WorldAbout = {
-  healthy: true,
-  acceptingUsers: true,
-  configurations: {
-    networkId: 1,
-    globalScenesUrn: [],
-    scenesUrn: [
-      "urn:decentraland:entity:bafkreigmbmwtfptb7uocny5fpnnxl2vvbzxxzbdkzpmneqgbjw2if62f2e?baseUrl=https://worlds-content-server.decentraland.org/contents/",
-    ],
-    minimap: {
-      enabled: false,
-    },
-    skybox: {},
-    realmName: "paralax.dcl.eth",
-  },
-  content: {
-    healthy: true,
-    publicUrl: "https://peer.decentraland.org/content",
-  },
-  lambdas: {
-    healthy: true,
-    publicUrl: "https://peer.decentraland.org/lambdas",
-  },
-  comms: {
-    healthy: true,
-    protocol: "v3",
-    fixedAdapter:
-      "signed-login:https://worlds-content-server.decentraland.org/get-comms-adapter/world-prd-paralax.dcl.eth",
   },
 }
 
@@ -276,10 +247,12 @@ export const worldPlaceTemplegame: AggregatePlaceAttributes = {
   highlighted_image: null,
   world: true,
   world_name: "templegame.dcl.eth",
+  world_id: "templegame.dcl.eth",
   deployed_at: new Date("2023-05-16T15:44:26.395Z"),
   user_favorite: false,
   user_like: false,
   user_dislike: false,
+  user_visits: 0,
   user_count: 3,
   textsearch: undefined,
   categories: [],

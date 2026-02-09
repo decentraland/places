@@ -4,7 +4,6 @@ import {
   SQLStatement,
   columns,
   conditional,
-  createSearchableMatches,
   join,
   limit,
   objectValues,
@@ -33,14 +32,17 @@ import {
 } from "../Map/types"
 import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
+import {
+  MIN_USER_ACTIVITY,
+  buildTextsearch,
+  buildUpdateFavoritesQuery,
+  buildUpdateLikesQuery,
+} from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
-import {
-  FindWorldWithAggregatesOptions,
-  WorldListOrderBy,
-} from "../World/types"
 
-export const MIN_USER_ACTIVITY = 100
+// Re-export for backwards compatibility
+export { MIN_USER_ACTIVITY }
 export const SUMMARY_ACTIVITY_RANGE = "7 days"
 export const SIGNIFICANT_DECIMALS = 4
 
@@ -48,18 +50,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static tableName = "places"
 
   static textsearch(place: PlaceAttributes) {
-    return SQL`(${join(
-      [
-        SQL`setweight(to_tsvector(coalesce(${place.title}, '')), 'A')`,
-        SQL`setweight(to_tsvector(coalesce(${place.world_name}, '')), 'A')`,
-        SQL`setweight(to_tsvector(coalesce(${place.description}, '')), 'B')`,
-        SQL`setweight(to_tsvector(${createSearchableMatches(
-          place.description || ""
-        )}), 'B')`,
-        SQL`setweight(to_tsvector(coalesce(${place.owner}, '')), 'C')`,
-      ],
-      SQL` || `
-    )})`
+    return buildTextsearch(place)
   }
 
   static async findEnabledByPositions(
@@ -97,6 +88,38 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("find_enabled_by_world_name", sql)
   }
 
+  /**
+   * Find all places (scene entries) associated with a world by world_id
+   */
+  static async findByWorldId(worldId: string): Promise<PlaceAttributes[]> {
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "world_id" = ${worldId}
+    `
+
+    return this.namedQuery("find_by_world_id", sql)
+  }
+
+  /**
+   * Find a place by world_id and base_position (unique identifier for a scene in a world)
+   */
+  static async findByWorldIdAndBasePosition(
+    worldId: string,
+    basePosition: string
+  ): Promise<PlaceAttributes | null> {
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "world_id" = ${worldId}
+        AND "base_position" = ${basePosition}
+    `
+
+    const results = await this.namedQuery<PlaceAttributes>(
+      "find_by_world_id_and_base_position",
+      sql
+    )
+    return results[0] || null
+  }
+
   static async findByIdWithAggregates(
     placeId: string,
     options: {
@@ -125,13 +148,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserLikesModel
-        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
       )}
       WHERE "p"."id" = ${placeId}
     `
@@ -234,19 +257,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserLikesModel
-        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -272,8 +295,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         p."disabled" is false 
         ${conditional(
-          !options.only_highlighted && !options.ids,
+          !options.only_highlighted && !options.ids && !options.names?.length,
           SQL`AND "world" is false`
+        )}
+        ${conditional(
+          !!options.names?.length,
+          SQL`AND p.world_id IN ${values(
+            (options.names || []).map((n) => n.toLowerCase())
+          )}`
         )}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(!!options.search, SQL`AND rank > 0`)}
@@ -336,6 +365,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "operatedPositions"
       | "creator_address"
       | "sdk"
+      | "names"
     >
   ) {
     const isMissingEthereumAddress =
@@ -354,7 +384,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -374,7 +404,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
       WHERE
         p."disabled" is false 
-        ${conditional(!options.only_highlighted, SQL`AND "world" is false`)}
+        ${conditional(
+          !options.only_highlighted && !options.names?.length,
+          SQL`AND "world" is false`
+        )}
+        ${conditional(
+          !!options.names?.length,
+          SQL`AND p.world_id IN ${values(
+            (options.names || []).map((n) => n.toLowerCase())
+          )}`
+        )}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
           options.positions?.length > 0,
@@ -423,43 +462,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   static async updateFavorites(placeId: string) {
-    const sql = SQL`
-    WITH counted AS (
-      SELECT count(*) AS count
-      FROM ${table(UserFavoriteModel)}
-      WHERE "place_id" = ${placeId}
-    )
-    UPDATE ${table(this)}
-      SET "favorites" = c.count
-      FROM counted c
-      WHERE "id" = ${placeId}
-    `
+    const sql = buildUpdateFavoritesQuery(this, placeId)
     return this.namedQuery("update_favorites", sql)
   }
 
   static async updateLikes(placeId: string) {
-    const sql = SQL`
-    WITH counted AS (
-      SELECT
-        count(*) filter (where "like") as count_likes,
-        count(*) filter (where not "like") as count_dislikes,
-        count(*) filter (where "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_total,
-        count(*) filter (where "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_likes,
-        count(*) filter (where not "like" and "user_activity" >= ${MIN_USER_ACTIVITY}) as count_active_dislikes
-      FROM ${table(UserLikesModel)}
-      WHERE "place_id" = ${placeId}
-    )
-    UPDATE ${table(this)}
-      SET
-        "likes" = c.count_likes,
-        "dislikes" = c.count_dislikes,
-        "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
-                            ELSE c.count_active_likes / c.count_active_total::float
-                      END),
-        "like_score" = (${PlaceModel.calculateLikeScoreStatement()})
-      FROM counted c
-      WHERE "id" = ${placeId}
-    `
+    const sql = buildUpdateLikesQuery(this, placeId)
     return this.namedQuery("update_likes", sql)
   }
 
@@ -532,7 +540,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )}
     ${conditional(
       !!place.world,
-      SQL` AND world is true AND ${place.world_name} = "world_name"`
+      SQL` AND world is true AND "world_id" = ${place.world_id} AND "base_position" = ${place.base_position}`
     )}`
 
     return this.namedQuery("update_place", sql)
@@ -551,202 +559,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("override_categories", sql)
   }
 
-  static async findWorlds(): Promise<PlaceAttributes[]> {
-    const sql = SQL`
-      SELECT * FROM ${table(this)}
-      WHERE "world" is true and disabled is false
-      ORDER BY updated_at ASC LIMIT 500
-    `
-
-    return this.namedQuery("find_worlds", sql)
-  }
-
-  static async findWorld(
-    options: FindWorldWithAggregatesOptions
-  ): Promise<AggregatePlaceAttributes[]> {
-    const searchIsEmpty = options.search && options.search.length < 3
-
-    if (searchIsEmpty) {
-      return []
-    }
-
-    const orderBy =
-      oneOf(options.order_by, [
-        WorldListOrderBy.LIKE_SCORE_BEST,
-        WorldListOrderBy.CREATED_AT,
-      ]) ?? WorldListOrderBy.LIKE_SCORE_BEST
-    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
-
-    const order = SQL.raw(
-      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
-    )
-
-    const sql = SQL`
-      SELECT p.*
-      ${conditional(
-        !!options.user,
-        SQL`, uf.user is not null as user_favorite`
-      )}
-      ${conditional(!options.user, SQL`, false as user_favorite`)}
-      ${conditional(
-        !!options.user,
-        SQL`, coalesce(ul.like,false) as user_like`
-      )}
-      ${conditional(!options.user, SQL`, false as user_like`)}
-      ${conditional(
-        !!options.user,
-        SQL`, not coalesce(ul.like,true) as user_dislike`
-      )}
-      ${conditional(!options.user, SQL`, false as user_dislike`)}
-      FROM ${table(this)} p
-      ${conditional(
-        !!options.user && !options.only_favorites,
-        SQL`LEFT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user,
-        SQL`LEFT JOIN ${table(
-          UserLikesModel
-        )} ul on p.id = ul.place_id AND ul.user = ${options.user}`
-      )}
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      WHERE
-        p.world is true
-        ${conditional(!!options.disabled, SQL`AND p.disabled is true`)}
-        ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
-        ${conditional(
-          options.names.length > 0,
-          SQL`AND LOWER(world_name) = ANY(${options.names.map((name) =>
-            name.toLowerCase()
-          )})`
-        )}
-        ${conditional(!!options.search, SQL` AND rank > 0`)}
-        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
-      ORDER BY
-      ${conditional(!!options.search, SQL`rank DESC, `)}
-      ${order}
-      ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}
-    `
-
-    return await this.namedQuery("find_worlds", sql)
-  }
-
-  static async countWorlds(
-    options: Pick<
-      FindWorldWithAggregatesOptions,
-      | "user"
-      | "only_favorites"
-      | "names"
-      | "search"
-      | "categories"
-      | "disabled"
-      | "owner"
-    >
-  ) {
-    const isMissingEthereumAddress =
-      options.user && !isEthereumAddress(options.user)
-    const searchIsEmpty = options.search && options.search.length < 3
-    if (isMissingEthereumAddress || searchIsEmpty) {
-      return 0
-    }
-
-    const query = SQL`
-      SELECT
-        count(*) as total
-      FROM ${table(this)} p
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-      WHERE
-        p.world is true
-        ${conditional(!!options.disabled, SQL`AND p.disabled is true`)}
-        ${conditional(!options.disabled, SQL`AND p.disabled is false`)}
-        ${conditional(
-          options.names.length > 0,
-          SQL`AND LOWER(p.world_name) = ANY(${options.names.map((name) =>
-            name.toLowerCase()
-          )})`
-        )}
-        ${conditional(!!options.search, SQL` AND rank > 0`)}
-        ${conditional(!!options.owner, SQL` AND p.owner = ${options.owner}`)}
-    `
-    const results: { total: number }[] = await this.namedQuery(
-      "count_worlds",
-      query
-    )
-
-    return Number(results[0].total)
-  }
-
-  static async findWorldNames(): Promise<{ world_name: string }[]> {
-    const sql = SQL`
-      SELECT p.world_name
-      FROM ${table(this)} p
-      WHERE
-        p.disabled is false AND world is true
-      ORDER BY p.world_name ASC
-    `
-
-    return await this.namedQuery("find_world_names", sql)
-  }
-
-  static async countWorldNames() {
-    const query = SQL`
-      SELECT
-        count(*) as total
-      FROM ${table(this)} p
-      WHERE
-        p.disabled is false
-        AND p.world is true
-    `
-    const results: { total: number }[] = await this.namedQuery(
-      "count_world_names",
-      query
-    )
-
-    return Number(results[0].total)
-  }
-
   static async findEnabledByCategory(
     category: string
   ): Promise<AggregatePlaceAttributes[]> {
@@ -760,18 +572,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         p."disabled" is false AND "world" is false
     `
     return await this.namedQuery("find_enabled_by_category", sql)
-  }
-
-  /**
-   * For reference: https://www.evanmiller.org/how-not-to-sort-by-average-rating.html
-   * We're calculating the lower bound of a 95% confidence interval
-   */
-  static calculateLikeScoreStatement(): SQLStatement {
-    return SQL`CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN ((c.count_active_likes + 1.9208)
-    / (c.count_active_likes + c.count_active_dislikes) - 1.96
-    * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604)
-    / (c.count_active_likes + c.count_active_dislikes))
-    / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) ELSE NULL END`
   }
 
   static async findWithCoordinatesAggregates(
@@ -818,19 +618,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf.user = ${options.user}`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf.user = ${options.user}`
       )}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserLikesModel
-        )} ul on p.id = ul.place_id AND ul.user = ${options.user}`
+        )} ul on p.id = ul.entity_id AND ul.user = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -902,7 +702,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -985,6 +785,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
         options.names
       )}`
+    } else {
+      placesOrWorldsCondition = SQL`AND p.world is false`
     }
 
     const sql = SQL`
@@ -1002,19 +804,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserLikesModel
-        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -1100,6 +902,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
         options.names
       )}`
+    } else {
+      placesOrWorldsCondition = SQL`AND p.world is false`
     }
 
     const query = SQL`
@@ -1110,7 +914,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf.user = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf.user = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -1286,19 +1090,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && !options.only_favorites,
         SQL`LEFT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
           UserLikesModel
-        )} ul on p.id = ul.place_id AND ul."user" = ${options.user}`
+        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
@@ -1408,7 +1212,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         !!options.user && options.only_favorites,
         SQL`RIGHT JOIN ${table(
           UserFavoriteModel
-        )} uf on p.id = uf.place_id AND uf."user" = ${options.user}`
+        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
       )}
       ${conditional(
         !!options.categories.length,
