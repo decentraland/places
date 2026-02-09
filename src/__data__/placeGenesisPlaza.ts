@@ -15,6 +15,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
   world: false,
   world_name: null,
+  world_id: null,
   title: "Genesis Plaza",
   description:
     "Decentraland's official spawn point and your #1 place to meet new people, hang out, and stay up to date with what's happening in our virtual world.",
