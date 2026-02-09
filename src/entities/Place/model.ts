@@ -307,7 +307,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(
-          options.positions?.length > 0,
+          options.positions?.length > 0 && !!options.names?.length,
+          SQL`AND p.positions && ${options.positions}::varchar[]`
+        )}
+        ${conditional(
+          options.positions?.length > 0 && !options.names?.length,
           SQL`AND p.base_position IN (
               SELECT DISTINCT(base_position)
               FROM ${table(PlacePositionModel)}
@@ -416,7 +420,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
         ${conditional(
-          options.positions?.length > 0,
+          options.positions?.length > 0 && !!options.names?.length,
+          SQL`AND p.positions && ${options.positions}::varchar[]`
+        )}
+        ${conditional(
+          options.positions?.length > 0 && !options.names?.length,
           SQL`AND p.base_position IN (
               SELECT DISTINCT(base_position)
               FROM ${table(PlacePositionModel)}

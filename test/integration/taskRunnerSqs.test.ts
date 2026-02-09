@@ -259,6 +259,53 @@ describe("taskRunnerSqs integration", () => {
     })
   })
 
+  describe("when querying a world place by position", () => {
+    let job: DeploymentToSqs
+
+    beforeEach(async () => {
+      job = createWorldDeploymentMessage()
+
+      // Deploy a scene with multiple parcels
+      const multiParcelScene = createWorldContentEntityScene({
+        worldName: "multiparcel.dcl.eth",
+        title: "Multi Parcel Scene",
+        base: "0,0",
+        parcels: ["0,0", "0,1", "1,0", "1,1"],
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(multiParcelScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    describe("and the position matches one of the scene's parcels", () => {
+      it("should return the place", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "multiparcel.dcl.eth", positions: "1,0" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].title).toBe("Multi Parcel Scene")
+      })
+    })
+
+    describe("and the position does not match any of the scene's parcels", () => {
+      it("should return no results", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "multiparcel.dcl.eth", positions: "99,99" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(0)
+      })
+    })
+  })
+
   describe("when a world scene deployment changes the rating of an existing place", () => {
     let job: DeploymentToSqs
 
