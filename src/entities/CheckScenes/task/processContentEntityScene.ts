@@ -50,7 +50,7 @@ export function processContentEntityScene(
       new: placefromContentEntity,
       rating: {
         id: randomUUID(),
-        place_id: placefromContentEntity.id,
+        entity_id: placefromContentEntity.id,
         original_rating: null,
         update_rating: placefromContentEntity.content_rating,
         moderator: null,
@@ -71,7 +71,7 @@ export function processContentEntityScene(
   if (placefromContentEntity.content_rating !== samePlace.content_rating) {
     rating = {
       id: randomUUID(),
-      place_id: samePlace.id,
+      entity_id: samePlace.id,
       original_rating: samePlace.content_rating,
       update_rating: placefromContentEntity.content_rating,
       moderator: null,
@@ -90,7 +90,12 @@ export function processContentEntityScene(
 export function createPlaceFromContentEntityScene(
   contentEntityScene: ContentEntityScene,
   data: Partial<Omit<PlaceAttributes, "id">> = {},
-  options: { url?: string; creator?: string | null; sdk?: string | null } = {}
+  options: {
+    url?: string
+    creator?: string | null
+    sdk?: string | null
+    worldId?: string | null
+  } = {}
 ) {
   const now = new Date()
   const title = contentEntityScene?.metadata?.display?.title || null
@@ -149,6 +154,7 @@ export function createPlaceFromContentEntityScene(
     updated_at: now,
     world: !!contentEntityScene?.metadata?.worldConfiguration,
     world_name: worldName,
+    world_id: options.worldId || null,
     ...data,
     title: title ? title.slice(0, 50) : "Untitled",
     description: contentEntityScene?.metadata?.display?.description || null,

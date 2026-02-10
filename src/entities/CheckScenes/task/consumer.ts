@@ -1,4 +1,9 @@
 import { AuthChain } from "@dcl/schemas/dist/misc/auth-chain"
+import { Events } from "@dcl/schemas/dist/platform/events/base"
+import {
+  WorldScenesUndeploymentEvent,
+  WorldSettingsChangedEvent,
+} from "@dcl/schemas/dist/platform/events/world"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
@@ -10,6 +15,43 @@ export declare type DeploymentToSqs = {
     authChain: AuthChain
   }
   contentServerUrls?: string[]
+}
+
+/** Union type for all possible SQS message types */
+export type WorldSqsMessage =
+  | DeploymentToSqs
+  | WorldSettingsChangedEvent
+  | WorldScenesUndeploymentEvent
+
+/** Type guard to check if message is a deployment event */
+export function isDeploymentEvent(
+  message: WorldSqsMessage
+): message is DeploymentToSqs {
+  return "entity" in message && "entityId" in message.entity
+}
+
+/** Type guard to check if message is a settings changed event */
+export function isSettingsChangedEvent(
+  message: WorldSqsMessage
+): message is WorldSettingsChangedEvent {
+  return (
+    "type" in message &&
+    message.type === Events.Type.WORLD &&
+    "subType" in message &&
+    message.subType === Events.SubType.Worlds.WORLD_SETTINGS_CHANGED
+  )
+}
+
+/** Type guard to check if message is an undeployment event */
+export function isUndeploymentEvent(
+  message: WorldSqsMessage
+): message is WorldScenesUndeploymentEvent {
+  return (
+    "type" in message &&
+    message.type === Events.Type.WORLD &&
+    "subType" in message &&
+    message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT
+  )
 }
 
 export interface TaskQueueMessage {
@@ -61,7 +103,7 @@ export class SQSConsumer {
     return published.Successful!.map((it) => it.Id!)
   }
 
-  async consume(taskRunner: (job: DeploymentToSqs) => Promise<any>) {
+  async consume(taskRunner: (job: WorldSqsMessage) => Promise<any>) {
     try {
       const response = await this.sqs.receiveMessage(this.params).promise()
       const finalReturn = []
@@ -72,7 +114,7 @@ export class SQSConsumer {
       ) {
         for (const it of response.Messages) {
           const message: TaskQueueMessage = { id: it.MessageId! }
-          const body = JSON.parse(it.Body!)
+          const body = JSON.parse(it.Body!) as WorldSqsMessage
           const loggerExtended = logger.extend({
             id: message.id,
             message: body,
@@ -88,10 +130,19 @@ export class SQSConsumer {
             loggerExtended.log(`Processed job`)
             finalReturn.push({ result, message })
           } catch (err: any) {
-            notifyError([
-              err.toString(),
-              `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`,
-            ])
+            // Build error message based on event type
+            let errorContext = ""
+            if (isDeploymentEvent(body)) {
+              errorContext = `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
+            } else if (isSettingsChangedEvent(body)) {
+              errorContext = `WorldSettingsChanged: ${body.key}`
+            } else if (isUndeploymentEvent(body)) {
+              errorContext = `WorldScenesUndeployment: ${
+                body.key
+              } - entityIds: ${body.metadata.entityIds.join(", ")}`
+            }
+
+            notifyError([err.toString(), errorContext])
             loggerExtended.error(err.toString())
 
             finalReturn.push({ result: undefined, message })

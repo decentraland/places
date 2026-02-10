@@ -1,10 +1,10 @@
 import schema from "decentraland-gatsby/dist/entities/Schema/schema"
 
 export const updateUserLikeParamsSchema = schema.params({
-  place_id: {
+  entity_id: {
     type: "string",
     format: "uuid",
-    description: "Place ID",
+    description: "Entity ID (place or world)",
   },
 })
 

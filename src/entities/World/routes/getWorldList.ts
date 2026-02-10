@@ -9,7 +9,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import { getWorldsLiveData } from "../../../modules/worldsLiveData"
-import PlaceModel from "../../Place/model"
+import WorldModel from "../model"
 import { getWorldListQuerySchema } from "../schemas"
 import {
   FindWorldWithAggregatesOptions,
@@ -64,8 +64,8 @@ export const getWorldList = Router.memo(
     }
 
     const [data, total, liveData] = await Promise.all([
-      PlaceModel.findWorld(options),
-      PlaceModel.countWorlds(options),
+      WorldModel.findWorldsWithAggregates(options),
+      WorldModel.countWorlds(options),
       getWorldsLiveData(),
     ])
 

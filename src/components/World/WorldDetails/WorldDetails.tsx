@@ -15,7 +15,7 @@ import remarkGfm from "remark-gfm"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 import Label from "semantic-ui-react/dist/commonjs/elements/Label"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../../entities/shared/types"
 import { FeatureFlags } from "../../../modules/ff"
 import locations from "../../../modules/locations"
 import { getRating } from "../../../modules/rating"
@@ -26,8 +26,11 @@ import PlaceStats from "../../Place/PlaceStats/PlaceStats"
 
 import "./WorldDetails.css"
 
+/** Type that can be either a world from the worlds table or a place with world=true */
+export type WorldData = AggregateBaseEntityAttributes
+
 export type WorldDetailsProps = Pick<RatingButtonProps, "onChangeRating"> & {
-  place: AggregatePlaceAttributes
+  place: WorldData
   loading: boolean
 }
 

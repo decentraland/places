@@ -23,7 +23,7 @@ import ConfirmRatingModal from "../components/Modal/ConfirmRatingModal"
 import ContentModerationModal from "../components/Modal/ContentModerationModal"
 import WorldDescription from "../components/World/WorldDescription/WorldDescription"
 import WorldDetails from "../components/World/WorldDetails/WorldDetails"
-import usePlacesManager from "../hooks/usePlacesManager"
+import useEntitiesManager from "../hooks/useEntitiesManager"
 import { useWorldFromParams } from "../hooks/useWorldFromParams"
 import { FeatureFlags } from "../modules/ff"
 import locations from "../modules/locations"
@@ -78,7 +78,7 @@ export default function WorldPage() {
       handlingDislike,
       handleRating,
     },
-  ] = usePlacesManager(placeMemo)
+  ] = useEntitiesManager(placeMemo)
 
   const [selectedRate, setSelectedRate] = useState<SceneContentRating>(
     getRating(place?.content_rating)

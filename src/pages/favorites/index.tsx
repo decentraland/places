@@ -23,14 +23,13 @@ import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
 import Navigation, { NavigationTab } from "../../components/Layout/Navigation"
 import PlaceCard from "../../components/Place/PlaceCard/PlaceCard"
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../entities/shared/types"
 import useCardsByWidth from "../../hooks/useCardsByWidth"
+import useEntitiesManager from "../../hooks/useEntitiesManager"
 import { usePlaceListMyFavorites } from "../../hooks/usePlaceListMyFavorites"
-import usePlacesManager from "../../hooks/usePlacesManager"
 import { useWorldListMyFavorites } from "../../hooks/useWorldListMyFavorites"
 import { FeatureFlags } from "../../modules/ff"
 import locations from "../../modules/locations"
-import { SegmentPlace } from "../../modules/segment"
 
 import "./index.css"
 
@@ -56,15 +55,13 @@ export default function FavoritesPage() {
   const [worldListMyFavorites, worldListMyFavoritesState] =
     useWorldListMyFavorites(options, search)
 
-  const placesMemo = useMemo(
+  const placesMemo: AggregateBaseEntityAttributes[][] = useMemo(
     () => [placeListMyFavorites.data, worldListMyFavorites.data],
     [placeListMyFavorites.data, worldListMyFavorites.data]
   )
 
-  const [
-    [placeFavoriteList, worldFavoriteList],
-    { handleFavorite, handlingFavorite },
-  ] = usePlacesManager(placesMemo)
+  const [[placeFavoriteList, worldFavoriteList]] =
+    useEntitiesManager(placesMemo)
 
   const [ff] = useFeatureFlagContext()
   const isAuthDappEnabled = ff.enabled(DappsFeatureFlags.AuthDappEnabled)
@@ -206,7 +203,7 @@ export default function FavoritesPage() {
               progress
               component={(props) => (
                 <div className="favorites__item-container">
-                  {props.item?.map((item: AggregatePlaceAttributes) => {
+                  {props.item?.map((item: AggregateBaseEntityAttributes) => {
                     return (
                       <PlaceCard
                         key={item?.id}
@@ -266,7 +263,7 @@ export default function FavoritesPage() {
                 progress
                 component={(props) => (
                   <div className="favorites__item-container">
-                    {props.item?.map((item: AggregatePlaceAttributes) => {
+                    {props.item?.map((item: AggregateBaseEntityAttributes) => {
                       return (
                         <PlaceCard
                           key={item?.id}

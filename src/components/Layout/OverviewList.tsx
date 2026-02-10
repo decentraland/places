@@ -11,7 +11,7 @@ import { Header } from "decentraland-ui/dist/components/Header/Header"
 import { HeaderMenu } from "decentraland-ui/dist/components/HeaderMenu/HeaderMenu"
 import Icon from "semantic-ui-react/dist/commonjs/elements/Icon"
 
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../entities/shared/types"
 import useCardsByWidth from "../../hooks/useCardsByWidth"
 import { SegmentPlace } from "../../modules/segment"
 import PlaceList from "../Place/PlaceList/PlaceList"
@@ -19,12 +19,12 @@ import PlaceList from "../Place/PlaceList/PlaceList"
 import "./OverviewList.css"
 
 type BaseOverviewListProps = {
-  places: AggregatePlaceAttributes[]
+  places: AggregateBaseEntityAttributes[]
   title: string | React.ReactNode
   loading: boolean
   onClickFavorite: (
     e: React.MouseEvent<HTMLButtonElement>,
-    place: AggregatePlaceAttributes
+    place: AggregateBaseEntityAttributes
   ) => void
   className?: string
   loadingFavorites: Set<string>

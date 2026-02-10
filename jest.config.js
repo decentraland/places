@@ -5,9 +5,12 @@ module.exports = {
   fakeTimers: {
     enableGlobally: true,
   },
+  testPathIgnorePatterns: ["/node_modules/", "<rootDir>/test/"],
   moduleNameMapper: {
     "^decentraland-dapps/dist/modules/analytics/utils$":
       "<rootDir>/__mocks__/decentraland-dapps-analytics.js",
     "^isbot$": "<rootDir>/__mocks__/isbot.js",
+    "^@dcl/ui-env$": "<rootDir>/src/__mocks__/@dcl/ui-env.ts",
+    "^@dcl/ui-env/(.*)$": "<rootDir>/src/__mocks__/@dcl/ui-env.ts",
   },
 }

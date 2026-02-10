@@ -530,6 +530,155 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
+  /places/{place_id}/ranking:
+    put:
+      tags:
+        - Places
+      summary: Update place ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Update the ranking score for a place. **Requires service token authentication.**
+
+        This endpoint uses a pre-configured service token for authentication, intended for
+        service-to-service calls from the data team's systems. The token must be provided
+        in the Authorization header as `Bearer <token>` or just `<token>`.
+
+        The ranking value is used to order places in listings. Higher ranking values appear first
+        (after highlighted places). This endpoint is intended for the data team to curate
+        place ordering based on quality metrics or promotional needs.
+
+        **Use Cases:**
+        - Promote high-quality places in listings
+        - Adjust place ordering based on data analysis
+        - Set custom ordering for promotional periods
+
+        **Authentication:**
+        Set the `DATA_TEAM_AUTH_TOKEN` environment variable on the server, then use that
+        token value in the Authorization header when calling this endpoint.
+      operationId: updatePlaceRanking
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to update ranking
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateRankingBody'
+            examples:
+              setRanking:
+                summary: Set ranking value
+                value:
+                  ranking: 0.85
+              removeRanking:
+                summary: Remove ranking (set to null)
+                value:
+                  ranking: null
+      responses:
+        '200':
+          description: Ranking updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceResponse'
+        '401':
+          description: Unauthorized - missing or invalid token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                error: "Authorization required"
+        '403':
+          description: Forbidden - invalid authorization token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                error: "Invalid authorization token"
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          description: Internal server error - service authentication not configured
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                error: "Service authentication not configured"
+
+  /places/{place_id}/highlight:
+    put:
+      tags:
+        - Places
+      summary: Update place highlight status 🔒 (Admin only)
+      security:
+        - BearerAuth: []
+      description: |
+        Update the highlight status for a place. **Requires authentication and admin privileges.**
+
+        Highlighted places receive special promotion and appear at the top of listings.
+        This endpoint is only available to administrators.
+
+        **Use Cases:**
+        - Feature exceptional places on the overview page
+        - Promote seasonal or event-related places
+        - Curate the best content for new users
+      operationId: updatePlaceHighlight
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to highlight/unhighlight
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateHighlightBody'
+            examples:
+              highlight:
+                summary: Add highlight
+                value:
+                  highlighted: true
+              unhighlight:
+                summary: Remove highlight
+                value:
+                  highlighted: false
+      responses:
+        '200':
+          description: Highlight status updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlaceResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          description: Forbidden - user is not an admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                ok: false
+                error: "Only admin allowed to update highlight"
+        '404':
+          $ref: '#/components/responses/NotFound'
+
   /places/{place_id}/favorites:
     patch:
       tags:
@@ -848,6 +997,7 @@ paths:
         - Filter worlds by exact name (world_names) or LIKE matching (names)
         - Filter by SDK version (includes places with null SDK)
         - Include connected user wallet addresses (with_connected_users)
+        - Include live event status (with_live_events)
         
         **Common Use Cases:**
         - Get all destinations: `?limit=50`
@@ -857,6 +1007,7 @@ paths:
         - Get only places: `?only_places=true`
         - Get only worlds: `?only_worlds=true`
         - Include connected users: `?with_connected_users=true`
+        - Include live event status: `?with_live_events=true`
       operationId: getDestinations
       parameters:
         - name: limit
@@ -965,6 +1116,16 @@ paths:
           description: |
             Include the list of connected user wallet addresses for each destination.
             When enabled, adds `connected_addresses` array to each destination.
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: with_live_events
+          in: query
+          description: |
+            Include whether the destination has a live event.
+            When enabled, adds `live` boolean to each destination.
+            Data is cached for 5 minutes for performance.
           required: false
           schema:
             type: boolean
@@ -1577,6 +1738,19 @@ components:
         2. Get the auth token from the SDK
         3. Include in requests: `Authorization: Bearer <token>`
 
+    ServiceToken:
+      type: http
+      scheme: bearer
+      description: |
+        Pre-configured service token for service-to-service authentication.
+
+        This authentication method is used for internal service calls, such as
+        the data team's ranking updates. The token value must match the
+        `DATA_TEAM_AUTH_TOKEN` environment variable configured on the server.
+
+        To authenticate:
+        Include in requests: `Authorization: Bearer <service-token>` or `Authorization: <service-token>`
+
   schemas:
     Place:
       type: object
@@ -1698,6 +1872,12 @@ components:
           nullable: true
           default: 0
           example: 0.75
+        highlighted:
+          type: boolean
+          description: |
+            True if this place is highlighted/featured by administrators.
+            Highlighted places appear at the top of listing endpoints.
+          example: false
         favorites:
           type: integer
           minimum: 0
@@ -1847,6 +2027,9 @@ components:
           description: External ranking value for custom ordering
           nullable: true
           default: 0
+        highlighted:
+          type: boolean
+          description: True if this world is highlighted/featured by administrators
         favorites:
           type: integer
           minimum: 0
@@ -2005,6 +2188,31 @@ components:
           type: string
           description: Optional explanation for the rating change (for moderation log)
           example: "Updated due to new interactive content"
+
+    UpdateRankingBody:
+      type: object
+      required:
+        - ranking
+      properties:
+        ranking:
+          type: number
+          nullable: true
+          description: |
+            Ranking score for ordering places. Higher values appear first in listings
+            (after highlighted places). Set to null to remove ranking.
+          example: 0.85
+
+    UpdateHighlightBody:
+      type: object
+      required:
+        - highlighted
+      properties:
+        highlighted:
+          type: boolean
+          description: |
+            Set to true to highlight the place (feature it), false to remove highlight.
+            Only administrators can update this field.
+          example: true
 
     UpdateFavoriteBody:
       type: object

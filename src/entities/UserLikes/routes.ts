@@ -17,7 +17,7 @@ import { fetchScore } from "../Snapshot/utils"
 import UserLikesModel from "../UserLikes/model"
 
 export default routes((router) => {
-  router.patch("/places/:place_id/likes", updateLike)
+  router.patch("/places/:entity_id/likes", updateLike)
 })
 
 export const validateGetPlaceParams = Router.validator<UpdateUserLikeParams>(
@@ -29,30 +29,30 @@ export const validateGetPlaceBody = Router.validator<UpdateUserLikeBody>(
 )
 
 async function updateLike(
-  ctx: Context<{ place_id: string }, "request" | "body" | "params">
+  ctx: Context<{ entity_id: string }, "request" | "body" | "params">
 ) {
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
-  const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
+  const place = await PlaceModel.findByIdWithAggregates(params.entity_id, {
     user: userAuth.address,
   })
 
   if (!place) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found place "${params.place_id}"`
+      `Not found place "${params.entity_id}"`
     )
   }
 
-  const placeUserData = {
-    place_id: params.place_id,
+  const entityUserData = {
+    entity_id: params.entity_id,
     user: userAuth.address,
   }
 
   const userLike = await UserLikesModel.findOne<UserLikeAttributes>(
-    placeUserData
+    entityUserData
   )
 
   if (userLike && userLike.like === body.like) {
@@ -65,18 +65,21 @@ async function updateLike(
   }
 
   if (body.like === null) {
-    await UserLikesModel.delete(placeUserData)
+    await UserLikesModel.delete(entityUserData)
   } else {
     // TODO(#319): if the snapshot fetching fails, the like is stored as if the user doesn't have enough VP.
     // this should be retried or turned into a SQL tx to be able to rollback  if this fails
     const user_activity = await fetchScore(userAuth.address)
-    await UserLikesModel.like(placeUserData, { like: body.like, user_activity })
+    await UserLikesModel.like(entityUserData, {
+      like: body.like,
+      user_activity,
+    })
   }
 
-  await PlaceModel.updateLikes(params.place_id)
+  await PlaceModel.updateLikes(params.entity_id)
 
   const placeUpdated = await PlaceModel.findByIdWithAggregates(
-    params.place_id,
+    params.entity_id,
     {
       user: userAuth.address,
     }

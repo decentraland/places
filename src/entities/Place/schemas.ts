@@ -96,6 +96,14 @@ export const getPlaceListQuerySchema = schema({
       description: "Filter places by SDK version (e.g., '7' for SDK7 scenes)",
       nullable: true as any,
     },
+    names: {
+      type: "array",
+      maxItems: 1000,
+      items: { type: "string" },
+      description:
+        "Filter places belonging to a world by its name (e.g., 'myworld.dcl.eth')",
+      nullable: true as any,
+    },
   },
 })
 
@@ -315,6 +323,34 @@ export const updateRatingBodySchema = schema({
     comment: {
       type: "string",
       description: "A comment for the rating",
+    },
+  },
+})
+
+export const updateRankingBodySchema = schema({
+  type: "object",
+  description: "Ranking update body",
+  additionalProperties: false,
+  required: ["ranking"],
+  properties: {
+    ranking: {
+      type: "number",
+      nullable: true as any,
+      description:
+        "Ranking score for ordering places (higher values appear first). Set to null to remove ranking.",
+    },
+  },
+})
+
+export const updateHighlightBodySchema = schema({
+  type: "object",
+  description: "Highlight update body",
+  additionalProperties: false,
+  required: ["highlighted"],
+  properties: {
+    highlighted: {
+      type: "boolean",
+      description: "Whether the place should be highlighted",
     },
   },
 })

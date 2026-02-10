@@ -40,6 +40,7 @@ export const getPlaceList = Router.memo(
 
     const query = await validateGetPlaceListQuery({
       positions: ctx.url.searchParams.getAll("positions"),
+      names: ctx.url.searchParams.getAll("names"),
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
@@ -83,6 +84,7 @@ export const getPlaceList = Router.memo(
       owner: query.owner,
       creator_address: query.creator_address,
       sdk: query.sdk,
+      names: query.names,
     }
 
     // If owner parameter is provided, fetch operated lands from Catalyst API

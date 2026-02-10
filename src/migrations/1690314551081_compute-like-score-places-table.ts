@@ -1,7 +1,11 @@
 import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
-import PlaceModel, { MIN_USER_ACTIVITY } from "../entities/Place/model"
+import PlaceModel from "../entities/Place/model"
+import {
+  MIN_USER_ACTIVITY,
+  calculateLikeScoreStatement,
+} from "../entities/shared/entityInteractions"
 import UserLikesModel from "../entities/UserLikes/model"
 
 export const shorthands: ColumnDefinitions | undefined = undefined
@@ -11,7 +15,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     UPDATE ${table(PlaceModel)} 
       SET like_score = 
         (
-          SELECT ${PlaceModel.calculateLikeScoreStatement()}
+          SELECT ${calculateLikeScoreStatement()}
           FROM (
             SELECT
               count(*) filter (where "like") as count_likes,

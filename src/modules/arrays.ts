@@ -1,17 +1,19 @@
-import { AggregatePlaceAttributes } from "../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../entities/shared/types"
 
-export const updatePlaceInPlaceList = (
-  placeList: AggregatePlaceAttributes[] | null,
-  placeId: string,
-  placeNewData: Partial<AggregatePlaceAttributes>
-) => {
-  if (!placeList) {
+/**
+ * Update an entity in a list by ID.
+ * Works with both places and worlds.
+ */
+export const updateEntityInList = <T extends AggregateBaseEntityAttributes>(
+  entityList: T[] | null,
+  entityId: string,
+  newData: Partial<T>
+): T[] => {
+  if (!entityList) {
     return []
   }
 
-  return placeList.map((itemToUpdate) =>
-    itemToUpdate.id === placeId
-      ? { ...itemToUpdate, ...placeNewData }
-      : itemToUpdate
+  return entityList.map((item) =>
+    item.id === entityId ? { ...item, ...newData } : item
   )
 }

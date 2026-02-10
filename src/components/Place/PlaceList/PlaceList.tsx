@@ -9,7 +9,7 @@ import {
   useTabletAndBelowMediaQuery,
 } from "decentraland-ui/dist/components/Media/Media"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import { AggregateBaseEntityAttributes } from "../../../entities/shared/types"
 import useCardsByWidth from "../../../hooks/useCardsByWidth"
 import { SegmentPlace } from "../../../modules/segment"
 import PlaceCard from "../PlaceCard/PlaceCard"
@@ -17,10 +17,10 @@ import PlaceCard from "../PlaceCard/PlaceCard"
 import "./PlaceList.css"
 
 export type PlaceListProps = {
-  places: AggregatePlaceAttributes[]
+  places: AggregateBaseEntityAttributes[]
   onClickFavorite: (
     e: React.MouseEvent<HTMLButtonElement>,
-    place: AggregatePlaceAttributes
+    place: AggregateBaseEntityAttributes
   ) => void
   dataPlace: SegmentPlace
   loadingFavorites?: Set<string>

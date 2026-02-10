@@ -4,11 +4,7 @@ import { userLikeTrue } from "../../__data__/entities"
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
-import {
-  worldPlaceParalax,
-  worldPlaceParalaxWithAggregated,
-  worldPlaceTemplegame,
-} from "../../__data__/world"
+import { worldPlaceParalax } from "../../__data__/world"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -135,8 +131,8 @@ describe(`findByIdWithAggregates`, () => {
           coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         WHERE "p"."id" = $3
       `
         .trim()
@@ -214,8 +210,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         )
@@ -259,8 +255,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
         WHERE p."disabled" is false AND "world" is false AND rank > 0 AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($4)
@@ -327,8 +323,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         ) AND (LOWER(p.owner) = $4 )
@@ -377,8 +373,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         WHERE p."disabled" is false AND "world" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         ) AND (LOWER(p.owner) = $4 OR p.base_position IN (
@@ -428,8 +424,8 @@ describe(`findWithAggregates`, () => {
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf."user" = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul."user" = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
         WHERE p."disabled" is false AND p.base_position IN (
           SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($3)
         ) AND p.id IN ($4)
@@ -635,12 +631,12 @@ describe(`updateFavorites`, () => {
         WITH counted AS (
           SELECT count(*) AS count
           FROM "user_favorites"
-          WHERE "place_id" = $1
+          WHERE entity_id = $1
         )
         UPDATE "places"
-          SET "favorites" = c.count
-          FROM counted c
-          WHERE "id" = $2
+        SET favorites = c.count
+        FROM counted c
+        WHERE id = $2
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -668,26 +664,28 @@ describe(`updateLikes`, () => {
           SELECT
             count(*) filter (where "like") as count_likes,
             count(*) filter (where not "like") as count_dislikes,
-            count(*) filter (where "user_activity" >= $1) as count_active_total,
-            count(*) filter (where "like" and "user_activity" >= $2) as count_active_likes,
-            count(*) filter (where not "like" and "user_activity" >= $3) as count_active_dislikes
+            count(*) filter (where user_activity >= $1) as count_active_total,
+            count(*) filter (where "like" and user_activity >= $2) as count_active_likes,
+            count(*) filter (where not "like" and user_activity >= $3) as count_active_dislikes
           FROM "user_likes"
-          WHERE "place_id" = $4
+          WHERE entity_id = $4
         )
         UPDATE "places"
-          SET
-            "likes" = c.count_likes,
-            "dislikes" = c.count_dislikes,
-            "like_rate" = (CASE WHEN c.count_active_total::float = 0 THEN NULL
-                                ELSE c.count_active_likes / c.count_active_total::float
-                          END),
-          "like_score" = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN 
-            ((c.count_active_likes + 1.9208) / (c.count_active_likes + c.count_active_dislikes)
-             - 1.96 * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604) / (c.count_active_likes + c.count_active_dislikes)) 
-            / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes)) 
-            ELSE NULL END)
-          FROM counted c
-          WHERE "id" = $5
+        SET
+          likes = c.count_likes,
+          dislikes = c.count_dislikes,
+          like_rate = (CASE WHEN c.count_active_total::float = 0 THEN NULL
+                            ELSE c.count_active_likes / c.count_active_total::float
+                      END),
+          like_score = (CASE WHEN (c.count_active_likes + c.count_active_dislikes > 0) THEN
+            ((c.count_active_likes + 1.9208)
+            / (c.count_active_likes + c.count_active_dislikes) - 1.96
+            * SQRT((c.count_active_likes * c.count_active_dislikes) / (c.count_active_likes + c.count_active_dislikes) + 0.9604)
+            / (c.count_active_likes + c.count_active_dislikes))
+            / (1 + 3.8416 / (c.count_active_likes + c.count_active_dislikes))
+          ELSE NULL END)
+        FROM counted c
+        WHERE id = $5
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -780,337 +778,6 @@ describe(`updatePlace`, () => {
         SELECT DISTINCT("base_position") 
         FROM "place_positions" "pp" WHERE "pp"."position" = $17
       )
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-})
-
-describe(`findWorlds`, () => {
-  test(`should return a list of worlds not hidden`, async () => {
-    namedQuery.mockResolvedValue([worldPlaceParalaxWithAggregated])
-    expect(await PlaceModel.findWorlds()).toEqual([
-      worldPlaceParalaxWithAggregated,
-    ])
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("find_worlds")
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT * FROM "places"
-        WHERE "world" is true and disabled is false
-        ORDER BY updated_at ASC LIMIT 500
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-})
-
-describe(`findWorld`, () => {
-  test(`should return a list of worlds matching the parameters FindWorldWithAggregatesOptions without user`, async () => {
-    namedQuery.mockResolvedValue([worldPlaceTemplegame])
-    expect(
-      await PlaceModel.findWorld({
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        order_by: "created_at",
-        order: "desc",
-        search: "",
-        categories: [],
-      })
-    ).toEqual([worldPlaceTemplegame])
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("find_worlds")
-    expect(sql.values).toEqual([["templegame.dcl.eth"], 1, 0])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT p.* , false as user_favorite , false as user_like , false as user_dislike
-        FROM "places" p
-          WHERE
-            p.world is true
-            AND p.disabled is false
-            AND LOWER(world_name) = ANY($1)
-          ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
-            LIMIT $2
-            OFFSET $3
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-  test(`should return a list of worlds matching the parameters FindWithAggregatesOptions`, async () => {
-    namedQuery.mockResolvedValue([worldPlaceTemplegame])
-    expect(
-      await PlaceModel.findWorld({
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        order_by: "created_at",
-        order: "desc",
-        user: userLikeTrue.user,
-        search: "decentraland",
-        categories: [],
-      })
-    ).toEqual([worldPlaceTemplegame])
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("find_worlds")
-    expect(sql.values).toEqual([
-      userLikeTrue.user,
-      userLikeTrue.user,
-      "decentraland:*",
-      ["templegame.dcl.eth"],
-      1,
-      0,
-    ])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
-        FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
-        , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
-        WHERE
-          p.world is true
-          AND p.disabled is false
-          AND LOWER(world_name) = ANY($4)
-          AND rank > 0
-        ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
-          LIMIT $5
-          OFFSET $6
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-  test(`should return a list of worlds matching the parameters FindWithAggregatesOptions with disabled`, async () => {
-    namedQuery.mockResolvedValue([{ ...worldPlaceTemplegame, disabled: true }])
-    expect(
-      await PlaceModel.findWorld({
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        order_by: "created_at",
-        order: "desc",
-        user: userLikeTrue.user,
-        search: "decentraland",
-        categories: [],
-        disabled: true,
-      })
-    ).toEqual([{ ...worldPlaceTemplegame, disabled: true }])
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("find_worlds")
-    expect(sql.values).toEqual([
-      userLikeTrue.user,
-      userLikeTrue.user,
-      "decentraland:*",
-      ["templegame.dcl.eth"],
-      1,
-      0,
-    ])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
-        FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
-        , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
-        WHERE
-          p.world is true
-          AND p.disabled is true
-          AND LOWER(world_name) = ANY($4)
-          AND rank > 0
-        ORDER BY rank DESC, p.created_at DESC NULLS LAST, p."deployed_at" DESC
-          LIMIT $5
-          OFFSET $6
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-  test(`should return an empty list of worlds when search is empty`, async () => {
-    namedQuery.mockResolvedValue([worldPlaceTemplegame])
-    expect(
-      await PlaceModel.findWorld({
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        order_by: "created_at",
-        order: "desc",
-        user: userLikeTrue.user,
-        search: "de",
-        categories: [],
-      })
-    ).toEqual([])
-    expect(namedQuery.mock.calls.length).toBe(0)
-  })
-  test(`should return a list of worlds matching the parameters FindWorldWithAggregatesOptions with owner filter`, async () => {
-    namedQuery.mockResolvedValue([worldPlaceTemplegame])
-    expect(
-      await PlaceModel.findWorld({
-        offset: 0,
-        limit: 1,
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        order_by: "created_at",
-        order: "desc",
-        user: userLikeTrue.user,
-        search: "",
-        categories: [],
-        owner: "0x1234567890123456789012345678901234567890",
-      })
-    ).toEqual([worldPlaceTemplegame])
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("find_worlds")
-    expect(sql.values).toEqual([
-      userLikeTrue.user,
-      userLikeTrue.user,
-      ["templegame.dcl.eth"],
-      "0x1234567890123456789012345678901234567890",
-      1,
-      0,
-    ])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT p.* , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
-        FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
-        WHERE
-          p.world is true
-          AND p.disabled is false
-          AND LOWER(world_name) = ANY($3)
-          AND p.owner = $4
-        ORDER BY p.created_at DESC NULLS LAST, p."deployed_at" DESC
-          LIMIT $5
-          OFFSET $6
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-})
-
-describe(`countWorlds`, () => {
-  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions without user`, async () => {
-    namedQuery.mockResolvedValue([{ total: 1 }])
-    expect(
-      await PlaceModel.countWorlds({
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        search: "",
-        categories: [],
-      })
-    ).toEqual(1)
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual([["templegame.dcl.eth"]])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT
-          count(*) as total
-        FROM "places" p
-        WHERE
-          p.world is true
-          AND p.disabled is false
-          AND LOWER(p.world_name) = ANY($1)
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions with search without user`, async () => {
-    namedQuery.mockResolvedValue([{ total: 1 }])
-    expect(
-      await PlaceModel.countWorlds({
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        search: "decentraland",
-        categories: [],
-      })
-    ).toEqual(1)
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual(["decentraland:*", ["templegame.dcl.eth"]])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT
-          count(*) as total
-        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
-        WHERE
-          p.world is true
-          AND p.disabled is false
-          AND LOWER(p.world_name) = ANY($2)
-          AND rank > 0
-      `
-        .trim()
-        .replace(/\s{2,}/gi, " ")
-    )
-  })
-  test("should return 0 is the search is not long enough", async () => {
-    expect(
-      await PlaceModel.countWorlds({
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        user: "ABC",
-        search: "a",
-        categories: [],
-      })
-    ).toEqual(0)
-  })
-  test(`should return 0 with wrong user address`, async () => {
-    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
-    expect(
-      await PlaceModel.countWorlds({
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        user: "ABC",
-        search: "asdkad",
-        categories: [],
-      })
-    ).toEqual(0)
-    expect(namedQuery.mock.calls.length).toBe(0)
-  })
-  test(`should return the total number of worlds matching the parameters FindWorldWithAggregatesOptions with owner filter`, async () => {
-    namedQuery.mockResolvedValue([{ total: 1 }])
-    expect(
-      await PlaceModel.countWorlds({
-        only_favorites: false,
-        names: ["templegame.dcl.eth"],
-        search: "",
-        categories: [],
-        owner: "0x1234567890123456789012345678901234567890",
-      })
-    ).toEqual(1)
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [name, sql] = namedQuery.mock.calls[0]
-    expect(name).toBe("count_worlds")
-    expect(sql.values).toEqual([
-      ["templegame.dcl.eth"],
-      "0x1234567890123456789012345678901234567890",
-    ])
-    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
-      `
-        SELECT
-          count(*) as total
-        FROM "places" p
-        WHERE
-          p.world is true
-          AND p.disabled is false
-          AND LOWER(p.world_name) = ANY($1)
-          AND p.owner = $2
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -1250,8 +917,8 @@ describe(`findWithCoordinatesAggregates`, () => {
       `
         SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
         FROM "places" p
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul.user = $2
         WHERE
           p.disabled is false 
           AND array_length(p.categories, 1) > 0
@@ -1299,8 +966,8 @@ describe(`findWithCoordinatesAggregates`, () => {
       `
         SELECT p.id, p.base_position, p.positions, p.title, p.description, p.image, p.contact_name, p.categories , uf.user is not null as user_favorite , coalesce(ul.like,false) as user_like , not coalesce(ul.like,true) as user_dislike
         FROM "places" p 
-        LEFT JOIN "user_favorites" uf on p.id = uf.place_id AND uf.user = $1
-        LEFT JOIN "user_likes" ul on p.id = ul.place_id AND ul.user = $2 , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
+        LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf.user = $1
+        LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul.user = $2 , ts_rank_cd(p.textsearch, to_tsquery($3)) as rank
         WHERE p.disabled is false 
           AND array_length(p.categories, 1) > 0
           AND world is false

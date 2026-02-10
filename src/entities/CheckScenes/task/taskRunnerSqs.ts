@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto"
 
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
@@ -12,13 +14,10 @@ import {
   notifyNewPlace,
   notifyUpdatePlace,
 } from "../../Slack/utils"
+import WorldModel from "../../World/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import {
-  fetchWorldInformation,
-  getWorldAbout,
-  updateGenesisCityManifest,
-} from "../utils"
+import { updateGenesisCityManifest } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import {
@@ -45,6 +44,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "deployed_at",
   "world",
   "world_name",
+  "world_id",
   "textsearch",
   "creator_address",
   "sdk",
@@ -79,39 +79,55 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
       contentEntityScene.metadata.worldConfiguration.dclName) as string
 
-    const worlds = await PlaceModel.findEnabledWorldName(worldName)
+    // Determine if opt-out is set
+    const isOptOut =
+      !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    // fallback to get the owner of the world in case is missing
-    if (!worlds.length || !contentEntityScene.metadata.owner) {
-      const worldInformation = await fetchWorldInformation(
-        worldName,
-        job.contentServerUrls![0]
-      )
+    // Insert the world only if it doesn't already exist.
+    // If it already exists (configured via settings or a previous deployment),
+    // its data is left untouched.
+    const worldId = await WorldModel.insertWorldIfNotExists({
+      world_name: worldName,
+      title:
+        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
+      description:
+        contentEntityScene?.metadata?.display?.description || undefined,
+      content_rating:
+        (contentEntityScene?.metadata?.policy
+          ?.contentRating as SceneContentRating) || undefined,
+      categories: contentEntityScene?.metadata?.tags || undefined,
+      owner: contentEntityScene?.metadata?.owner || undefined,
+      show_in_places: isOptOut ? false : undefined,
+    })
 
-      if (worldInformation) {
-        contentEntityScene.metadata.owner = worldInformation?.metadata?.owner
-      }
-    }
+    // Find the existing place for this scene by world_id and base_position
+    const basePosition =
+      contentEntityScene?.metadata?.scene?.base ||
+      (contentEntityScene?.pointers || [])[0]
+    const existingPlace = await PlaceModel.findByWorldIdAndBasePosition(
+      worldId,
+      basePosition
+    )
 
-    if (!worlds.length) {
+    if (!existingPlace) {
+      // Create a new place for this world scene
       const placefromContentEntity = createPlaceFromContentEntityScene(
         contentEntityScene,
         {
-          disabled:
-            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-              ?.optOut,
+          disabled: isOptOut,
         },
         {
           url: job.contentServerUrls![0],
           creator: sceneJsonData.creator,
           sdk: sceneJsonData.runtimeVersion,
+          worldId,
         }
       )
       placesToProcess = {
         new: placefromContentEntity,
         rating: {
           id: randomUUID(),
-          place_id: placefromContentEntity.id,
+          entity_id: placefromContentEntity.id,
           original_rating: null,
           update_rating: placefromContentEntity.content_rating,
           moderator: null,
@@ -121,41 +137,30 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         disabled: [],
       }
     } else {
-      const worldAbout = await getWorldAbout(
-        job.contentServerUrls![0],
-        worldName
-      )
-
-      if (
-        !worldAbout.configurations.scenesUrn[0].includes(job.entity.entityId)
-      ) {
-        throw new Error(
-          `The information obtained from the World \`${worldName}\` with the \`${job.entity.entityId}\` hash is not the same as the information obtained from About. scenesUrn: \`${worldAbout.configurations.scenesUrn[0]}\``
-        )
-      }
-
+      // Update the existing place (classic update operation)
       const placefromContentEntity = createPlaceFromContentEntityScene(
         contentEntityScene,
         {
-          ...worlds[0],
-          disabled:
-            !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig
-              ?.optOut,
+          ...existingPlace,
+          disabled: isOptOut,
         },
         {
           url: job.contentServerUrls![0],
           creator: sceneJsonData.creator,
           sdk: sceneJsonData.runtimeVersion,
+          worldId,
         }
       )
 
       let rating = null
 
-      if (placefromContentEntity.content_rating !== worlds[0].content_rating) {
+      if (
+        placefromContentEntity.content_rating !== existingPlace.content_rating
+      ) {
         rating = {
           id: randomUUID(),
-          place_id: worlds[0].id,
-          original_rating: worlds[0].content_rating,
+          entity_id: existingPlace.id,
+          original_rating: existingPlace.content_rating,
           update_rating: placefromContentEntity.content_rating,
           moderator: null,
           comment: null,

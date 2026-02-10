@@ -8,7 +8,7 @@ export default class UserLikesModel extends Model<UserLikeAttributes> {
 
   /** create or update a new like record */
   static async like(
-    data: Pick<UserLikeAttributes, "user" | "place_id">,
+    data: Pick<UserLikeAttributes, "user" | "entity_id">,
     expected: Partial<Pick<UserLikeAttributes, "like" | "user_activity">> = {}
   ): Promise<UserLikeAttributes> {
     const now = new Date()

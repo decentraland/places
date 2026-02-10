@@ -1,9 +1,11 @@
 import CommsGatekeeper from "../../api/CommsGatekeeper"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
+import Events from "../../api/Events"
 import { AggregatePlaceAttributes, HotScene } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
 export type ConnectedUsersMap = Map<string, string[]>
+export type LiveEventsMap = Map<string, boolean>
 
 /**
  * Fetches connected users for a list of destinations from comms-gatekeeper.
@@ -67,6 +69,25 @@ export async function fetchConnectedUsersForDestinations(
   return connectedUsersMap
 }
 
+/**
+ * Fetches live event status for a list of destinations from the events API.
+ * Returns a map where keys are destination IDs (for both places and worlds),
+ * and values indicate whether there's a live event.
+ *
+ * @param destinations - Array of destination attributes (places and/or worlds)
+ * @returns Promise resolving to a map of destination IDs to live event status
+ */
+export async function fetchLiveEventsForDestinations(
+  destinations: AggregatePlaceAttributes[]
+): Promise<LiveEventsMap> {
+  const eventsApi = Events.get()
+
+  // Extract all destination IDs (both places and worlds share the same table)
+  const destinationIds = destinations.filter((d) => d.id).map((d) => d.id)
+
+  return eventsApi.checkLiveEventsForDestinations(destinationIds)
+}
+
 export function destinationsWithAggregates(
   destinations: AggregatePlaceAttributes[],
   hotScenes: HotScene[],
@@ -76,6 +97,8 @@ export function destinationsWithAggregates(
     withRealmsDetail: boolean
     withConnectedUsers: boolean
     connectedUsersMap?: ConnectedUsersMap
+    withLiveEvents: boolean
+    liveEventsMap?: LiveEventsMap
   }
 ) {
   return destinations.map((destination) => {
@@ -129,8 +152,16 @@ export function destinationsWithAggregates(
         ? connected_addresses.length
         : user_count
 
+    // Get live event status if requested
+    let live: boolean | undefined
+    if (options?.withLiveEvents && options.liveEventsMap) {
+      // Use destination ID for both places and worlds (they share the same table)
+      live = options.liveEventsMap.get(destination.id) ?? false
+    }
+
     const result: AggregatePlaceAttributes & {
       connected_addresses?: string[]
+      live?: boolean
     } = {
       ...destination,
       user_visits: user_visits,
@@ -139,6 +170,10 @@ export function destinationsWithAggregates(
 
     if (connected_addresses) {
       result.connected_addresses = connected_addresses
+    }
+
+    if (options?.withLiveEvents) {
+      result.live = live ?? false
     }
 
     return result

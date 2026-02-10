@@ -79,8 +79,7 @@ export const worldSchema = schema({
   properties: {
     id: {
       type: "string",
-      format: "uuid",
-      description: "world id",
+      description: "world id (lowercased world name)",
     },
     title: {
       type: "string",
@@ -226,3 +225,76 @@ export const worldSchema = schema({
 })
 
 export const worldListResponseSchema = schema.api(schema.array(worldSchema))
+
+export const getWorldParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldFavoriteParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldFavoriteBodySchema = schema({
+  type: "object",
+  description: "User favorite update body",
+  additionalProperties: false,
+  required: ["favorites"] as const,
+  properties: {
+    favorites: {
+      type: "boolean",
+      description: "Favorites boolean is require",
+    },
+  },
+})
+
+export const updateWorldLikeParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldLikeBodySchema = schema({
+  type: "object",
+  description: "User like update body",
+  additionalProperties: false,
+  required: ["like"] as const,
+  properties: {
+    like: {
+      type: "boolean",
+      description: "Like is required",
+      nullable: true as any,
+    },
+  },
+})
+
+export const updateWorldRatingParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldRatingBodySchema = schema({
+  type: "object",
+  description: "content rating body needed",
+  additionalProperties: false,
+  required: ["content_rating"] as const,
+  properties: {
+    content_rating: {
+      type: "string",
+      description: "Rating for the world",
+      enum: ["PR", "E", "T", "A", "R"],
+    },
+    comment: {
+      type: "string",
+      description: "A comment for the rating",
+    },
+  },
+})

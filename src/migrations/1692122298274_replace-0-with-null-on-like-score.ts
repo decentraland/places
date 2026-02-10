@@ -1,7 +1,8 @@
 import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import { ColumnDefinitions, MigrationBuilder } from "node-pg-migrate"
 
-import PlaceModel, { MIN_USER_ACTIVITY } from "../entities/Place/model"
+import PlaceModel from "../entities/Place/model"
+import { MIN_USER_ACTIVITY } from "../entities/shared/entityInteractions"
 import UserLikesModel from "../entities/UserLikes/model"
 
 export const shorthands: ColumnDefinitions | undefined = undefined
