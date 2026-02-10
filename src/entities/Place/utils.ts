@@ -139,7 +139,7 @@ export function getThumbnailFromContentDeployment(
 
 export function placesWithUserVisits(
   places: AggregatePlaceAttributes[],
-  sceneStats: SceneStatsMap
+  sceneStats: SceneStatsMap = {}
 ) {
   return places.map((place) => {
     let stats: SceneStats | undefined = sceneStats[place.base_position]
@@ -161,7 +161,7 @@ export function placesWithUserVisits(
 
 export function placesWithUserCount(
   places: AggregatePlaceAttributes[],
-  hotScenes: HotScene[],
+  hotScenes: HotScene[] = [],
   options?: {
     withRealmsDetail: boolean
   }
