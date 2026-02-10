@@ -98,7 +98,7 @@ export function createWorldContentEntityScene(
  * Represents a second scene in the same world at a different base position.
  */
 export function createWorldContentEntitySceneSecondScene(
-  worldName: string = "testworld.dcl.eth"
+  worldName = "testworld.dcl.eth"
 ): ContentEntityScene {
   return createWorldContentEntityScene({
     worldName,
