@@ -9,7 +9,6 @@ import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import useAsyncTask from "decentraland-gatsby/dist/hooks/useAsyncTask"
 import useAsyncTasks from "decentraland-gatsby/dist/hooks/useAsyncTasks"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
-import { navigate } from "decentraland-gatsby/dist/plugins/intl"
 import API from "decentraland-gatsby/dist/utils/api/API"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Container } from "decentraland-ui/dist/components/Container/Container"
@@ -23,9 +22,11 @@ import Places from "../../api/Places"
 import Navigation, { NavigationTab } from "../../components/Layout/Navigation"
 import SearchInput from "../../components/Layout/SearchInput"
 import AdminPlaceCard from "../../components/Place/AdminPlaceCard/AdminPlaceCard"
-import { AggregatePlaceAttributes } from "../../entities/Place/types"
+import {
+  AggregateBaseEntityAttributes,
+  isPlace,
+} from "../../entities/shared/entityTypes"
 import { FeatureFlags } from "../../modules/ff"
-import locations from "../../modules/locations"
 
 import "./highlights.css"
 
@@ -39,7 +40,7 @@ export default function AdminHighlightsPage() {
   const admin = isAdmin(account)
   const [ff] = useFeatureFlagContext()
 
-  const [places, setPlaces] = useState<AggregatePlaceAttributes[]>([])
+  const [places, setPlaces] = useState<AggregateBaseEntityAttributes[]>([])
   const [totalPlaces, setTotalPlaces] = useState(0)
   const [offset, setOffset] = useState(0)
   const [search, setSearch] = useState("")
@@ -50,7 +51,7 @@ export default function AdminHighlightsPage() {
 
     const response = {
       total: 0,
-      data: [] as AggregatePlaceAttributes[],
+      data: [] as AggregateBaseEntityAttributes[],
       ok: false,
     }
 
@@ -84,9 +85,13 @@ export default function AdminHighlightsPage() {
       const response = await Places.get().updateHighlight(id, highlighted)
       if (response) {
         setPlaces((prev) =>
-          prev.map((place) =>
-            place.id === id ? { ...place, highlighted } : place
-          )
+          prev.map((place) => {
+            if (place.id !== id) return place
+            if (isPlace(place)) {
+              return { ...place, highlighted }
+            }
+            return place
+          })
         )
       }
     },
