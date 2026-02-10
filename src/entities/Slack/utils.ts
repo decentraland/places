@@ -6,6 +6,7 @@ import isURL from "validator/lib/isURL"
 import { DeploymentToSqs } from "../CheckScenes/task/consumer"
 import { PlaceAttributes } from "../Place/types"
 import { placeUrl, worldUrl } from "../Place/utils"
+import { AnyEntityAttributes, isWorld } from "../shared/entityTypes"
 
 const SLACK_WEBHOOK = env("SLACK_WEBHOOK", "")
 const CONTENT_MODERATION_SLACK_WEBHOOK = env(
@@ -187,12 +188,13 @@ async function sendToSlack(body: {}) {
 }
 
 export async function notifyDowngradeRating(
-  place: PlaceAttributes,
+  place: AnyEntityAttributes,
   ratingProposed: SceneContentRating
 ) {
   logger.log(
     `sending downgrade rating "${place.title}" to content moderation slack`
   )
+  const isWorldEntity = isWorld(place)
   await sendToContentModeratorSlack({
     blocks: [
       {
@@ -200,11 +202,13 @@ export async function notifyDowngradeRating(
         text: {
           type: "mrkdwn",
           text: `:warning: The ${
-            place.world ? "world" : "place"
+            isWorldEntity ? "world" : "place"
           } updated trying to downgrade rating: ${
-            place.world
+            isWorldEntity
               ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place)}|${place.base_position}>`
+              : `<${placeUrl(place as PlaceAttributes)}|${
+                  (place as PlaceAttributes).base_position
+                }>`
           }`,
         },
       },
@@ -220,13 +224,14 @@ export async function notifyDowngradeRating(
 }
 
 export async function notifyUpgradingRating(
-  place: PlaceAttributes,
+  place: AnyEntityAttributes,
   updatedBy: "Content Moderator" | "Content Creator",
   ratingProposed: SceneContentRating
 ) {
   logger.log(
     `sending upgrading rating "${place.title}" to content moderation slack`
   )
+  const isWorldEntity = isWorld(place)
   await sendToContentModeratorSlack({
     blocks: [
       {
@@ -234,11 +239,13 @@ export async function notifyUpgradingRating(
         text: {
           type: "mrkdwn",
           text: `:white_check_mark: The ${
-            place.world ? "world" : "place"
+            isWorldEntity ? "world" : "place"
           } upgrade rating: ${
-            place.world
+            isWorldEntity
               ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place)}|${place.base_position}>`
+              : `<${placeUrl(place as PlaceAttributes)}|${
+                  (place as PlaceAttributes).base_position
+                }>`
           }`,
         },
       },

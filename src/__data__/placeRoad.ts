@@ -15,6 +15,7 @@ export const placeRoad: PlaceAttributes = {
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
   world: false,
   world_name: null,
+  world_id: null,
   title: "Road at -89,11 (open road OpenRoad_C)",
   description: null,
   owner: null,

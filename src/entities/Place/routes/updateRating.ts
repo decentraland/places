@@ -59,7 +59,7 @@ export async function updateRating(
     PlaceModel.updatePlace(newPlace, ["content_rating"]),
     PlaceContentRatingModel.create({
       id: randomUUID(),
-      place_id: place.id,
+      entity_id: place.id,
       original_rating: place.content_rating,
       update_rating: body.content_rating,
       moderator: userAuth.address,

@@ -1,16 +1,9 @@
-import {
-  findNewDeployedPlace,
-  findSamePlace,
-  getWorldAbout,
-  isSameWorld,
-} from "./utils"
+import { findNewDeployedPlace, findSamePlace, isSameWorld } from "./utils"
 import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { placeRoad } from "../../__data__/placeRoad"
-import { sqsMessageWorld } from "../../__data__/sqs"
 import {
-  worldAboutParalax,
   worldContentEntitySceneParalax,
   worldPlaceParalax,
 } from "../../__data__/world"

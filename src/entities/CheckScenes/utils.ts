@@ -1,17 +1,8 @@
-import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import AWS from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
-import {
-  ContentDeploymentScene,
-  ContentDeploymentSortingField,
-  ContentDeploymentSortingOrder,
-  ContentEntityScene,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { DeploymentTrackAttributes, WorldAbout } from "./types"
 import allCoordinates from "../../__data__/AllCoordinates.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
@@ -28,36 +19,6 @@ interface ManifestResponse {
   roads: Pointer[]
   occupied: Pointer[]
   empty: Pointer[]
-}
-
-export async function fetchWorldInformation(
-  worldName: string,
-  url: string
-): Promise<ContentEntityScene | undefined> {
-  try {
-    const response = await fetch(`${url}/entities/active`, {
-      method: "POST",
-      body: JSON.stringify({
-        pointers: [worldName],
-      }),
-    })
-
-    if (!response.ok) {
-      return undefined // prevent failing
-    }
-
-    return (await response.json())[0] as Promise<ContentEntityScene | undefined>
-  } catch (error) {
-    return undefined // prevent failing
-  }
-}
-
-export async function getWorldAbout(
-  url: string,
-  worldName: string
-): Promise<WorldAbout> {
-  const worldContentServer = ContentServer.getInstanceFrom(url)
-  return worldContentServer.fetch(`/world/${worldName}/about`)
 }
 
 async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {
@@ -111,22 +72,6 @@ export async function updateGenesisCityManifest() {
       error: error?.message,
     })
   }
-}
-
-/** @deprecated */
-export async function fetchDeployments(catalyst: DeploymentTrackAttributes) {
-  const contentDeploymentsResponse = await Catalyst.getInstanceFrom(
-    catalyst.base_url
-  ).getContentDeployments({
-    from: catalyst.from,
-    limit: catalyst.limit,
-    entityTypes: [EntityType.SCENE],
-    onlyCurrentlyPointed: true,
-    sortingField: ContentDeploymentSortingField.LocalTimestamp,
-    sortingOrder: ContentDeploymentSortingOrder.ASCENDING,
-  })
-
-  return contentDeploymentsResponse.deployments as ContentDeploymentScene[]
 }
 
 export function findSamePlace(

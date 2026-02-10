@@ -9,13 +9,16 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
-import { AggregatePlaceAttributes } from "../../../entities/Place/types"
+import {
+  AggregateBaseEntityAttributes,
+  isPlace,
+} from "../../../entities/shared/entityTypes"
 import locations from "../../../modules/locations"
 
 import "./AdminPlaceCard.css"
 
 export type AdminPlaceCardProps = {
-  place: AggregatePlaceAttributes
+  place: AggregateBaseEntityAttributes
   loading?: boolean
   onToggleHighlight: (highlighted: boolean) => void
 }
@@ -23,6 +26,7 @@ export type AdminPlaceCardProps = {
 export default React.memo(function AdminPlaceCard(props: AdminPlaceCardProps) {
   const { place, loading, onToggleHighlight } = props
   const l = useFormatMessage()
+  const highlighted = isPlace(place) ? place.highlighted : false
 
   const href = useMemo(() => {
     if (place && !place.world) {
@@ -36,19 +40,19 @@ export default React.memo(function AdminPlaceCard(props: AdminPlaceCardProps) {
   const handleToggleHighlight = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.preventDefault()
     e.stopPropagation()
-    onToggleHighlight(!place.highlighted)
+    onToggleHighlight(!highlighted)
   }
 
   return (
     <Card
       className={TokenList.join([
         "admin-place-card",
-        place.highlighted && "admin-place-card--highlighted",
+        highlighted && "admin-place-card--highlighted",
       ])}
     >
       <Link className="admin-place-card__cover" href={href}>
         <ImgFixed src={place.image || ""} dimension="wide" />
-        {place.highlighted && (
+        {highlighted && (
           <div className="admin-place-card__badge">
             {l("components.admin_place_card.highlighted")}
           </div>
@@ -77,7 +81,7 @@ export default React.memo(function AdminPlaceCard(props: AdminPlaceCardProps) {
       </Card.Content>
       <Card.Content extra>
         <div className="admin-place-card__actions">
-          {place.highlighted ? (
+          {highlighted ? (
             <Button
               basic
               color="red"

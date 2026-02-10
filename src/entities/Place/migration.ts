@@ -79,6 +79,7 @@ export function createPlaceFromEntityScene(
     deployed_at: now,
     world: false,
     world_name: null,
+    world_id: null,
     categories: [],
     textsearch: undefined,
     creator_address: null,

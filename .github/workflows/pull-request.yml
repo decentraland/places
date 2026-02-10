@@ -56,3 +56,71 @@ jobs:
           tags: ${{ github.sha }}
           dockerfiles: |
             ./Dockerfile
+
+  integration-tests:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: places_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      localstack:
+        image: localstack/localstack:latest
+        env:
+          SERVICES: sqs
+          DEFAULT_REGION: us-east-1
+        ports:
+          - 4566:4566
+
+    env:
+      CONNECTION_STRING: postgres://postgres:postgres@localhost:5432/places_test
+      AWS_REGION: us-east-1
+      AWS_ENDPOINT: http://localhost:4566
+      QUEUE_URL: http://localhost:4566/000000000000/places_test
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Reconfigure git to use HTTP authentication
+        run: >
+          git config --global url."https://github.com/".insteadOf "ssh://git@github.com/"
+
+      - name: node.js 18
+        uses: actions/setup-node@v4.0.1
+        with:
+          node-version: 18.x
+          registry-url: https://registry.npmjs.org/
+          cache: "npm"
+
+      - name: installing
+        run: npm install
+
+      - name: Create SQS queue in LocalStack
+        run: |
+          pip install awscli-local awscli
+          awslocal sqs create-queue --queue-name places_test
+
+      - name: Run database migrations
+        run: >
+          ./node_modules/.bin/node-pg-migrate
+          --tsconfig ./tsconfig.json
+          -j ts
+          -m ./src/migrations
+          -d CONNECTION_STRING
+          up
+
+      - name: Run integration tests
+        run: npm run test:integration
