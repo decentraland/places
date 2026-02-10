@@ -6,6 +6,7 @@ module.exports = {
   fakeTimers: {
     enableGlobally: false,
   },
+  setupFiles: ["<rootDir>/test/setup/mocks.ts"],
   testMatch: ["<rootDir>/test/**/*.test.ts"],
   testPathIgnorePatterns: ["/node_modules/"],
   testTimeout: 30000,

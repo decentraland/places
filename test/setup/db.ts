@@ -1,7 +1,7 @@
 import database from "decentraland-gatsby/dist/entities/Database/database"
 
 const TABLES_TO_CLEAN = [
-  "place_content_rating",
+  "content_ratings",
   "place_categories",
   "place_positions",
   "check_scenes",

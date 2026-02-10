@@ -1,6 +1,9 @@
 import { AuthLinkType } from "@dcl/schemas/dist/misc/auth-chain"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import {
+  ContentEntityScene,
+  SceneContentRating,
+} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 
@@ -89,7 +92,16 @@ export function createWorldContentEntityScene(
             ...(overrides.optOut ? { placesConfig: { optOut: true } } : {}),
           },
       ...(overrides.contentRating
-        ? { policy: { contentRating: overrides.contentRating } }
+        ? {
+            policy: {
+              contentRating:
+                overrides.contentRating as unknown as SceneContentRating,
+              fly: true,
+              voiceEnabled: true,
+              blacklist: [],
+              teleportPosition: "",
+            },
+          }
         : {}),
     },
   }
