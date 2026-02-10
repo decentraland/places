@@ -31,6 +31,20 @@ jest.mock("../../src/entities/CheckScenes/utils", () => ({
   updateGenesisCityManifest: jest.fn(),
 }))
 
+// Mock modules with persistent timers to prevent Jest from hanging
+jest.mock("../../src/modules/hotScenes", () => ({
+  getHotScenes: jest.fn().mockReturnValue([]),
+}))
+jest.mock("../../src/modules/sceneStats", () => ({
+  getSceneStats: jest.fn().mockResolvedValue({}),
+}))
+jest.mock("../../src/modules/worldsLiveData", () => ({
+  getWorldsLiveData: jest.fn().mockResolvedValue({
+    perWorld: [],
+    totalUsers: 0,
+  }),
+}))
+
 const mockProcessEntityId = processEntityId as jest.MockedFunction<
   typeof processEntityId
 >
