@@ -7,6 +7,7 @@ module.exports = {
     enableGlobally: false,
   },
   testMatch: ["<rootDir>/test/**/*.test.ts"],
+  testPathIgnorePatterns: ["/node_modules/"],
   testTimeout: 30000,
   transform: {
     "^.+\\.tsx?$": [

@@ -12,8 +12,10 @@ const TABLES_TO_CLEAN = [
 
 /**
  * Validates that the current environment is safe for destructive database operations.
- * Requires NODE_ENV=test and a local CONNECTION_STRING to prevent accidental
- * data loss in production.
+ * Requires:
+ *  1. NODE_ENV=test
+ *  2. CONNECTION_STRING pointing to localhost or 127.0.0.1
+ *  3. Database name containing "test" (guards against port-forwarded production databases)
  */
 function assertTestEnvironment(): void {
   if (process.env.NODE_ENV !== "test") {
@@ -33,6 +35,32 @@ function assertTestEnvironment(): void {
       "Refused to run: CONNECTION_STRING is not a local database. " +
         "Use a localhost or 127.0.0.1 connection for tests."
     )
+  }
+
+  const dbName = extractDatabaseName(connectionString)
+  if (!dbName || !dbName.includes("test")) {
+    throw new Error(
+      `Refused to run: database name "${
+        dbName || ""
+      }" does not contain "test". ` +
+        "Use a database name like 'places_test' to prevent accidental " +
+        "data loss on port-forwarded production databases."
+    )
+  }
+}
+
+/**
+ * Extracts the database name from a PostgreSQL connection string.
+ * Supports both URI format (postgres://.../<dbname>) and key-value format (dbname=<name>).
+ */
+function extractDatabaseName(connectionString: string): string | null {
+  try {
+    const url = new URL(connectionString)
+    const dbName = url.pathname.replace(/^\//, "")
+    return dbName || null
+  } catch {
+    const match = connectionString.match(/dbname=(\S+)/)
+    return match?.[1] || null
   }
 }
 
