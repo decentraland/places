@@ -82,10 +82,12 @@ export function createWorldContentEntityScene(
         parcels,
         base,
       },
-      worldConfiguration: {
-        ...(overrides.dclName ? { dclName: worldName } : { name: worldName }),
-        ...(overrides.optOut ? { placesConfig: { optOut: true } } : {}),
-      },
+      worldConfiguration: overrides.dclName
+        ? { dclName: worldName }
+        : {
+            name: worldName,
+            ...(overrides.optOut ? { placesConfig: { optOut: true } } : {}),
+          },
       ...(overrides.contentRating
         ? { policy: { contentRating: overrides.contentRating } }
         : {}),
