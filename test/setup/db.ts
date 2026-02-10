@@ -4,7 +4,7 @@ const TABLES_TO_CLEAN = [
   "content_ratings",
   "place_categories",
   "place_positions",
-  "check_scenes",
+  "check_scenes_logs",
   "places",
   "worlds",
   "categories",
