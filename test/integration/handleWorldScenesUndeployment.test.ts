@@ -111,7 +111,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
 
   afterEach(async () => {
     await cleanTables()
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   describe("and the WorldScenesUndeploymentEvent targets a single scene", () => {
