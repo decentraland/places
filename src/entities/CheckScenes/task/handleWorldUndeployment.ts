@@ -1,8 +1,8 @@
 import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
-import { notifyError } from "../../Slack/utils"
 import PlaceModel from "../../Place/model"
+import { notifyError } from "../../Slack/utils"
 
 /**
  * Handles WorldUndeploymentEvent from the worlds content server.
@@ -28,7 +28,7 @@ export async function handleWorldUndeployment(
   try {
     loggerExtended.log(`Processing world undeployment for world: ${worldName}`)
 
-    await PlaceModel.deleteByWorldId(worldName)
+    await PlaceModel.deleteByWorldId(worldName, event.timestamp)
 
     loggerExtended.log(`Deleted all place records for world: ${worldName}`)
   } catch (error: any) {

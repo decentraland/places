@@ -470,29 +470,43 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Delete all place records associated with a world
+   * Delete all place records associated with a world that were deployed
+   * before the given event timestamp. This prevents stale undeployment
+   * events from removing places that were re-deployed after the event
+   * was emitted.
    */
-  static async deleteByWorldId(worldId: string): Promise<void> {
+  static async deleteByWorldId(
+    worldId: string,
+    eventTimestamp: number
+  ): Promise<void> {
     const normalizedWorldId = worldId.toLowerCase()
+    const eventDate = new Date(eventTimestamp)
     const sql = SQL`
       DELETE FROM ${table(this)}
       WHERE "world_id" = ${normalizedWorldId}
+        AND "deployed_at" < ${eventDate}
     `
     await this.namedQuery("delete_by_world_id", sql)
   }
 
   /**
    * Delete place records matching a world and specific base positions
+   * that were deployed before the given event timestamp. This prevents
+   * stale undeployment events from removing places that were re-deployed
+   * after the event was emitted.
    */
   static async deleteByWorldIdAndPositions(
     worldId: string,
-    basePositions: string[]
+    basePositions: string[],
+    eventTimestamp: number
   ): Promise<void> {
     const normalizedWorldId = worldId.toLowerCase()
+    const eventDate = new Date(eventTimestamp)
     const sql = SQL`
       DELETE FROM ${table(this)}
       WHERE "world_id" = ${normalizedWorldId}
         AND "base_position" = ANY(${basePositions})
+        AND "deployed_at" < ${eventDate}
     `
     await this.namedQuery("delete_by_world_id_and_positions", sql)
   }

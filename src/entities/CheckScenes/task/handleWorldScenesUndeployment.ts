@@ -41,7 +41,11 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.deleteByWorldIdAndPositions(worldName, basePositions)
+    await PlaceModel.deleteByWorldIdAndPositions(
+      worldName,
+      basePositions,
+      event.timestamp
+    )
 
     loggerExtended.log(
       `Deleted place records for world: ${worldName} at positions: ${basePositions.join(

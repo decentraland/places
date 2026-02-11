@@ -8,13 +8,14 @@ import {
  * Creates a WorldUndeploymentEvent for a full world undeployment.
  */
 export function createWorldUndeploymentEvent(
-  worldName: string
+  worldName: string,
+  options: { timestamp?: number } = {}
 ): WorldUndeploymentEvent {
   return {
     type: Events.Type.WORLD,
     subType: Events.SubType.Worlds.WORLD_UNDEPLOYMENT,
     key: worldName,
-    timestamp: Date.now(),
+    timestamp: options.timestamp ?? Date.now(),
     metadata: {
       worldName,
     },
@@ -26,13 +27,14 @@ export function createWorldUndeploymentEvent(
  */
 export function createWorldScenesUndeploymentEvent(
   worldName: string,
-  scenes: Array<{ entityId: string; baseParcel: string }>
+  scenes: Array<{ entityId: string; baseParcel: string }>,
+  options: { timestamp?: number } = {}
 ): WorldScenesUndeploymentEvent {
   return {
     type: Events.Type.WORLD,
     subType: Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT,
     key: worldName,
-    timestamp: Date.now(),
+    timestamp: options.timestamp ?? Date.now(),
     metadata: {
       worldName,
       scenes,

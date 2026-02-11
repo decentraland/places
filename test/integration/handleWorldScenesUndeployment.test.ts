@@ -270,6 +270,38 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
     })
   })
 
+  describe("and the WorldScenesUndeploymentEvent has a timestamp older than the deployment", () => {
+    const worldName = "racecondition.dcl.eth"
+
+    beforeEach(async () => {
+      await deployWorldScene({
+        worldName,
+        title: "Re-deployed Scene",
+        base: "10,10",
+        parcels: ["10,10"],
+      })
+    })
+
+    it("should not delete the place record", async () => {
+      // Simulate a stale undeployment event with a timestamp before the deployment
+      const staleTimestamp = Date.now() - 60_000
+      const event = createWorldScenesUndeploymentEvent(
+        worldName,
+        [{ entityId: "entity-stale", baseParcel: "10,10" }],
+        { timestamp: staleTimestamp }
+      )
+      await handleWorldScenesUndeployment(event)
+
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ names: worldName })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].title).toBe("Re-deployed Scene")
+    })
+  })
+
   describe("and the WorldScenesUndeploymentEvent has an empty scenes array", () => {
     it("should return early without errors", async () => {
       const event = createWorldScenesUndeploymentEvent("anyworld.dcl.eth", [])
