@@ -469,6 +469,34 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
   }
 
+  /**
+   * Delete all place records associated with a world
+   */
+  static async deleteByWorldId(worldId: string): Promise<void> {
+    const normalizedWorldId = worldId.toLowerCase()
+    const sql = SQL`
+      DELETE FROM ${table(this)}
+      WHERE "world_id" = ${normalizedWorldId}
+    `
+    await this.namedQuery("delete_by_world_id", sql)
+  }
+
+  /**
+   * Delete place records matching a world and specific base positions
+   */
+  static async deleteByWorldIdAndPositions(
+    worldId: string,
+    basePositions: string[]
+  ): Promise<void> {
+    const normalizedWorldId = worldId.toLowerCase()
+    const sql = SQL`
+      DELETE FROM ${table(this)}
+      WHERE "world_id" = ${normalizedWorldId}
+        AND "base_position" = ANY(${basePositions})
+    `
+    await this.namedQuery("delete_by_world_id_and_positions", sql)
+  }
+
   static async updateFavorites(placeId: string) {
     const sql = buildUpdateFavoritesQuery(this, placeId)
     return this.namedQuery("update_favorites", sql)

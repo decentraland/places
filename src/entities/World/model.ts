@@ -205,6 +205,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${conditional(!!options.disabled, SQL`AND w.disabled IS TRUE`)}
         ${conditional(!options.disabled, SQL`AND w.disabled IS FALSE`)}
         AND w.show_in_places IS TRUE
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id)
         ${conditional(
           options.names.length > 0,
           SQL`AND w.id = ANY(${options.names.map((name) =>
@@ -272,6 +273,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${conditional(!!options.disabled, SQL`AND w.disabled IS TRUE`)}
         ${conditional(!options.disabled, SQL`AND w.disabled IS FALSE`)}
         AND w.show_in_places IS TRUE
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id)
         ${conditional(
           options.names.length > 0,
           SQL`AND w.id = ANY(${options.names.map((name) =>

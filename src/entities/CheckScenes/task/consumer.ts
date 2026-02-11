@@ -3,6 +3,7 @@ import { Events } from "@dcl/schemas/dist/platform/events/base"
 import {
   WorldScenesUndeploymentEvent,
   WorldSettingsChangedEvent,
+  WorldUndeploymentEvent,
 } from "@dcl/schemas/dist/platform/events/world"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
@@ -22,6 +23,7 @@ export type WorldSqsMessage =
   | DeploymentToSqs
   | WorldSettingsChangedEvent
   | WorldScenesUndeploymentEvent
+  | WorldUndeploymentEvent
 
 /** Type guard to check if message is a deployment event */
 export function isDeploymentEvent(
@@ -42,8 +44,8 @@ export function isSettingsChangedEvent(
   )
 }
 
-/** Type guard to check if message is an undeployment event */
-export function isUndeploymentEvent(
+/** Type guard to check if message is a scene undeployment event */
+export function isScenesUndeploymentEvent(
   message: WorldSqsMessage
 ): message is WorldScenesUndeploymentEvent {
   return (
@@ -51,6 +53,18 @@ export function isUndeploymentEvent(
     message.type === Events.Type.WORLD &&
     "subType" in message &&
     message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT
+  )
+}
+
+/** Type guard to check if message is a full world undeployment event */
+export function isWorldUndeploymentEvent(
+  message: WorldSqsMessage
+): message is WorldUndeploymentEvent {
+  return (
+    "type" in message &&
+    message.type === Events.Type.WORLD &&
+    "subType" in message &&
+    message.subType === Events.SubType.Worlds.WORLD_UNDEPLOYMENT
   )
 }
 
@@ -136,10 +150,14 @@ export class SQSConsumer {
               errorContext = `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
             } else if (isSettingsChangedEvent(body)) {
               errorContext = `WorldSettingsChanged: ${body.key}`
-            } else if (isUndeploymentEvent(body)) {
+            } else if (isScenesUndeploymentEvent(body)) {
               errorContext = `WorldScenesUndeployment: ${
                 body.key
-              } - entityIds: ${body.metadata.entityIds.join(", ")}`
+              } - scenes: ${body.metadata.scenes
+                .map((s) => s.entityId)
+                .join(", ")}`
+            } else if (isWorldUndeploymentEvent(body)) {
+              errorContext = `WorldUndeployment: ${body.metadata.worldName}`
             }
 
             notifyError([err.toString(), errorContext])
