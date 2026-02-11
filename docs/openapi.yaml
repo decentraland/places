@@ -255,10 +255,11 @@ paths:
         - name: sdk
           in: query
           description: |
-            Filter by SDK version.
-            Value is matched against the `runtimeVersion` from scene.json.
+            Filter by SDK version (major version matching).
+            Matches exact version or any version starting with the given prefix.
+            Example: `sdk=7` matches "7", "7.0.0", "7.3.27", etc.
             Places with null SDK values are treated as SDK6 (legacy scenes).
-            Example: `7` for SDK7 scenes, `6` for SDK6/legacy scenes.
+            Use `6` for SDK6/legacy scenes (including null), `7` for SDK7 scenes.
           required: false
           schema:
             type: string
@@ -995,7 +996,7 @@ paths:
         - **Highlighted destinations are always returned first**, followed by **ranking value** (descending), then by the specified order_by
         - Filter places by exact coordinates (pointer)
         - Filter worlds by exact name (world_names) or LIKE matching (names)
-        - Filter by SDK version (null SDK values are treated as SDK6)
+        - Filter by SDK version with prefix matching (e.g., sdk=7 matches 7.x.x; null values treated as SDK6)
         - Include connected user wallet addresses (with_connected_users)
         - Include live event status (with_live_events)
         

@@ -336,7 +336,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
@@ -452,7 +452,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
@@ -855,7 +855,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
@@ -957,7 +957,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
@@ -1167,7 +1167,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
@@ -1274,7 +1274,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk}${
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
             options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
           })`
         )}
