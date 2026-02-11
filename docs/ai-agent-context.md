@@ -62,7 +62,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **User Visits**: Unique users who visited a place in the last 30 days
 - **Highlighted Places**: Featured places with special promotion status, managed via admin UI at `/admin/highlights/`
 - **Creator Address**: Ethereum address of the scene creator, extracted from scene metadata during deployment processing, indexed for efficient creator-based queries (used by tipping systems)
-- **SDK Version**: Runtime version extracted from `runtimeVersion` in scene.json during deployment, used for filtering scenes by SDK version (e.g., SDK7 vs legacy)
+- **SDK Version**: Runtime version extracted from `runtimeVersion` in scene.json during deployment, used for filtering scenes by SDK version. Places with null SDK values are treated as SDK6 (legacy scenes)
 
 ## API Specification
 

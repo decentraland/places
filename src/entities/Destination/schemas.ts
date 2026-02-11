@@ -127,7 +127,8 @@ export const getDestinationsListQuerySchema = schema({
     },
     sdk: {
       type: "string",
-      description: "Filter by SDK version (includes places with null SDK)",
+      description:
+        "Filter by SDK version. Null SDK values are treated as SDK6 (legacy scenes). Use '6' to include legacy scenes, '7' for SDK7 only.",
       nullable: true as any,
     },
   },
