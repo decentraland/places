@@ -1,12 +1,19 @@
 import { Events } from "@dcl/schemas/dist/platform/events/base"
 import { WorldSettingsChangedEvent } from "@dcl/schemas/dist/platform/events/world"
 
+/** Extended metadata type that includes the accessType field not yet in @dcl/schemas */
+type WorldSettingsMetadataWithAccess =
+  WorldSettingsChangedEvent["metadata"] & {
+    accessType?: string
+  }
+
 /**
  * A WorldSettingsChangedEvent for creating a new world with all settings.
+ * Supports the optional `accessType` metadata field for privacy testing.
  */
 export function createWorldSettingsChangedEvent(
   overrides: Partial<WorldSettingsChangedEvent> & {
-    metadata?: Partial<WorldSettingsChangedEvent["metadata"]>
+    metadata?: Partial<WorldSettingsMetadataWithAccess>
   } = {}
 ): WorldSettingsChangedEvent {
   return {
@@ -26,7 +33,7 @@ export function createWorldSettingsChangedEvent(
       thumbnailUrl: "https://example.com/thumbnail.png",
       ...overrides.metadata,
     },
-  }
+  } as WorldSettingsChangedEvent
 }
 
 /**
@@ -66,3 +73,4 @@ export function createWorldSettingsEventMissingKey(): WorldSettingsChangedEvent 
     key: "",
   })
 }
+

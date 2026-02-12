@@ -70,6 +70,12 @@ export async function handleWorldSettingsChanged(
       }
     }
 
+    // Derive is_private from the accessType metadata field.
+    // Only set is_private when accessType is explicitly provided.
+    const accessType = (event.metadata as { accessType?: string }).accessType
+    const isPrivate =
+      accessType !== undefined ? accessType !== "unrestricted" : undefined
+
     await WorldModel.upsertWorld({
       world_name: worldName,
       title: event.metadata.title,
@@ -80,6 +86,7 @@ export async function handleWorldSettingsChanged(
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,
+      is_private: isPrivate,
     })
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)
