@@ -54,6 +54,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const event = createWorldSettingsChangedEvent({
         key: "newworld.dcl.eth",
         metadata: {
+          worldName: "newworld.dcl.eth",
           title: "New World",
           description: "A brand new world",
           contentRating: "T",
@@ -87,6 +88,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const initialEvent = createWorldSettingsChangedEvent({
         key: "existingworld.dcl.eth",
         metadata: {
+          worldName: "existingworld.dcl.eth",
           title: "Original Title",
           description: "Original Description",
           contentRating: "T",
@@ -102,6 +104,7 @@ describe("handleWorldSettingsChanged integration", () => {
         const updateEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
           metadata: {
+            worldName: "existingworld.dcl.eth",
             title: "Updated Title",
             description: "Updated Description",
             contentRating: "T",
@@ -167,6 +170,149 @@ describe("handleWorldSettingsChanged integration", () => {
       const response = await supertest(app).get("/api/worlds").expect(200)
 
       expect(response.body.data).toHaveLength(0)
+    })
+  })
+
+  describe("when accessType is not 'unrestricted' (restricted world)", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "privateworld.dcl.eth",
+        metadata: {
+          worldName: "privateworld.dcl.eth",
+          title: "Private World",
+          description: "A restricted world",
+          accessType: "restricted",
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should create the world with is_private set to true", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/privateworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.data.is_private).toBe(true)
+    })
+  })
+
+  describe("when accessType is 'unrestricted' (public world)", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "publicworld.dcl.eth",
+        metadata: {
+          worldName: "publicworld.dcl.eth",
+          title: "Public World",
+          description: "An unrestricted world",
+          accessType: "unrestricted",
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should create the world with is_private set to false", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/publicworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.data.is_private).toBe(false)
+    })
+  })
+
+  describe("when an existing public world changes to restricted", () => {
+    beforeEach(async () => {
+      const createEvent = createWorldSettingsChangedEvent({
+        key: "existingworld2.dcl.eth",
+        metadata: {
+          worldName: "existingworld2.dcl.eth",
+          title: "Existing World",
+          description: "A public world",
+          accessType: "unrestricted",
+        },
+      })
+      await handleWorldSettingsChanged(createEvent)
+
+      const restrictEvent = createWorldSettingsChangedEvent({
+        key: "existingworld2.dcl.eth",
+        metadata: {
+          worldName: "existingworld2.dcl.eth",
+          accessType: "restricted",
+        },
+      })
+      await handleWorldSettingsChanged(restrictEvent)
+    })
+
+    it("should update is_private to true", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/existingworld2.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.is_private).toBe(true)
+    })
+
+    it("should preserve existing world settings", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/existingworld2.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.title).toBe("Existing World")
+      expect(response.body.data.description).toBe("A public world")
+    })
+  })
+
+  describe("when an existing restricted world changes to unrestricted", () => {
+    beforeEach(async () => {
+      const createEvent = createWorldSettingsChangedEvent({
+        key: "toggleworld.dcl.eth",
+        metadata: {
+          worldName: "toggleworld.dcl.eth",
+          title: "Toggle World",
+          accessType: "restricted",
+        },
+      })
+      await handleWorldSettingsChanged(createEvent)
+
+      const makePublicEvent = createWorldSettingsChangedEvent({
+        key: "toggleworld.dcl.eth",
+        metadata: {
+          worldName: "toggleworld.dcl.eth",
+          accessType: "unrestricted",
+        },
+      })
+      await handleWorldSettingsChanged(makePublicEvent)
+    })
+
+    it("should update is_private to false", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/toggleworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.is_private).toBe(false)
+    })
+  })
+
+  describe("when accessType is not present in metadata", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "defaultworld.dcl.eth",
+        metadata: {
+          worldName: "defaultworld.dcl.eth",
+          title: "Default World",
+          description: "World created without access type",
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should default is_private to false", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/defaultworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.data.is_private).toBe(false)
     })
   })
 })

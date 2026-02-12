@@ -12,6 +12,7 @@ export type WorldAttributes = BaseEntityAttributes & {
   show_in_places: boolean
   single_player: boolean
   skybox_time: number | null
+  is_private: boolean
 }
 
 /**

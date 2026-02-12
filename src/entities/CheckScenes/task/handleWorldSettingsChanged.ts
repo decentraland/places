@@ -25,7 +25,7 @@ import WorldModel from "../../World/model"
 export async function handleWorldSettingsChanged(
   event: WorldSettingsChangedEvent
 ): Promise<void> {
-  const worldName = event.key
+  const { worldName } = event.metadata
 
   if (!worldName) {
     logger.error("WorldSettingsChangedEvent missing world name (key)")
@@ -80,6 +80,9 @@ export async function handleWorldSettingsChanged(
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,
+      is_private: event.metadata.accessType
+        ? event.metadata.accessType !== "unrestricted"
+        : false,
     })
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)

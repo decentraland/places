@@ -335,6 +335,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       show_in_places: world.show_in_places ?? true,
       single_player: world.single_player ?? false,
       skybox_time: world.skybox_time ?? null,
+      is_private: world.is_private ?? false,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -362,7 +363,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       INSERT INTO ${table(this)} (
         "id", "world_name", "title", "description", "image",
         "content_rating", "categories", "owner", "show_in_places",
-        "single_player", "skybox_time", "likes", "dislikes", "favorites",
+        "single_player", "skybox_time", "is_private", "likes", "dislikes", "favorites",
         "like_rate", "like_score", "disabled", "disabled_at",
         "created_at", "updated_at"
       ) VALUES (
@@ -377,6 +378,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.show_in_places},
         ${worldData.single_player},
         ${worldData.skybox_time},
+        ${worldData.is_private},
         ${worldData.likes},
         ${worldData.dislikes},
         ${worldData.favorites},
@@ -410,6 +412,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       "show_in_places",
       "single_player",
       "skybox_time",
+      "is_private",
     ]
 
     // Build changes object with only explicitly provided fields

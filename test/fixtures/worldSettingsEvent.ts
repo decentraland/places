@@ -16,16 +16,9 @@ export function createWorldSettingsChangedEvent(
     timestamp: Date.now(),
     ...overrides,
     metadata: {
-      title: "Test World",
-      description: "A test world for integration tests",
-      contentRating: "T",
-      categories: ["art", "game"],
-      showInPlaces: true,
-      singlePlayer: false,
-      skyboxTime: null,
-      thumbnailUrl: "https://example.com/thumbnail.png",
+      worldName: "testworld.dcl.eth",
       ...overrides.metadata,
-    },
+    } as WorldSettingsChangedEvent["metadata"],
   }
 }
 
@@ -38,6 +31,7 @@ export function createWorldSettingsUpgradeRatingEvent(
   return createWorldSettingsChangedEvent({
     key: worldName,
     metadata: {
+      worldName: worldName,
       contentRating: "A",
     },
   })
@@ -53,6 +47,7 @@ export function createWorldSettingsDowngradeRatingEvent(
   return createWorldSettingsChangedEvent({
     key: worldName,
     metadata: {
+      worldName: worldName,
       contentRating: "RP",
     },
   })

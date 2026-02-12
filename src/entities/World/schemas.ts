@@ -166,6 +166,10 @@ export const worldSchema = schema({
       minimum: 0,
       description: "The number of favorites on the world",
     },
+    is_private: {
+      type: "boolean",
+      description: "True if the world has restricted access (private)",
+    },
     disabled: {
       type: "boolean",
       description: "True if the world is disabled",
