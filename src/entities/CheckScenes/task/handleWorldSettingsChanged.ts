@@ -80,9 +80,9 @@ export async function handleWorldSettingsChanged(
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,
-      is_private:
-        event.metadata.accessType &&
-        event.metadata.accessType !== "unrestricted",
+      is_private: event.metadata.accessType
+        ? event.metadata.accessType !== "unrestricted"
+        : false,
     })
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)

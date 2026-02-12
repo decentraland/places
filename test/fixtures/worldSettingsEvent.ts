@@ -39,6 +39,7 @@ export function createWorldSettingsUpgradeRatingEvent(
   return createWorldSettingsChangedEvent({
     key: worldName,
     metadata: {
+      worldName: worldName,
       contentRating: "A",
     },
   })
@@ -54,6 +55,7 @@ export function createWorldSettingsDowngradeRatingEvent(
   return createWorldSettingsChangedEvent({
     key: worldName,
     metadata: {
+      worldName: worldName,
       contentRating: "RP",
     },
   })
