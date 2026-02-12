@@ -17,16 +17,8 @@ export function createWorldSettingsChangedEvent(
     ...overrides,
     metadata: {
       worldName: "testworld.dcl.eth",
-      title: "Test World",
-      description: "A test world for integration tests",
-      contentRating: "T",
-      categories: ["art", "game"],
-      showInPlaces: true,
-      singlePlayer: false,
-      skyboxTime: null,
-      thumbnailUrl: "https://example.com/thumbnail.png",
       ...overrides.metadata,
-    },
+    } as WorldSettingsChangedEvent["metadata"],
   }
 }
 
