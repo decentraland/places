@@ -54,6 +54,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const event = createWorldSettingsChangedEvent({
         key: "newworld.dcl.eth",
         metadata: {
+          worldName: "newworld.dcl.eth",
           title: "New World",
           description: "A brand new world",
           contentRating: "T",
@@ -87,6 +88,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const initialEvent = createWorldSettingsChangedEvent({
         key: "existingworld.dcl.eth",
         metadata: {
+          worldName: "existingworld.dcl.eth",
           title: "Original Title",
           description: "Original Description",
           contentRating: "T",
@@ -102,6 +104,7 @@ describe("handleWorldSettingsChanged integration", () => {
         const updateEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
           metadata: {
+            worldName: "existingworld.dcl.eth",
             title: "Updated Title",
             description: "Updated Description",
             contentRating: "T",
@@ -175,6 +178,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const event = createWorldSettingsChangedEvent({
         key: "privateworld.dcl.eth",
         metadata: {
+          worldName: "privateworld.dcl.eth",
           title: "Private World",
           description: "A restricted world",
           accessType: "restricted",
@@ -198,6 +202,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const event = createWorldSettingsChangedEvent({
         key: "publicworld.dcl.eth",
         metadata: {
+          worldName: "publicworld.dcl.eth",
           title: "Public World",
           description: "An unrestricted world",
           accessType: "unrestricted",
@@ -221,6 +226,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const createEvent = createWorldSettingsChangedEvent({
         key: "existingworld2.dcl.eth",
         metadata: {
+          worldName: "existingworld2.dcl.eth",
           title: "Existing World",
           description: "A public world",
           accessType: "unrestricted",
@@ -231,6 +237,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const restrictEvent = createWorldSettingsChangedEvent({
         key: "existingworld2.dcl.eth",
         metadata: {
+          worldName: "existingworld2.dcl.eth",
           accessType: "restricted",
         },
       })
@@ -260,6 +267,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const createEvent = createWorldSettingsChangedEvent({
         key: "toggleworld.dcl.eth",
         metadata: {
+          worldName: "toggleworld.dcl.eth",
           title: "Toggle World",
           accessType: "restricted",
         },
@@ -269,6 +277,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const makePublicEvent = createWorldSettingsChangedEvent({
         key: "toggleworld.dcl.eth",
         metadata: {
+          worldName: "toggleworld.dcl.eth",
           accessType: "unrestricted",
         },
       })
@@ -289,6 +298,7 @@ describe("handleWorldSettingsChanged integration", () => {
       const event = createWorldSettingsChangedEvent({
         key: "defaultworld.dcl.eth",
         metadata: {
+          worldName: "defaultworld.dcl.eth",
           title: "Default World",
           description: "World created without access type",
         },
