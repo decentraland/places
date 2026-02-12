@@ -25,7 +25,7 @@ import WorldModel from "../../World/model"
 export async function handleWorldSettingsChanged(
   event: WorldSettingsChangedEvent
 ): Promise<void> {
-  const worldName = event.key
+  const { worldName } = event.metadata
 
   if (!worldName) {
     logger.error("WorldSettingsChangedEvent missing world name (key)")
@@ -70,12 +70,6 @@ export async function handleWorldSettingsChanged(
       }
     }
 
-    // Derive is_private from the accessType metadata field.
-    // Only set is_private when accessType is explicitly provided.
-    const accessType = (event.metadata as { accessType?: string }).accessType
-    const isPrivate =
-      accessType !== undefined ? accessType !== "unrestricted" : undefined
-
     await WorldModel.upsertWorld({
       world_name: worldName,
       title: event.metadata.title,
@@ -86,7 +80,9 @@ export async function handleWorldSettingsChanged(
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,
-      is_private: isPrivate,
+      is_private:
+        event.metadata.accessType &&
+        event.metadata.accessType !== "unrestricted",
     })
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)
