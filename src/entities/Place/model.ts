@@ -1115,6 +1115,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )`
       )}
       SELECT p.*
+      , COALESCE(w.is_private, false) as is_private
       ${conditional(
         !!options.user,
         SQL`, uf."user" is not null as user_favorite`
@@ -1135,6 +1136,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
       )}
       FROM ${table(this)} p
+
+      LEFT JOIN worlds w ON p.world_id = w.id
 
       ${conditional(
         !!options.user && !options.only_favorites,
