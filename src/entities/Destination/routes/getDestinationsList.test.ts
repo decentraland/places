@@ -67,6 +67,7 @@ describe("getDestinationsList", () => {
           data: [
             {
               ...placeGenesisPlazaWithAggregatedAttributes,
+              is_private: false,
               user_count: hotSceneGenesisPlaza.usersTotalCount,
               user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
               connected_addresses: [
@@ -117,6 +118,7 @@ describe("getDestinationsList", () => {
           data: [
             {
               ...worldDestination,
+              is_private: false,
               user_count: 30, // from worldsLiveData
               user_visits: 0,
               connected_addresses: [
