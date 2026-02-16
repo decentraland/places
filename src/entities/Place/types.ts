@@ -63,6 +63,8 @@ export type PlaceAttributes = BaseEntityAttributes & {
 export type AggregatePlaceAttributes = PlaceAttributes &
   BaseAggregateAttributes & {
     realms_detail?: Realm[]
+    /** Whether this destination is private (only applicable to worlds, false for genesis places) */
+    is_private?: boolean
   }
 
 export type GetPlaceParams = {

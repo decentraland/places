@@ -160,10 +160,12 @@ export function destinationsWithAggregates(
     }
 
     const result: AggregatePlaceAttributes & {
+      is_private: boolean
       connected_addresses?: string[]
       live?: boolean
     } = {
       ...destination,
+      is_private: destination.is_private ?? false,
       user_visits: user_visits,
       user_count: finalUserCount,
     }

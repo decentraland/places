@@ -60,6 +60,7 @@ describe("getDestinationsListById", () => {
           data: [
             {
               ...placeGenesisPlazaWithAggregatedAttributes,
+              is_private: false,
               user_count: hotSceneGenesisPlaza.usersTotalCount,
               user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
             },
@@ -97,6 +98,7 @@ describe("getDestinationsListById", () => {
           data: [
             {
               ...placeGenesisPlazaWithAggregatedAttributes,
+              is_private: false,
               user_count: hotSceneGenesisPlaza.usersTotalCount,
               user_visits: sceneStatsGenesisPlaza["0,0"].last_30d.users,
             },
