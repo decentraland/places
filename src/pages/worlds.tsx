@@ -25,7 +25,7 @@ import { useMobileMediaQuery } from "decentraland-ui/dist/components/Media/Media
 import { unique } from "radash"
 import Grid from "semantic-ui-react/dist/commonjs/collections/Grid"
 
-import Places from "../api/Places"
+import Worlds from "../api/Worlds"
 import Banner from "../components/Banner"
 import BannerMobile from "../components/BannerMobile"
 import { CategoryFilterProps } from "../components/Category/CategoryFilter"
@@ -108,7 +108,7 @@ export default function WorldsPage() {
     }
 
     if (params.only_view_category) {
-      const placesFetch = await Places.get().getWorlds({
+      const placesFetch = await Worlds.get().getWorlds({
         ...options,
         offset: offset,
         search: isSearching ? search : undefined,
@@ -121,7 +121,7 @@ export default function WorldsPage() {
 
     if (isFilteringByCategory && !params.only_view_category) {
       const categoriesFetch = params.categories.map((category) => {
-        return Places.get().getWorlds({
+        return Worlds.get().getWorlds({
           ...options,
           offset,
           limit: 15,
@@ -136,7 +136,7 @@ export default function WorldsPage() {
         response.data.push(...res.data)
       }
     } else if (!params.only_view_category) {
-      const placesFetch = await Places.get().getWorlds({
+      const placesFetch = await Worlds.get().getWorlds({
         ...options,
         offset,
         search: isSearching ? search : undefined,

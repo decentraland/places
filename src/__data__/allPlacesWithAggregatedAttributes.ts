@@ -1,8 +1,8 @@
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
-import { AggregatePlaceAttributes } from "../entities/Place/types"
+import { AggregateDestinationAttributes } from "../entities/Destination/types"
 
-export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
+export const allPlacesWithAggregatedAttributes: AggregateDestinationAttributes[] = [
   {
     id: "214d5f61-4049-4109-b811-690813b1f7f0",
     title: "Genesis Plaza",
@@ -104,9 +104,8 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     categories: [],
     world: false,
     world_name: null,
-    world_id: null,
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
-    textsearch: undefined,
+    is_private: false,
     creator_address: null,
     sdk: null,
     ranking: 0,
@@ -117,7 +116,7 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     description: "Test World",
     image: "https://localhost:8000/images/places/genesis_plaza.jpg",
     owner: null,
-    positions: ["0,0"],
+    positions: [],
     base_position: "0,0",
     contact_name: "Decentraland Foundation",
     contact_email: null,
@@ -140,9 +139,8 @@ export const allPlacesWithAggregatedAttributes: AggregatePlaceAttributes[] = [
     categories: [],
     world: true,
     world_name: "test.dcl.eth",
-    world_id: "test.dcl.eth",
     deployed_at: new Date("2022-11-14T17:22:05.307Z"),
-    textsearch: undefined,
+    is_private: false,
     creator_address: null,
     sdk: null,
     ranking: 0,

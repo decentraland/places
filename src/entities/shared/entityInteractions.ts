@@ -1,9 +1,11 @@
 import {
   SQL,
   SQLStatement,
+  conditional,
   createSearchableMatches,
   join,
   table,
+  tsquery,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import UserFavoriteModel from "../UserFavorite/model"
@@ -125,4 +127,82 @@ export function buildUpdateLikesQuery(
     FROM counted c
     WHERE id = ${entityId}
   `
+}
+
+/**
+ * Build SQL SELECT fragments for user interaction columns (user_favorite, user_like, user_dislike).
+ * These reference the `uf` and `ul` table aliases from the corresponding JOINs.
+ *
+ * @param user - The user address, or undefined if no user context
+ * @param forCount - When true, returns empty (count queries don't need these columns)
+ */
+export function buildUserInteractionColumns(
+  user: string | undefined,
+  forCount: boolean
+): SQLStatement {
+  if (forCount) return SQL``
+  return SQL`
+    ${conditional(!!user, SQL`, uf."user" is not null as user_favorite`)}
+    ${conditional(!user, SQL`, false as user_favorite`)}
+    ${conditional(!!user, SQL`, coalesce(ul."like",false) as "user_like"`)}
+    ${conditional(!user, SQL`, false as "user_like"`)}
+    ${conditional(!!user, SQL`, not coalesce(ul."like",true) as "user_dislike"`)}
+    ${conditional(!user, SQL`, false as "user_dislike"`)}
+  `
+}
+
+/**
+ * Build SQL JOIN fragments for user favorites and user likes tables.
+ *
+ * @param entityIdExpr - SQL expression for the entity ID column (e.g., SQL`p.id` or SQL`w.id`)
+ * @param user - The user address, or undefined if no user context
+ * @param options.onlyFavorites - When true, uses RIGHT JOIN for favorites (filtering to favorites only)
+ * @param options.forCount - When true, only includes the favorites join (count queries skip likes)
+ */
+export function buildUserInteractionJoins(
+  entityIdExpr: SQLStatement,
+  user: string | undefined,
+  options: { onlyFavorites: boolean; forCount: boolean }
+): SQLStatement {
+  return SQL`
+    ${conditional(
+      !!user && !options.onlyFavorites && !options.forCount,
+      SQL`LEFT JOIN ${table(
+        UserFavoriteModel
+      )} uf on ${entityIdExpr} = uf.entity_id AND uf."user" = ${user}`
+    )}
+    ${conditional(
+      !!user && options.onlyFavorites,
+      SQL`RIGHT JOIN ${table(
+        UserFavoriteModel
+      )} uf on ${entityIdExpr} = uf.entity_id AND uf."user" = ${user}`
+    )}
+    ${conditional(
+      !!user && !options.forCount,
+      SQL`LEFT JOIN ${table(
+        UserLikesModel
+      )} ul on ${entityIdExpr} = ul.entity_id AND ul."user" = ${user}`
+    )}
+  `
+}
+
+/**
+ * Build the inline tsvector text search rank expression for worlds.
+ * Worlds don't have a stored `textsearch` column, so we build the tsvector inline.
+ *
+ * @param alias - Table alias for the worlds table (e.g., "w")
+ * @param search - The search string to rank against
+ */
+export function buildWorldTextSearchRank(
+  alias: string,
+  search: string
+): SQLStatement {
+  const a = SQL.raw(alias)
+  return SQL`ts_rank_cd(
+    (setweight(to_tsvector(coalesce(${a}.title, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.world_name, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.description, '')), 'B') ||
+     setweight(to_tsvector(coalesce(${a}.owner, '')), 'C')),
+    to_tsquery(${tsquery(search || "")})
+  )`
 }

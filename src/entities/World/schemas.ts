@@ -278,6 +278,48 @@ export const updateWorldLikeBodySchema = schema({
   },
 })
 
+export const updateWorldHighlightParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldHighlightBodySchema = schema({
+  type: "object",
+  description: "Highlight update body",
+  additionalProperties: false,
+  required: ["highlighted"] as const,
+  properties: {
+    highlighted: {
+      type: "boolean",
+      description: "Whether the world should be highlighted",
+    },
+  },
+})
+
+export const updateWorldRankingParamsSchema = schema.params({
+  world_id: {
+    type: "string",
+    description: "World ID (lowercased world name)",
+  },
+})
+
+export const updateWorldRankingBodySchema = schema({
+  type: "object",
+  description: "Ranking update body",
+  additionalProperties: false,
+  required: ["ranking"] as const,
+  properties: {
+    ranking: {
+      type: "number",
+      nullable: true as any,
+      description:
+        "Ranking score for ordering worlds (higher values appear first). Set to null to remove ranking.",
+    },
+  },
+})
+
 export const updateWorldRatingParamsSchema = schema.params({
   world_id: {
     type: "string",

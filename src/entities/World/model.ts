@@ -1,11 +1,13 @@
 import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
+  SQLStatement,
   conditional,
+  join,
   limit,
   offset,
   table,
-  tsquery,
+  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
@@ -21,6 +23,9 @@ import {
   buildTextsearch,
   buildUpdateFavoritesQuery,
   buildUpdateLikesQuery,
+  buildUserInteractionColumns,
+  buildUserInteractionJoins,
+  buildWorldTextSearchRank,
 } from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
@@ -30,6 +35,90 @@ export default class WorldModel extends Model<WorldAttributes> {
 
   static textsearch(world: WorldAttributes) {
     return buildTextsearch(world)
+  }
+
+  /**
+   * Build the lateral join to get data from the latest enabled place for a world.
+   * Includes columns needed by both WorldModel and DestinationModel.
+   *
+   * @param worldAlias - Table alias for the worlds table (e.g., "w")
+   */
+  static buildLatestPlaceLateralJoin(worldAlias: string): SQLStatement {
+    const a = SQL.raw(worldAlias)
+    return SQL`LEFT JOIN LATERAL (
+        SELECT p.image, p.contact_name, p.contact_email,
+               p.creator_address, p.sdk, p.deployed_at
+        FROM places p
+        WHERE p.world_id = ${a}.id AND p.disabled IS FALSE
+        ORDER BY p.deployed_at DESC
+        LIMIT 1
+      ) lp ON true`
+  }
+
+  /**
+   * Build shared WHERE clause fragments for world queries.
+   * Used by findWorldsWithAggregates, countWorlds, and DestinationModel.buildWorldsSubQuery.
+   *
+   * Starts with the category condition (determines WHERE opener), then appends
+   * all other AND conditions.
+   *
+   * @param alias - Table alias (e.g., "w")
+   * @param options - Filter options
+   */
+  static buildWhereConditions(
+    alias: string,
+    options: {
+      categories: string[]
+      disabled?: boolean
+      search?: string
+      names?: string[]
+      world_names?: string[]
+      only_highlighted?: boolean
+      owner?: string
+      ids?: string[]
+    }
+  ): SQLStatement {
+    const a = SQL.raw(alias)
+    return SQL`
+      ${conditional(
+        !!options.categories.length,
+        SQL`WHERE ${a}.categories && ${options.categories}::varchar[]`
+      )}
+      ${conditional(!options.categories.length, SQL`WHERE 1=1`)}
+        ${conditional(!!options.disabled, SQL`AND ${a}.disabled IS TRUE`)}
+        ${conditional(!options.disabled, SQL`AND ${a}.disabled IS FALSE`)}
+        AND ${a}.show_in_places IS TRUE
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = ${a}.id)
+        ${conditional(
+          options.only_highlighted ?? false,
+          SQL`AND ${a}.highlighted = TRUE`
+        )}
+        ${conditional(
+          !!options.search,
+          SQL`AND ${buildWorldTextSearchRank(alias, options.search || "")} > 0`
+        )}
+        ${conditional(
+          (options.world_names?.length ?? 0) > 0,
+          SQL`AND ${a}.id = ANY(${(options.world_names || []).map((name) =>
+            name.toLowerCase()
+          )})`
+        )}
+        ${conditional(
+          (options.names?.length ?? 0) > 0,
+          SQL`AND (${join(
+            (options.names || []).map(
+              (name) =>
+                SQL`LOWER(${a}.world_name) LIKE ${`%${name.toLowerCase()}%`}`
+            ),
+            SQL` OR `
+          )})`
+        )}
+        ${conditional(!!options.owner, SQL`AND ${a}.owner = ${options.owner}`)}
+        ${conditional(
+          !!options.ids?.length,
+          SQL` AND ${a}.id IN ${values(options.ids || [])}`
+        )}
+    `
   }
 
   static async findByWorldName(
@@ -143,77 +232,27 @@ export default class WorldModel extends Model<WorldAttributes> {
       , COALESCE(w.image, lp.image) as image
       , lp.contact_name
       , '0,0' as base_position
-      ${conditional(
-        !!options.user,
-        SQL`, uf."user" is not null as user_favorite`
-      )}
-      ${conditional(!options.user, SQL`, false as user_favorite`)}
-      ${conditional(
-        !!options.user,
-        SQL`, coalesce(ul."like",false) as "user_like"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_like"`)}
-      ${conditional(
-        !!options.user,
-        SQL`, not coalesce(ul."like",true) as "user_dislike"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_dislike"`)}
+      ${buildUserInteractionColumns(options.user, false)}
       , true as world
       , 0 as user_visits
       , lp.deployed_at
       FROM ${table(this)} w
-      LEFT JOIN LATERAL (
-        SELECT p.image, p.contact_name, p.deployed_at
-        FROM places p
-        WHERE p.world_id = w.id AND p.disabled IS FALSE
-        ORDER BY p.deployed_at DESC
-        LIMIT 1
-      ) lp ON true
-      ${conditional(
-        !!options.user && !options.only_favorites,
-        SQL`LEFT JOIN ${table(
-          UserFavoriteModel
-        )} uf on w.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on w.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user,
-        SQL`LEFT JOIN ${table(
-          UserLikesModel
-        )} ul on w.id = ul.entity_id AND ul."user" = ${options.user}`
-      )}
+      ${this.buildLatestPlaceLateralJoin("w")}
+      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
+        onlyFavorites: options.only_favorites,
+        forCount: false,
+      })}
       ${conditional(
         !!options.search,
-        SQL`, ts_rank_cd(
-          (setweight(to_tsvector(coalesce(w.title, '')), 'A') || 
-           setweight(to_tsvector(coalesce(w.world_name, '')), 'A') || 
-           setweight(to_tsvector(coalesce(w.description, '')), 'B') ||
-           setweight(to_tsvector(coalesce(w.owner, '')), 'C')),
-          to_tsquery(${tsquery(options.search || "")})
-        ) as rank`
+        SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`
       )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`WHERE w.categories && ${options.categories}::varchar[]`
-      )}
-      ${conditional(!options.categories.length, SQL`WHERE 1=1`)}
-        ${conditional(!!options.disabled, SQL`AND w.disabled IS TRUE`)}
-        ${conditional(!options.disabled, SQL`AND w.disabled IS FALSE`)}
-        AND w.show_in_places IS TRUE
-        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id)
-        ${conditional(
-          options.names.length > 0,
-          SQL`AND w.id = ANY(${options.names.map((name) =>
-            name.toLowerCase()
-          )})`
-        )}
-        ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(!!options.owner, SQL`AND w.owner = ${options.owner}`)}
+      ${this.buildWhereConditions("w", {
+        categories: options.categories,
+        disabled: options.disabled,
+        search: options.search,
+        world_names: options.names,
+        owner: options.owner,
+      })}
       ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -249,39 +288,17 @@ export default class WorldModel extends Model<WorldAttributes> {
     const query = SQL`
       SELECT count(*) as total
       FROM ${table(this)} w
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on w.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(
-          (setweight(to_tsvector(coalesce(w.title, '')), 'A') || 
-           setweight(to_tsvector(coalesce(w.world_name, '')), 'A') || 
-           setweight(to_tsvector(coalesce(w.description, '')), 'B') ||
-           setweight(to_tsvector(coalesce(w.owner, '')), 'C')),
-          to_tsquery(${tsquery(options.search || "")})
-        ) as rank`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`WHERE w.categories && ${options.categories}::varchar[]`
-      )}
-      ${conditional(!options.categories.length, SQL`WHERE 1=1`)}
-        ${conditional(!!options.disabled, SQL`AND w.disabled IS TRUE`)}
-        ${conditional(!options.disabled, SQL`AND w.disabled IS FALSE`)}
-        AND w.show_in_places IS TRUE
-        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id)
-        ${conditional(
-          options.names.length > 0,
-          SQL`AND w.id = ANY(${options.names.map((name) =>
-            name.toLowerCase()
-          )})`
-        )}
-        ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(!!options.owner, SQL`AND w.owner = ${options.owner}`)}
+      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
+        onlyFavorites: options.only_favorites,
+        forCount: true,
+      })}
+      ${this.buildWhereConditions("w", {
+        categories: options.categories,
+        disabled: options.disabled,
+        search: options.search,
+        world_names: options.names,
+        owner: options.owner,
+      })}
     `
 
     const results: { total: number }[] = await this.namedQuery(
@@ -336,6 +353,9 @@ export default class WorldModel extends Model<WorldAttributes> {
       single_player: world.single_player ?? false,
       skybox_time: world.skybox_time ?? null,
       is_private: world.is_private ?? false,
+      highlighted: world.highlighted ?? false,
+      highlighted_image: world.highlighted_image ?? null,
+      ranking: world.ranking ?? 0,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -363,7 +383,9 @@ export default class WorldModel extends Model<WorldAttributes> {
       INSERT INTO ${table(this)} (
         "id", "world_name", "title", "description", "image",
         "content_rating", "categories", "owner", "show_in_places",
-        "single_player", "skybox_time", "is_private", "likes", "dislikes", "favorites",
+        "single_player", "skybox_time", "is_private",
+        "highlighted", "highlighted_image", "ranking",
+        "likes", "dislikes", "favorites",
         "like_rate", "like_score", "disabled", "disabled_at",
         "created_at", "updated_at"
       ) VALUES (
@@ -379,6 +401,9 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.single_player},
         ${worldData.skybox_time},
         ${worldData.is_private},
+        ${worldData.highlighted},
+        ${worldData.highlighted_image},
+        ${worldData.ranking},
         ${worldData.likes},
         ${worldData.dislikes},
         ${worldData.favorites},
@@ -451,6 +476,34 @@ export default class WorldModel extends Model<WorldAttributes> {
   static async updateLikes(worldId: string): Promise<void> {
     const sql = buildUpdateLikesQuery(this, worldId)
     await this.namedQuery("update_likes", sql)
+  }
+
+  static async updateHighlighted(
+    worldId: string,
+    highlighted: boolean
+  ): Promise<void> {
+    const now = new Date()
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET highlighted = ${highlighted},
+          updated_at = ${now}
+      WHERE id = ${worldId}
+    `
+    await this.namedQuery("update_highlighted", sql)
+  }
+
+  static async updateRanking(
+    worldId: string,
+    ranking: number | null
+  ): Promise<void> {
+    const now = new Date()
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET ranking = ${ranking},
+          updated_at = ${now}
+      WHERE id = ${worldId}
+    `
+    await this.namedQuery("update_ranking", sql)
   }
 
   /**

@@ -76,7 +76,7 @@ describe("get of AggregatePlaceAttributes", () => {
 describe("get of AllPlacesWithAggregates", () => {
   test("should return a place of type AggregateCoordinatePlaceAttributes", () => {
     const places = allPlacesWithAggregates(
-      allPlacesWithAggregatedAttributes,
+      allPlacesWithAggregatedAttributes as any,
       [hotSceneGenesisPlaza],
       sceneStatsGenesisPlaza,
       worldsLiveData
@@ -105,7 +105,7 @@ describe("get of AllPlacesWithAggregates", () => {
       base_position: "-1,-1",
     }
     const places = allPlacesWithAggregates(
-      [place],
+      [place] as any,
       [hotSceneGenesisPlaza],
       sceneStatsGenesisPlaza,
       worldsLiveData
@@ -124,7 +124,7 @@ describe("get of AllPlacesWithAggregates", () => {
 
   test("should return a place of type AggregatePlaceAttributes with realm details", () => {
     const places = allPlacesWithAggregates(
-      allPlacesWithAggregatedAttributes,
+      allPlacesWithAggregatedAttributes as any,
       [hotSceneGenesisPlaza],
       sceneStatsGenesisPlaza,
       worldsLiveData,

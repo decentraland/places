@@ -19,12 +19,13 @@ import { SignIn } from "decentraland-ui/dist/components/SignIn/SignIn"
 import { Tabs } from "decentraland-ui/dist/components/Tabs/Tabs"
 
 import Places from "../../api/Places"
+import Worlds from "../../api/Worlds"
 import Navigation, { NavigationTab } from "../../components/Layout/Navigation"
 import SearchInput from "../../components/Layout/SearchInput"
 import AdminPlaceCard from "../../components/Place/AdminPlaceCard/AdminPlaceCard"
 import {
   AggregateBaseEntityAttributes,
-  isPlace,
+  isWorld,
 } from "../../entities/shared/entityTypes"
 import { FeatureFlags } from "../../modules/ff"
 
@@ -64,7 +65,7 @@ export default function AdminHighlightsPage() {
 
     const fetchFunction =
       activeTab === "worlds"
-        ? Places.get().getWorlds.bind(Places.get())
+        ? Worlds.get().getWorlds.bind(Worlds.get())
         : Places.get().getPlaces.bind(Places.get())
     const fetchResponse = await fetchFunction(searchOptions)
     response.data = fetchResponse.data
@@ -82,20 +83,21 @@ export default function AdminHighlightsPage() {
 
   const [handlingHighlight, handleHighlight] = useAsyncTasks(
     async (id, highlighted: boolean) => {
-      const response = await Places.get().updateHighlight(id, highlighted)
+      const entity = places.find((p) => p.id === id)
+      const response =
+        entity && isWorld(entity)
+          ? await Worlds.get().updateHighlight(id, { highlighted })
+          : await Places.get().updateHighlight(id, { highlighted })
       if (response) {
         setPlaces((prev) =>
           prev.map((place) => {
             if (place.id !== id) return place
-            if (isPlace(place)) {
-              return { ...place, highlighted }
-            }
-            return place
+            return { ...place, highlighted }
           })
         )
       }
     },
-    []
+    [places]
   )
 
   useEffect(() => {
