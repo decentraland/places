@@ -8,6 +8,8 @@ import express from "express"
 
 import categoryRoute from "../../src/entities/Category/routes"
 import placeRoute from "../../src/entities/Place/routes"
+import userFavoriteRoute from "../../src/entities/UserFavorite/routes"
+import userLikesRoute from "../../src/entities/UserLikes/routes"
 import worldRoute from "../../src/entities/World/routes"
 
 /**
@@ -25,6 +27,8 @@ export function createTestApp(): express.Express {
     }),
     withBody(),
     categoryRoute,
+    userFavoriteRoute,
+    userLikesRoute,
     placeRoute,
     worldRoute,
     handle(async () => {
