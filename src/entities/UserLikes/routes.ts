@@ -13,8 +13,11 @@ import {
   UserLikeAttributes,
 } from "./types"
 import PlaceModel from "../Place/model"
+import { findEntityByIdWithAggregates } from "../shared/entityInteractions"
+import { isWorld } from "../shared/entityTypes"
 import { fetchScore } from "../Snapshot/utils"
 import UserLikesModel from "../UserLikes/model"
+import WorldModel from "../World/model"
 
 export default routes((router) => {
   router.patch("/places/:entity_id/likes", updateLike)
@@ -28,21 +31,25 @@ export const validateGetPlaceBody = Router.validator<UpdateUserLikeBody>(
   updateUserLikeBodySchema
 )
 
-async function updateLike(
+// This endpoint is under /places/ but also handles world entities for
+// retro-compatibility. The dedicated /worlds/:world_id/likes endpoint
+// exists for world likes, but older clients may still send world IDs
+// through this endpoint, so we look up both places and worlds here.
+export async function updateLike(
   ctx: Context<{ entity_id: string }, "request" | "body" | "params">
 ) {
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
-  const place = await PlaceModel.findByIdWithAggregates(params.entity_id, {
+  const entity = await findEntityByIdWithAggregates(params.entity_id, {
     user: userAuth.address,
   })
 
-  if (!place) {
+  if (!entity) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found place "${params.entity_id}"`
+      `Not found entity "${params.entity_id}"`
     )
   }
 
@@ -57,10 +64,10 @@ async function updateLike(
 
   if (userLike && userLike.like === body.like) {
     return new ApiResponse({
-      likes: place!.likes,
-      dislikes: place!.dislikes,
-      user_like: place.user_like,
-      user_dislike: place.user_dislike,
+      likes: entity.likes,
+      dislikes: entity.dislikes,
+      user_like: entity.user_like,
+      user_dislike: entity.user_dislike,
     })
   }
 
@@ -76,19 +83,20 @@ async function updateLike(
     })
   }
 
-  await PlaceModel.updateLikes(params.entity_id)
+  if (isWorld(entity)) {
+    await WorldModel.updateLikes(params.entity_id)
+  } else {
+    await PlaceModel.updateLikes(params.entity_id)
+  }
 
-  const placeUpdated = await PlaceModel.findByIdWithAggregates(
-    params.entity_id,
-    {
-      user: userAuth.address,
-    }
-  )
+  const refreshed = await findEntityByIdWithAggregates(params.entity_id, {
+    user: userAuth.address,
+  })
 
   return new ApiResponse({
-    likes: placeUpdated!.likes,
-    dislikes: placeUpdated!.dislikes,
-    user_like: placeUpdated!.user_like,
-    user_dislike: placeUpdated!.user_dislike,
+    likes: refreshed!.likes,
+    dislikes: refreshed!.dislikes,
+    user_like: refreshed!.user_like,
+    user_dislike: refreshed!.user_dislike,
   })
 }

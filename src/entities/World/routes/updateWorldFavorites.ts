@@ -5,6 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
+import { findEntityByIdWithAggregates } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserFavoriteModel from "../../UserFavorite/model"
 import WorldModel from "../model"
@@ -35,26 +36,26 @@ export async function updateWorldFavorites(
   const userAuth = await withAuth(ctx)
 
   const now = new Date()
-  const world = await WorldModel.findByIdWithAggregates(params.world_id, {
+  const entity = await findEntityByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 
-  if (!world) {
+  if (!entity) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found world "${params.world_id}"`
+      `Not found entity "${params.world_id}"`
     )
   }
 
   const user_activity = await fetchScore(userAuth.address)
 
   if (
-    (body.favorites && world.user_favorite) ||
-    (!body.favorites && !world.user_favorite)
+    (body.favorites && entity.user_favorite) ||
+    (!body.favorites && !entity.user_favorite)
   ) {
     return new ApiResponse({
-      favorites: world.favorites,
-      user_favorite: world.user_favorite,
+      favorites: entity.favorites,
+      user_favorite: entity.user_favorite,
     })
   }
 
@@ -77,7 +78,7 @@ export async function updateWorldFavorites(
   await WorldModel.updateFavorites(params.world_id)
 
   return new ApiResponse({
-    favorites: body.favorites ? world.favorites + 1 : world.favorites - 1,
+    favorites: body.favorites ? entity.favorites + 1 : entity.favorites - 1,
     user_favorite: body.favorites,
   })
 }

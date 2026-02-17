@@ -5,6 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
+import { findEntityByIdWithAggregates } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserLikesModel from "../../UserLikes/model"
 import { UserLikeAttributes } from "../../UserLikes/types"
@@ -37,14 +38,14 @@ export async function updateWorldLikes(
   const body = await validateWorldLikeBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
-  const world = await WorldModel.findByIdWithAggregates(params.world_id, {
+  const entity = await findEntityByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 
-  if (!world) {
+  if (!entity) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found world "${params.world_id}"`
+      `Not found entity "${params.world_id}"`
     )
   }
 
@@ -59,10 +60,10 @@ export async function updateWorldLikes(
 
   if (userLike && userLike.like === body.like) {
     return new ApiResponse({
-      likes: world.likes,
-      dislikes: world.dislikes,
-      user_like: world.user_like,
-      user_dislike: world.user_dislike,
+      likes: entity.likes,
+      dislikes: entity.dislikes,
+      user_like: entity.user_like,
+      user_dislike: entity.user_dislike,
     })
   }
 
@@ -78,17 +79,14 @@ export async function updateWorldLikes(
 
   await WorldModel.updateLikes(params.world_id)
 
-  const worldUpdated = await WorldModel.findByIdWithAggregates(
-    params.world_id,
-    {
-      user: userAuth.address,
-    }
-  )
+  const refreshed = await findEntityByIdWithAggregates(params.world_id, {
+    user: userAuth.address,
+  })
 
   return new ApiResponse({
-    likes: worldUpdated!.likes,
-    dislikes: worldUpdated!.dislikes,
-    user_like: worldUpdated!.user_like,
-    user_dislike: worldUpdated!.user_dislike,
+    likes: refreshed!.likes,
+    dislikes: refreshed!.dislikes,
+    user_like: refreshed!.user_like,
+    user_dislike: refreshed!.user_dislike,
   })
 }
