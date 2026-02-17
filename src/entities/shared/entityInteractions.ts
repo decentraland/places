@@ -6,8 +6,11 @@ import {
   table,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
+import { AggregateBaseEntityAttributes } from "./types"
+import PlaceModel from "../Place/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
+import WorldModel from "../World/model"
 
 /**
  * Minimum user activity threshold for likes to be counted in like_rate and like_score
@@ -18,6 +21,33 @@ export const MIN_USER_ACTIVITY = 100
  * Type for models that can have their interactions updated
  */
 type EntityModel = { tableName: string }
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Determine whether an entity ID corresponds to a place (UUID) or a world (name like "name.dcl.eth").
+ */
+export function isPlaceId(entityId: string): boolean {
+  return UUID_REGEX.test(entityId)
+}
+
+/**
+ * Find an entity (place or world) by its ID along with user-specific aggregate data.
+ * Uses the entity ID format to determine which model to query:
+ * - UUIDs are looked up as places
+ * - Non-UUID strings (e.g. "name.dcl.eth") are looked up as worlds
+ */
+export async function findEntityByIdWithAggregates(
+  entityId: string,
+  options: { user: string | undefined }
+): Promise<AggregateBaseEntityAttributes | null> {
+  if (isPlaceId(entityId)) {
+    return PlaceModel.findByIdWithAggregates(entityId, options)
+  }
+
+  return WorldModel.findByIdWithAggregates(entityId, options)
+}
 
 /**
  * Common fields used for full-text search in both places and worlds

@@ -5,6 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
+import { isPlaceId } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserFavoriteModel from "../../UserFavorite/model"
 import WorldModel from "../model"
@@ -33,6 +34,13 @@ export async function updateWorldFavorites(
   const params = await validateWorldFavoriteParams(ctx.params)
   const body = await validateWorldFavoriteBody(ctx.body)
   const userAuth = await withAuth(ctx)
+
+  if (isPlaceId(params.world_id)) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Invalid world ID "${params.world_id}". Use /places/:entity_id/favorites for place entities.`
+    )
+  }
 
   const now = new Date()
   const world = await WorldModel.findByIdWithAggregates(params.world_id, {

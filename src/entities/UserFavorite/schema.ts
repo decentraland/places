@@ -3,8 +3,7 @@ import schema from "decentraland-gatsby/dist/entities/Schema/schema"
 export const updateUserFavoriteParamsSchema = schema.params({
   entity_id: {
     type: "string",
-    format: "uuid",
-    description: "Entity ID (place or world)",
+    description: "Entity ID (place UUID or world name)",
   },
 })
 
