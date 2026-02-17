@@ -5,7 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
-import { findEntityByIdWithAggregates } from "../../shared/entityInteractions"
+import { isPlaceId } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserLikesModel from "../../UserLikes/model"
 import { UserLikeAttributes } from "../../UserLikes/types"
@@ -38,14 +38,21 @@ export async function updateWorldLikes(
   const body = await validateWorldLikeBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
-  const entity = await findEntityByIdWithAggregates(params.world_id, {
+  if (isPlaceId(params.world_id)) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Invalid world ID "${params.world_id}". Use /places/:entity_id/likes for place entities.`
+    )
+  }
+
+  const world = await WorldModel.findByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 
-  if (!entity) {
+  if (!world) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found entity "${params.world_id}"`
+      `Not found world "${params.world_id}"`
     )
   }
 
@@ -60,10 +67,10 @@ export async function updateWorldLikes(
 
   if (userLike && userLike.like === body.like) {
     return new ApiResponse({
-      likes: entity.likes,
-      dislikes: entity.dislikes,
-      user_like: entity.user_like,
-      user_dislike: entity.user_dislike,
+      likes: world.likes,
+      dislikes: world.dislikes,
+      user_like: world.user_like,
+      user_dislike: world.user_dislike,
     })
   }
 
@@ -79,7 +86,7 @@ export async function updateWorldLikes(
 
   await WorldModel.updateLikes(params.world_id)
 
-  const refreshed = await findEntityByIdWithAggregates(params.world_id, {
+  const refreshed = await WorldModel.findByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 

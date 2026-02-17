@@ -28,7 +28,7 @@ const UUID_REGEX =
 /**
  * Determine whether an entity ID corresponds to a place (UUID) or a world (name like "name.dcl.eth").
  */
-function isPlaceId(entityId: string): boolean {
+export function isPlaceId(entityId: string): boolean {
   return UUID_REGEX.test(entityId)
 }
 

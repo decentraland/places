@@ -93,6 +93,17 @@ describe("when updating likes on a world via PATCH /worlds/:world_id/likes", () 
     })
   })
 
+  describe("and a place UUID is provided instead of a world name", () => {
+    it("should respond with a 400", async () => {
+      const placeUUID = "d5c08816-6745-469a-b68f-69a0b4373fb3"
+      const response = await supertest(app)
+        .patch(`/api/worlds/${placeUUID}/likes`)
+        .send({ like: true })
+
+      expect(response.status).toBe(400)
+    })
+  })
+
   describe("and the world exists", () => {
     beforeEach(async () => {
       await seedWorld(worldName)

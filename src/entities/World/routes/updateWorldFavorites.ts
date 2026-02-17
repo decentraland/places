@@ -5,7 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
-import { findEntityByIdWithAggregates } from "../../shared/entityInteractions"
+import { isPlaceId } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserFavoriteModel from "../../UserFavorite/model"
 import WorldModel from "../model"
@@ -35,27 +35,34 @@ export async function updateWorldFavorites(
   const body = await validateWorldFavoriteBody(ctx.body)
   const userAuth = await withAuth(ctx)
 
+  if (isPlaceId(params.world_id)) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Invalid world ID "${params.world_id}". Use /places/:entity_id/favorites for place entities.`
+    )
+  }
+
   const now = new Date()
-  const entity = await findEntityByIdWithAggregates(params.world_id, {
+  const world = await WorldModel.findByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 
-  if (!entity) {
+  if (!world) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found entity "${params.world_id}"`
+      `Not found world "${params.world_id}"`
     )
   }
 
   const user_activity = await fetchScore(userAuth.address)
 
   if (
-    (body.favorites && entity.user_favorite) ||
-    (!body.favorites && !entity.user_favorite)
+    (body.favorites && world.user_favorite) ||
+    (!body.favorites && !world.user_favorite)
   ) {
     return new ApiResponse({
-      favorites: entity.favorites,
-      user_favorite: entity.user_favorite,
+      favorites: world.favorites,
+      user_favorite: world.user_favorite,
     })
   }
 
@@ -78,7 +85,7 @@ export async function updateWorldFavorites(
   await WorldModel.updateFavorites(params.world_id)
 
   return new ApiResponse({
-    favorites: body.favorites ? entity.favorites + 1 : entity.favorites - 1,
+    favorites: body.favorites ? world.favorites + 1 : world.favorites - 1,
     user_favorite: body.favorites,
   })
 }
