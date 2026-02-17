@@ -146,7 +146,10 @@ export function buildUserInteractionColumns(
     ${conditional(!user, SQL`, false as user_favorite`)}
     ${conditional(!!user, SQL`, coalesce(ul."like",false) as "user_like"`)}
     ${conditional(!user, SQL`, false as "user_like"`)}
-    ${conditional(!!user, SQL`, not coalesce(ul."like",true) as "user_dislike"`)}
+    ${conditional(
+      !!user,
+      SQL`, not coalesce(ul."like",true) as "user_dislike"`
+    )}
     ${conditional(!user, SQL`, false as "user_dislike"`)}
   `
 }

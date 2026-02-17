@@ -1,12 +1,8 @@
 import {
   SQL,
-  SQLStatement,
   conditional,
   limit,
   offset,
-  table,
-  tsquery,
-  values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 
@@ -16,139 +12,42 @@ import {
 } from "./types"
 import PlaceModel from "../Place/model"
 import { HotScene, PlaceListOrderBy } from "../Place/types"
-import PlaceCategories from "../PlaceCategories/model"
-import {
-  buildUserInteractionColumns,
-  buildUserInteractionJoins,
-  buildWorldTextSearchRank,
-} from "../shared/entityInteractions"
 import WorldModel from "../World/model"
 
+/**
+ * Explicit SELECT columns for places in destination queries.
+ * Provides sensible defaults for fields that don't exist on places
+ * (e.g., `false as world`, `false as is_private`, `0 as user_visits`).
+ */
+const PLACES_DESTINATION_SELECT = SQL`
+  p.id, p.title, p.description, p.image, p.owner, p.world_name,
+  p.content_rating, p.categories, p.likes, p.dislikes, p.favorites,
+  p.like_rate, p.like_score, p.disabled, p.disabled_at,
+  p.created_at, p.updated_at,
+  p.base_position, p.contact_name, p.deployed_at,
+  p.highlighted, false as world, false as is_private,
+  p.highlighted_image, p.positions, p.contact_email,
+  p.creator_address, p.sdk, p.ranking,
+  0 as user_visits`
+
+/**
+ * Explicit SELECT columns for worlds in destination queries.
+ * Maps world columns to the unified DestinationAttributes shape,
+ * using the lateral join (lp) for place-derived fields.
+ */
+const WORLDS_DESTINATION_SELECT = SQL`
+  w.id, w.title, w.description, COALESCE(w.image, lp.image) as image,
+  w.owner, w.world_name,
+  w.content_rating, w.categories, w.likes, w.dislikes, w.favorites,
+  w.like_rate, w.like_score, w.disabled, w.disabled_at,
+  w.created_at, w.updated_at,
+  '0,0' as base_position, lp.contact_name, lp.deployed_at,
+  w.highlighted, true as world, w.is_private,
+  w.highlighted_image, '{}'::varchar[] as positions,
+  lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
+  0 as user_visits`
+
 export default class DestinationModel {
-  /**
-   * Build the places sub-query selecting from the places table (world=false).
-   * Returns AggregateDestinationAttributes-compatible columns.
-   */
-  private static buildPlacesSubQuery(
-    options: FindDestinationsWithAggregatesOptions,
-    opts?: { forCount?: boolean }
-  ): SQLStatement {
-    const forCount = opts?.forCount ?? false
-    const filterMostActivePlaces =
-      !forCount &&
-      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
-      !!options.hotScenesPositions &&
-      options.hotScenesPositions.length > 0
-
-    return SQL`
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`WITH most_active_places AS (
-              SELECT DISTINCT base_position
-              FROM "place_positions"
-              WHERE position IN ${values(options.hotScenesPositions || [])}
-            )`
-      )}
-      SELECT
-        ${conditional(
-          !forCount,
-          SQL`
-        p.id, p.title, p.description, p.image, p.owner, p.world_name,
-        p.content_rating, p.categories, p.likes, p.dislikes, p.favorites,
-        p.like_rate, p.like_score, p.disabled, p.disabled_at,
-        p.created_at, p.updated_at,
-        p.base_position, p.contact_name, p.deployed_at,
-        p.highlighted, false as world, false as is_private,
-        p.highlighted_image, p.positions, p.contact_email,
-        p.creator_address, p.sdk, p.ranking,
-        0 as user_visits
-        `
-        )}
-        ${conditional(forCount, SQL`p.id`)}
-        ${buildUserInteractionColumns(options.user, forCount)}
-        ${conditional(
-          !forCount && filterMostActivePlaces,
-          SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
-        )}
-        ${conditional(
-          !forCount && !!options.search,
-          SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-            options.search || ""
-          )})) as rank`
-        )}
-      FROM ${table(PlaceModel)} p
-      ${buildUserInteractionJoins(SQL`p.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount,
-      })}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
-      )}
-      WHERE ${PlaceModel.buildWhereConditions("p", options, {
-        worldFilter: "always",
-      })}
-    `
-  }
-
-  /**
-   * Build the worlds sub-query selecting from the worlds table.
-   * Returns AggregateDestinationAttributes-compatible columns via lateral join.
-   */
-  private static buildWorldsSubQuery(
-    options: FindDestinationsWithAggregatesOptions,
-    opts?: { forCount?: boolean }
-  ): SQLStatement {
-    const forCount = opts?.forCount ?? false
-    return SQL`
-      SELECT
-        ${conditional(
-          !forCount,
-          SQL`
-        w.id, w.title, w.description, COALESCE(w.image, lp.image) as image,
-        w.owner, w.world_name,
-        w.content_rating, w.categories, w.likes, w.dislikes, w.favorites,
-        w.like_rate, w.like_score, w.disabled, w.disabled_at,
-        w.created_at, w.updated_at,
-        '0,0' as base_position, lp.contact_name, lp.deployed_at,
-        w.highlighted, true as world, w.is_private,
-        w.highlighted_image, '{}'::varchar[] as positions,
-        lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
-        0 as user_visits
-        `
-        )}
-        ${conditional(forCount, SQL`w.id`)}
-        ${buildUserInteractionColumns(options.user, forCount)}
-        ${conditional(
-          !forCount && !!options.search,
-          SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`
-        )}
-      FROM ${table(WorldModel)} w
-      ${WorldModel.buildLatestPlaceLateralJoin("w")}
-      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount,
-      })}
-      ${WorldModel.buildWhereConditions("w", {
-        categories: options.categories,
-        search: options.search,
-        only_highlighted: options.only_highlighted,
-        world_names: options.world_names,
-        names: options.names,
-        owner: options.owner,
-        ids: options.ids,
-      })}
-    `
-  }
-
   /**
    * Find destinations with aggregates. Uses three strategies:
    * - only_places: query only places table (world=false)
@@ -178,7 +77,10 @@ export default class DestinationModel {
       options.hotScenesPositions.length > 0
 
     if (options.only_places) {
-      const placesQuery = this.buildPlacesSubQuery(options)
+      const placesQuery = PlaceModel.buildSubQuery(options, {
+        selectColumns: PLACES_DESTINATION_SELECT,
+        worldFilter: "always",
+      })
       const sql = SQL`
         ${placesQuery}
         ORDER BY
@@ -202,7 +104,20 @@ export default class DestinationModel {
     }
 
     if (options.only_worlds) {
-      const worldsQuery = this.buildWorldsSubQuery(options)
+      const worldsQuery = WorldModel.buildSubQuery(
+        {
+          user: options.user,
+          only_favorites: options.only_favorites,
+          search: options.search,
+          categories: options.categories,
+          only_highlighted: options.only_highlighted,
+          world_names: options.world_names,
+          names: options.names,
+          owner: options.owner,
+          ids: options.ids,
+        },
+        { selectColumns: WORLDS_DESTINATION_SELECT }
+      )
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
@@ -222,8 +137,24 @@ export default class DestinationModel {
     }
 
     // UNION ALL strategy
-    const placesQuery = this.buildPlacesSubQuery(options)
-    const worldsQuery = this.buildWorldsSubQuery(options)
+    const placesQuery = PlaceModel.buildSubQuery(options, {
+      selectColumns: PLACES_DESTINATION_SELECT,
+      worldFilter: "always",
+    })
+    const worldsQuery = WorldModel.buildSubQuery(
+      {
+        user: options.user,
+        only_favorites: options.only_favorites,
+        search: options.search,
+        categories: options.categories,
+        only_highlighted: options.only_highlighted,
+        world_names: options.world_names,
+        names: options.names,
+        owner: options.owner,
+        ids: options.ids,
+      },
+      { selectColumns: WORLDS_DESTINATION_SELECT }
+    )
 
     const sql = SQL`
       SELECT * FROM (
@@ -297,8 +228,9 @@ export default class DestinationModel {
     }
 
     if (options.only_places) {
-      const placesQuery = this.buildPlacesSubQuery(fullOptions, {
+      const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
         forCount: true,
+        worldFilter: "always",
       })
       const sql = SQL`SELECT count(*) as total FROM (${placesQuery}) sub`
       const results: { total: string }[] = await PlaceModel.namedQuery(
@@ -309,9 +241,20 @@ export default class DestinationModel {
     }
 
     if (options.only_worlds) {
-      const worldsQuery = this.buildWorldsSubQuery(fullOptions, {
-        forCount: true,
-      })
+      const worldsQuery = WorldModel.buildSubQuery(
+        {
+          user: fullOptions.user,
+          only_favorites: fullOptions.only_favorites,
+          search: fullOptions.search,
+          categories: fullOptions.categories,
+          only_highlighted: fullOptions.only_highlighted,
+          world_names: fullOptions.world_names,
+          names: fullOptions.names,
+          owner: fullOptions.owner,
+          ids: fullOptions.ids,
+        },
+        { forCount: true }
+      )
       const sql = SQL`SELECT count(*) as total FROM (${worldsQuery}) sub`
       const results: { total: string }[] = await WorldModel.namedQuery(
         "count_destinations_worlds",
@@ -321,12 +264,24 @@ export default class DestinationModel {
     }
 
     // UNION ALL count
-    const placesQuery = this.buildPlacesSubQuery(fullOptions, {
+    const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
       forCount: true,
+      worldFilter: "always",
     })
-    const worldsQuery = this.buildWorldsSubQuery(fullOptions, {
-      forCount: true,
-    })
+    const worldsQuery = WorldModel.buildSubQuery(
+      {
+        user: fullOptions.user,
+        only_favorites: fullOptions.only_favorites,
+        search: fullOptions.search,
+        categories: fullOptions.categories,
+        only_highlighted: fullOptions.only_highlighted,
+        world_names: fullOptions.world_names,
+        names: fullOptions.names,
+        owner: fullOptions.owner,
+        ids: fullOptions.ids,
+      },
+      { forCount: true }
+    )
 
     const sql = SQL`
       SELECT count(*) as total FROM (

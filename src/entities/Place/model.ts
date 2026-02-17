@@ -143,6 +143,94 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     `
   }
 
+  /**
+   * Build a places sub-query (CTE + SELECT + FROM + JOINs + rank + WHERE).
+   * Does NOT include ORDER BY/LIMIT/OFFSET -- callers append those.
+   *
+   * Used by findWithAggregates, countPlaces, and DestinationModel.
+   *
+   * @param options - Filter and search options
+   * @param opts.forCount - When true: SELECT p.id only, skip CTE/most_active/interaction columns
+   * @param opts.worldFilter - Controls the "world is false" condition in WHERE
+   * @param opts.selectColumns - Custom SELECT columns (default: p.*)
+   */
+  static buildSubQuery(
+    options: {
+      user?: string
+      only_favorites: boolean
+      search?: string
+      positions?: string[]
+      only_highlighted?: boolean
+      owner?: string
+      operatedPositions?: string[]
+      creator_address?: string
+      sdk?: string
+      ids?: string[]
+      names?: string[]
+      categories: string[]
+      order_by?: string
+      hotScenesPositions?: string[]
+    },
+    opts?: {
+      forCount?: boolean
+      worldFilter?: "always" | "conditional"
+      selectColumns?: SQLStatement
+    }
+  ): SQLStatement {
+    const forCount = opts?.forCount ?? false
+    const filterMostActivePlaces =
+      !forCount &&
+      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
+      !!options.hotScenesPositions &&
+      options.hotScenesPositions.length > 0
+
+    return SQL`
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`WITH most_active_places AS (
+              SELECT DISTINCT base_position
+              FROM "place_positions"
+              WHERE position IN ${values(options.hotScenesPositions || [])}
+            )`
+      )}
+      SELECT
+        ${conditional(!forCount, opts?.selectColumns ?? SQL`p.*`)}
+        ${conditional(forCount, SQL`p.id`)}
+        ${buildUserInteractionColumns(options.user, forCount)}
+        ${conditional(
+          !forCount && filterMostActivePlaces,
+          SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
+        )}
+        ${conditional(!forCount && !!options.search, SQL`, rank`)}
+      FROM ${table(this)} p
+      ${buildUserInteractionJoins(SQL`p.id`, options.user, {
+        onlyFavorites: options.only_favorites,
+        forCount,
+      })}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+      WHERE ${this.buildWhereConditions("p", options, {
+        worldFilter: opts?.worldFilter ?? "conditional",
+      })}
+    `
+  }
+
   static async findEnabledByPositions(
     positions: string[]
   ): Promise<PlaceAttributes[]> {
@@ -294,7 +382,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    // The columns most_active, user_visits doesn't exists in the PlaceAttributes
     const orderBy =
       oneOf(options.order_by, [
         PlaceListOrderBy.LIKE_SCORE_BEST,
@@ -312,51 +399,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       !!options.hotScenesPositions &&
       options.hotScenesPositions.length > 0
 
+    const subQuery = this.buildSubQuery(options)
+
     const sql = SQL`
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`WITH most_active_places AS (
-              SELECT DISTINCT base_position
-              FROM "place_positions"
-              WHERE position IN ${values(options.hotScenesPositions || [])}
-            )`
-      )}
-      SELECT p.*
-      ${buildUserInteractionColumns(options.user, false)}
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
-      )}
-      FROM ${table(this)} p
-
-      ${buildUserInteractionJoins(SQL`p.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount: false,
-      })}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        ${this.buildWhereConditions("p", options)}
-      ORDER BY 
+      ${subQuery}
+      ORDER BY
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -394,32 +441,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return 0
     }
 
+    const subQuery = this.buildSubQuery(options, { forCount: true })
+
     const query = SQL`
-      SELECT
-        count(DISTINCT p.id) as "total"
-      FROM ${table(this)} p
-      ${buildUserInteractionJoins(SQL`p.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount: true,
-      })}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        ${this.buildWhereConditions("p", options)}
+      SELECT count(DISTINCT sub.id) as "total"
+      FROM (${subQuery}) sub
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",

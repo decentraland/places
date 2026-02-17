@@ -121,6 +121,71 @@ export default class WorldModel extends Model<WorldAttributes> {
     `
   }
 
+  /**
+   * Build a worlds sub-query (SELECT + FROM + lateral join + JOINs + rank + WHERE).
+   * Does NOT include ORDER BY/LIMIT/OFFSET -- callers append those.
+   *
+   * Used by findWorldsWithAggregates, countWorlds, and DestinationModel.
+   *
+   * @param options - Filter and search options
+   * @param opts.forCount - When true: SELECT w.id only, skip interaction columns and rank
+   * @param opts.selectColumns - Custom SELECT columns (default: w.* with COALESCE and extras)
+   */
+  static buildSubQuery(
+    options: {
+      user?: string
+      only_favorites: boolean
+      search?: string
+      categories: string[]
+      disabled?: boolean
+      names?: string[]
+      world_names?: string[]
+      only_highlighted?: boolean
+      owner?: string
+      ids?: string[]
+    },
+    opts?: {
+      forCount?: boolean
+      selectColumns?: SQLStatement
+    }
+  ): SQLStatement {
+    const forCount = opts?.forCount ?? false
+    const defaultSelectColumns = SQL`w.*
+      , COALESCE(w.image, lp.image) as image
+      , lp.contact_name
+      , '0,0' as base_position
+      , true as world
+      , 0 as user_visits
+      , lp.deployed_at`
+
+    return SQL`
+      SELECT
+        ${conditional(!forCount, opts?.selectColumns ?? defaultSelectColumns)}
+        ${conditional(forCount, SQL`w.id`)}
+        ${buildUserInteractionColumns(options.user, forCount)}
+        ${conditional(
+          !forCount && !!options.search,
+          SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`
+        )}
+      FROM ${table(this)} w
+      ${this.buildLatestPlaceLateralJoin("w")}
+      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
+        onlyFavorites: options.only_favorites,
+        forCount,
+      })}
+      ${this.buildWhereConditions("w", {
+        categories: options.categories,
+        disabled: options.disabled,
+        search: options.search,
+        world_names: options.world_names,
+        names: options.names,
+        only_highlighted: options.only_highlighted,
+        owner: options.owner,
+        ids: options.ids,
+      })}
+    `
+  }
+
   static async findByWorldName(
     worldName: string
   ): Promise<WorldAttributes | null> {
@@ -227,32 +292,18 @@ export default class WorldModel extends Model<WorldAttributes> {
       `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC`
     )
 
+    const subQuery = this.buildSubQuery({
+      user: options.user,
+      only_favorites: options.only_favorites,
+      search: options.search,
+      categories: options.categories,
+      disabled: options.disabled,
+      world_names: options.names,
+      owner: options.owner,
+    })
+
     const sql = SQL`
-      SELECT w.*
-      , COALESCE(w.image, lp.image) as image
-      , lp.contact_name
-      , '0,0' as base_position
-      ${buildUserInteractionColumns(options.user, false)}
-      , true as world
-      , 0 as user_visits
-      , lp.deployed_at
-      FROM ${table(this)} w
-      ${this.buildLatestPlaceLateralJoin("w")}
-      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount: false,
-      })}
-      ${conditional(
-        !!options.search,
-        SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`
-      )}
-      ${this.buildWhereConditions("w", {
-        categories: options.categories,
-        disabled: options.disabled,
-        search: options.search,
-        world_names: options.names,
-        owner: options.owner,
-      })}
+      ${subQuery}
       ORDER BY
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -285,20 +336,22 @@ export default class WorldModel extends Model<WorldAttributes> {
       return 0
     }
 
-    const query = SQL`
-      SELECT count(*) as total
-      FROM ${table(this)} w
-      ${buildUserInteractionJoins(SQL`w.id`, options.user, {
-        onlyFavorites: options.only_favorites,
-        forCount: true,
-      })}
-      ${this.buildWhereConditions("w", {
+    const subQuery = this.buildSubQuery(
+      {
+        user: options.user,
+        only_favorites: options.only_favorites,
+        search: options.search,
         categories: options.categories,
         disabled: options.disabled,
-        search: options.search,
         world_names: options.names,
         owner: options.owner,
-      })}
+      },
+      { forCount: true }
+    )
+
+    const query = SQL`
+      SELECT count(*) as total
+      FROM (${subQuery}) sub
     `
 
     const results: { total: number }[] = await this.namedQuery(
