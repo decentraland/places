@@ -1,16 +1,16 @@
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
-import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
+import { createWkcValidator } from "../../shared/validate"
 import WorldModel from "../model"
 import {
-  updateWorldHighlightParamsSchema,
   updateWorldHighlightBodySchema,
+  updateWorldHighlightParamsSchema,
 } from "../schemas"
 import {
   AggregateWorldAttributes,
@@ -18,11 +18,11 @@ import {
   UpdateWorldHighlightBody,
 } from "../types"
 
-const validateParams = createValidator<GetWorldParams>(
+const validateParams = createWkcValidator<GetWorldParams>(
   updateWorldHighlightParamsSchema as AjvObjectSchema
 )
 
-const validateBody = createValidator<UpdateWorldHighlightBody>(
+const validateBody = createWkcValidator<UpdateWorldHighlightBody>(
   updateWorldHighlightBodySchema as AjvObjectSchema
 )
 

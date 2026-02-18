@@ -1,12 +1,12 @@
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
-import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
+import { createWkcValidator } from "../../shared/validate"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema, updateHighlightBodySchema } from "../schemas"
 import {
@@ -15,11 +15,11 @@ import {
   UpdateHighlightBody,
 } from "../types"
 
-const validateUpdateHighlightParams = createValidator<GetPlaceParams>(
+const validateUpdateHighlightParams = createWkcValidator<GetPlaceParams>(
   getPlaceParamsSchema as AjvObjectSchema
 )
 
-const validateUpdateHighlightBody = createValidator<UpdateHighlightBody>(
+const validateUpdateHighlightBody = createWkcValidator<UpdateHighlightBody>(
   updateHighlightBodySchema as AjvObjectSchema
 )
 

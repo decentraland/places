@@ -1,5 +1,4 @@
 import withBearerToken from "decentraland-gatsby/dist/entities/Auth/routes/withBearerToken"
-import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
@@ -7,6 +6,7 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { createWkcValidator } from "../../shared/validate"
 import WorldModel from "../model"
 import {
   updateWorldRankingParamsSchema,
@@ -18,11 +18,11 @@ import {
   UpdateWorldRankingBody,
 } from "../types"
 
-const validateParams = createValidator<GetWorldParams>(
+const validateParams = createWkcValidator<GetWorldParams>(
   updateWorldRankingParamsSchema as AjvObjectSchema
 )
 
-const validateBody = createValidator<UpdateWorldRankingBody>(
+const validateBody = createWkcValidator<UpdateWorldRankingBody>(
   updateWorldRankingBodySchema as AjvObjectSchema
 )
 
