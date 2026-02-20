@@ -76,6 +76,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       only_highlighted?: boolean
       owner?: string
       ids?: string[]
+      sdk?: string
+      creator_address?: string
     }
   ): SQLStatement {
     const a = SQL.raw(alias)
@@ -118,6 +120,24 @@ export default class WorldModel extends Model<WorldAttributes> {
           !!options.ids?.length,
           SQL` AND ${a}.id IN ${values(options.ids || [])}`
         )}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND EXISTS (
+            SELECT 1 FROM places wp
+            WHERE wp.world_id = ${a}.id
+              AND wp.disabled IS FALSE
+              AND (wp.sdk = ${options.sdk} OR wp.sdk IS NULL)
+          )`
+        )}
+        ${conditional(
+          !!options.creator_address,
+          SQL` AND EXISTS (
+            SELECT 1 FROM places wp
+            WHERE wp.world_id = ${a}.id
+              AND wp.disabled IS FALSE
+              AND LOWER(wp.creator_address) = ${options.creator_address}
+          )`
+        )}
     `
   }
 
@@ -143,6 +163,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       only_highlighted?: boolean
       owner?: string
       ids?: string[]
+      sdk?: string
+      creator_address?: string
     },
     opts?: {
       forCount?: boolean
@@ -182,6 +204,8 @@ export default class WorldModel extends Model<WorldAttributes> {
         only_highlighted: options.only_highlighted,
         owner: options.owner,
         ids: options.ids,
+        sdk: options.sdk,
+        creator_address: options.creator_address,
       })}
     `
   }

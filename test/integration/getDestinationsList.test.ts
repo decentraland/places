@@ -6,6 +6,7 @@ import supertest from "supertest"
 
 import PlaceModel from "../../src/entities/Place/model"
 import { PlaceAttributes } from "../../src/entities/Place/types"
+import UserFavoriteModel from "../../src/entities/UserFavorite/model"
 import WorldModel from "../../src/entities/World/model"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
@@ -67,6 +68,7 @@ jest.mock("../../src/api/CatalystAPI", () => ({
 
 const app = createTestApp()
 
+const MOCK_USER_ADDRESS = "0x1234567890123456789012345678901234567890"
 const OWNER_A = "0x000000000000000000000000000000000000000a"
 const OWNER_B = "0x000000000000000000000000000000000000000b"
 const CREATOR_A = "0x000000000000000000000000000000000000000c"
@@ -186,13 +188,17 @@ async function seedWorldWithOptions(
   }
 }
 
-async function seedWorldPlace(worldName: string): Promise<void> {
-  await seedPlace({
+async function seedWorldPlace(
+  worldName: string,
+  overrides: Partial<PlaceAttributes> = {}
+): Promise<PlaceAttributes> {
+  return seedPlace({
     world: true,
     world_name: worldName,
     world_id: worldName,
     base_position: "0,0",
     positions: [],
+    ...overrides,
   })
 }
 
@@ -304,7 +310,10 @@ describe("when fetching destinations via GET /destinations", () => {
         created_at: new Date("2025-03-01"),
         updated_at: new Date("2025-07-01"),
       })
-      await seedWorldPlace("highlighted.dcl.eth")
+      await seedWorldPlace("highlighted.dcl.eth", {
+        sdk: "7",
+        creator_address: CREATOR_A,
+      })
 
       await seedWorldWithOptions("regular.dcl.eth", {
         title: "Regular World",
@@ -316,7 +325,10 @@ describe("when fetching destinations via GET /destinations", () => {
         created_at: new Date("2024-03-01"),
         updated_at: new Date("2024-07-01"),
       })
-      await seedWorldPlace("regular.dcl.eth")
+      await seedWorldPlace("regular.dcl.eth", {
+        sdk: "7",
+        creator_address: CREATOR_B,
+      })
 
       await seedWorldWithOptions("searchable.dcl.eth", {
         title: "Searchable Galaxy World",
@@ -327,7 +339,10 @@ describe("when fetching destinations via GET /destinations", () => {
         created_at: new Date("2023-03-01"),
         updated_at: new Date("2023-07-01"),
       })
-      await seedWorldPlace("searchable.dcl.eth")
+      await seedWorldPlace("searchable.dcl.eth", {
+        sdk: "6",
+        creator_address: CREATOR_A,
+      })
     })
 
     it("should return both places and worlds", async () => {
@@ -699,6 +714,32 @@ describe("when fetching destinations via GET /destinations", () => {
           expect(response.body.data[0].title).toBe("Searchable Galaxy World")
         })
       })
+
+      describe("and the sdk filter is applied", () => {
+        it("should return only worlds that have a linked place with the specified SDK", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true", sdk: "6" })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(1)
+          expect(response.body.data[0].title).toBe("Searchable Galaxy World")
+        })
+      })
+
+      describe("and the creator_address filter is applied", () => {
+        it("should return only worlds that have a linked place with the specified creator address", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true", creator_address: CREATOR_B })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(1)
+          expect(response.body.data[0].title).toBe("Regular World")
+        })
+      })
     })
 
     describe("and neither the only_places nor the only_worlds filter is applied", () => {
@@ -811,7 +852,7 @@ describe("when fetching destinations via GET /destinations", () => {
       })
 
       describe("and the sdk filter is applied", () => {
-        it("should filter places by SDK and return all worlds", async () => {
+        it("should filter both places and worlds by SDK", async () => {
           const response = await supertest(app)
             .get("/api/destinations")
             .query({ sdk: "6" })
@@ -828,12 +869,13 @@ describe("when fetching destinations via GET /destinations", () => {
 
           expect(placeResults).toHaveLength(1)
           expect(placeResults[0].id).toBe(placeGarden.id)
-          expect(worldResults).toHaveLength(3)
+          expect(worldResults).toHaveLength(1)
+          expect(worldResults[0].title).toBe("Searchable Galaxy World")
         })
       })
 
       describe("and the creator_address filter is applied", () => {
-        it("should filter places by creator address and return all worlds", async () => {
+        it("should filter both places and worlds by creator address", async () => {
           const response = await supertest(app)
             .get("/api/destinations")
             .query({ creator_address: CREATOR_B })
@@ -850,7 +892,8 @@ describe("when fetching destinations via GET /destinations", () => {
 
           expect(placeResults).toHaveLength(1)
           expect(placeResults[0].id).toBe(placeMuseum.id)
-          expect(worldResults).toHaveLength(3)
+          expect(worldResults).toHaveLength(1)
+          expect(worldResults[0].title).toBe("Regular World")
         })
       })
 
@@ -1045,6 +1088,109 @@ describe("when fetching destinations via GET /destinations", () => {
             expect(page2Ids).toHaveLength(3)
             expect(new Set([...page1Ids, ...page2Ids]).size).toBe(6)
           })
+        })
+      })
+    })
+
+    describe("and the only_favorites filter is applied", () => {
+      describe("and the user has favorited a place and a world", () => {
+        beforeEach(async () => {
+          await UserFavoriteModel.create({
+            user: MOCK_USER_ADDRESS,
+            user_activity: 100,
+            entity_id: placeGenesis.id,
+            created_at: new Date(),
+          })
+          await UserFavoriteModel.create({
+            user: MOCK_USER_ADDRESS,
+            user_activity: 100,
+            entity_id: "highlighted.dcl.eth",
+            created_at: new Date(),
+          })
+        })
+
+        it("should return only the favorited destinations", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_favorites: "true" })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(2)
+
+          const ids = response.body.data.map((d: { id: string }) => d.id)
+          expect(ids).toContain(placeGenesis.id)
+          expect(ids).toContain("highlighted.dcl.eth")
+        })
+
+        it("should mark user_favorite as true on the returned destinations", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_favorites: "true" })
+            .expect(200)
+
+          expect(
+            response.body.data.every(
+              (d: { user_favorite: boolean }) => d.user_favorite === true
+            )
+          ).toBe(true)
+        })
+      })
+
+      describe("and the user has no favorites", () => {
+        it("should return an empty list", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_favorites: "true" })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(0)
+          expect(response.body.total).toBe(0)
+        })
+      })
+    })
+
+    describe("and order_by is like_score", () => {
+      it("should order destinations by like_score descending by default", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .query({ order_by: "like_score" })
+          .expect(200)
+
+        expect(response.body.ok).toBe(true)
+
+        const nonHighlighted = response.body.data.filter(
+          (d: { highlighted: boolean; ranking: number }) =>
+            !d.highlighted && d.ranking === 0
+        )
+
+        for (let i = 0; i < nonHighlighted.length - 1; i++) {
+          const current = nonHighlighted[i].like_score ?? -Infinity
+          const next = nonHighlighted[i + 1].like_score ?? -Infinity
+          expect(current).toBeGreaterThanOrEqual(next)
+        }
+      })
+
+      describe("and order is asc", () => {
+        it("should order destinations by like_score ascending", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "like_score", order: "asc" })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+
+          const nonHighlighted = response.body.data.filter(
+            (d: { highlighted: boolean; ranking: number }) =>
+              !d.highlighted && d.ranking === 0
+          )
+
+          for (let i = 0; i < nonHighlighted.length - 1; i++) {
+            const current = nonHighlighted[i].like_score ?? -Infinity
+            const next = nonHighlighted[i + 1].like_score ?? -Infinity
+            expect(current).toBeLessThanOrEqual(next)
+          }
         })
       })
     })

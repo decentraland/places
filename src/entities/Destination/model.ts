@@ -115,6 +115,8 @@ export default class DestinationModel {
           names: options.names,
           owner: options.owner,
           ids: options.ids,
+          sdk: options.sdk,
+          creator_address: options.creator_address,
         },
         { selectColumns: WORLDS_DESTINATION_SELECT }
       )
@@ -152,6 +154,8 @@ export default class DestinationModel {
         names: options.names,
         owner: options.owner,
         ids: options.ids,
+        sdk: options.sdk,
+        creator_address: options.creator_address,
       },
       { selectColumns: WORLDS_DESTINATION_SELECT }
     )
@@ -252,6 +256,8 @@ export default class DestinationModel {
           names: fullOptions.names,
           owner: fullOptions.owner,
           ids: fullOptions.ids,
+          sdk: fullOptions.sdk,
+          creator_address: fullOptions.creator_address,
         },
         { forCount: true }
       )
@@ -279,6 +285,8 @@ export default class DestinationModel {
         names: fullOptions.names,
         owner: fullOptions.owner,
         ids: fullOptions.ids,
+        sdk: fullOptions.sdk,
+        creator_address: fullOptions.creator_address,
       },
       { forCount: true }
     )

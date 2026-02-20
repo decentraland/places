@@ -6,6 +6,7 @@ import supertest from "supertest"
 
 import PlaceModel from "../../src/entities/Place/model"
 import { PlaceAttributes } from "../../src/entities/Place/types"
+import UserFavoriteModel from "../../src/entities/UserFavorite/model"
 import WorldModel from "../../src/entities/World/model"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
@@ -67,8 +68,11 @@ jest.mock("../../src/api/CatalystAPI", () => ({
 
 const app = createTestApp()
 
+const MOCK_USER_ADDRESS = "0x1234567890123456789012345678901234567890"
 const OWNER_A = "0x000000000000000000000000000000000000000a"
 const OWNER_B = "0x000000000000000000000000000000000000000b"
+const CREATOR_A = "0x000000000000000000000000000000000000000c"
+const CREATOR_B = "0x000000000000000000000000000000000000000d"
 
 function createPlaceAttributes(
   overrides: Partial<PlaceAttributes> = {}
@@ -174,13 +178,17 @@ async function seedWorldWithOptions(
   }
 }
 
-async function seedWorldPlace(worldName: string): Promise<void> {
-  await seedPlace({
+async function seedWorldPlace(
+  worldName: string,
+  overrides: Partial<PlaceAttributes> = {}
+): Promise<PlaceAttributes> {
+  return seedPlace({
     world: true,
     world_name: worldName,
     world_id: worldName,
     base_position: "0,0",
     positions: [],
+    ...overrides,
   })
 }
 
@@ -255,6 +263,9 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         highlighted: false,
         ranking: 0,
         owner: OWNER_A,
+        creator_address: CREATOR_A,
+        sdk: "7",
+        like_score: 40,
         created_at: new Date("2024-01-01"),
         updated_at: new Date("2024-06-01"),
       })
@@ -267,6 +278,9 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         highlighted: false,
         ranking: 0,
         owner: OWNER_B,
+        creator_address: CREATOR_B,
+        sdk: "6",
+        like_score: 20,
         created_at: new Date("2025-01-01"),
         updated_at: new Date("2025-06-01"),
       })
@@ -279,6 +293,9 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         highlighted: true,
         ranking: 1,
         owner: OWNER_A,
+        creator_address: CREATOR_A,
+        sdk: "7",
+        like_score: 60,
       })
 
       await database.query(
@@ -297,7 +314,10 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         owner: OWNER_A,
         categories: ["art"],
       })
-      await seedWorldPlace("world-alpha.dcl.eth")
+      await seedWorldPlace("world-alpha.dcl.eth", {
+        sdk: "7",
+        creator_address: CREATOR_A,
+      })
 
       await seedWorldWithOptions("world-beta.dcl.eth", {
         title: "World Beta",
@@ -306,7 +326,10 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         owner: OWNER_B,
         categories: ["social"],
       })
-      await seedWorldPlace("world-beta.dcl.eth")
+      await seedWorldPlace("world-beta.dcl.eth", {
+        sdk: "6",
+        creator_address: CREATOR_B,
+      })
     })
 
     describe("and the body contains place IDs", () => {
@@ -570,6 +593,153 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
         })
       })
 
+      describe("and the pointer filter is applied", () => {
+        beforeEach(async () => {
+          await database.query(
+            `INSERT INTO place_positions (position, base_position)
+             VALUES ($1, $2)
+             ON CONFLICT (position) DO NOTHING`,
+            ["1,1", placeA.base_position] as string[]
+          )
+        })
+
+        it("should filter places by position and return all matching worlds", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations?pointer=1%2C1")
+            .send([
+              placeA.id,
+              placeB.id,
+              "world-alpha.dcl.eth",
+              "world-beta.dcl.eth",
+            ])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+
+          const placeResults = response.body.data.filter(
+            (d: { world: boolean }) => !d.world
+          )
+          const worldResults = response.body.data.filter(
+            (d: { world: boolean }) => d.world
+          )
+
+          expect(placeResults).toHaveLength(1)
+          expect(placeResults[0].id).toBe(placeA.id)
+          expect(worldResults).toHaveLength(2)
+        })
+      })
+
+      describe("and the names filter is applied", () => {
+        it("should filter worlds by partial name from the provided IDs", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations?names=alpha")
+            .send([
+              placeA.id,
+              placeB.id,
+              "world-alpha.dcl.eth",
+              "world-beta.dcl.eth",
+            ])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+
+          const worldResults = response.body.data.filter(
+            (d: { world: boolean }) => d.world
+          )
+
+          expect(worldResults).toHaveLength(1)
+          expect(worldResults[0].title).toBe("World Alpha")
+        })
+      })
+
+      describe("and the creator_address filter is applied", () => {
+        it("should filter both places and worlds by creator address", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ creator_address: CREATOR_B })
+            .send([
+              placeA.id,
+              placeB.id,
+              "world-alpha.dcl.eth",
+              "world-beta.dcl.eth",
+            ])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+
+          const placeResults = response.body.data.filter(
+            (d: { world: boolean }) => !d.world
+          )
+          const worldResults = response.body.data.filter(
+            (d: { world: boolean }) => d.world
+          )
+
+          expect(placeResults).toHaveLength(1)
+          expect(placeResults[0].id).toBe(placeB.id)
+          expect(worldResults).toHaveLength(1)
+          expect(worldResults[0].title).toBe("World Beta")
+        })
+      })
+
+      describe("and the sdk filter is applied", () => {
+        it("should filter both places and worlds by SDK version", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ sdk: "6" })
+            .send([
+              placeA.id,
+              placeB.id,
+              "world-alpha.dcl.eth",
+              "world-beta.dcl.eth",
+            ])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+
+          const placeResults = response.body.data.filter(
+            (d: { world: boolean }) => !d.world
+          )
+          const worldResults = response.body.data.filter(
+            (d: { world: boolean }) => d.world
+          )
+
+          expect(placeResults).toHaveLength(1)
+          expect(placeResults[0].id).toBe(placeB.id)
+          expect(worldResults).toHaveLength(1)
+          expect(worldResults[0].title).toBe("World Beta")
+        })
+      })
+
+      describe("and order_by is like_score", () => {
+        it("should order results by like_score descending by default", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ order_by: "like_score" })
+            .send([placeA.id, placeB.id])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(2)
+          expect(response.body.data[0].id).toBe(placeA.id)
+          expect(response.body.data[1].id).toBe(placeB.id)
+        })
+
+        describe("and order is asc", () => {
+          it("should order results by like_score ascending", async () => {
+            const response = await supertest(app)
+              .post("/api/destinations")
+              .query({ order_by: "like_score", order: "asc" })
+              .send([placeA.id, placeB.id])
+              .expect(201)
+
+            expect(response.body.ok).toBe(true)
+            expect(response.body.data).toHaveLength(2)
+            expect(response.body.data[0].id).toBe(placeB.id)
+            expect(response.body.data[1].id).toBe(placeA.id)
+          })
+        })
+      })
+
       describe("and order_by is created_at", () => {
         it("should order results by created_at descending by default", async () => {
           const response = await supertest(app)
@@ -684,6 +854,73 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
             )
             expect(overlap).toHaveLength(0)
           })
+        })
+      })
+    })
+
+    describe("and the only_favorites filter is applied", () => {
+      describe("and the user has favorited a place and a world", () => {
+        beforeEach(async () => {
+          await UserFavoriteModel.create({
+            user: MOCK_USER_ADDRESS,
+            user_activity: 100,
+            entity_id: placeA.id,
+            created_at: new Date(),
+          })
+          await UserFavoriteModel.create({
+            user: MOCK_USER_ADDRESS,
+            user_activity: 100,
+            entity_id: "world-beta.dcl.eth",
+            created_at: new Date(),
+          })
+        })
+
+        it("should return only the favorited destinations from the provided IDs", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ only_favorites: "true" })
+            .send([
+              placeA.id,
+              placeB.id,
+              "world-alpha.dcl.eth",
+              "world-beta.dcl.eth",
+            ])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(2)
+
+          const ids = response.body.data.map((d: { id: string }) => d.id)
+          expect(ids).toContain(placeA.id)
+          expect(ids).toContain("world-beta.dcl.eth")
+        })
+
+        it("should mark user_favorite as true on the returned destinations", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ only_favorites: "true" })
+            .send([placeA.id, placeB.id, "world-beta.dcl.eth"])
+            .expect(201)
+
+          expect(
+            response.body.data.every(
+              (d: { user_favorite: boolean }) => d.user_favorite === true
+            )
+          ).toBe(true)
+        })
+      })
+
+      describe("and the user has no favorites", () => {
+        it("should return an empty list", async () => {
+          const response = await supertest(app)
+            .post("/api/destinations")
+            .query({ only_favorites: "true" })
+            .send([placeA.id, "world-alpha.dcl.eth"])
+            .expect(201)
+
+          expect(response.body.ok).toBe(true)
+          expect(response.body.data).toHaveLength(0)
+          expect(response.body.total).toBe(0)
         })
       })
     })
