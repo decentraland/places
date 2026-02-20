@@ -336,7 +336,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
         ${conditional(
           !!options.ids,
@@ -450,7 +452,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
     `
     const results: { total: string }[] = await this.namedQuery(
@@ -893,7 +897,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
       ORDER BY 
       ${conditional(!!options.search, SQL`rank DESC, `)}
@@ -993,7 +999,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
     `
     const results: { total: string }[] = await this.namedQuery(
@@ -1075,7 +1083,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   /**
    * Find destinations (combined places and worlds) with aggregates
    * Supports filtering by positions, world_names (exact), names (LIKE), search, categories, owner, creator_address, sdk
-   * and can filter by only_places or only_worlds
+   * and can filter by only_places or only_worlds.
+   * Note: SDK filter treats null SDK values as SDK6 (legacy scenes). Use sdk='6' to include legacy scenes.
    */
   static async findDestinationsWithAggregates(
     options: FindDestinationsWithAggregatesOptions
@@ -1203,7 +1212,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
         ${conditional(
           !!options.ids,
@@ -1308,7 +1319,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
+          SQL` AND (p.sdk = ${options.sdk} OR p.sdk LIKE ${options.sdk + ".%"}${
+            options.sdk === "6" ? SQL` OR p.sdk IS NULL` : SQL``
+          })`
         )}
         ${conditional(
           !!options.ids,
