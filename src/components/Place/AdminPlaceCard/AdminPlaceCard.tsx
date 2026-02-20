@@ -23,7 +23,8 @@ export type AdminPlaceCardProps = {
 export default React.memo(function AdminPlaceCard(props: AdminPlaceCardProps) {
   const { place, loading, onToggleHighlight } = props
   const l = useFormatMessage()
-  const highlighted = "highlighted" in place && (place as { highlighted: boolean }).highlighted
+  const highlighted =
+    "highlighted" in place && (place as { highlighted: boolean }).highlighted
 
   const href = useMemo(() => {
     if (place && !place.world) {

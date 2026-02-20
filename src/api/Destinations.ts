@@ -3,12 +3,12 @@ import Options from "decentraland-gatsby/dist/utils/api/Options"
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { DecentralandCategories } from "../entities/Category/types"
 import {
   AggregateDestinationAttributes,
   DestinationListClientOptions,
   DestinationsListOrderBy,
 } from "../entities/Destination/types"
-import { DecentralandCategories } from "../entities/Category/types"
 
 export default class Destinations extends API {
   static Url = env(`PLACES_URL`, `https://places.decentraland.org/api`)
@@ -65,9 +65,7 @@ export default class Destinations extends API {
 
     return {
       ...result,
-      data: result.data.map(
-        Destinations.parse<AggregateDestinationAttributes>
-      ),
+      data: result.data.map(Destinations.parse<AggregateDestinationAttributes>),
       total: Number(result.total),
     }
   }
@@ -101,10 +99,7 @@ export default class Destinations extends API {
     })
   }
 
-  async getDestinationsMostActive(options?: {
-    limit: number
-    offset: number
-  }) {
+  async getDestinationsMostActive(options?: { limit: number; offset: number }) {
     return this.getDestinations({
       order_by: DestinationsListOrderBy.MOST_ACTIVE,
       order: "desc",
