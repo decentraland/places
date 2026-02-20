@@ -6,6 +6,7 @@ import useAsyncTasks from "decentraland-gatsby/dist/hooks/useAsyncTasks"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import Places from "../api/Places"
+import Worlds from "../api/Worlds"
 import { isWorld } from "../entities/shared/entityTypes"
 import { AggregateBaseEntityAttributes } from "../entities/shared/types"
 import { updateEntityInList } from "../modules/arrays"
@@ -37,7 +38,7 @@ export default function useEntitiesManager<
       } else if (entity) {
         // Call the appropriate API based on entity type
         const favoritesResponse = isWorld(entity)
-          ? await Places.get().updateWorldFavorite(id, !entity.user_favorite)
+          ? await Worlds.get().updateWorldFavorite(id, !entity.user_favorite)
           : await Places.get().updateFavorite(id, !entity.user_favorite)
 
         if (favoritesResponse) {
@@ -77,7 +78,7 @@ export default function useEntitiesManager<
       // Call the appropriate API based on entity type
       const likesResponse =
         targetEntity && isWorld(targetEntity)
-          ? await Places.get().updateWorldLike(id, like)
+          ? await Worlds.get().updateWorldLike(id, like)
           : await Places.get().updateLike(id, like)
 
       if (likesResponse) {
@@ -126,7 +127,7 @@ export default function useEntitiesManager<
       // Call the appropriate API based on entity type
       const ratingResponse =
         targetEntity && isWorld(targetEntity)
-          ? await Places.get().updateWorldRating(id, { content_rating: rate })
+          ? await Worlds.get().updateWorldRating(id, { content_rating: rate })
           : await Places.get().updateRating(id, { content_rating: rate })
 
       if (ratingResponse) {

@@ -7,28 +7,31 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
 import { createWkcValidator } from "../../shared/validate"
-import PlaceModel from "../model"
-import { getPlaceParamsSchema, updateHighlightBodySchema } from "../schemas"
+import WorldModel from "../model"
 import {
-  AggregatePlaceAttributes,
-  GetPlaceParams,
-  UpdateHighlightBody,
+  updateWorldHighlightBodySchema,
+  updateWorldHighlightParamsSchema,
+} from "../schemas"
+import {
+  AggregateWorldAttributes,
+  GetWorldParams,
+  UpdateWorldHighlightBody,
 } from "../types"
 
-const validateUpdateHighlightParams = createWkcValidator<GetPlaceParams>(
-  getPlaceParamsSchema as AjvObjectSchema
+const validateParams = createWkcValidator<GetWorldParams>(
+  updateWorldHighlightParamsSchema as AjvObjectSchema
 )
 
-const validateUpdateHighlightBody = createWkcValidator<UpdateHighlightBody>(
-  updateHighlightBodySchema as AjvObjectSchema
+const validateBody = createWkcValidator<UpdateWorldHighlightBody>(
+  updateWorldHighlightBodySchema as AjvObjectSchema
 )
 
-export async function updateHighlight(
-  ctx: Context<{ place_id: string }, "request" | "body" | "params">
-): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
+export async function updateWorldHighlight(
+  ctx: Context<{ world_id: string }, "request" | "body" | "params">
+): Promise<ApiResponse<AggregateWorldAttributes, {}>> {
   const userAuth = await withAuth(ctx)
-  const params = await validateUpdateHighlightParams(ctx.params)
-  const body = await validateUpdateHighlightBody(ctx.body)
+  const params = await validateParams(ctx.params)
+  const body = await validateBody(ctx.body)
 
   if (!isAdmin(userAuth.address)) {
     throw new ErrorResponse(
@@ -37,22 +40,23 @@ export async function updateHighlight(
     )
   }
 
-  const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
+  const world = await WorldModel.findByIdWithAggregates(params.world_id, {
     user: userAuth.address,
   })
 
-  if (!place) {
+  if (!world) {
     throw new ErrorResponse(
       Response.NotFound,
-      `Not found place "${params.place_id}"`
+      `Not found world "${params.world_id}"`
     )
   }
 
-  const newPlace = {
-    ...place,
+  await WorldModel.updateHighlighted(params.world_id, body.highlighted)
+
+  const updatedWorld: AggregateWorldAttributes = {
+    ...world,
     highlighted: body.highlighted,
   }
-  await PlaceModel.updatePlace(newPlace, ["highlighted"])
 
-  return new ApiResponse(newPlace)
+  return new ApiResponse(updatedWorld)
 }

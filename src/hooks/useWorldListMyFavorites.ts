@@ -1,7 +1,7 @@
 import useAuthContext from "decentraland-gatsby/dist/context/Auth/useAuthContext"
 import useAsyncMemo from "decentraland-gatsby/dist/hooks/useAsyncMemo"
 
-import Places from "../api/Places"
+import Worlds from "../api/Worlds"
 import { AggregateWorldAttributes } from "../entities/World/types"
 
 const defaultResult = {
@@ -24,7 +24,7 @@ export function useWorldListMyFavorites(
         return defaultResult
       }
 
-      return Places.get().getWorldsMyFavorites({ ...options, search })
+      return Worlds.get().getWorldsMyFavorites({ ...options, search })
     },
     [options, account, search],
     {

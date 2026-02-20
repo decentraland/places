@@ -9,10 +9,7 @@ import TokenList from "decentraland-gatsby/dist/utils/dom/TokenList"
 import { Button } from "decentraland-ui/dist/components/Button/Button"
 import { Card } from "decentraland-ui/dist/components/Card/Card"
 
-import {
-  AggregateBaseEntityAttributes,
-  isPlace,
-} from "../../../entities/shared/entityTypes"
+import { AggregateBaseEntityAttributes } from "../../../entities/shared/entityTypes"
 import locations from "../../../modules/locations"
 
 import "./AdminPlaceCard.css"
@@ -26,7 +23,8 @@ export type AdminPlaceCardProps = {
 export default React.memo(function AdminPlaceCard(props: AdminPlaceCardProps) {
   const { place, loading, onToggleHighlight } = props
   const l = useFormatMessage()
-  const highlighted = isPlace(place) ? place.highlighted : false
+  const highlighted =
+    "highlighted" in place && (place as { highlighted: boolean }).highlighted
 
   const href = useMemo(() => {
     if (place && !place.world) {

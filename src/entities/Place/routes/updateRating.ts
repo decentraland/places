@@ -2,7 +2,6 @@ import { randomUUID } from "crypto"
 
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import { withAuth } from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
-import { createValidator } from "decentraland-gatsby/dist/entities/Route/validate"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
@@ -12,6 +11,7 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
+import { createWkcValidator } from "../../shared/validate"
 import { notifyUpgradingRating } from "../../Slack/utils"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema, updateRatingBodySchema } from "../schemas"
@@ -21,11 +21,11 @@ import {
   UpdateRatingBody,
 } from "../types"
 
-const validateUpdateRatingParams = createValidator<GetPlaceParams>(
+const validateUpdateRatingParams = createWkcValidator<GetPlaceParams>(
   getPlaceParamsSchema as AjvObjectSchema
 )
 
-const validateUpdateRatingBody = createValidator<UpdateRatingBody>(
+const validateUpdateRatingBody = createWkcValidator<UpdateRatingBody>(
   updateRatingBodySchema as AjvObjectSchema
 )
 

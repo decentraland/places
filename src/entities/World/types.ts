@@ -13,6 +13,17 @@ export type WorldAttributes = BaseEntityAttributes & {
   single_player: boolean
   skybox_time: number | null
   is_private: boolean
+  highlighted: boolean
+  highlighted_image: string | null
+  ranking: number | null
+}
+
+export type UpdateWorldHighlightBody = {
+  highlighted: boolean
+}
+
+export type UpdateWorldRankingBody = {
+  ranking: number | null
 }
 
 /**

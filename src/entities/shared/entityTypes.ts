@@ -38,7 +38,7 @@ export type AnyEntityAttributes =
 export function isWorld(
   entity: AnyEntityAttributes | AggregateBaseEntityAttributes
 ): entity is WorldAttributes | AggregateWorldAttributes {
-  return "world" in entity && entity.world === true && !("positions" in entity)
+  return "world" in entity && entity.world === true
 }
 
 /**

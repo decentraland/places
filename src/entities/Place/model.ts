@@ -24,7 +24,6 @@ import {
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
-import { FindDestinationsWithAggregatesOptions } from "../Destination/types"
 import {
   type AggregateCoordinatePlaceAttributes,
   DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
@@ -37,6 +36,8 @@ import {
   buildTextsearch,
   buildUpdateFavoritesQuery,
   buildUpdateLikesQuery,
+  buildUserInteractionColumns,
+  buildUserInteractionJoins,
 } from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
@@ -51,6 +52,183 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
   static textsearch(place: PlaceAttributes) {
     return buildTextsearch(place)
+  }
+
+  /**
+   * Build shared WHERE clause fragments for place queries.
+   * Used by findWithAggregates, countPlaces, and DestinationModel.buildPlacesSubQuery.
+   *
+   * @param alias - Table alias (e.g., "p")
+   * @param options - Filter options
+   * @param opts.worldFilter - Controls the "world is false" condition:
+   *   - "always": always include `AND world is false` (for destination queries)
+   *   - "conditional": include only when not highlighted/ids/names (for place-only queries)
+   */
+  static buildWhereConditions(
+    alias: string,
+    options: {
+      search?: string
+      positions?: string[]
+      only_highlighted?: boolean
+      owner?: string
+      operatedPositions?: string[]
+      creator_address?: string
+      sdk?: string
+      ids?: string[]
+      names?: string[]
+    },
+    opts?: { worldFilter?: "always" | "conditional" }
+  ): SQLStatement {
+    const a = SQL.raw(alias)
+    const worldFilter = opts?.worldFilter ?? "conditional"
+    return SQL`
+        ${a}."disabled" is false
+        ${conditional(worldFilter === "always", SQL`AND ${a}.world is false`)}
+        ${conditional(
+          worldFilter === "conditional" &&
+            !options.only_highlighted &&
+            !options.ids?.length &&
+            !options.names?.length,
+          SQL`AND "world" is false`
+        )}
+        ${conditional(
+          !!options.names?.length,
+          SQL`AND ${a}.world_id IN ${values(
+            (options.names || []).map((n) => n.toLowerCase())
+          )}`
+        )}
+        ${conditional(
+          options.only_highlighted ?? false,
+          SQL`AND highlighted = TRUE`
+        )}
+        ${conditional(!!options.search, SQL`AND rank > 0`)}
+        ${conditional(
+          (options.positions?.length ?? 0) > 0 && !!options.names?.length,
+          SQL`AND ${a}.positions && ${options.positions || []}::varchar[]`
+        )}
+        ${conditional(
+          (options.positions?.length ?? 0) > 0 && !options.names?.length,
+          SQL`AND ${a}.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM ${table(PlacePositionModel)}
+              WHERE position IN ${values(
+                options.positions?.length ? options.positions : [""]
+              )}
+            )`
+        )}
+        ${conditional(
+          !!options.owner,
+          SQL` AND (LOWER(${a}.owner) = ${options.owner} ${
+            options.operatedPositions?.length
+              ? SQL`OR ${a}.base_position IN (
+                  SELECT DISTINCT(base_position)
+                  FROM ${table(PlacePositionModel)}
+                  WHERE position IN ${values(options.operatedPositions)}
+                )`
+              : SQL``
+          })`
+        )}
+        ${conditional(
+          !!options.creator_address,
+          SQL` AND LOWER(${a}.creator_address) = ${options.creator_address}`
+        )}
+        ${conditional(
+          !!options.sdk,
+          SQL` AND (${a}.sdk = ${options.sdk} OR ${a}.sdk IS NULL)`
+        )}
+        ${conditional(
+          !!options.ids?.length,
+          SQL` AND ${a}.id IN ${values(options.ids || [])}`
+        )}
+    `
+  }
+
+  /**
+   * Build a places sub-query (CTE + SELECT + FROM + JOINs + rank + WHERE).
+   * Does NOT include ORDER BY/LIMIT/OFFSET -- callers append those.
+   *
+   * Used by findWithAggregates, countPlaces, and DestinationModel.
+   *
+   * @param options - Filter and search options
+   * @param opts.forCount - When true: SELECT p.id only, skip CTE/most_active/interaction columns
+   * @param opts.worldFilter - Controls the "world is false" condition in WHERE
+   * @param opts.selectColumns - Custom SELECT columns (default: p.*)
+   */
+  static buildSubQuery(
+    options: {
+      user?: string
+      only_favorites: boolean
+      search?: string
+      positions?: string[]
+      only_highlighted?: boolean
+      owner?: string
+      operatedPositions?: string[]
+      creator_address?: string
+      sdk?: string
+      ids?: string[]
+      names?: string[]
+      categories: string[]
+      order_by?: string
+      hotScenesPositions?: string[]
+    },
+    opts?: {
+      forCount?: boolean
+      worldFilter?: "always" | "conditional"
+      selectColumns?: SQLStatement
+    }
+  ): SQLStatement {
+    const forCount = opts?.forCount ?? false
+    const filterMostActivePlaces =
+      !forCount &&
+      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
+      !!options.hotScenesPositions &&
+      options.hotScenesPositions.length > 0
+
+    return SQL`
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`WITH most_active_places AS (
+              SELECT DISTINCT base_position
+              FROM "place_positions"
+              WHERE position IN ${values(options.hotScenesPositions || [])}
+            )`
+      )}
+      SELECT
+        ${conditional(!forCount, opts?.selectColumns ?? SQL`p.*`)}
+        ${conditional(forCount, SQL`p.id`)}
+        ${buildUserInteractionColumns(options.user, forCount)}
+        ${conditional(
+          !forCount && filterMostActivePlaces,
+          SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
+        )}
+        ${conditional(!forCount && !!options.search, SQL`, rank`)}
+      FROM ${table(this)} p
+      ${buildUserInteractionJoins(SQL`p.id`, options.user, {
+        onlyFavorites: options.only_favorites,
+        forCount,
+      })}
+      ${conditional(
+        !!options.categories.length,
+        SQL`INNER JOIN ${table(
+          PlaceCategories
+        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
+          options.categories
+        )}`
+      )}
+      ${conditional(
+        filterMostActivePlaces,
+        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
+      )}
+      ${conditional(
+        !!options.search,
+        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
+          options.search || ""
+        )})) as rank`
+      )}
+      WHERE ${this.buildWhereConditions("p", options, {
+        worldFilter: opts?.worldFilter ?? "conditional",
+      })}
+    `
   }
 
   static async findEnabledByPositions(
@@ -204,7 +382,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return []
     }
 
-    // The columns most_active, user_visits doesn't exists in the PlaceAttributes
     const orderBy =
       oneOf(options.order_by, [
         PlaceListOrderBy.LIKE_SCORE_BEST,
@@ -222,127 +399,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       !!options.hotScenesPositions &&
       options.hotScenesPositions.length > 0
 
+    const subQuery = this.buildSubQuery(options)
+
     const sql = SQL`
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`WITH most_active_places AS (
-              SELECT DISTINCT base_position
-              FROM "place_positions"
-              WHERE position IN ${values(options.hotScenesPositions || [])}
-            )`
-      )}
-      SELECT p.*
-      ${conditional(
-        !!options.user,
-        SQL`, uf."user" is not null as user_favorite`
-      )}
-      ${conditional(!options.user, SQL`, false as user_favorite`)}
-      ${conditional(
-        !!options.user,
-        SQL`, coalesce(ul."like",false) as "user_like"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_like"`)}
-      ${conditional(
-        !!options.user,
-        SQL`, not coalesce(ul."like",true) as "user_dislike"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_dislike"`)}
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
-      )}
-      FROM ${table(this)} p
-
-      ${conditional(
-        !!options.user && !options.only_favorites,
-        SQL`LEFT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user,
-        SQL`LEFT JOIN ${table(
-          UserLikesModel
-        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        p."disabled" is false 
-        ${conditional(
-          !options.only_highlighted && !options.ids && !options.names?.length,
-          SQL`AND "world" is false`
-        )}
-        ${conditional(
-          !!options.names?.length,
-          SQL`AND p.world_id IN ${values(
-            (options.names || []).map((n) => n.toLowerCase())
-          )}`
-        )}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
-        ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(
-          options.positions?.length > 0 && !!options.names?.length,
-          SQL`AND p.positions && ${options.positions}::varchar[]`
-        )}
-        ${conditional(
-          options.positions?.length > 0 && !options.names?.length,
-          SQL`AND p.base_position IN (
-              SELECT DISTINCT(base_position)
-              FROM ${table(PlacePositionModel)}
-              WHERE position IN ${values(options.positions)}
-            )`
-        )}
-        ${conditional(
-          !!options.owner,
-          SQL` AND (LOWER(p.owner) = ${options.owner} ${
-            options.operatedPositions?.length
-              ? SQL`OR p.base_position IN (
-                  SELECT DISTINCT(base_position)
-                  FROM ${table(PlacePositionModel)}
-                  WHERE position IN ${values(options.operatedPositions)}
-                )`
-              : SQL``
-          })`
-        )}
-        ${conditional(
-          !!options.creator_address,
-          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
-        )}
-        ${conditional(
-          !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
-        )}
-        ${conditional(
-          !!options.ids,
-          SQL` AND p.id IN ${values(options.ids || [])}`
-        )}
-      ORDER BY 
+      ${subQuery}
+      ORDER BY
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
@@ -380,78 +441,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       return 0
     }
 
+    const subQuery = this.buildSubQuery(options, { forCount: true })
+
     const query = SQL`
-      SELECT
-        count(DISTINCT p.id) as "total"
-      FROM ${table(this)} p
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        p."disabled" is false 
-        ${conditional(
-          !options.only_highlighted && !options.names?.length,
-          SQL`AND "world" is false`
-        )}
-        ${conditional(
-          !!options.names?.length,
-          SQL`AND p.world_id IN ${values(
-            (options.names || []).map((n) => n.toLowerCase())
-          )}`
-        )}
-        ${conditional(options.only_highlighted, SQL`AND highlighted = TRUE`)}
-        ${conditional(
-          options.positions?.length > 0 && !!options.names?.length,
-          SQL`AND p.positions && ${options.positions}::varchar[]`
-        )}
-        ${conditional(
-          options.positions?.length > 0 && !options.names?.length,
-          SQL`AND p.base_position IN (
-              SELECT DISTINCT(base_position)
-              FROM ${table(PlacePositionModel)}
-              WHERE position IN ${values(options.positions)}
-            )`
-        )}
-        ${conditional(!!options.search, SQL` AND rank > 0`)}
-        ${conditional(
-          !!options.owner,
-          SQL` AND (LOWER(p.owner) = ${options.owner} ${
-            options.operatedPositions?.length
-              ? SQL`OR p.base_position IN (
-                  SELECT DISTINCT(base_position)
-                  FROM ${table(PlacePositionModel)}
-                  WHERE position IN ${values(options.operatedPositions)}
-                )`
-              : SQL``
-          })`
-        )}
-        ${conditional(
-          !!options.creator_address,
-          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
-        )}
-        ${conditional(
-          !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
-        )}
+      SELECT count(DISTINCT sub.id) as "total"
+      FROM (${subQuery}) sub
     `
     const results: { total: string }[] = await this.namedQuery(
       "count_places",
@@ -1002,398 +996,5 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
 
     return Number(results[0].total)
-  }
-
-  /**
-   * Build SQL condition for filtering destinations by positions and/or world names
-   */
-  private static buildDestinationFilterCondition(options: {
-    positions: string[]
-    world_names: string[]
-    names: string[]
-    only_places: boolean
-    only_worlds: boolean
-  }): SQLStatement {
-    const hasPositions = options.positions.length > 0
-    const hasWorldNames = options.world_names.length > 0
-    const hasNames = options.names.length > 0
-
-    // Build world name conditions (exact match and/or LIKE)
-    const buildWorldConditions = (): ReturnType<typeof SQL>[] => {
-      const conditions: ReturnType<typeof SQL>[] = []
-      if (hasWorldNames) {
-        conditions.push(
-          SQL`LOWER(p.world_name) = ANY(${options.world_names.map(
-            (name: string) => name.toLowerCase()
-          )})`
-        )
-      }
-      if (hasNames) {
-        const nameLikeConditions = options.names.map(
-          (name: string) =>
-            SQL`LOWER(p.world_name) LIKE ${`%${name.toLowerCase()}%`}`
-        )
-        conditions.push(SQL`(${join(nameLikeConditions, SQL` OR `)})`)
-      }
-      return conditions
-    }
-
-    if (
-      hasPositions &&
-      (hasWorldNames || hasNames) &&
-      !options.only_places &&
-      !options.only_worlds
-    ) {
-      const worldConditions = buildWorldConditions()
-      return SQL`AND (
-        (p.world is false AND p.base_position IN (
-          SELECT DISTINCT(base_position)
-          FROM ${table(PlacePositionModel)}
-          WHERE position IN ${values(options.positions)}
-        ))
-        OR
-        (p.world is true AND (${join(worldConditions, SQL` OR `)}))
-      )`
-    }
-
-    if (hasPositions && !options.only_worlds) {
-      return SQL`AND p.base_position IN (
-        SELECT DISTINCT(base_position)
-        FROM ${table(PlacePositionModel)}
-        WHERE position IN ${values(options.positions)}
-      )`
-    }
-
-    if ((hasWorldNames || hasNames) && !options.only_places) {
-      const worldConditions = buildWorldConditions()
-      return SQL`AND (${join(worldConditions, SQL` OR `)})`
-    }
-
-    return SQL``
-  }
-
-  /**
-   * Find destinations (combined places and worlds) with aggregates
-   * Supports filtering by positions, world_names (exact), names (LIKE), search, categories, owner, creator_address, sdk
-   * and can filter by only_places or only_worlds
-   */
-  static async findDestinationsWithAggregates(
-    options: FindDestinationsWithAggregatesOptions
-  ): Promise<AggregatePlaceAttributes[]> {
-    const searchIsEmpty = options.search && options.search.length < 3
-    if (searchIsEmpty) {
-      return []
-    }
-
-    const orderBy =
-      oneOf(options.order_by, [
-        PlaceListOrderBy.LIKE_SCORE_BEST,
-        PlaceListOrderBy.UPDATED_AT,
-        PlaceListOrderBy.CREATED_AT,
-      ]) ?? PlaceListOrderBy.LIKE_SCORE_BEST
-
-    const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
-    const order = SQL.raw(
-      `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
-    )
-
-    const filterMostActivePlaces =
-      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
-      !!options.hotScenesPositions &&
-      options.hotScenesPositions.length > 0
-
-    const placesOrWorldsCondition =
-      this.buildDestinationFilterCondition(options)
-
-    const sql = SQL`
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`WITH most_active_places AS (
-              SELECT DISTINCT base_position
-              FROM "place_positions"
-              WHERE position IN ${values(options.hotScenesPositions || [])}
-            )`
-      )}
-      SELECT p.*
-      , COALESCE(w.is_private, false) as is_private
-      ${conditional(
-        !!options.user,
-        SQL`, uf."user" is not null as user_favorite`
-      )}
-      ${conditional(!options.user, SQL`, false as user_favorite`)}
-      ${conditional(
-        !!options.user,
-        SQL`, coalesce(ul."like",false) as "user_like"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_like"`)}
-      ${conditional(
-        !!options.user,
-        SQL`, not coalesce(ul."like",true) as "user_dislike"`
-      )}
-      ${conditional(!options.user, SQL`, false as "user_dislike"`)}
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`, (map.base_position IS NOT NULL)::int AS is_most_active_place`
-      )}
-      FROM ${table(this)} p
-
-      LEFT JOIN worlds w ON p.world_id = w.id
-
-      ${conditional(
-        !!options.user && !options.only_favorites,
-        SQL`LEFT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.user,
-        SQL`LEFT JOIN ${table(
-          UserLikesModel
-        )} ul on p.id = ul.entity_id AND ul."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        filterMostActivePlaces,
-        SQL`LEFT JOIN most_active_places "map" ON p.base_position = map.base_position`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        p."disabled" is false 
-        ${conditional(options.only_highlighted, SQL`AND p.highlighted = TRUE`)}
-        ${conditional(options.only_places, SQL`AND p.world is false`)}
-        ${conditional(options.only_worlds, SQL`AND p.world is true`)}
-        ${conditional(!!options.search, SQL`AND rank > 0`)}
-        ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
-        ${conditional(
-          !!options.owner,
-          SQL` AND (LOWER(p.owner) = ${options.owner} ${
-            options.operatedPositions?.length
-              ? SQL`OR p.base_position IN (
-                  SELECT DISTINCT(base_position)
-                  FROM ${table(PlacePositionModel)}
-                  WHERE position IN ${values(options.operatedPositions)}
-                )`
-              : SQL``
-          })`
-        )}
-        ${conditional(
-          !!options.creator_address,
-          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
-        )}
-        ${conditional(
-          !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
-        )}
-        ${conditional(
-          !!options.ids,
-          SQL` AND p.id IN ${values(options.ids || [])}`
-        )}
-      ORDER BY 
-      p.highlighted DESC,
-      p.ranking DESC NULLS LAST,
-      ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
-      ${conditional(!!options.search, SQL`rank DESC, `)}
-      ${order}
-      ${limit(options.limit, { max: 100 })}
-      ${offset(options.offset)}
-    `
-
-    const queryResult = await this.namedQuery<
-      AggregatePlaceAttributes & { category_id?: string }
-    >("find_destinations_with_agregates", sql)
-    return queryResult
-  }
-
-  /**
-   * Count destinations (combined places and worlds) with the given filters
-   */
-  static async countDestinations(
-    options: Pick<
-      FindDestinationsWithAggregatesOptions,
-      | "user"
-      | "only_favorites"
-      | "positions"
-      | "world_names"
-      | "names"
-      | "only_highlighted"
-      | "search"
-      | "categories"
-      | "owner"
-      | "operatedPositions"
-      | "creator_address"
-      | "only_worlds"
-      | "only_places"
-      | "sdk"
-      | "ids"
-    >
-  ) {
-    const searchIsEmpty = options.search && options.search.length < 3
-
-    if (searchIsEmpty) {
-      return 0
-    }
-
-    const placesOrWorldsCondition =
-      this.buildDestinationFilterCondition(options)
-
-    const query = SQL`
-      SELECT
-        count(DISTINCT p.id) as "total"
-      FROM ${table(this)} p
-      ${conditional(
-        !!options.user && options.only_favorites,
-        SQL`RIGHT JOIN ${table(
-          UserFavoriteModel
-        )} uf on p.id = uf.entity_id AND uf."user" = ${options.user}`
-      )}
-      ${conditional(
-        !!options.categories.length,
-        SQL`INNER JOIN ${table(
-          PlaceCategories
-        )} pc ON p.id = pc.place_id AND pc.category_id IN ${values(
-          options.categories
-        )}`
-      )}
-
-      ${conditional(
-        !!options.search,
-        SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
-        )})) as rank`
-      )}
-
-      WHERE
-        p."disabled" is false 
-        ${conditional(options.only_highlighted, SQL`AND p.highlighted = TRUE`)}
-        ${conditional(options.only_places, SQL`AND p.world is false`)}
-        ${conditional(options.only_worlds, SQL`AND p.world is true`)}
-        ${conditional(!!options.search, SQL` AND rank > 0`)}
-        ${conditional(!!placesOrWorldsCondition, placesOrWorldsCondition)}
-        ${conditional(
-          !!options.owner,
-          SQL` AND (LOWER(p.owner) = ${options.owner} ${
-            options.operatedPositions?.length
-              ? SQL`OR p.base_position IN (
-                  SELECT DISTINCT(base_position)
-                  FROM ${table(PlacePositionModel)}
-                  WHERE position IN ${values(options.operatedPositions)}
-                )`
-              : SQL``
-          })`
-        )}
-        ${conditional(
-          !!options.creator_address,
-          SQL` AND LOWER(p.creator_address) = ${options.creator_address}`
-        )}
-        ${conditional(
-          !!options.sdk,
-          SQL` AND (p.sdk = ${options.sdk} OR p.sdk IS NULL)`
-        )}
-        ${conditional(
-          !!options.ids,
-          SQL` AND p.id IN ${values(options.ids || [])}`
-        )}
-    `
-    const results: { total: string }[] = await this.namedQuery(
-      "count_destinations",
-      query
-    )
-
-    return Number(results[0].total)
-  }
-
-  /**
-   * Find destinations ordered by most active (hot scenes + world live data)
-   */
-  static async findDestinationsWithHotScenes(
-    options: FindDestinationsWithAggregatesOptions & {
-      hotScenesPositions?: string[]
-    },
-    hotScenes: HotScene[]
-  ): Promise<AggregatePlaceAttributes[]> {
-    const {
-      offset: offsetValue,
-      limit: limitValue,
-      order,
-      ...extraOptions
-    } = options
-    const destinations = await this.findDestinationsWithAggregates({
-      offset: 0,
-      limit: 100,
-      order,
-      ...extraOptions,
-    })
-
-    const hotSceneDestinations = hotScenes
-      .filter(
-        (scene) =>
-          !!destinations.find(
-            (destination) =>
-              !destination.world &&
-              destination.base_position === scene.baseCoords.join(",")
-          )
-      )
-      .map((scene) => {
-        const hotSceneDestination = destinations.find(
-          (destination) =>
-            destination.base_position === scene.baseCoords.join(",")
-        )
-        return {
-          ...hotSceneDestination!,
-          user_count: scene.usersTotalCount,
-        }
-      })
-
-    // Also include worlds (which are not in hotScenes) if not filtering only_places
-    const worldDestinations = options.only_places
-      ? []
-      : destinations.filter((d) => d.world)
-
-    // Combine hot scene places and worlds
-    const allDestinations = [...hotSceneDestinations, ...worldDestinations]
-
-    // Sort highlighted items first, then by ranking, then by activity/order
-    allDestinations.sort((a, b) => {
-      // Highlighted items come first
-      if (a.highlighted !== b.highlighted) {
-        return a.highlighted ? -1 : 1
-      }
-      // Then sort by ranking (higher ranking first, nulls last)
-      const aRanking = a.ranking ?? -Infinity
-      const bRanking = b.ranking ?? -Infinity
-      if (aRanking !== bRanking) {
-        return bRanking - aRanking
-      }
-      // Then sort by user_count (activity) if available
-      const aCount = a.user_count ?? 0
-      const bCount = b.user_count ?? 0
-      return order === "asc" ? aCount - bCount : bCount - aCount
-    })
-
-    const from = numeric(offsetValue || 0, { min: 0 }) ?? 0
-    const to = numeric(from + (limitValue || 100), { min: 0, max: 100 }) ?? 100
-
-    return allDestinations.slice(from, to)
   }
 }

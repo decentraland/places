@@ -10,9 +10,11 @@ import CommsGatekeeper from "../../../api/CommsGatekeeper"
 import DataTeam from "../../../api/DataTeam"
 import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../../Place/model"
+import WorldModel from "../../World/model"
 import * as worldUtilsModule from "../../World/utils"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
+const worldFind = jest.spyOn(WorldModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 const getWorldsLiveDataMock = jest.spyOn(worldUtilsModule, "getWorldsLiveData")
@@ -20,6 +22,7 @@ const commsGatekeeperGet = jest.spyOn(CommsGatekeeper, "get")
 
 afterEach(() => {
   find.mockReset()
+  worldFind.mockReset()
   catalystHotScenes.mockReset()
   catalystSceneStats.mockReset()
   getWorldsLiveDataMock.mockReset()

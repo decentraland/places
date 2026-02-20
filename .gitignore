@@ -75,6 +75,7 @@ tmp
 *.tmp
 node_modules
 tsconfig.tsbuildinfo
+tsconfig.test.tsbuildinfo
 static/balloon.min.css
 static/base-theme.css
 static/light-theme.css

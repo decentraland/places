@@ -13,9 +13,9 @@ import {
 import CatalystAPI from "../../../api/CatalystAPI"
 import { getHotScenes } from "../../../modules/hotScenes"
 import { getSceneStats } from "../../../modules/sceneStats"
-import PlaceModel from "../../Place/model"
 import { Permission, PlaceListOrderBy } from "../../Place/types"
 import { getWorldsLiveData } from "../../World/utils"
+import DestinationModel from "../model"
 import { getDestinationsListQuerySchema } from "../schemas"
 import {
   FindDestinationsWithAggregatesOptions,
@@ -145,8 +145,8 @@ export const getDestinationsListById = Router.memo(
     }
 
     const [data, total, sceneStats] = await Promise.all([
-      PlaceModel.findDestinationsWithAggregates(enhancedOptions),
-      PlaceModel.countDestinations(enhancedOptions),
+      DestinationModel.findWithAggregates(enhancedOptions),
+      DestinationModel.count(enhancedOptions),
       getSceneStats(),
     ])
     const worldsLiveData = getWorldsLiveData()

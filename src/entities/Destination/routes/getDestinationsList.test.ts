@@ -11,9 +11,11 @@ import DataTeam from "../../../api/DataTeam"
 import Events from "../../../api/Events"
 import * as hotScenesModule from "../../../modules/hotScenes"
 import PlaceModel from "../../Place/model"
+import WorldModel from "../../World/model"
 import * as worldUtilsModule from "../../World/utils"
 
 const find = jest.spyOn(PlaceModel, "namedQuery")
+const worldFind = jest.spyOn(WorldModel, "namedQuery")
 const catalystHotScenes = jest.spyOn(hotScenesModule, "getHotScenes")
 const catalystSceneStats = jest.spyOn(DataTeam.get(), "getSceneStats")
 const getWorldsLiveDataMock = jest.spyOn(worldUtilsModule, "getWorldsLiveData")
@@ -22,6 +24,7 @@ const eventsGet = jest.spyOn(Events, "get")
 
 afterEach(() => {
   find.mockReset()
+  worldFind.mockReset()
   catalystHotScenes.mockReset()
   catalystSceneStats.mockReset()
   getWorldsLiveDataMock.mockReset()
@@ -97,8 +100,8 @@ describe("getDestinationsList", () => {
         }
         commsGatekeeperGet.mockReturnValue(mockCommsInstance as any)
 
-        find.mockResolvedValueOnce(Promise.resolve([worldDestination]))
-        find.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
+        worldFind.mockResolvedValueOnce(Promise.resolve([worldDestination]))
+        worldFind.mockResolvedValueOnce(Promise.resolve([{ total: 1 }]))
         catalystHotScenes.mockReturnValueOnce([])
         catalystSceneStats.mockResolvedValueOnce(Promise.resolve({}))
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
