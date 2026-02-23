@@ -134,7 +134,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         )}
         ${conditional(
           !!options.sdk,
-          SQL` AND (${a}.sdk = ${options.sdk} OR ${a}.sdk IS NULL)`
+          SQL` AND (${a}.sdk = ${options.sdk} OR ${a}.sdk LIKE ${
+            options.sdk + ".%"
+          }${options.sdk === "6" ? SQL` OR ${a}.sdk IS NULL` : SQL``})`
         )}
         ${conditional(
           !!options.ids?.length,
