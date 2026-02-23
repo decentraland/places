@@ -145,7 +145,7 @@ Create a `.env.development` file in the project root with the following variable
 | `PLACES_BASE_URL`                  | Public-facing places URL                      | `https://decentraland.org/places`           | -                                            |
 | `DECENTRALAND_URL`                 | Decentraland play URL                         | -                                           | `https://play.decentraland.org`              |
 | `PROFILE_URL`                      | Content server URL for profiles               | `https://peer.decentraland.org`             | -                                            |
-| `REALM_PROVIDER_URL`               | Realm provider API for hot scenes data        | -                                           | `https://realm-provider.decentraland.org`    |
+| `REALM_PROVIDER_URL`               | Realm provider API for hot scenes data        | -                                           | `https://realm-provider-ea.decentraland.org` |
 | `DATA_TEAM_URL`                    | Data team CDN URL for stats                   | `https://cdn-data.decentraland.org/`        | -                                            |
 | `CATALYST_URL`                     | Default Catalyst API URL                      | -                                           | `https://peer.decentraland.org`              |
 | `COMMS_GATEKEEPER_URL`             | Comms Gatekeeper API for connected users      | `https://comms-gatekeeper.decentraland.org` | `https://comms-gatekeeper.decentraland.zone` |
