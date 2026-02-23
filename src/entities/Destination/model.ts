@@ -1,6 +1,5 @@
 import {
   SQL,
-  SQLStatement,
   conditional,
   limit,
   offset,
@@ -48,18 +47,8 @@ const WORLDS_DESTINATION_SELECT = SQL`
   lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
   0 as user_visits`
 
-/**
- * Returns worlds SELECT for destination queries. When includeMostActiveColumn
- * is true, appends is_most_active_place so the UNION with places (order_by=most_active)
- * has matching column count.
- */
-function getWorldsDestinationSelect(
-  includeMostActiveColumn: boolean
-): SQLStatement {
-  return includeMostActiveColumn
-    ? SQL`${WORLDS_DESTINATION_SELECT}, 0 as is_most_active_place`
-    : WORLDS_DESTINATION_SELECT
-}
+/** Cast to int so UNION type matches places (is_most_active_place is (x)::int there). */
+const WORLDS_IS_MOST_ACTIVE_PLACE = SQL`, 0::int as is_most_active_place`
 
 export default class DestinationModel {
   /**
@@ -172,7 +161,10 @@ export default class DestinationModel {
         creator_address: options.creator_address,
       },
       {
-        selectColumns: getWorldsDestinationSelect(filterMostActivePlaces),
+        selectColumns: WORLDS_DESTINATION_SELECT,
+        extraSelectAfterUserColumns: filterMostActivePlaces
+          ? WORLDS_IS_MOST_ACTIVE_PLACE
+          : undefined,
       }
     )
 
