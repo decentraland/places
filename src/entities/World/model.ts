@@ -169,6 +169,8 @@ export default class WorldModel extends Model<WorldAttributes> {
     opts?: {
       forCount?: boolean
       selectColumns?: SQLStatement
+      /** Extra SELECT column(s) appended after user interaction columns (for UNION column/order alignment with places). */
+      extraSelectAfterUserColumns?: SQLStatement
     }
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
@@ -185,6 +187,10 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${conditional(!forCount, opts?.selectColumns ?? defaultSelectColumns)}
         ${conditional(forCount, SQL`w.id`)}
         ${buildUserInteractionColumns(options.user, forCount)}
+        ${conditional(
+          !forCount && !!opts?.extraSelectAfterUserColumns,
+          opts?.extraSelectAfterUserColumns ?? SQL``
+        )}
         ${conditional(
           !forCount && !!options.search,
           SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`

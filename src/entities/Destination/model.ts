@@ -47,6 +47,9 @@ const WORLDS_DESTINATION_SELECT = SQL`
   lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
   0 as user_visits`
 
+/** Cast to int so UNION type matches places (is_most_active_place is (x)::int there). */
+const WORLDS_IS_MOST_ACTIVE_PLACE = SQL`, 0::int as is_most_active_place`
+
 export default class DestinationModel {
   /**
    * Find destinations with aggregates. Uses three strategies:
@@ -138,7 +141,7 @@ export default class DestinationModel {
       )
     }
 
-    // UNION ALL strategy
+    // UNION ALL strategy (both subqueries must have the same columns; places add is_most_active_place when order_by=most_active)
     const placesQuery = PlaceModel.buildSubQuery(options, {
       selectColumns: PLACES_DESTINATION_SELECT,
       worldFilter: "always",
@@ -157,7 +160,12 @@ export default class DestinationModel {
         sdk: options.sdk,
         creator_address: options.creator_address,
       },
-      { selectColumns: WORLDS_DESTINATION_SELECT }
+      {
+        selectColumns: WORLDS_DESTINATION_SELECT,
+        extraSelectAfterUserColumns: filterMostActivePlaces
+          ? WORLDS_IS_MOST_ACTIVE_PLACE
+          : undefined,
+      }
     )
 
     const sql = SQL`
