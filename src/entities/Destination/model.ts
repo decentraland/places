@@ -1,5 +1,6 @@
 import {
   SQL,
+  SQLStatement,
   conditional,
   limit,
   offset,
@@ -46,6 +47,19 @@ const WORLDS_DESTINATION_SELECT = SQL`
   w.highlighted_image, '{}'::varchar[] as positions,
   lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
   0 as user_visits`
+
+/**
+ * Returns worlds SELECT for destination queries. When includeMostActiveColumn
+ * is true, appends is_most_active_place so the UNION with places (order_by=most_active)
+ * has matching column count.
+ */
+function getWorldsDestinationSelect(
+  includeMostActiveColumn: boolean
+): SQLStatement {
+  return includeMostActiveColumn
+    ? SQL`${WORLDS_DESTINATION_SELECT}, 0 as is_most_active_place`
+    : WORLDS_DESTINATION_SELECT
+}
 
 export default class DestinationModel {
   /**
@@ -138,7 +152,7 @@ export default class DestinationModel {
       )
     }
 
-    // UNION ALL strategy
+    // UNION ALL strategy (both subqueries must have the same columns; places add is_most_active_place when order_by=most_active)
     const placesQuery = PlaceModel.buildSubQuery(options, {
       selectColumns: PLACES_DESTINATION_SELECT,
       worldFilter: "always",
@@ -157,7 +171,9 @@ export default class DestinationModel {
         sdk: options.sdk,
         creator_address: options.creator_address,
       },
-      { selectColumns: WORLDS_DESTINATION_SELECT }
+      {
+        selectColumns: getWorldsDestinationSelect(filterMostActivePlaces),
+      }
     )
 
     const sql = SQL`
