@@ -11,7 +11,7 @@ let memory = DEFAULT_HOST_SCENE
 export default class RealmProvider {
   static Url = env(
     "REALM_PROVIDER_URL",
-    "https://realm-provider.decentraland.org/"
+    "https://realm-provider-ea.decentraland.org/"
   )
   static Cache = new Map<string, RealmProvider>()
 
