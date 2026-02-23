@@ -1,13 +1,18 @@
 import {
   SQL,
   SQLStatement,
+  conditional,
   createSearchableMatches,
   join,
   table,
+  tsquery,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
+import { AggregateBaseEntityAttributes } from "./types"
+import PlaceModel from "../Place/model"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
+import WorldModel from "../World/model"
 
 /**
  * Minimum user activity threshold for likes to be counted in like_rate and like_score
@@ -18,6 +23,33 @@ export const MIN_USER_ACTIVITY = 100
  * Type for models that can have their interactions updated
  */
 type EntityModel = { tableName: string }
+
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+/**
+ * Determine whether an entity ID corresponds to a place (UUID) or a world (name like "name.dcl.eth").
+ */
+export function isPlaceId(entityId: string): boolean {
+  return UUID_REGEX.test(entityId)
+}
+
+/**
+ * Find an entity (place or world) by its ID along with user-specific aggregate data.
+ * Uses the entity ID format to determine which model to query:
+ * - UUIDs are looked up as places
+ * - Non-UUID strings (e.g. "name.dcl.eth") are looked up as worlds
+ */
+export async function findEntityByIdWithAggregates(
+  entityId: string,
+  options: { user: string | undefined }
+): Promise<AggregateBaseEntityAttributes | null> {
+  if (isPlaceId(entityId)) {
+    return PlaceModel.findByIdWithAggregates(entityId, options)
+  }
+
+  return WorldModel.findByIdWithAggregates(entityId, options)
+}
 
 /**
  * Common fields used for full-text search in both places and worlds
@@ -125,4 +157,85 @@ export function buildUpdateLikesQuery(
     FROM counted c
     WHERE id = ${entityId}
   `
+}
+
+/**
+ * Build SQL SELECT fragments for user interaction columns (user_favorite, user_like, user_dislike).
+ * These reference the `uf` and `ul` table aliases from the corresponding JOINs.
+ *
+ * @param user - The user address, or undefined if no user context
+ * @param forCount - When true, returns empty (count queries don't need these columns)
+ */
+export function buildUserInteractionColumns(
+  user: string | undefined,
+  forCount: boolean
+): SQLStatement {
+  if (forCount) return SQL``
+  return SQL`
+    ${conditional(!!user, SQL`, uf."user" is not null as user_favorite`)}
+    ${conditional(!user, SQL`, false as user_favorite`)}
+    ${conditional(!!user, SQL`, coalesce(ul."like",false) as "user_like"`)}
+    ${conditional(!user, SQL`, false as "user_like"`)}
+    ${conditional(
+      !!user,
+      SQL`, not coalesce(ul."like",true) as "user_dislike"`
+    )}
+    ${conditional(!user, SQL`, false as "user_dislike"`)}
+  `
+}
+
+/**
+ * Build SQL JOIN fragments for user favorites and user likes tables.
+ *
+ * @param entityIdExpr - SQL expression for the entity ID column (e.g., SQL`p.id` or SQL`w.id`)
+ * @param user - The user address, or undefined if no user context
+ * @param options.onlyFavorites - When true, uses RIGHT JOIN for favorites (filtering to favorites only)
+ * @param options.forCount - When true, only includes the favorites join (count queries skip likes)
+ */
+export function buildUserInteractionJoins(
+  entityIdExpr: SQLStatement,
+  user: string | undefined,
+  options: { onlyFavorites: boolean; forCount: boolean }
+): SQLStatement {
+  return SQL`
+    ${conditional(
+      !!user && !options.onlyFavorites && !options.forCount,
+      SQL`LEFT JOIN ${table(
+        UserFavoriteModel
+      )} uf on ${entityIdExpr} = uf.entity_id AND uf."user" = ${user}`
+    )}
+    ${conditional(
+      !!user && options.onlyFavorites,
+      SQL`RIGHT JOIN ${table(
+        UserFavoriteModel
+      )} uf on ${entityIdExpr} = uf.entity_id AND uf."user" = ${user}`
+    )}
+    ${conditional(
+      !!user && !options.forCount,
+      SQL`LEFT JOIN ${table(
+        UserLikesModel
+      )} ul on ${entityIdExpr} = ul.entity_id AND ul."user" = ${user}`
+    )}
+  `
+}
+
+/**
+ * Build the inline tsvector text search rank expression for worlds.
+ * Worlds don't have a stored `textsearch` column, so we build the tsvector inline.
+ *
+ * @param alias - Table alias for the worlds table (e.g., "w")
+ * @param search - The search string to rank against
+ */
+export function buildWorldTextSearchRank(
+  alias: string,
+  search: string
+): SQLStatement {
+  const a = SQL.raw(alias)
+  return SQL`ts_rank_cd(
+    (setweight(to_tsvector(coalesce(${a}.title, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.world_name, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.description, '')), 'B') ||
+     setweight(to_tsvector(coalesce(${a}.owner, '')), 'C')),
+    to_tsquery(${tsquery(search || "")})
+  )`
 }

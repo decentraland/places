@@ -7,7 +7,10 @@ import {
 import express from "express"
 
 import categoryRoute from "../../src/entities/Category/routes"
+import destinationRoute from "../../src/entities/Destination/routes"
 import placeRoute from "../../src/entities/Place/routes"
+import userFavoriteRoute from "../../src/entities/UserFavorite/routes"
+import userLikesRoute from "../../src/entities/UserLikes/routes"
 import worldRoute from "../../src/entities/World/routes"
 
 /**
@@ -25,6 +28,9 @@ export function createTestApp(): express.Express {
     }),
     withBody(),
     categoryRoute,
+    destinationRoute,
+    userFavoriteRoute,
+    userLikesRoute,
     placeRoute,
     worldRoute,
     handle(async () => {

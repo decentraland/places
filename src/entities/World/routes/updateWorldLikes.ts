@@ -5,6 +5,7 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
 
+import { isPlaceId } from "../../shared/entityInteractions"
 import { fetchScore } from "../../Snapshot/utils"
 import UserLikesModel from "../../UserLikes/model"
 import { UserLikeAttributes } from "../../UserLikes/types"
@@ -36,6 +37,13 @@ export async function updateWorldLikes(
   const params = await validateWorldLikeParams(ctx.params)
   const body = await validateWorldLikeBody(ctx.body)
   const userAuth = await withAuth(ctx)
+
+  if (isPlaceId(params.world_id)) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Invalid world ID "${params.world_id}". Use /places/:entity_id/likes for place entities.`
+    )
+  }
 
   const world = await WorldModel.findByIdWithAggregates(params.world_id, {
     user: userAuth.address,
@@ -78,17 +86,14 @@ export async function updateWorldLikes(
 
   await WorldModel.updateLikes(params.world_id)
 
-  const worldUpdated = await WorldModel.findByIdWithAggregates(
-    params.world_id,
-    {
-      user: userAuth.address,
-    }
-  )
+  const refreshed = await WorldModel.findByIdWithAggregates(params.world_id, {
+    user: userAuth.address,
+  })
 
   return new ApiResponse({
-    likes: worldUpdated!.likes,
-    dislikes: worldUpdated!.dislikes,
-    user_like: worldUpdated!.user_like,
-    user_dislike: worldUpdated!.user_dislike,
+    likes: refreshed!.likes,
+    dislikes: refreshed!.dislikes,
+    user_like: refreshed!.user_like,
+    user_dislike: refreshed!.user_dislike,
   })
 }

@@ -21,10 +21,10 @@ import WorldLabel from "../components/World/WorldLabel/WorldLabel"
 import { DecentralandCategories } from "../entities/Category/types"
 import { PlaceListOrderBy } from "../entities/Place/types"
 import { AggregateBaseEntityAttributes } from "../entities/shared/types"
+import { useDestinationsHighlighted } from "../hooks/useDestinationsHighlighted"
 import useEntitiesManager from "../hooks/useEntitiesManager"
 import usePlaceCategories from "../hooks/usePlaceCategories"
 import { usePlaceListFeatured } from "../hooks/usePlaceListFeatured"
-import { usePlaceListHighlighted } from "../hooks/usePlaceListHighlighted"
 import { usePlaceListHightRated } from "../hooks/usePlaceListHightRated"
 import { usePlaceListMostActive } from "../hooks/usePlaceListMostActive"
 import { usePlaceListMyFavorites } from "../hooks/usePlaceListMyFavorites"
@@ -52,8 +52,8 @@ export default function OverviewPage() {
   const search = (isSearching && params.get("search")) || ""
 
   const [account] = useAuthContext()
-  const [placeListHighlighted, placeListHighlightedState] =
-    usePlaceListHighlighted()
+  const [destinationsListHighlighted, destinationsListHighlightedState] =
+    useDestinationsHighlighted()
   const [placeListFeatured, placeListFeaturedState] = usePlaceListFeatured()
   const [placeListMostActive, placeListMostActiveState] =
     usePlaceListMostActive(overviewOptions)
@@ -81,7 +81,7 @@ export default function OverviewPage() {
 
   const placesMemo: AggregateBaseEntityAttributes[][] = useMemo(
     () => [
-      placeListHighlighted,
+      destinationsListHighlighted,
       placeListFeatured,
       placeListMostActive,
       placeListHightRated,
@@ -92,7 +92,7 @@ export default function OverviewPage() {
       worldListSearch,
     ],
     [
-      placeListHighlighted,
+      destinationsListHighlighted,
       placeListFeatured,
       placeListMostActive,
       placeListHightRated,
@@ -255,11 +255,12 @@ export default function OverviewPage() {
 
   const renderCarousel = () => (
     <>
-      {(placeListHighlightedState.loading || highlightedList.length > 0) && (
+      {(destinationsListHighlightedState.loading ||
+        highlightedList.length > 0) && (
         <>
           <Carousel2
             className="overview__carousel2"
-            loading={placeListHighlightedState.loading}
+            loading={destinationsListHighlightedState.loading}
             isFullscreen
             indicatorsType={IndicatorType.Dash}
             items={highlightedList}

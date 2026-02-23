@@ -254,6 +254,7 @@ describe(`findWithAggregates`, () => {
       `
         SELECT p.* , uf."user" is not null as user_favorite , coalesce(ul."like",false) as "user_like" ,
           not coalesce(ul."like",true) as "user_dislike"
+          , rank
         FROM "places" p
         LEFT JOIN "user_favorites" uf on p.id = uf.entity_id AND uf."user" = $1
         LEFT JOIN "user_likes" ul on p.id = ul.entity_id AND ul."user" = $2
@@ -505,15 +506,17 @@ describe(`countPlaces`, () => {
     expect(sql.values).toEqual(["0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT
-          count(DISTINCT p.id) as "total"
-        FROM "places" p
-        WHERE
-          p."disabled" is false
-          AND "world" is false
-          AND p.base_position IN (
-            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
-          )
+        SELECT count(DISTINCT sub.id) as "total"
+        FROM (
+          SELECT p.id
+          FROM "places" p
+          WHERE
+            p."disabled" is false
+            AND "world" is false
+            AND p.base_position IN (
+              SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+            )
+        ) sub
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -536,15 +539,19 @@ describe(`countPlaces`, () => {
     expect(sql.values).toEqual(["decentraland:*&atlas:*", "0,0"])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT
-          count(DISTINCT p.id) as "total"
-        FROM "places" p , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
-        WHERE
-          p."disabled" is false
-          AND "world" is false
-          AND p.base_position IN (
-            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($2)
-          ) AND rank > 0
+        SELECT count(DISTINCT sub.id) as "total"
+        FROM (
+          SELECT p.id
+          FROM "places" p
+          , ts_rank_cd(p.textsearch, to_tsquery($1)) as rank
+          WHERE
+            p."disabled" is false
+            AND "world" is false
+            AND rank > 0
+            AND p.base_position IN (
+              SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($2)
+            )
+        ) sub
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -597,16 +604,18 @@ describe(`countPlaces`, () => {
     ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT
-          count(DISTINCT p.id) as "total"
-        FROM "places" p
-        WHERE
-          p."disabled" is false
-          AND "world" is false
-          AND p.base_position IN (
-            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
-          )
-          AND (LOWER(p.owner) = $2 )
+        SELECT count(DISTINCT sub.id) as "total"
+        FROM (
+          SELECT p.id
+          FROM "places" p
+          WHERE
+            p."disabled" is false
+            AND "world" is false
+            AND p.base_position IN (
+              SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+            )
+            AND (LOWER(p.owner) = $2 )
+        ) sub
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -637,20 +646,22 @@ describe(`countPlaces`, () => {
     ])
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-        SELECT
-          count(DISTINCT p.id) as "total"
-        FROM "places" p
-        WHERE
-          p."disabled" is false
-          AND "world" is false
-          AND p.base_position IN (
-            SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
-          )
-          AND (LOWER(p.owner) = $2 OR p.base_position IN (
-            SELECT DISTINCT(base_position)
-            FROM "place_positions"
-            WHERE position IN ($3, $4)
-          ))
+        SELECT count(DISTINCT sub.id) as "total"
+        FROM (
+          SELECT p.id
+          FROM "places" p
+          WHERE
+            p."disabled" is false
+            AND "world" is false
+            AND p.base_position IN (
+              SELECT DISTINCT(base_position) FROM "place_positions" WHERE position IN ($1)
+            )
+            AND (LOWER(p.owner) = $2 OR p.base_position IN (
+              SELECT DISTINCT(base_position)
+              FROM "place_positions"
+              WHERE position IN ($3, $4)
+            ))
+        ) sub
       `
         .trim()
         .replace(/\s{2,}/gi, " ")

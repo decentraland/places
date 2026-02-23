@@ -8,7 +8,7 @@ import { HotScene } from "../entities/Place/types"
 export default class RealmProvider extends API {
   static Url = env(
     `REALM_PROVIDER_URL`,
-    "https://realm-provider.decentraland.org/"
+    "https://realm-provider-ea.decentraland.org/"
   )
 
   static Cache = new Map<string, RealmProvider>()

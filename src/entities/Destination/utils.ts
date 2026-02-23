@@ -1,7 +1,8 @@
+import { AggregateDestinationAttributes } from "./types"
 import CommsGatekeeper from "../../api/CommsGatekeeper"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import Events from "../../api/Events"
-import { AggregatePlaceAttributes, HotScene } from "../Place/types"
+import { HotScene } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
 export type ConnectedUsersMap = Map<string, string[]>
@@ -16,7 +17,7 @@ export type LiveEventsMap = Map<string, boolean>
  * @returns Promise resolving to a map of destination identifiers to wallet addresses
  */
 export async function fetchConnectedUsersForDestinations(
-  destinations: AggregatePlaceAttributes[]
+  destinations: AggregateDestinationAttributes[]
 ): Promise<ConnectedUsersMap> {
   const connectedUsersMap: ConnectedUsersMap = new Map()
   const commsGatekeeper = CommsGatekeeper.get()
@@ -78,7 +79,7 @@ export async function fetchConnectedUsersForDestinations(
  * @returns Promise resolving to a map of destination IDs to live event status
  */
 export async function fetchLiveEventsForDestinations(
-  destinations: AggregatePlaceAttributes[]
+  destinations: AggregateDestinationAttributes[]
 ): Promise<LiveEventsMap> {
   const eventsApi = Events.get()
 
@@ -89,7 +90,7 @@ export async function fetchLiveEventsForDestinations(
 }
 
 export function destinationsWithAggregates(
-  destinations: AggregatePlaceAttributes[],
+  destinations: AggregateDestinationAttributes[],
   hotScenes: HotScene[],
   placesSceneStats: SceneStatsMap,
   worldsLiveData: WorldLiveDataProps,
@@ -135,7 +136,6 @@ export function destinationsWithAggregates(
       destination.realms_detail = hotScenePlaces?.realms || []
     }
 
-    // Get connected addresses if requested
     let connected_addresses: string[] | undefined
     if (options?.withConnectedUsers && options.connectedUsersMap) {
       // Use world_name for worlds, base_position for places
@@ -159,11 +159,12 @@ export function destinationsWithAggregates(
       live = options.liveEventsMap.get(destination.id) ?? false
     }
 
-    const result: AggregatePlaceAttributes & {
+    const result: AggregateDestinationAttributes & {
       connected_addresses?: string[]
       live?: boolean
     } = {
       ...destination,
+      is_private: destination.is_private ?? false,
       user_visits: user_visits,
       user_count: finalUserCount,
     }
