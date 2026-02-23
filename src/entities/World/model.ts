@@ -189,7 +189,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${buildUserInteractionColumns(options.user, forCount)}
         ${conditional(
           !forCount && !!opts?.extraSelectAfterUserColumns,
-          opts.extraSelectAfterUserColumns
+          opts?.extraSelectAfterUserColumns ?? SQL``
         )}
         ${conditional(
           !forCount && !!options.search,
