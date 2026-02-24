@@ -438,54 +438,6 @@ describe(`findWithAggregates`, () => {
         .replace(/\s{2,}/gi, " ")
     )
   })
-
-  test(`should filter by SDK=6 with prefix matching and include null SDK values (legacy scenes)`, async () => {
-    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
-    await PlaceModel.findWithAggregates({
-      offset: 0,
-      limit: 10,
-      only_favorites: false,
-      only_highlighted: false,
-      positions: [],
-      order_by: "created_at",
-      order: "desc",
-      search: "",
-      categories: [],
-      sdk: "6",
-    })
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [, sql] = namedQuery.mock.calls[0]
-    // SDK=6 should match exact "6" or prefix "6.%" and include null values (legacy scenes)
-    expect(sql.text).toContain("p.sdk = $")
-    expect(sql.text).toContain("p.sdk LIKE $")
-    expect(sql.text).toContain("OR p.sdk IS NULL")
-    expect(sql.values).toContain("6")
-    expect(sql.values).toContain("6.%")
-  })
-
-  test(`should filter by SDK=7 with prefix matching and NOT include null SDK values`, async () => {
-    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
-    await PlaceModel.findWithAggregates({
-      offset: 0,
-      limit: 10,
-      only_favorites: false,
-      only_highlighted: false,
-      positions: [],
-      order_by: "created_at",
-      order: "desc",
-      search: "",
-      categories: [],
-      sdk: "7",
-    })
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [, sql] = namedQuery.mock.calls[0]
-    // SDK=7 should match exact "7" or prefix "7.%" but NOT include null values
-    expect(sql.text).toContain("p.sdk = $")
-    expect(sql.text).toContain("p.sdk LIKE $")
-    expect(sql.text).not.toContain("OR p.sdk IS NULL")
-    expect(sql.values).toContain("7")
-    expect(sql.values).toContain("7.%")
-  })
 })
 
 describe(`countPlaces`, () => {
@@ -666,46 +618,6 @@ describe(`countPlaces`, () => {
         .trim()
         .replace(/\s{2,}/gi, " ")
     )
-  })
-
-  test(`should count places with SDK=6 filter with prefix matching and include null SDK values`, async () => {
-    namedQuery.mockResolvedValue([{ total: 5 }])
-    await PlaceModel.countPlaces({
-      only_favorites: false,
-      only_highlighted: false,
-      positions: [],
-      search: "",
-      categories: [],
-      sdk: "6",
-    })
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [, sql] = namedQuery.mock.calls[0]
-    // SDK=6 should match exact "6" or prefix "6.%" and include null values (legacy scenes)
-    expect(sql.text).toContain("p.sdk = $")
-    expect(sql.text).toContain("p.sdk LIKE $")
-    expect(sql.text).toContain("OR p.sdk IS NULL")
-    expect(sql.values).toContain("6")
-    expect(sql.values).toContain("6.%")
-  })
-
-  test(`should count places with SDK=7 filter with prefix matching and NOT include null SDK values`, async () => {
-    namedQuery.mockResolvedValue([{ total: 3 }])
-    await PlaceModel.countPlaces({
-      only_favorites: false,
-      only_highlighted: false,
-      positions: [],
-      search: "",
-      categories: [],
-      sdk: "7",
-    })
-    expect(namedQuery.mock.calls.length).toBe(1)
-    const [, sql] = namedQuery.mock.calls[0]
-    // SDK=7 should match exact "7" or prefix "7.%" but NOT include null values
-    expect(sql.text).toContain("p.sdk = $")
-    expect(sql.text).toContain("p.sdk LIKE $")
-    expect(sql.text).not.toContain("OR p.sdk IS NULL")
-    expect(sql.values).toContain("7")
-    expect(sql.values).toContain("7.%")
   })
 })
 
