@@ -41,6 +41,7 @@ export function createWorldContentEntityScene(
     base?: string
     parcels?: string[]
     contentRating?: string
+    tags?: string[]
     optOut?: boolean
     dclName?: boolean
   } = {}
@@ -80,7 +81,7 @@ export function createWorldContentEntityScene(
         email: "",
       },
       main: "bin/game.js",
-      tags: [],
+      tags: overrides.tags ?? [],
       scene: {
         parcels,
         base,

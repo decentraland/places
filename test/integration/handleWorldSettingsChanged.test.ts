@@ -1,6 +1,7 @@
 import supertest from "supertest"
 
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
+import { DEFAULT_WORLD_IMAGE } from "../../src/entities/shared/constants"
 import {
   createWorldSettingsChangedEvent,
   createWorldSettingsDowngradeRatingEvent,
@@ -313,6 +314,77 @@ describe("handleWorldSettingsChanged integration", () => {
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.is_private).toBe(false)
+    })
+  })
+
+  describe("when settings are configured without a thumbnail image", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "noimagecfg.dcl.eth",
+        metadata: {
+          worldName: "noimagecfg.dcl.eth",
+          title: "No Image World",
+          description: "Settings without image",
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should return the default world image", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/noimagecfg.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.image).toBe(DEFAULT_WORLD_IMAGE)
+    })
+  })
+
+  describe("when settings are configured with a thumbnail image", () => {
+    let configuredImage: string
+
+    beforeEach(async () => {
+      configuredImage = "https://example.com/custom-thumb.png"
+      const event = createWorldSettingsChangedEvent({
+        key: "withimagecfg.dcl.eth",
+        metadata: {
+          worldName: "withimagecfg.dcl.eth",
+          title: "Image World",
+          thumbnailUrl: configuredImage,
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should return the configured image", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/withimagecfg.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.image).toBe(configuredImage)
+    })
+  })
+
+  describe("when searching for a world by its configured title", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "searchcfg.dcl.eth",
+        metadata: {
+          worldName: "searchcfg.dcl.eth",
+          title: "Butterfly Garden",
+          description: "A beautiful garden world",
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should find the world by the configured title", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ search: "Butterfly" })
+        .expect(200)
+
+      const worldNames = response.body.data.map((w: any) => w.world_name)
+      expect(worldNames).toContain("searchcfg.dcl.eth")
     })
   })
 })
