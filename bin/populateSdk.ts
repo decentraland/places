@@ -119,7 +119,14 @@ async function fetchWorldRuntimeVersion(
       return null
     }
 
-    const entityData = (await contentResponse.json()) as ContentEntityScene
+    const entityData = (await contentResponse.json()) as ContentEntityScene & {
+      metadata?: { runtimeVersion?: string }
+    }
+
+    // Use metadata.runtimeVersion if present to avoid fetching scene.json
+    if (entityData.metadata?.runtimeVersion) {
+      return entityData.metadata.runtimeVersion
+    }
 
     // Find scene.json in content
     const sceneJsonContent = entityData.content?.find(
