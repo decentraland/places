@@ -93,7 +93,8 @@ export const getPlaceListQuerySchema = schema({
     },
     sdk: {
       type: "string",
-      description: "Filter places by SDK version (e.g., '7' for SDK7 scenes)",
+      description:
+        "Filter places by SDK version (major version matching). Use '6' to match 6.x.x and null/legacy scenes, '7' to match 7.x.x versions.",
       nullable: true as any,
     },
     names: {
