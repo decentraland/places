@@ -529,7 +529,6 @@ export default class WorldModel extends Model<WorldAttributes> {
     const updatableFields: (keyof WorldAttributes)[] = [
       "title",
       "description",
-      "image",
       "content_rating",
       "categories",
       "owner",
@@ -542,6 +541,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     const setClauses: SQLStatement[] = [
       SQL`"settings_configured" = true`,
       SQL`"textsearch" = ${textsearch}`,
+      SQL`"image" = EXCLUDED."image"`,
       SQL`"updated_at" = EXCLUDED."updated_at"`,
     ]
 
