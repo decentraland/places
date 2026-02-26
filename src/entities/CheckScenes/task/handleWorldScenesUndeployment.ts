@@ -1,13 +1,13 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
-import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
+import WorldModel from "../../World/model"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
- * Deletes the place records corresponding to the undeployed scenes,
- * identified by world name and each scene's base parcel.
+ * Atomically deletes place records for undeployed scenes and refreshes
+ * the world's deployment-derived fields from the next-latest remaining scene.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -41,14 +41,14 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.deleteByWorldIdAndPositions(
+    await WorldModel.deleteWorldScenesAndRefresh(
       worldName,
       basePositions,
       event.timestamp
     )
 
     loggerExtended.log(
-      `Deleted place records for world: ${worldName} at positions: ${basePositions.join(
+      `Deleted place records and refreshed world: ${worldName} at positions: ${basePositions.join(
         ", "
       )}`
     )

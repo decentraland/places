@@ -3,6 +3,7 @@ import supertest from "supertest"
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
+import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import {
@@ -10,6 +11,7 @@ import {
   createWorldDeploymentMessage,
 } from "../fixtures/deploymentEvent"
 import { createWorldScenesUndeploymentEvent } from "../fixtures/undeploymentEvent"
+import { createWorldSettingsChangedEvent } from "../fixtures/worldSettingsEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -305,9 +307,112 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
   describe("and the WorldScenesUndeploymentEvent has an empty scenes array", () => {
     it("should return early without errors", async () => {
       const event = createWorldScenesUndeploymentEvent("anyworld.dcl.eth", [])
-      // The handler checks for empty scenes and returns early
 
       await expect(handleWorldScenesUndeployment(event)).resolves.not.toThrow()
+    })
+  })
+
+  describe("and a scene is undeployed from a multi-scene world with settings_configured = false", () => {
+    const worldName = "atomicrefresh.dcl.eth"
+
+    beforeEach(async () => {
+      await deployWorldScene({
+        worldName,
+        title: "Older Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await deployWorldScene({
+        worldName,
+        title: "Latest Scene",
+        base: "5,5",
+        parcels: ["5,5"],
+      })
+    })
+
+    describe("and the latest scene is removed", () => {
+      beforeEach(async () => {
+        const event = createWorldScenesUndeploymentEvent(worldName, [
+          { entityId: "entity-latest", baseParcel: "5,5" },
+        ])
+        await handleWorldScenesUndeployment(event)
+      })
+
+      it("should update the world title to the remaining scene", async () => {
+        const response = await supertest(app)
+          .get(`/api/worlds/${worldName}`)
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Older Scene")
+      })
+    })
+  })
+
+  describe("and the only scene is undeployed from a world", () => {
+    const worldName = "singleundeploy.dcl.eth"
+
+    beforeEach(async () => {
+      await deployWorldScene({
+        worldName,
+        title: "Only Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      const event = createWorldScenesUndeploymentEvent(worldName, [
+        { entityId: "entity-only", baseParcel: "0,0" },
+      ])
+      await handleWorldScenesUndeployment(event)
+    })
+
+    it("should not return the world in the worlds list", async () => {
+      const response = await supertest(app).get("/api/worlds").expect(200)
+
+      const worldNames = response.body.data.map((w: any) => w.world_name)
+      expect(worldNames).not.toContain(worldName)
+    })
+  })
+
+  describe("and a scene is undeployed from a world with settings_configured = true", () => {
+    const worldName = "configuredundeploy.dcl.eth"
+
+    beforeEach(async () => {
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "5,5",
+        parcels: ["5,5"],
+      })
+
+      const settingsEvent = createWorldSettingsChangedEvent({
+        key: worldName,
+        metadata: {
+          worldName,
+          title: "User Configured Title",
+          description: "User configured description",
+        },
+      })
+      await handleWorldSettingsChanged(settingsEvent)
+
+      const event = createWorldScenesUndeploymentEvent(worldName, [
+        { entityId: "entity-b", baseParcel: "5,5" },
+      ])
+      await handleWorldScenesUndeployment(event)
+    })
+
+    it("should preserve the user-configured title and description", async () => {
+      const response = await supertest(app)
+        .get(`/api/worlds/${worldName}`)
+        .expect(200)
+
+      expect(response.body.data.title).toBe("User Configured Title")
+      expect(response.body.data.description).toBe("User configured description")
     })
   })
 })
