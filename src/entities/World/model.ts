@@ -524,7 +524,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       ...world,
       settings_configured: true,
     })
-    worldData.textsearch = this.textsearch(worldData)
+    const textsearch = this.textsearch(worldData)
 
     const updatableFields: (keyof WorldAttributes)[] = [
       "title",
@@ -537,25 +537,65 @@ export default class WorldModel extends Model<WorldAttributes> {
       "single_player",
       "skybox_time",
       "is_private",
-      "settings_configured",
-      "textsearch",
     ]
 
-    const changes: Partial<WorldAttributes> = {
-      updated_at: worldData.updated_at,
-      settings_configured: true,
-      textsearch: worldData.textsearch,
-    }
+    const setClauses: SQLStatement[] = [
+      SQL`"settings_configured" = true`,
+      SQL`"textsearch" = ${textsearch}`,
+      SQL`"updated_at" = EXCLUDED."updated_at"`,
+    ]
+
     for (const field of updatableFields) {
       if (world[field] !== undefined) {
-        ;(changes as Record<string, unknown>)[field] = world[field]
+        setClauses.push(SQL`"${SQL.raw(field)}" = EXCLUDED."${SQL.raw(field)}"`)
       }
     }
 
-    return this.upsert(worldData, {
-      target: ["id"],
-      changes,
-    })
+    const sql = SQL`
+      INSERT INTO ${table(this)} (
+        "id", "world_name", "title", "description", "image",
+        "content_rating", "categories", "owner", "show_in_places",
+        "single_player", "skybox_time", "is_private",
+        "highlighted", "highlighted_image", "ranking",
+        "settings_configured", "textsearch",
+        "likes", "dislikes", "favorites",
+        "like_rate", "like_score", "disabled", "disabled_at",
+        "created_at", "updated_at"
+      ) VALUES (
+        ${worldData.id},
+        ${worldData.world_name},
+        ${worldData.title},
+        ${worldData.description},
+        ${worldData.image},
+        ${worldData.content_rating},
+        ${worldData.categories},
+        ${worldData.owner},
+        ${worldData.show_in_places},
+        ${worldData.single_player},
+        ${worldData.skybox_time},
+        ${worldData.is_private},
+        ${worldData.highlighted},
+        ${worldData.highlighted_image},
+        ${worldData.ranking},
+        ${worldData.settings_configured},
+        ${textsearch},
+        ${worldData.likes},
+        ${worldData.dislikes},
+        ${worldData.favorites},
+        ${worldData.like_rate},
+        ${worldData.like_score},
+        ${worldData.disabled},
+        ${worldData.disabled_at},
+        ${worldData.created_at},
+        ${worldData.updated_at}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        ${join(setClauses, SQL`, `)}
+      RETURNING *
+    `
+
+    const results = await this.namedQuery<WorldAttributes>("upsert_world", sql)
+    return results[0]
   }
 
   /**

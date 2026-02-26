@@ -68,7 +68,7 @@ describe("taskRunnerSqs integration", () => {
 
   afterEach(async () => {
     await cleanTables()
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   describe("when a world scene deployment is received for a new world", () => {
