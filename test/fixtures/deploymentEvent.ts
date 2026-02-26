@@ -66,7 +66,7 @@ export function createWorldContentEntityScene(
       },
       {
         file: "scene-thumbnail.png",
-        hash: "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
+        hash: "bafkreig3zy6m5e2jzlanfpzpbpqcje5xv4iz3o7v3ghpuqxlgjmoeyylm",
       },
     ],
     metadata: {

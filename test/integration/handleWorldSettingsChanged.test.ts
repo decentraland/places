@@ -1,6 +1,10 @@
+import { randomUUID } from "crypto"
+
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import supertest from "supertest"
 
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
+import PlaceModel from "../../src/entities/Place/model"
 import { DEFAULT_WORLD_IMAGE } from "../../src/entities/shared/constants"
 import {
   createWorldSettingsChangedEvent,
@@ -375,6 +379,39 @@ describe("handleWorldSettingsChanged integration", () => {
         },
       })
       await handleWorldSettingsChanged(event)
+
+      await PlaceModel.create({
+        id: randomUUID(),
+        title: "Butterfly Scene",
+        description: null,
+        image: null,
+        owner: null,
+        positions: [],
+        base_position: "0,0",
+        contact_name: null,
+        contact_email: null,
+        content_rating: SceneContentRating.RATING_PENDING,
+        categories: [],
+        likes: 0,
+        dislikes: 0,
+        favorites: 0,
+        like_rate: null,
+        like_score: null,
+        disabled: false,
+        disabled_at: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+        highlighted: false,
+        highlighted_image: null,
+        world: true,
+        world_name: "searchcfg.dcl.eth",
+        world_id: "searchcfg.dcl.eth",
+        deployed_at: new Date(),
+        textsearch: null,
+        creator_address: null,
+        sdk: null,
+        ranking: 0,
+      })
     })
 
     it("should find the world by the configured title", async () => {
