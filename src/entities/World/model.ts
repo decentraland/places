@@ -7,6 +7,7 @@ import {
   limit,
   offset,
   table,
+  tsquery,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
 import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
@@ -19,13 +20,13 @@ import {
   WorldAttributes,
   WorldListOrderBy,
 } from "./types"
+import { DEFAULT_WORLD_IMAGE } from "../shared/constants"
 import {
   buildTextsearch,
   buildUpdateFavoritesQuery,
   buildUpdateLikesQuery,
   buildUserInteractionColumns,
   buildUserInteractionJoins,
-  buildWorldTextSearchRank,
 } from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
@@ -46,7 +47,7 @@ export default class WorldModel extends Model<WorldAttributes> {
   static buildLatestPlaceLateralJoin(worldAlias: string): SQLStatement {
     const a = SQL.raw(worldAlias)
     return SQL`LEFT JOIN LATERAL (
-        SELECT p.image, p.contact_name, p.contact_email,
+        SELECT p.contact_name, p.contact_email,
                p.creator_address, p.sdk, p.deployed_at
         FROM places p
         WHERE p.world_id = ${a}.id AND p.disabled IS FALSE
@@ -97,7 +98,9 @@ export default class WorldModel extends Model<WorldAttributes> {
         )}
         ${conditional(
           !!options.search,
-          SQL`AND ${buildWorldTextSearchRank(alias, options.search || "")} > 0`
+          SQL`AND ${a}.textsearch @@ to_tsquery(${tsquery(
+            options.search || ""
+          )})`
         )}
         ${conditional(
           (options.world_names?.length ?? 0) > 0,
@@ -175,7 +178,7 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
     const defaultSelectColumns = SQL`w.*
-      , COALESCE(w.image, lp.image) as image
+      , COALESCE(w.image, ${DEFAULT_WORLD_IMAGE}) as image
       , lp.contact_name
       , '0,0' as base_position
       , true as world
@@ -193,7 +196,9 @@ export default class WorldModel extends Model<WorldAttributes> {
         )}
         ${conditional(
           !forCount && !!options.search,
-          SQL`, ${buildWorldTextSearchRank("w", options.search || "")} as rank`
+          SQL`, ts_rank_cd(w.textsearch, to_tsquery(${tsquery(
+            options.search || ""
+          )})) as rank`
         )}
       FROM ${table(this)} w
       ${this.buildLatestPlaceLateralJoin("w")}
@@ -252,7 +257,7 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): Promise<AggregateWorldAttributes | null> {
     const sql = SQL`
       SELECT w.*
-      , COALESCE(w.image, lp.image) as image
+      , COALESCE(w.image, ${DEFAULT_WORLD_IMAGE}) as image
       , lp.contact_name
       , '0,0' as base_position
       ${conditional(
@@ -274,13 +279,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       , 0 as user_visits
       , lp.deployed_at
       FROM ${table(this)} w
-      LEFT JOIN LATERAL (
-        SELECT p.image, p.contact_name, p.deployed_at
-        FROM places p
-        WHERE p.world_id = w.id AND p.disabled IS FALSE
-        ORDER BY p.deployed_at DESC
-        LIMIT 1
-      ) lp ON true
+      ${this.buildLatestPlaceLateralJoin("w")}
       ${conditional(
         !!options.user,
         SQL`LEFT JOIN ${table(
@@ -439,6 +438,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       highlighted: world.highlighted ?? false,
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
+      settings_configured: world.settings_configured ?? false,
+      textsearch: undefined,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -452,15 +453,16 @@ export default class WorldModel extends Model<WorldAttributes> {
   }
 
   /**
-   * Insert a world only if it doesn't already exist.
-   * Uses INSERT ... ON CONFLICT (id) DO NOTHING for atomicity.
-   * Returns the world ID (lowercased world_name) regardless of whether
-   * the insert was performed.
+   * Insert a world or update its deployment-derived fields if settings haven't been
+   * explicitly configured. Uses INSERT ... ON CONFLICT (id) DO UPDATE ... WHERE
+   * settings_configured = false so that user-configured worlds are never overwritten
+   * by deployments.
    */
   static async insertWorldIfNotExists(
     world: Partial<WorldAttributes> & { world_name: string }
   ): Promise<string> {
     const worldData = this.buildWorldData(world)
+    const textsearch = this.textsearch(worldData)
 
     const sql = SQL`
       INSERT INTO ${table(this)} (
@@ -468,6 +470,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         "content_rating", "categories", "owner", "show_in_places",
         "single_player", "skybox_time", "is_private",
         "highlighted", "highlighted_image", "ranking",
+        "settings_configured", "textsearch",
         "likes", "dislikes", "favorites",
         "like_rate", "like_score", "disabled", "disabled_at",
         "created_at", "updated_at"
@@ -487,6 +490,8 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.highlighted},
         ${worldData.highlighted_image},
         ${worldData.ranking},
+        ${worldData.settings_configured},
+        ${textsearch},
         ${worldData.likes},
         ${worldData.dislikes},
         ${worldData.favorites},
@@ -497,7 +502,15 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.created_at},
         ${worldData.updated_at}
       )
-      ON CONFLICT (id) DO NOTHING
+      ON CONFLICT (id) DO UPDATE SET
+        title = EXCLUDED.title,
+        description = EXCLUDED.description,
+        image = EXCLUDED.image,
+        content_rating = EXCLUDED.content_rating,
+        categories = EXCLUDED.categories,
+        textsearch = EXCLUDED.textsearch,
+        updated_at = EXCLUDED.updated_at
+      WHERE worlds.settings_configured = false
     `
 
     await this.namedQuery("insert_world_if_not_exists", sql)
@@ -507,13 +520,15 @@ export default class WorldModel extends Model<WorldAttributes> {
   static async upsertWorld(
     world: Partial<WorldAttributes> & { world_name: string }
   ): Promise<WorldAttributes> {
-    const worldData = this.buildWorldData(world)
+    const worldData = this.buildWorldData({
+      ...world,
+      settings_configured: true,
+    })
+    const textsearch = this.textsearch(worldData)
 
-    // Fields that can be updated on conflict (excludes id, world_name, likes, etc.)
     const updatableFields: (keyof WorldAttributes)[] = [
       "title",
       "description",
-      "image",
       "content_rating",
       "categories",
       "owner",
@@ -523,22 +538,120 @@ export default class WorldModel extends Model<WorldAttributes> {
       "is_private",
     ]
 
-    // Build changes object with only explicitly provided fields
-    // This ensures we don't overwrite existing values with defaults on conflict
-    const changes: Partial<WorldAttributes> = {
-      updated_at: worldData.updated_at,
-    }
+    const setClauses: SQLStatement[] = [
+      SQL`"settings_configured" = true`,
+      SQL`"textsearch" = ${textsearch}`,
+      SQL`"image" = EXCLUDED."image"`,
+      SQL`"updated_at" = EXCLUDED."updated_at"`,
+    ]
+
     for (const field of updatableFields) {
       if (world[field] !== undefined) {
-        ;(changes as Record<string, unknown>)[field] = world[field]
+        setClauses.push(SQL`"${SQL.raw(field)}" = EXCLUDED."${SQL.raw(field)}"`)
       }
     }
 
-    // Upsert on id (lowercased world_name) as the conflict target
-    return this.upsert(worldData, {
-      target: ["id"],
-      changes,
-    })
+    const sql = SQL`
+      INSERT INTO ${table(this)} (
+        "id", "world_name", "title", "description", "image",
+        "content_rating", "categories", "owner", "show_in_places",
+        "single_player", "skybox_time", "is_private",
+        "highlighted", "highlighted_image", "ranking",
+        "settings_configured", "textsearch",
+        "likes", "dislikes", "favorites",
+        "like_rate", "like_score", "disabled", "disabled_at",
+        "created_at", "updated_at"
+      ) VALUES (
+        ${worldData.id},
+        ${worldData.world_name},
+        ${worldData.title},
+        ${worldData.description},
+        ${worldData.image},
+        ${worldData.content_rating},
+        ${worldData.categories},
+        ${worldData.owner},
+        ${worldData.show_in_places},
+        ${worldData.single_player},
+        ${worldData.skybox_time},
+        ${worldData.is_private},
+        ${worldData.highlighted},
+        ${worldData.highlighted_image},
+        ${worldData.ranking},
+        ${worldData.settings_configured},
+        ${textsearch},
+        ${worldData.likes},
+        ${worldData.dislikes},
+        ${worldData.favorites},
+        ${worldData.like_rate},
+        ${worldData.like_score},
+        ${worldData.disabled},
+        ${worldData.disabled_at},
+        ${worldData.created_at},
+        ${worldData.updated_at}
+      )
+      ON CONFLICT (id) DO UPDATE SET
+        ${join(setClauses, SQL`, `)}
+      RETURNING *
+    `
+
+    const results = await this.namedQuery<WorldAttributes>("upsert_world", sql)
+    return results[0]
+  }
+
+  /**
+   * Atomically delete place records for undeployed scenes and refresh the world's
+   * deployment-derived fields from the next-latest remaining scene. All operations
+   * happen in a single SQL statement (CTE-based) to prevent inconsistent state.
+   *
+   * If settings_configured = true, the world update is skipped (user settings preserved).
+   * If no remaining places exist, the UPDATE produces no rows (world stays as-is but
+   * won't appear in queries since they check EXISTS(places)).
+   */
+  static async deleteWorldScenesAndRefresh(
+    worldId: string,
+    basePositions: string[],
+    eventTimestamp: number
+  ): Promise<void> {
+    const normalizedWorldId = worldId.toLowerCase()
+    const eventDate = new Date(eventTimestamp)
+
+    const sql = SQL`
+      WITH deleted AS (
+        DELETE FROM places
+        WHERE world_id = ${normalizedWorldId}
+          AND base_position = ANY(${basePositions})
+          AND deployed_at < ${eventDate}
+        RETURNING world_id
+      ),
+      latest_remaining AS (
+        SELECT p.title, p.description, p.image, p.content_rating, p.categories
+        FROM places p
+        WHERE p.world_id = ${normalizedWorldId}
+          AND p.disabled IS FALSE
+          AND p.base_position != ALL(${basePositions})
+        ORDER BY p.deployed_at DESC
+        LIMIT 1
+      )
+      UPDATE worlds SET
+        title = lr.title,
+        description = lr.description,
+        image = lr.image,
+        content_rating = COALESCE(lr.content_rating, worlds.content_rating),
+        categories = COALESCE(lr.categories, worlds.categories),
+        textsearch = (
+          setweight(to_tsvector(coalesce(lr.title, '')), 'A') ||
+          setweight(to_tsvector(coalesce(worlds.world_name, '')), 'A') ||
+          setweight(to_tsvector(coalesce(lr.description, '')), 'B') ||
+          setweight(to_tsvector(coalesce(worlds.owner, '')), 'C')
+        ),
+        updated_at = now()
+      FROM latest_remaining lr
+      WHERE worlds.id = ${normalizedWorldId}
+        AND worlds.settings_configured = false
+        AND EXISTS (SELECT 1 FROM deleted)
+    `
+
+    await this.namedQuery("delete_world_scenes_and_refresh", sql)
   }
 
   static async disableWorld(worldName: string): Promise<void> {

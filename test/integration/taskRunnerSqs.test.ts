@@ -2,12 +2,15 @@ import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
+import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import { DEFAULT_WORLD_IMAGE } from "../../src/entities/shared/constants"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
 } from "../fixtures/deploymentEvent"
+import { createWorldSettingsChangedEvent } from "../fixtures/worldSettingsEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -65,7 +68,7 @@ describe("taskRunnerSqs integration", () => {
 
   afterEach(async () => {
     await cleanTables()
-    jest.resetAllMocks()
+    jest.clearAllMocks()
   })
 
   describe("when a world scene deployment is received for a new world", () => {
@@ -365,6 +368,212 @@ describe("taskRunnerSqs integration", () => {
 
       expect(response.body.data).toHaveLength(1)
       expect(response.body.data[0].content_rating).toBe("A")
+    })
+  })
+
+  describe("when a second deployment updates a world with settings_configured = false", () => {
+    let job: DeploymentToSqs
+
+    beforeEach(async () => {
+      job = createWorldDeploymentMessage()
+
+      const initialScene = createWorldContentEntityScene({
+        worldName: "updateworld.dcl.eth",
+        title: "Initial Title",
+        description: "Initial description",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(initialScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+
+      const updatedScene = createWorldContentEntityScene({
+        worldName: "updateworld.dcl.eth",
+        title: "Latest Title",
+        description: "Latest description",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(updatedScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    it("should update the world title, description, and image to the latest deployment", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/updateworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.title).toBe("Latest Title")
+      expect(response.body.data.description).toBe("Latest description")
+      expect(response.body.data.image).toBeTruthy()
+      expect(response.body.data.image).not.toBe(DEFAULT_WORLD_IMAGE)
+    })
+  })
+
+  describe("when a deployment occurs after settings have been configured", () => {
+    let job: DeploymentToSqs
+
+    beforeEach(async () => {
+      job = createWorldDeploymentMessage()
+
+      const initialScene = createWorldContentEntityScene({
+        worldName: "configured.dcl.eth",
+        title: "Deployment Title",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(initialScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+
+      const settingsEvent = createWorldSettingsChangedEvent({
+        key: "configured.dcl.eth",
+        metadata: {
+          worldName: "configured.dcl.eth",
+          title: "Configured Title",
+          description: "Configured description",
+        },
+      })
+      await handleWorldSettingsChanged(settingsEvent)
+
+      const newScene = createWorldContentEntityScene({
+        worldName: "configured.dcl.eth",
+        title: "New Deployment Title",
+        description: "New deployment desc",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(newScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    it("should preserve user-configured settings and use the default image", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/configured.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.title).toBe("Configured Title")
+      expect(response.body.data.description).toBe("Configured description")
+      expect(response.body.data.image).toBe(DEFAULT_WORLD_IMAGE)
+    })
+  })
+
+  describe("when searching for a world by the latest scene title", () => {
+    let job: DeploymentToSqs
+
+    beforeEach(async () => {
+      job = createWorldDeploymentMessage()
+
+      const initialScene = createWorldContentEntityScene({
+        worldName: "searchworld.dcl.eth",
+        title: "Dinosaur Museum",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(initialScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+
+      const updatedScene = createWorldContentEntityScene({
+        worldName: "searchworld.dcl.eth",
+        title: "Spaceship Hangar",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(updatedScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    it("should find the world by the updated title", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ search: "Spaceship" })
+        .expect(200)
+
+      const worldNames = response.body.data.map((w: any) => w.world_name)
+      expect(worldNames).toContain("searchworld.dcl.eth")
+    })
+
+    it("should not find the world by the old title", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ search: "Dinosaur" })
+        .expect(200)
+
+      const worldNames = response.body.data.map((w: any) => w.world_name)
+      expect(worldNames).not.toContain("searchworld.dcl.eth")
+    })
+  })
+
+  describe("when a second deployment updates content_rating and categories", () => {
+    let job: DeploymentToSqs
+
+    beforeEach(async () => {
+      job = createWorldDeploymentMessage()
+
+      const initialScene = createWorldContentEntityScene({
+        worldName: "ratingworld.dcl.eth",
+        title: "Rating World",
+        contentRating: "T",
+        tags: ["art"],
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(initialScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+
+      const updatedScene = createWorldContentEntityScene({
+        worldName: "ratingworld.dcl.eth",
+        title: "Rating World v2",
+        contentRating: "A",
+        tags: ["game", "music"],
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(updatedScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    it("should reflect the latest content_rating and categories on the world", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/ratingworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.content_rating).toBe("A")
+      expect(response.body.data.categories).toEqual(
+        expect.arrayContaining(["game", "music"])
+      )
+      expect(response.body.data.categories).toHaveLength(2)
     })
   })
 })
