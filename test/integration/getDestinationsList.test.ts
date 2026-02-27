@@ -6,7 +6,6 @@ import supertest from "supertest"
 
 import PlaceModel from "../../src/entities/Place/model"
 import { PlaceAttributes } from "../../src/entities/Place/types"
-import { DEFAULT_WORLD_IMAGE } from "../../src/entities/shared/constants"
 import UserFavoriteModel from "../../src/entities/UserFavorite/model"
 import WorldModel from "../../src/entities/World/model"
 import * as hotScenesModule from "../../src/modules/hotScenes"
@@ -587,19 +586,6 @@ describe("when fetching destinations via GET /destinations", () => {
           response.body.data.every((d: { world: boolean }) => d.world === true)
         ).toBe(true)
         expect(response.body.total).toBe(3)
-      })
-
-      it("should return DEFAULT_WORLD_IMAGE for worlds without a configured image", async () => {
-        const response = await supertest(app)
-          .get("/api/destinations")
-          .query({ only_worlds: "true" })
-          .expect(200)
-
-        const world = response.body.data.find(
-          (d: { world_name: string }) => d.world_name === "regular.dcl.eth"
-        )
-        expect(world).toBeDefined()
-        expect(world.image).toBe(DEFAULT_WORLD_IMAGE)
       })
 
       describe("and order_by is created_at", () => {

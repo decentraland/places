@@ -12,7 +12,6 @@ import {
 } from "./types"
 import PlaceModel from "../Place/model"
 import { HotScene, PlaceListOrderBy } from "../Place/types"
-import { DEFAULT_WORLD_IMAGE } from "../shared/constants"
 import WorldModel from "../World/model"
 
 /**
@@ -37,7 +36,7 @@ const PLACES_DESTINATION_SELECT = SQL`
  * using the lateral join (lp) for place-derived fields.
  */
 const WORLDS_DESTINATION_SELECT = SQL`
-  w.id, w.title, w.description, COALESCE(w.image, ${DEFAULT_WORLD_IMAGE}) as image,
+  w.id, w.title, w.description, COALESCE(w.image, lp.image) as image,
   w.owner, w.world_name,
   w.content_rating, w.categories, w.likes, w.dislikes, w.favorites,
   w.like_rate, w.like_score, w.disabled, w.disabled_at,
