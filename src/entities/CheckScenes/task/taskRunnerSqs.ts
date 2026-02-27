@@ -6,7 +6,6 @@ import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
-import { getThumbnailFromContentDeployment } from "../../Place/utils"
 import PlaceCategories from "../../PlaceCategories/model"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
@@ -84,17 +83,15 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const isOptOut =
       !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    const worldImage = getThumbnailFromContentDeployment(contentEntityScene, {
-      url: job.contentServerUrls![0],
-    })
-
+    // Insert the world only if it doesn't already exist.
+    // If it already exists (configured via settings or a previous deployment),
+    // its data is left untouched.
     const worldId = await WorldModel.insertWorldIfNotExists({
       world_name: worldName,
       title:
         contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
       description:
         contentEntityScene?.metadata?.display?.description || undefined,
-      image: worldImage,
       content_rating:
         (contentEntityScene?.metadata?.policy
           ?.contentRating as SceneContentRating) || undefined,

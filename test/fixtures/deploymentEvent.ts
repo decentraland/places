@@ -41,7 +41,6 @@ export function createWorldContentEntityScene(
     base?: string
     parcels?: string[]
     contentRating?: string
-    tags?: string[]
     optOut?: boolean
     dclName?: boolean
   } = {}
@@ -66,13 +65,12 @@ export function createWorldContentEntityScene(
       },
       {
         file: "scene-thumbnail.png",
-        hash: "bafkreig3zy6m5e2jzlanfpzpbpqcje5xv4iz3o7v3ghpuqxlgjmoeyylm",
+        hash: "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku",
       },
     ],
     metadata: {
       display: {
         title: overrides.title ?? "Test World Scene",
-        description: overrides.description,
         favicon: "favicon_asset",
         navmapThumbnail: "scene-thumbnail.png",
       },
@@ -82,7 +80,7 @@ export function createWorldContentEntityScene(
         email: "",
       },
       main: "bin/game.js",
-      tags: overrides.tags ?? [],
+      tags: [],
       scene: {
         parcels,
         base,
