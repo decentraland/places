@@ -19,6 +19,10 @@ import { SegmentPlace } from "../../../modules/segment"
 import { placeClientOptions } from "../../../modules/utils"
 import { getImageUrl } from "../../../utils/image"
 import UserCount from "../../Label/UserCount/UserCount"
+import {
+  MobileDownloadModal,
+  useIsMobileDevice,
+} from "../../MobileDownloadModal/MobileDownloadModal"
 
 import "./PlaceFeatured.css"
 
@@ -31,6 +35,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   const { item, loading } = props
 
   const l = useFormatMessage()
+  const isMobileDevice = useIsMobileDevice()
 
   const placeDetailUrl = useMemo(() => {
     if (item.world) return locations.world(item.world_name!)
@@ -112,14 +117,21 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
           </Button>
         </Hero.Actions>
       </Hero>
-      <DownloadModal
-        open={showModal}
-        title={l("components.modal.download.title")}
-        description={l("components.modal.download.description")}
-        buttonLabel={l("components.modal.download.button_label")}
-        onClose={() => setShowModal(false)}
-        onDownloadClick={handleModalClick}
-      />
+      {isMobileDevice ? (
+        <MobileDownloadModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+        />
+      ) : (
+        <DownloadModal
+          open={showModal}
+          title={l("components.modal.download.title")}
+          description={l("components.modal.download.description")}
+          buttonLabel={l("components.modal.download.button_label")}
+          onClose={() => setShowModal(false)}
+          onDownloadClick={handleModalClick}
+        />
+      )}
     </div>
   )
 })
