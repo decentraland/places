@@ -176,6 +176,8 @@ app.use("/places", [
         "https://verify.walletconnect.com",
         "https://js.sentry-cdn.com",
         "https://browser.sentry-cdn.com",
+        "https://t.contentsquare.net",
+        "https://*.contentsquare.net",
       ].join(" "),
       connectSrc: [
         "https:",
