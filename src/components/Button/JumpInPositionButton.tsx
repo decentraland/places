@@ -23,7 +23,7 @@ export default React.memo(function JumpInPositionButton({
   )
 
   return (
-    <MobileJumpInWrapper>
+    <MobileJumpInWrapper desktopAppOptions={desktopAppOptions}>
       <JumpIn
         variant="button"
         loading={loading}
