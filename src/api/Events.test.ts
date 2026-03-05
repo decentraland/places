@@ -24,7 +24,11 @@ describe("Events API", () => {
           data: {
             events: [
               { id: "event-1", place_id: "place-1", live: true },
-              { id: "event-world", place_id: "world-id", live: true },
+              {
+                id: "event-world",
+                place_id: "my-world.dcl.eth",
+                live: true,
+              },
             ],
             total: 2,
           },
@@ -33,13 +37,13 @@ describe("Events API", () => {
         result = await Events.get().checkLiveEventsForDestinations([
           "place-1",
           "place-2",
-          "world-id",
+          "my-world.dcl.eth",
         ])
       })
 
       it("should return true for destinations with live events", () => {
         expect(result.get("place-1")).toBe(true)
-        expect(result.get("world-id")).toBe(true)
+        expect(result.get("my-world.dcl.eth")).toBe(true)
       })
 
       it("should return false for destinations without live events", () => {
@@ -51,6 +55,12 @@ describe("Events API", () => {
           "/events/search?list=live",
           expect.anything()
         )
+      })
+
+      it("should send world names (not UUIDs) as placeIds for world destinations", () => {
+        const callArgs = fetchMock.mock.calls[0][1]
+        const body = JSON.parse(callArgs.toObject().body)
+        expect(body.placeIds).toContain("my-world.dcl.eth")
       })
     })
 
