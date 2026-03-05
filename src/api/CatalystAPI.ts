@@ -29,11 +29,11 @@ export default class CatalystAPI extends API {
     let hasMorePages = true
 
     while (hasMorePages) {
-      const { signal, abort } = new AbortController()
-      const fetchOptions = new Options({ signal })
+      const controller = new AbortController()
+      const fetchOptions = new Options({ signal: controller.signal })
 
       const timeoutId = setTimeout(() => {
-        abort()
+        controller.abort()
       }, Time.Second * 10)
 
       try {
