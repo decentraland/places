@@ -1,6 +1,7 @@
 import supertest from "supertest"
 
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
+import * as SlackUtils from "../../src/entities/Slack/utils"
 import {
   createWorldSettingsChangedEvent,
   createWorldSettingsDowngradeRatingEvent,
@@ -156,6 +157,16 @@ describe("handleWorldSettingsChanged integration", () => {
           .expect(200)
 
         expect(response.body.data.content_rating).toBe("T")
+      })
+
+      it("should call notifyDowngradeRating with the world entity (world_name defined, not undefined base_position)", () => {
+        expect(SlackUtils.notifyDowngradeRating).toHaveBeenCalledWith(
+          expect.objectContaining({
+            world_name: "existingworld.dcl.eth",
+            show_in_places: expect.anything(),
+          }),
+          expect.any(String)
+        )
       })
     })
   })
