@@ -34,7 +34,8 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
 
   const l = useFormatMessage()
   const [, userAgentData] = useAdvancedUserAgentData()
-  const isMobileDevice = userAgentData?.mobile ?? false
+  const isAndroidDevice =
+    (userAgentData?.mobile ?? false) && userAgentData?.os?.name === "Android"
 
   const placeDetailUrl = useMemo(() => {
     if (item.world) return locations.world(item.world_name!)
@@ -116,7 +117,7 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
           </Button>
         </Hero.Actions>
       </Hero>
-      {isMobileDevice ? (
+      {isAndroidDevice ? (
         <MobileDownloadModal
           open={showModal}
           onClose={() => setShowModal(false)}
