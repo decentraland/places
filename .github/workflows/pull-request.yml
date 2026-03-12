@@ -40,11 +40,6 @@ jobs:
       - name: testing
         run: npm test -- --coverage
 
-      - name: coveralls
-        uses: coverallsapp/github-action@master
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: setup envs
         run: touch .env
 
@@ -56,6 +51,11 @@ jobs:
           tags: ${{ github.sha }}
           dockerfiles: |
             ./Dockerfile
+
+      - name: coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   integration-tests:
     runs-on: ubuntu-latest

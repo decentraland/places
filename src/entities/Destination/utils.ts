@@ -72,19 +72,21 @@ export async function fetchConnectedUsersForDestinations(
 
 /**
  * Fetches live event status for a list of destinations from the events API.
- * Returns a map where keys are destination IDs (for both places and worlds),
- * and values indicate whether there's a live event.
+ * Returns a map where keys are destination identifiers (place UUID for land places,
+ * world name for worlds), and values indicate whether there's a live event.
  *
  * @param destinations - Array of destination attributes (places and/or worlds)
- * @returns Promise resolving to a map of destination IDs to live event status
+ * @returns Promise resolving to a map of destination identifiers to live event status
  */
 export async function fetchLiveEventsForDestinations(
   destinations: AggregateDestinationAttributes[]
 ): Promise<LiveEventsMap> {
   const eventsApi = Events.get()
 
-  // Extract all destination IDs (both places and worlds share the same table)
-  const destinationIds = destinations.filter((d) => d.id).map((d) => d.id)
+  // For worlds use world_name; for land places use the place UUID
+  const destinationIds = destinations
+    .map((d) => (d.world && d.world_name ? d.world_name : d.id))
+    .filter(Boolean) as string[]
 
   return eventsApi.checkLiveEventsForDestinations(destinationIds)
 }
@@ -155,8 +157,12 @@ export function destinationsWithAggregates(
     // Get live event status if requested
     let live: boolean | undefined
     if (options?.withLiveEvents && options.liveEventsMap) {
-      // Use destination ID for both places and worlds (they share the same table)
-      live = options.liveEventsMap.get(destination.id) ?? false
+      // Use world_name for worlds, UUID for land places
+      const liveKey =
+        destination.world && destination.world_name
+          ? destination.world_name
+          : destination.id
+      live = options.liveEventsMap.get(liveKey) ?? false
     }
 
     const result: AggregateDestinationAttributes & {

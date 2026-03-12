@@ -34,11 +34,16 @@ export type AnyEntityAttributes =
 /**
  * Type guard to check if an entity is a world.
  * Works for aggregate, non-aggregate, and base entity types.
+ * For aggregate entities, checks the `world` boolean field.
+ * For non-aggregate WorldAttributes (e.g. from WorldModel queries), detects via
+ * `show_in_places`, which is unique to WorldAttributes and absent from PlaceAttributes.
  */
 export function isWorld(
   entity: AnyEntityAttributes | AggregateBaseEntityAttributes
 ): entity is WorldAttributes | AggregateWorldAttributes {
-  return "world" in entity && entity.world === true
+  return (
+    ("world" in entity && entity.world === true) || "show_in_places" in entity
+  )
 }
 
 /**

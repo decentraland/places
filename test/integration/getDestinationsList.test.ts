@@ -8,6 +8,7 @@ import PlaceModel from "../../src/entities/Place/model"
 import { PlaceAttributes } from "../../src/entities/Place/types"
 import UserFavoriteModel from "../../src/entities/UserFavorite/model"
 import WorldModel from "../../src/entities/World/model"
+import * as hotScenesModule from "../../src/modules/hotScenes"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -1191,6 +1192,94 @@ describe("when fetching destinations via GET /destinations", () => {
             const next = nonHighlighted[i + 1].like_score ?? -Infinity
             expect(current).toBeLessThanOrEqual(next)
           }
+        })
+      })
+    })
+
+    describe("and order_by is most_active", () => {
+      beforeEach(() => {
+        ;(hotScenesModule.getHotScenes as jest.Mock).mockReturnValue([
+          {
+            id: "hot-scene-museum",
+            name: "Museum Hot Scene",
+            baseCoords: [10, 10],
+            usersTotalCount: 5,
+            parcels: [[10, 10]],
+            realms: [],
+          },
+          {
+            id: "hot-scene-garden",
+            name: "Garden Hot Scene",
+            baseCoords: [20, 20],
+            usersTotalCount: 15,
+            parcels: [[20, 20]],
+            realms: [],
+          },
+        ])
+      })
+
+      describe("and the list includes both most_active and non-most_active destinations", () => {
+        it("should return most_active destinations before non-most_active ones", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          expect(response.body.ok).toBe(true)
+          expect(Array.isArray(response.body.data)).toBe(true)
+          expect(typeof response.body.total).toBe("number")
+
+          const data = response.body.data as Array<{
+            id: string
+            base_position: string
+            world: boolean
+          }>
+          const indexOf = (predicate: (d: (typeof data)[0]) => boolean) =>
+            data.findIndex(predicate)
+          const indexMuseum = indexOf(
+            (d) => !d.world && d.base_position === "10,10"
+          )
+          const indexGarden = indexOf(
+            (d) => !d.world && d.base_position === "20,20"
+          )
+          const indexRegularWorld = indexOf((d) => d.id === "regular.dcl.eth")
+
+          expect(indexMuseum).toBeGreaterThanOrEqual(0)
+          expect(indexGarden).toBeGreaterThanOrEqual(0)
+          expect(indexRegularWorld).toBeGreaterThanOrEqual(0)
+          // is_most_active_place DESC: both hot-scene places must appear before the non–most_active world
+          expect(indexMuseum).toBeLessThan(indexRegularWorld)
+          expect(indexGarden).toBeLessThan(indexRegularWorld)
+        })
+      })
+
+      describe("and there are multiple most_active places", () => {
+        it("should order them by like_score descending", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          const data = response.body.data as Array<{
+            id: string
+            base_position: string
+            world: boolean
+            like_score: number | null
+          }>
+          const mostActivePlaces = data.filter(
+            (d) =>
+              !d.world &&
+              (d.base_position === "10,10" || d.base_position === "20,20")
+          )
+          const indexMuseum = mostActivePlaces.findIndex(
+            (d) => d.base_position === "10,10"
+          )
+          const indexGarden = mostActivePlaces.findIndex(
+            (d) => d.base_position === "20,20"
+          )
+          expect(indexMuseum).toBeLessThan(indexGarden)
+          expect(mostActivePlaces[indexMuseum].like_score).toBe(30)
+          expect(mostActivePlaces[indexGarden].like_score).toBe(10)
         })
       })
     })
