@@ -10,6 +10,8 @@ import { BaseEntityAttributes } from "../shared/types"
  *   textsearch, world_id, single_player, skybox_time, show_in_places
  */
 export type DestinationAttributes = BaseEntityAttributes & {
+  disabled: boolean
+  disabled_at: Date | null
   base_position: string
   contact_name: string | null
   deployed_at: Date | null

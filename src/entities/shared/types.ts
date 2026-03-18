@@ -24,8 +24,6 @@ export interface BaseEntityAttributes {
   favorites: number
   like_rate: number | null
   like_score: number | null
-  disabled: boolean
-  disabled_at: Date | null
   created_at: Date
   updated_at: Date
 }

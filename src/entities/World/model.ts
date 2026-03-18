@@ -174,6 +174,8 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
     const defaultSelectColumns = SQL`w.*
+      , false as disabled
+      , null::timestamptz as disabled_at
       , COALESCE(w.image, ${DEFAULT_WORLD_IMAGE}) as image
       , lp.contact_name
       , '0,0' as base_position
@@ -251,6 +253,8 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): Promise<AggregateWorldAttributes | null> {
     const sql = SQL`
       SELECT w.*
+      , false as disabled
+      , null::timestamptz as disabled_at
       , COALESCE(w.image, ${DEFAULT_WORLD_IMAGE}) as image
       , lp.contact_name
       , '0,0' as base_position
@@ -342,12 +346,7 @@ export default class WorldModel extends Model<WorldAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      | "user"
-      | "only_favorites"
-      | "names"
-      | "search"
-      | "categories"
-      | "owner"
+      "user" | "only_favorites" | "names" | "search" | "categories" | "owner"
     >
   ): Promise<number> {
     const isMissingEthereumAddress =
@@ -436,8 +435,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       favorites: world.favorites ?? 0,
       like_rate: world.like_rate ?? 0.5,
       like_score: world.like_score ?? 0,
-      disabled: false,
-      disabled_at: null,
       created_at: now,
       updated_at: now,
     }
@@ -463,7 +460,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         "highlighted", "highlighted_image", "ranking",
         "settings_configured", "textsearch",
         "likes", "dislikes", "favorites",
-        "like_rate", "like_score", "disabled", "disabled_at",
+        "like_rate", "like_score",
         "created_at", "updated_at"
       ) VALUES (
         ${worldData.id},
@@ -488,8 +485,6 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.favorites},
         ${worldData.like_rate},
         ${worldData.like_score},
-        ${worldData.disabled},
-        ${worldData.disabled_at},
         ${worldData.created_at},
         ${worldData.updated_at}
       )
@@ -550,7 +545,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         "highlighted", "highlighted_image", "ranking",
         "settings_configured", "textsearch",
         "likes", "dislikes", "favorites",
-        "like_rate", "like_score", "disabled", "disabled_at",
+        "like_rate", "like_score",
         "created_at", "updated_at"
       ) VALUES (
         ${worldData.id},
@@ -575,8 +570,6 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.favorites},
         ${worldData.like_rate},
         ${worldData.like_score},
-        ${worldData.disabled},
-        ${worldData.disabled_at},
         ${worldData.created_at},
         ${worldData.updated_at}
       )
