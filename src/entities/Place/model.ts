@@ -17,6 +17,12 @@ import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 import { diff, unique } from "radash"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
+/** Replace apostrophes with spaces so pg-tsquery doesn't merge them into the word
+ *  (e.g. "Franky's" → "Franky s" instead of "Frankys") */
+function sanitizeSearch(search: string): string {
+  return search.replace(/'/g, " ")
+}
+
 import {
   AggregatePlaceAttributes,
   FindWithAggregatesOptions,
@@ -224,7 +230,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
+          sanitizeSearch(options.search || "")
         )})) as rank`
       )}
       WHERE ${this.buildWhereConditions("p", options, {
@@ -696,7 +702,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
+          sanitizeSearch(options.search || "")
         )})) as rank`
       )}
 
@@ -768,7 +774,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
+          sanitizeSearch(options.search || "")
         )})) as rank`
       )}
 
@@ -881,7 +887,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
+          sanitizeSearch(options.search || "")
         )})) as rank`
       )}
       WHERE
@@ -982,7 +988,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ${conditional(
         !!options.search,
         SQL`, ts_rank_cd(p.textsearch, to_tsquery(${tsquery(
-          options.search || ""
+          sanitizeSearch(options.search || "")
         )})) as rank`
       )}
 
