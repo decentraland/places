@@ -61,11 +61,11 @@ export default class Events extends API {
   /**
    * Batch check for live events for multiple destinations.
    * Uses POST with body { placeIds: [...] } as required by the events API.
-   * Works for both places and worlds since they share the same table.
-   * Results are cached per-ID for 5 minutes.
+   * For land places pass the place UUID; for worlds pass the world name.
+   * Results are cached per identifier for 5 minutes.
    *
-   * @param destinationIds - Array of destination UUIDs (places or worlds) to check
-   * @returns Map where keys are destination IDs and values indicate live event status
+   * @param destinationIds - Array of identifiers: UUIDs for land places, world names for worlds
+   * @returns Map where keys are the supplied identifiers and values indicate live event status
    */
   async checkLiveEventsForDestinations(
     destinationIds: string[]

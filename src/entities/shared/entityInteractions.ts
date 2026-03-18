@@ -218,3 +218,24 @@ export function buildUserInteractionJoins(
     )}
   `
 }
+
+/**
+ * Build the inline tsvector text search rank expression for worlds.
+ * Worlds don't have a stored `textsearch` column, so we build the tsvector inline.
+ *
+ * @param alias - Table alias for the worlds table (e.g., "w")
+ * @param search - The search string to rank against
+ */
+export function buildWorldTextSearchRank(
+  alias: string,
+  search: string
+): SQLStatement {
+  const a = SQL.raw(alias)
+  return SQL`ts_rank_cd(
+    (setweight(to_tsvector(coalesce(${a}.title, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.world_name, '')), 'A') ||
+     setweight(to_tsvector(coalesce(${a}.description, '')), 'B') ||
+     setweight(to_tsvector(coalesce(${a}.owner, '')), 'C')),
+    to_tsquery(${tsquery(search || "")})
+  )`
+}
