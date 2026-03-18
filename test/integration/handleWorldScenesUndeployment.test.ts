@@ -126,7 +126,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
       })
     })
 
-    it("should delete the place record at the specified base parcel", async () => {
+    it("should disable the place record at the specified base parcel", async () => {
       const event = createWorldScenesUndeploymentEvent(worldName, [
         { entityId: "entity-1", baseParcel: "20,24" },
       ])
@@ -171,7 +171,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
       })
     })
 
-    it("should only delete the place at the specified base parcel", async () => {
+    it("should only disable the place at the specified base parcel", async () => {
       const event = createWorldScenesUndeploymentEvent(worldName, [
         { entityId: "entity-b", baseParcel: "5,5" },
       ])
@@ -225,7 +225,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
       })
     })
 
-    it("should delete all targeted scenes while preserving the rest", async () => {
+    it("should disable all targeted scenes while preserving the rest", async () => {
       const event = createWorldScenesUndeploymentEvent(worldName, [
         { entityId: "entity-x", baseParcel: "10,10" },
         { entityId: "entity-y", baseParcel: "20,20" },
@@ -282,7 +282,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
       })
     })
 
-    it("should not delete the place record", async () => {
+    it("should not disable the place record", async () => {
       // Simulate a stale undeployment event with a timestamp before the deployment
       const staleTimestamp = Date.now() - 60_000
       const event = createWorldScenesUndeploymentEvent(

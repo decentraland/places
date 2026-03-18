@@ -6,7 +6,7 @@ import { notifyError } from "../../Slack/utils"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
- * Deletes the place records corresponding to the undeployed scenes,
+ * Disables the place records corresponding to the undeployed scenes,
  * identified by world name and each scene's base parcel.
  */
 export async function handleWorldScenesUndeployment(
@@ -41,14 +41,14 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.deleteByWorldIdAndPositions(
+    await PlaceModel.disableByWorldIdAndPositions(
       worldName,
       basePositions,
       event.timestamp
     )
 
     loggerExtended.log(
-      `Deleted place records for world: ${worldName} at positions: ${basePositions.join(
+      `Disabled place records for world: ${worldName} at positions: ${basePositions.join(
         ", "
       )}`
     )

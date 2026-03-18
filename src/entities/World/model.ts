@@ -87,7 +87,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       )}
       ${conditional(!options.categories.length, SQL`WHERE 1=1`)}
         AND ${a}.show_in_places IS TRUE
-        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = ${a}.id)
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = ${a}.id AND p.disabled IS FALSE)
         ${conditional(
           options.only_highlighted ?? false,
           SQL`AND ${a}.highlighted = TRUE`
@@ -386,6 +386,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       SELECT w.world_name
       FROM ${table(this)} w
       WHERE w.show_in_places IS TRUE
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id AND p.disabled IS FALSE)
       ORDER BY w.world_name ASC
     `
     return await this.namedQuery("find_world_names", sql)
@@ -396,6 +397,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       SELECT count(*) as total
       FROM ${table(this)} w
       WHERE w.show_in_places IS TRUE
+        AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id AND p.disabled IS FALSE)
     `
     const results: { total: number }[] = await this.namedQuery(
       "count_world_names",

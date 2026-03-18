@@ -6,9 +6,9 @@ import { notifyError } from "../../Slack/utils"
 
 /**
  * Handles WorldUndeploymentEvent from the worlds content server.
- * Deletes all place records associated with the undeployed world.
- * The world entity itself is not deleted -- it simply won't appear
- * in queries once it has no associated places.
+ * Disables all place records associated with the undeployed world.
+ * The world entity itself is not modified -- it simply won't appear
+ * in queries once it has no enabled places.
  */
 export async function handleWorldUndeployment(
   event: WorldUndeploymentEvent
@@ -28,9 +28,9 @@ export async function handleWorldUndeployment(
   try {
     loggerExtended.log(`Processing world undeployment for world: ${worldName}`)
 
-    await PlaceModel.deleteByWorldId(worldName, event.timestamp)
+    await PlaceModel.disableByWorldId(worldName, event.timestamp)
 
-    loggerExtended.log(`Deleted all place records for world: ${worldName}`)
+    loggerExtended.log(`Disabled all place records for world: ${worldName}`)
   } catch (error: any) {
     loggerExtended.error(
       `Error handling WorldUndeploymentEvent for ${worldName}: ${error.message}`
