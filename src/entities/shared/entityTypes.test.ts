@@ -18,8 +18,6 @@ const baseWorldAttributes: WorldAttributes = {
   favorites: 0,
   like_rate: 0.5,
   like_score: 0,
-  disabled: false,
-  disabled_at: null,
   created_at: new Date(),
   updated_at: new Date(),
   show_in_places: true,
