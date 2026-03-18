@@ -69,7 +69,6 @@ export default class WorldModel extends Model<WorldAttributes> {
     alias: string,
     options: {
       categories: string[]
-      disabled?: boolean
       search?: string
       names?: string[]
       world_names?: string[]
@@ -87,8 +86,6 @@ export default class WorldModel extends Model<WorldAttributes> {
         SQL`WHERE ${a}.categories && ${options.categories}::varchar[]`
       )}
       ${conditional(!options.categories.length, SQL`WHERE 1=1`)}
-        ${conditional(!!options.disabled, SQL`AND ${a}.disabled IS TRUE`)}
-        ${conditional(!options.disabled, SQL`AND ${a}.disabled IS FALSE`)}
         AND ${a}.show_in_places IS TRUE
         AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = ${a}.id AND p.disabled IS FALSE)
         ${conditional(
@@ -157,7 +154,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       only_favorites: boolean
       search?: string
       categories: string[]
-      disabled?: boolean
       names?: string[]
       world_names?: string[]
       only_highlighted?: boolean
@@ -175,6 +171,8 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
     const defaultSelectColumns = SQL`w.*
+      , false as disabled
+      , null::timestamptz as disabled_at
       , COALESCE(w.image, lp.image) as image
       , lp.contact_name
       , '0,0' as base_position
@@ -203,7 +201,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       })}
       ${this.buildWhereConditions("w", {
         categories: options.categories,
-        disabled: options.disabled,
         search: options.search,
         world_names: options.world_names,
         names: options.names,
@@ -236,7 +233,6 @@ export default class WorldModel extends Model<WorldAttributes> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE id = ${worldName.toLowerCase()}
-        AND disabled IS FALSE
         AND show_in_places IS TRUE
     `
     const results = await this.namedQuery<WorldAttributes>(
@@ -252,6 +248,8 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): Promise<AggregateWorldAttributes | null> {
     const sql = SQL`
       SELECT w.*
+      , false as disabled
+      , null::timestamptz as disabled_at
       , COALESCE(w.image, lp.image) as image
       , lp.contact_name
       , '0,0' as base_position
@@ -327,7 +325,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       only_favorites: options.only_favorites,
       search: options.search,
       categories: options.categories,
-      disabled: options.disabled,
       world_names: options.names,
       owner: options.owner,
     })
@@ -350,13 +347,7 @@ export default class WorldModel extends Model<WorldAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      | "user"
-      | "only_favorites"
-      | "names"
-      | "search"
-      | "categories"
-      | "disabled"
-      | "owner"
+      "user" | "only_favorites" | "names" | "search" | "categories" | "owner"
     >
   ): Promise<number> {
     const isMissingEthereumAddress =
@@ -372,7 +363,6 @@ export default class WorldModel extends Model<WorldAttributes> {
         only_favorites: options.only_favorites,
         search: options.search,
         categories: options.categories,
-        disabled: options.disabled,
         world_names: options.names,
         owner: options.owner,
       },
@@ -395,7 +385,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     const sql = SQL`
       SELECT w.world_name
       FROM ${table(this)} w
-      WHERE w.disabled IS FALSE AND w.show_in_places IS TRUE
+      WHERE w.show_in_places IS TRUE
         AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id AND p.disabled IS FALSE)
       ORDER BY w.world_name ASC
     `
@@ -406,7 +396,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     const query = SQL`
       SELECT count(*) as total
       FROM ${table(this)} w
-      WHERE w.disabled IS FALSE AND w.show_in_places IS TRUE
+      WHERE w.show_in_places IS TRUE
         AND EXISTS (SELECT 1 FROM places p WHERE p.world_id = w.id AND p.disabled IS FALSE)
     `
     const results: { total: number }[] = await this.namedQuery(
@@ -446,8 +436,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       favorites: world.favorites ?? 0,
       like_rate: world.like_rate ?? 0.5,
       like_score: world.like_score ?? 0,
-      disabled: world.disabled ?? false,
-      disabled_at: world.disabled_at ?? null,
       created_at: now,
       updated_at: now,
     }
@@ -471,7 +459,7 @@ export default class WorldModel extends Model<WorldAttributes> {
         "single_player", "skybox_time", "is_private",
         "highlighted", "highlighted_image", "ranking",
         "likes", "dislikes", "favorites",
-        "like_rate", "like_score", "disabled", "disabled_at",
+        "like_rate", "like_score",
         "created_at", "updated_at"
       ) VALUES (
         ${worldData.id},
@@ -494,8 +482,6 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${worldData.favorites},
         ${worldData.like_rate},
         ${worldData.like_score},
-        ${worldData.disabled},
-        ${worldData.disabled_at},
         ${worldData.created_at},
         ${worldData.updated_at}
       )
@@ -541,16 +527,6 @@ export default class WorldModel extends Model<WorldAttributes> {
       target: ["id"],
       changes,
     })
-  }
-
-  static async disableWorld(worldName: string): Promise<void> {
-    const now = new Date()
-    const sql = SQL`
-      UPDATE ${table(this)}
-      SET disabled = TRUE, disabled_at = ${now}, updated_at = ${now}
-      WHERE id = ${worldName.toLowerCase()}
-    `
-    await this.namedQuery("disable_world", sql)
   }
 
   static async updateFavorites(worldId: string): Promise<void> {

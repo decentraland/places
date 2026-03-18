@@ -39,7 +39,6 @@ export const getWorldList = Router.memo(
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
       categories: ctx.url.searchParams.getAll("categories"),
-      disabled: ctx.url.searchParams.get("disabled"),
       owner: ctx.url.searchParams.get("owner")?.toLowerCase(),
     })
 
@@ -59,7 +58,6 @@ export const getWorldList = Router.memo(
       order: query.order,
       search: query.search,
       categories: query.categories,
-      disabled: !!bool(query.disabled),
       owner: query.owner,
     }
 

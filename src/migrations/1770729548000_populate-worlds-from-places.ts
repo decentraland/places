@@ -40,8 +40,8 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       favorites,
       like_rate,
       like_score,
-      disabled,
-      disabled_at,
+      false as disabled,
+      null as disabled_at,
       created_at,
       updated_at
     FROM places

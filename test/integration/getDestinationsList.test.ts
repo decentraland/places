@@ -372,6 +372,32 @@ describe("when fetching destinations via GET /destinations", () => {
       expect(disabledResult).toBeUndefined()
     })
 
+    it("should return disabled as false for world destinations", async () => {
+      const response = await supertest(app).get("/api/destinations").expect(200)
+
+      const worlds = response.body.data.filter(
+        (d: { world: boolean }) => d.world === true
+      )
+
+      expect(worlds.length).toBeGreaterThanOrEqual(1)
+      for (const world of worlds) {
+        expect(world.disabled).toBe(false)
+      }
+    })
+
+    it("should return disabled_at as null for world destinations", async () => {
+      const response = await supertest(app).get("/api/destinations").expect(200)
+
+      const worlds = response.body.data.filter(
+        (d: { world: boolean }) => d.world === true
+      )
+
+      expect(worlds.length).toBeGreaterThanOrEqual(1)
+      for (const world of worlds) {
+        expect(world.disabled_at).toBeNull()
+      }
+    })
+
     it("should return highlighted destinations before non-highlighted ones", async () => {
       const response = await supertest(app).get("/api/destinations").expect(200)
 
