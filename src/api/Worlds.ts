@@ -32,16 +32,12 @@ export default class Worlds extends API {
     T extends {
       created_at: Date
       updated_at: Date
-      disabled_at: Date | null
-      disabled: boolean
     }
   >(entity: T): T {
     return {
       ...entity,
       created_at: Time.date(entity.created_at),
       updated_at: Time.date(entity.updated_at),
-      disabled_at: Time.date(entity.disabled_at),
-      disabled: Boolean(entity.disabled),
     } as T
   }
 

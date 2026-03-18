@@ -11,8 +11,8 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
-import { notifyUpgradingRating } from "../../Slack/utils"
 import { createWkcValidator } from "../../shared/validate"
+import { notifyUpgradingRating } from "../../Slack/utils"
 import WorldModel from "../model"
 import {
   updateWorldRatingBodySchema,

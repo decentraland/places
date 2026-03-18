@@ -38,6 +38,8 @@ export type HotScene = Pick<
  * Note: world_name is inherited from BaseEntityAttributes.
  */
 export type PlaceAttributes = BaseEntityAttributes & {
+  disabled: boolean
+  disabled_at: Date | null
   highlighted_image: string | null
   positions: string[]
   base_position: string

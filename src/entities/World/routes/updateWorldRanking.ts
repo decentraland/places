@@ -9,8 +9,8 @@ import env from "decentraland-gatsby/dist/utils/env"
 import { createWkcValidator } from "../../shared/validate"
 import WorldModel from "../model"
 import {
-  updateWorldRankingParamsSchema,
   updateWorldRankingBodySchema,
+  updateWorldRankingParamsSchema,
 } from "../schemas"
 import {
   AggregateWorldAttributes,

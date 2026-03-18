@@ -39,7 +39,7 @@ const WORLDS_DESTINATION_SELECT = SQL`
   w.id, w.title, w.description, COALESCE(w.image, lp.image) as image,
   w.owner, w.world_name,
   w.content_rating, w.categories, w.likes, w.dislikes, w.favorites,
-  w.like_rate, w.like_score, w.disabled, w.disabled_at,
+  w.like_rate, w.like_score, false as disabled, null::timestamptz as disabled_at,
   w.created_at, w.updated_at,
   '0,0' as base_position, lp.contact_name, lp.deployed_at,
   w.highlighted, true as world, w.is_private,
