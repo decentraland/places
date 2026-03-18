@@ -105,7 +105,7 @@ describe("when handling the WorldUndeploymentEvent", () => {
       await deployWorldScene({ worldName, title: "Single Scene World" })
     })
 
-    it("should delete the place record", async () => {
+    it("should disable the place record", async () => {
       const event = createWorldUndeploymentEvent(worldName)
       await handleWorldUndeployment(event)
 
@@ -146,7 +146,7 @@ describe("when handling the WorldUndeploymentEvent", () => {
       })
     })
 
-    it("should delete all place records for the world", async () => {
+    it("should disable all place records for the world", async () => {
       const event = createWorldUndeploymentEvent(worldName)
       await handleWorldUndeployment(event)
 
@@ -174,7 +174,7 @@ describe("when handling the WorldUndeploymentEvent", () => {
       await deployWorldScene({ worldName, title: "Re-deployed Scene" })
     })
 
-    it("should not delete the place record", async () => {
+    it("should not disable the place record", async () => {
       // Simulate a stale undeployment event with a timestamp before the deployment
       const staleTimestamp = Date.now() - 60_000
       const event = createWorldUndeploymentEvent(worldName, {

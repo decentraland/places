@@ -466,45 +466,51 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Delete all place records associated with a world that were deployed
+   * Disable all place records associated with a world that were deployed
    * before the given event timestamp. This prevents stale undeployment
-   * events from removing places that were re-deployed after the event
+   * events from disabling places that were re-deployed after the event
    * was emitted.
    */
-  static async deleteByWorldId(
+  static async disableByWorldId(
     worldId: string,
     eventTimestamp: number
   ): Promise<void> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
+    const now = new Date()
     const sql = SQL`
-      DELETE FROM ${table(this)}
+      UPDATE ${table(this)}
+      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}
       WHERE "world_id" = ${normalizedWorldId}
         AND "deployed_at" < ${eventDate}
+        AND "disabled" IS FALSE
     `
-    await this.namedQuery("delete_by_world_id", sql)
+    await this.namedQuery("disable_by_world_id", sql)
   }
 
   /**
-   * Delete place records matching a world and specific base positions
+   * Disable place records matching a world and specific base positions
    * that were deployed before the given event timestamp. This prevents
-   * stale undeployment events from removing places that were re-deployed
+   * stale undeployment events from disabling places that were re-deployed
    * after the event was emitted.
    */
-  static async deleteByWorldIdAndPositions(
+  static async disableByWorldIdAndPositions(
     worldId: string,
     basePositions: string[],
     eventTimestamp: number
   ): Promise<void> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
+    const now = new Date()
     const sql = SQL`
-      DELETE FROM ${table(this)}
+      UPDATE ${table(this)}
+      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}
       WHERE "world_id" = ${normalizedWorldId}
         AND "base_position" = ANY(${basePositions})
         AND "deployed_at" < ${eventDate}
+        AND "disabled" IS FALSE
     `
-    await this.namedQuery("delete_by_world_id_and_positions", sql)
+    await this.namedQuery("disable_by_world_id_and_positions", sql)
   }
 
   static async updateFavorites(placeId: string) {
