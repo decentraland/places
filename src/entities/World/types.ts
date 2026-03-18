@@ -1,5 +1,3 @@
-import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
-
 import { BaseAggregateAttributes, BaseEntityAttributes } from "../shared/types"
 
 /**
@@ -18,8 +16,6 @@ export type WorldAttributes = BaseEntityAttributes & {
   highlighted: boolean
   highlighted_image: string | null
   ranking: number | null
-  settings_configured: boolean
-  textsearch: SQLStatement | string | null | undefined
 }
 
 export type UpdateWorldHighlightBody = {

@@ -10,7 +10,6 @@ import {
 } from "./types"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
-import { DEFAULT_WORLD_IMAGE } from "../shared/constants"
 import { AnyEntityAttributes } from "../shared/entityTypes"
 
 const DECENTRALAND_URL =
@@ -128,7 +127,8 @@ export function getThumbnailFromContentDeployment(
   }
 
   if (!thumbnail && deployment?.metadata?.worldConfiguration) {
-    thumbnail = DEFAULT_WORLD_IMAGE
+    thumbnail =
+      "https://peer.decentraland.org/content/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
   } else if (!thumbnail) {
     thumbnail = Land.getInstance().getMapImage({
       selected: positions,
