@@ -50,7 +50,6 @@ export type GetWorldListQuery = {
   order: string
   search: string
   categories: string[]
-  disabled: string
   owner?: string
 }
 
@@ -74,7 +73,6 @@ export type WorldListOptions = {
 
 export type FindWorldWithAggregatesOptions = WorldListOptions & {
   user?: string
-  disabled?: boolean
 }
 
 export type WorldLivePerWorldProps = {
