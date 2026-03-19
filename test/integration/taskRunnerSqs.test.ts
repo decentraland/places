@@ -140,7 +140,7 @@ describe("taskRunnerSqs integration", () => {
       const initialScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Original Scene",
-        owner: "0xoriginalowner0000000000000000000000000000",
+        owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(initialScene)
@@ -156,7 +156,7 @@ describe("taskRunnerSqs integration", () => {
         worldName: "existingworld.dcl.eth",
         title: "Updated Scene",
         description: "Updated description",
-        owner: "0xnewowner00000000000000000000000000000000",
+        owner: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(updatedScene)
@@ -186,7 +186,7 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.ok).toBe(true)
       expect(response.body.data.world_name).toBe("existingworld.dcl.eth")
       expect(response.body.data.owner).toBe(
-        "0xnewowner00000000000000000000000000000000"
+        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
       )
     })
 
