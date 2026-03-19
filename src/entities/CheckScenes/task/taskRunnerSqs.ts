@@ -2,6 +2,7 @@ import { randomUUID } from "crypto"
 
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { isDowngradingRating } from "../../../utils/rating/contentRating"
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
@@ -83,22 +84,36 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const isOptOut =
       !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    // Insert the world only if it doesn't already exist.
-    // If it already exists (configured via settings or a previous deployment),
-    // its data is left untouched.
-    const worldId = await WorldModel.insertWorldIfNotExists({
+    const newContentRating =
+      (contentEntityScene?.metadata?.policy
+        ?.contentRating as SceneContentRating) || undefined
+
+    // Apply rating downgrade protection: content creators cannot downgrade
+    // ratings — only moderators can. If the incoming rating is lower than the
+    // existing one, keep the current rating by passing undefined (upsertWorld
+    // skips undefined fields).
+    const existingWorld = await WorldModel.findByWorldName(worldName)
+    const contentRatingToUse =
+      existingWorld?.content_rating &&
+      newContentRating &&
+      isDowngradingRating(newContentRating, existingWorld.content_rating)
+        ? undefined
+        : newContentRating
+
+    // Upsert the world so that every scene deployment keeps the world record
+    // in sync (owner, title, description, categories, show_in_places, etc.).
+    const world = await WorldModel.upsertWorld({
       world_name: worldName,
       title:
         contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
       description:
         contentEntityScene?.metadata?.display?.description || undefined,
-      content_rating:
-        (contentEntityScene?.metadata?.policy
-          ?.contentRating as SceneContentRating) || undefined,
+      content_rating: contentRatingToUse,
       categories: contentEntityScene?.metadata?.tags || undefined,
       owner: contentEntityScene?.metadata?.owner || undefined,
       show_in_places: isOptOut ? false : undefined,
     })
+    const worldId = world.id
 
     // Find the existing place for this scene by world_id and base_position
     const basePosition =

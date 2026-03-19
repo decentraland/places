@@ -140,6 +140,7 @@ describe("taskRunnerSqs integration", () => {
       const initialScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Original Scene",
+        owner: "0xoriginalowner0000000000000000000000000000",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(initialScene)
@@ -150,11 +151,12 @@ describe("taskRunnerSqs integration", () => {
 
       await taskRunnerSqs(job)
 
-      // Second deployment updates the existing scene
+      // Second deployment updates the existing scene with a new owner
       const updatedScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Updated Scene",
         description: "Updated description",
+        owner: "0xnewowner00000000000000000000000000000000",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(updatedScene)
@@ -176,13 +178,16 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data[0].title).toBe("Updated Scene")
     })
 
-    it("should preserve the world record", async () => {
+    it("should update the world record with the new owner", async () => {
       const response = await supertest(app)
         .get("/api/worlds/existingworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.world_name).toBe("existingworld.dcl.eth")
+      expect(response.body.data.owner).toBe(
+        "0xnewowner00000000000000000000000000000000"
+      )
     })
 
     it("should reflect updated data via the place detail API", async () => {
