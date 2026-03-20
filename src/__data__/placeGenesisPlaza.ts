@@ -99,6 +99,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
   content_rating: SceneContentRating.RATING_PENDING,
   created_at: new Date("2023-03-28T18:37:39.918Z"),
   disabled_at: null,
+  disabled_reason: null,
   deployed_at: new Date("2022-11-14T17:22:05.307Z"),
   textsearch: undefined,
   categories: [],

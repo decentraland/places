@@ -57,6 +57,7 @@ const aggregatePlaceAttributes: AggregatePlaceAttributes = {
   like_score: 0,
   disabled: false,
   disabled_at: null,
+  disabled_reason: null,
   created_at: new Date(),
   updated_at: new Date(),
   base_position: "0,0",
