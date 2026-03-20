@@ -1,8 +1,5 @@
 import { randomUUID } from "crypto"
 
-import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-
-import { isDowngradingRating } from "../../../utils/rating/contentRating"
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
@@ -18,7 +15,7 @@ import {
 import WorldModel from "../../World/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { updateGenesisCityManifest } from "../utils"
+import { fetchWorldInformation, updateGenesisCityManifest } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import {
@@ -84,34 +81,22 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const isOptOut =
       !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    const newContentRating =
-      (contentEntityScene?.metadata?.policy
-        ?.contentRating as SceneContentRating) || undefined
+    // fallback to get the owner of the world in case is missing
+    if (!contentEntityScene.metadata.owner) {
+      const worldInformation = await fetchWorldInformation(
+        worldName,
+        job.contentServerUrls![0]
+      )
 
-    // Apply rating downgrade protection: content creators cannot downgrade
-    // ratings — only moderators can. If the incoming rating is lower than the
-    // existing one, keep the current rating by passing undefined (upsertWorld
-    // skips undefined fields).
-    const existingWorld = await WorldModel.findByWorldName(worldName)
-    const contentRatingToUse =
-      existingWorld?.content_rating &&
-      newContentRating &&
-      isDowngradingRating(newContentRating, existingWorld.content_rating)
-        ? undefined
-        : newContentRating
+      if (worldInformation) {
+        contentEntityScene.metadata.owner = worldInformation?.metadata?.owner
+      }
+    }
 
-    // Upsert the world so that every scene deployment keeps the world record
-    // in sync (owner, title, description, categories, show_in_places, etc.).
+    // Upsert the world to keep the owner in sync on every scene deployment.
     const world = await WorldModel.upsertWorld({
       world_name: worldName,
-      title:
-        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
-      description:
-        contentEntityScene?.metadata?.display?.description || undefined,
-      content_rating: contentRatingToUse,
-      categories: contentEntityScene?.metadata?.tags || undefined,
       owner: contentEntityScene?.metadata?.owner || undefined,
-      show_in_places: isOptOut ? false : undefined,
     })
     const worldId = world.id
 
@@ -213,78 +198,82 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   if (placesToProcess?.new) {
     await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
-    !contentEntityScene.metadata.worldConfiguration &&
-      (await PlacePositionModel.syncBasePosition(placesToProcess.new))
-
-    await overridePlaceCategories(
-      placesToProcess.new.id,
-      contentEntityScene.metadata.tags || []
-    )
-
     notifyNewPlace(placesToProcess.new, job)
-    await CheckScenesModel.createOne({
-      entity_id: job.entity.entityId,
-      content_server_url: job.contentServerUrls![0],
-      base_position: contentEntityScene.metadata.scene!.base,
-      positions: contentEntityScene.metadata.scene!.parcels,
-      action: CheckSceneLogsTypes.NEW,
-      deploy_at: new Date(contentEntityScene.timestamp),
-    })
+    await Promise.all([
+      !contentEntityScene.metadata.worldConfiguration &&
+        PlacePositionModel.syncBasePosition(placesToProcess.new),
+      overridePlaceCategories(
+        placesToProcess.new.id,
+        contentEntityScene.metadata.tags || []
+      ),
+      CheckScenesModel.createOne({
+        entity_id: job.entity.entityId,
+        content_server_url: job.contentServerUrls![0],
+        base_position: contentEntityScene.metadata.scene!.base,
+        positions: contentEntityScene.metadata.scene!.parcels,
+        action: CheckSceneLogsTypes.NEW,
+        deploy_at: new Date(contentEntityScene.timestamp),
+      }),
+    ])
   }
 
   if (placesToProcess?.update) {
     await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
-    !contentEntityScene.metadata.worldConfiguration &&
-      (await PlacePositionModel.syncBasePosition(placesToProcess.update))
-
-    await overridePlaceCategories(
-      placesToProcess.update.id,
-      contentEntityScene.metadata.tags || []
-    )
-
     notifyUpdatePlace(placesToProcess.update, job)
-    await CheckScenesModel.createOne({
-      entity_id: job.entity.entityId,
-      content_server_url: job.contentServerUrls![0],
-      base_position: contentEntityScene.metadata.scene!.base,
-      positions: contentEntityScene.metadata.scene!.parcels,
-      action: CheckSceneLogsTypes.UPDATE,
-      deploy_at: new Date(contentEntityScene.timestamp),
-    })
+    await Promise.all([
+      !contentEntityScene.metadata.worldConfiguration &&
+        PlacePositionModel.syncBasePosition(placesToProcess.update),
+      overridePlaceCategories(
+        placesToProcess.update.id,
+        contentEntityScene.metadata.tags || []
+      ),
+      CheckScenesModel.createOne({
+        entity_id: job.entity.entityId,
+        content_server_url: job.contentServerUrls![0],
+        base_position: contentEntityScene.metadata.scene!.base,
+        positions: contentEntityScene.metadata.scene!.parcels,
+        action: CheckSceneLogsTypes.UPDATE,
+        deploy_at: new Date(contentEntityScene.timestamp),
+      }),
+    ])
   }
 
-  if (placesToProcess?.rating) {
-    await PlaceContentRatingModel.create(placesToProcess.rating)
-  }
+  await Promise.all([
+    placesToProcess?.rating &&
+      PlaceContentRatingModel.create(placesToProcess.rating),
+    placesToProcess?.disabled.length &&
+      (async () => {
+        const placesIdToDisable = placesToProcess!.disabled.map(
+          (place) => place.id
+        )
+        await PlaceModel.disablePlaces(placesIdToDisable)
 
-  if (placesToProcess?.disabled.length) {
-    const placesIdToDisable = placesToProcess.disabled.map((place) => place.id)
-    await PlaceModel.disablePlaces(placesIdToDisable)
+        const positions = new Set(
+          placesToProcess!.disabled.flatMap((place) => place.positions)
+        )
+        placesToProcess?.new?.positions.forEach((position) =>
+          positions.delete(position)
+        )
+        placesToProcess?.update?.positions.forEach((position) =>
+          positions.delete(position)
+        )
+        notifyDisablePlaces(placesToProcess!.disabled)
 
-    const positions = new Set(
-      placesToProcess.disabled.flatMap((place) => place.positions)
-    )
-    placesToProcess?.new?.positions.forEach((position) =>
-      positions.delete(position)
-    )
-    placesToProcess?.update?.positions.forEach((position) =>
-      positions.delete(position)
-    )
-    !contentEntityScene.metadata.worldConfiguration &&
-      (await PlacePositionModel.removePositions([...positions]))
-
-    notifyDisablePlaces(placesToProcess.disabled)
-
-    const placesToDisable = placesToProcess.disabled.map((place) => ({
-      entity_id: job.entity.entityId,
-      content_server_url: job.contentServerUrls![0],
-      base_position: place.base_position,
-      positions: place.positions,
-      action: CheckSceneLogsTypes.DISABLED,
-    }))
-
-    await CheckScenesModel.createMany(placesToDisable)
-  }
+        await Promise.all([
+          !contentEntityScene.metadata.worldConfiguration &&
+            PlacePositionModel.removePositions([...positions]),
+          CheckScenesModel.createMany(
+            placesToProcess!.disabled.map((place) => ({
+              entity_id: job.entity.entityId,
+              content_server_url: job.contentServerUrls![0],
+              base_position: place.base_position,
+              positions: place.positions,
+              action: CheckSceneLogsTypes.DISABLED,
+            }))
+          ),
+        ])
+      })(),
+  ])
 
   // do not await so it is done on background
   updateGenesisCityManifest()
@@ -316,14 +305,15 @@ async function getValidCategories(creatorTags: string[]) {
 async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
   if (!creatorTags.length) return
 
-  const validCategories = await getValidCategories(creatorTags)
+  const [validCategories, currentCategoryRows] = await Promise.all([
+    getValidCategories(creatorTags),
+    PlaceCategories.findCategoriesByPlaceId(placeId),
+  ])
 
   if (!validCategories.size) return
 
   const currentCategories = new Set(
-    ...(await PlaceCategories.findCategoriesByPlaceId(placeId)).map(
-      ({ category_id }) => category_id
-    )
+    currentCategoryRows.map(({ category_id }) => category_id)
   )
 
   if (currentCategories.has(DecentralandCategories.POI)) {
@@ -334,8 +324,10 @@ async function overridePlaceCategories(placeId: string, creatorTags: string[]) {
     validCategories.add(DecentralandCategories.FEATURED)
   }
 
-  await PlaceCategories.cleanPlaceCategories(placeId)
-  await PlaceModel.overrideCategories(placeId, [...validCategories])
+  await Promise.all([
+    PlaceCategories.cleanPlaceCategories(placeId),
+    PlaceModel.overrideCategories(placeId, [...validCategories]),
+  ])
 
   await PlaceCategories.addCategoriesToPlaces(
     [...validCategories].map((category) => [placeId, category])

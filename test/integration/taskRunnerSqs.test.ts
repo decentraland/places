@@ -25,10 +25,11 @@ jest.mock("../../src/entities/Slack/utils", () => ({
   notifyDisablePlaces: jest.fn(),
 }))
 
-// Mock the genesis city manifest update (requires S3)
+// Mock the genesis city manifest update (requires S3) and world info fetch (requires HTTP)
 jest.mock("../../src/entities/CheckScenes/utils", () => ({
   ...jest.requireActual("../../src/entities/CheckScenes/utils"),
   updateGenesisCityManifest: jest.fn(),
+  fetchWorldInformation: jest.fn().mockResolvedValue(undefined),
 }))
 
 // Mock modules with persistent timers to prevent Jest from hanging
@@ -236,13 +237,13 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data).toHaveLength(0)
     })
 
-    it("should create the world with show_in_places set to false", async () => {
+    it("should create the world record", async () => {
       const response = await supertest(app)
         .get("/api/worlds/optoutworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
-      expect(response.body.data.show_in_places).toBe(false)
+      expect(response.body.data.world_name).toBe("optoutworld.dcl.eth")
     })
   })
 
