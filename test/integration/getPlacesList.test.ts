@@ -218,4 +218,43 @@ describe("when fetching places via GET /api/places", () => {
       })
     })
   })
+
+  describe("and the search filter is applied", () => {
+    beforeEach(async () => {
+      await seedPlace({
+        title: "Franky's Tavern",
+        base_position: "10,10",
+        positions: ["10,10"],
+        deployed_at: new Date("2024-01-01"),
+      })
+      await seedPlace({
+        title: "Another Place",
+        base_position: "20,20",
+        positions: ["20,20"],
+        deployed_at: new Date("2024-01-01"),
+      })
+    })
+
+    it("should find a place when searching with an apostrophe in the name", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ search: "Franky's Tavern" })
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.total).toBe(1)
+      expect(response.body.data[0].title).toBe("Franky's Tavern")
+    })
+
+    it("should find a place when searching without the apostrophe", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ search: "Franky Tavern" })
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.total).toBe(1)
+      expect(response.body.data[0].title).toBe("Franky's Tavern")
+    })
+  })
 })
