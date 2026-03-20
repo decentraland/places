@@ -82,6 +82,7 @@ function createPlaceAttributes(
     like_score: null,
     disabled: false,
     disabled_at: null,
+    disabled_reason: null,
     created_at: new Date(),
     updated_at: new Date(),
     highlighted: false,
