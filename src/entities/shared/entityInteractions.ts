@@ -236,6 +236,6 @@ export function buildWorldTextSearchRank(
      setweight(to_tsvector(coalesce(${a}.world_name, '')), 'A') ||
      setweight(to_tsvector(coalesce(${a}.description, '')), 'B') ||
      setweight(to_tsvector(coalesce(${a}.owner, '')), 'C')),
-    to_tsquery(${tsquery(search || "")})
+    to_tsquery(${tsquery((search || "").replace(/'/g, " "))})
   )`
 }

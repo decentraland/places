@@ -272,6 +272,34 @@ describe(`findWithAggregates`, () => {
     )
   })
 
+  test(`should return a list of places matching the search when it contains an apostrophe`, async () => {
+    namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
+    expect(
+      await PlaceModel.findWithAggregates({
+        offset: 0,
+        limit: 1,
+        only_favorites: false,
+        only_highlighted: false,
+        positions: ["0,0"],
+        order_by: "created_at",
+        order: "desc",
+        user: userLikeTrue.user,
+        search: "Franky's Tavern",
+        categories: [],
+      })
+    ).toEqual([placeGenesisPlazaWithAggregatedAttributes])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [, sql] = namedQuery.mock.calls[0]
+    expect(sql.values).toEqual([
+      userLikeTrue.user,
+      userLikeTrue.user,
+      "Franky&s&Tavern:*",
+      "0,0",
+      1,
+      0,
+    ])
+  })
+
   test(`should return an empty list of places when FindWithAggregatesOptions search isn't long enough`, async () => {
     namedQuery.mockResolvedValue([placeGenesisPlazaWithAggregatedAttributes])
     expect(
