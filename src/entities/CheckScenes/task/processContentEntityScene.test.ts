@@ -8,6 +8,7 @@ import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntityS
 import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
 import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
+import { DisabledReason } from "../../Place/types"
 
 describe("createPlaceFromContentEntityScene", () => {
   test("should accept a contentEntityScene and return a formatted place", async () => {
@@ -20,6 +21,50 @@ describe("createPlaceFromContentEntityScene", () => {
       updated_at: contentEntityDeployment.updated_at,
       created_at: contentEntityDeployment.created_at,
       textsearch: expect.any(SQLStatement),
+    })
+  })
+
+  describe("when the place was previously disabled with opt_out", () => {
+    describe("and it is re-enabled", () => {
+      let result: ReturnType<typeof createPlaceFromContentEntityScene>
+
+      beforeEach(() => {
+        result = createPlaceFromContentEntityScene(
+          contentEntitySceneGenesisPlaza,
+          {
+            ...placeGenesisPlaza,
+            disabled: false,
+            disabled_at: new Date("2025-01-01"),
+            disabled_reason: DisabledReason.OPT_OUT,
+          }
+        )
+      })
+
+      it("should set disabled to false and clear disabled_at and disabled_reason to null", () => {
+        expect(result.disabled).toBe(false)
+        expect(result.disabled_at).toBeNull()
+        expect(result.disabled_reason).toBeNull()
+      })
+    })
+  })
+
+  describe("when the place is created with opt_out", () => {
+    let result: ReturnType<typeof createPlaceFromContentEntityScene>
+
+    beforeEach(() => {
+      result = createPlaceFromContentEntityScene(
+        contentEntitySceneGenesisPlaza,
+        {
+          disabled: true,
+          disabled_reason: DisabledReason.OPT_OUT,
+        }
+      )
+    })
+
+    it("should set disabled to true, disabled_at to a date, and disabled_reason to opt_out", () => {
+      expect(result.disabled).toBe(true)
+      expect(result.disabled_at).toBeInstanceOf(Date)
+      expect(result.disabled_reason).toBe(DisabledReason.OPT_OUT)
     })
   })
 })

@@ -6,7 +6,7 @@ import { isDowngradingRating } from "../../../utils/rating/contentRating"
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
-import { PlaceAttributes } from "../../Place/types"
+import { DisabledReason, PlaceAttributes } from "../../Place/types"
 import PlaceCategories from "../../PlaceCategories/model"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
@@ -40,6 +40,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "content_rating",
   "disabled",
   "disabled_at",
+  "disabled_reason",
   "created_at",
   "updated_at",
   "deployed_at",
@@ -124,12 +125,20 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       basePosition
     )
 
-    if (!existingPlace) {
-      // Create a new place for this world scene
+    const shouldCreateNewPlace =
+      !existingPlace ||
+      (existingPlace.disabled &&
+        (existingPlace.disabled_reason === DisabledReason.UNDEPLOYMENT ||
+          existingPlace.disabled_reason === DisabledReason.OVERWRITTEN))
+
+    if (shouldCreateNewPlace) {
+      // Create a new place: either no existing place, or the existing one was
+      // disabled by undeployment/overlap and should not be resurrected.
       const placefromContentEntity = createPlaceFromContentEntityScene(
         contentEntityScene,
         {
           disabled: isOptOut,
+          disabled_reason: isOptOut ? DisabledReason.OPT_OUT : null,
         },
         {
           url: job.contentServerUrls![0],
@@ -152,12 +161,14 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         disabled: [],
       }
     } else {
-      // Update the existing place (classic update operation)
+      // Update the existing place: either it's enabled, or it was disabled
+      // by opt_out and can be re-enabled if opt-out is now removed.
       const placefromContentEntity = createPlaceFromContentEntityScene(
         contentEntityScene,
         {
           ...existingPlace,
           disabled: isOptOut,
+          disabled_reason: isOptOut ? DisabledReason.OPT_OUT : null,
         },
         {
           url: job.contentServerUrls![0],

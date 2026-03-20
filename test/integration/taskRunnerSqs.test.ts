@@ -2,12 +2,16 @@ import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
+import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import PlaceModel from "../../src/entities/Place/model"
+import { DisabledReason } from "../../src/entities/Place/types"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
 } from "../fixtures/deploymentEvent"
+import { createWorldUndeploymentEvent } from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -322,6 +326,156 @@ describe("taskRunnerSqs integration", () => {
 
         expect(response.body.data).toHaveLength(0)
       })
+    })
+  })
+
+  async function deployWorldScene(options: {
+    worldName: string
+    title?: string
+    base?: string
+    parcels?: string[]
+    optOut?: boolean
+  }): Promise<void> {
+    const job: DeploymentToSqs = createWorldDeploymentMessage()
+
+    const scene = createWorldContentEntityScene({
+      worldName: options.worldName,
+      title: options.title ?? "Test Scene",
+      base: options.base ?? "0,0",
+      parcels: options.parcels ?? ["0,0"],
+      optOut: options.optOut,
+    })
+
+    mockProcessEntityId.mockResolvedValueOnce(scene)
+    mockExtractSceneJsonData.mockResolvedValueOnce({
+      creator: "0x1234567890abcdef1234567890abcdef12345678",
+      runtimeVersion: "7.0.0",
+    })
+
+    await taskRunnerSqs(job)
+  }
+
+  describe("when a world scene is deployed and then an undeployment event is received", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "redeployafter-undeploy.dcl.eth"
+      await deployWorldScene({ worldName, title: "Original Scene" })
+
+      const event = createWorldUndeploymentEvent(worldName)
+      await handleWorldUndeployment(event)
+    })
+
+    it("should disable the place with undeployment reason", async () => {
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+
+      expect(place!.disabled).toBe(true)
+      expect(place!.disabled_reason).toBe(DisabledReason.UNDEPLOYMENT)
+    })
+
+    describe("and the world scene is redeployed", () => {
+      let originalPlaceId: string
+
+      beforeEach(async () => {
+        const disabledPlace = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        originalPlaceId = disabledPlace!.id
+
+        await deployWorldScene({ worldName, title: "Redeployed Scene" })
+      })
+
+      it("should create a new enabled place with a different id", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: worldName })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].title).toBe("Redeployed Scene")
+        expect(response.body.data[0].id).not.toBe(originalPlaceId)
+      })
+    })
+  })
+
+  describe("when a world scene is deployed with opt-out", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "optout-then-optin.dcl.eth"
+      await deployWorldScene({
+        worldName,
+        title: "Opted Out Scene",
+        optOut: true,
+      })
+    })
+
+    it("should disable the place with opt_out reason", async () => {
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+
+      expect(place!.disabled).toBe(true)
+      expect(place!.disabled_reason).toBe(DisabledReason.OPT_OUT)
+    })
+
+    describe("and the world scene is redeployed without opt-out", () => {
+      let originalPlaceId: string
+
+      beforeEach(async () => {
+        const disabledPlace = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        originalPlaceId = disabledPlace!.id
+
+        await deployWorldScene({ worldName, title: "Opted In Scene" })
+      })
+
+      it("should re-enable the same place record via the places API", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: worldName })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].title).toBe("Opted In Scene")
+        expect(response.body.data[0].id).toBe(originalPlaceId)
+      })
+
+      it("should clear disabled_at and disabled_reason to null on the place", async () => {
+        const place = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+
+        expect(place!.disabled_at).toBeNull()
+        expect(place!.disabled_reason).toBeNull()
+      })
+    })
+  })
+
+  describe("when a new world scene is deployed without opt-out", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "new-nooptout.dcl.eth"
+      await deployWorldScene({ worldName, title: "Normal Scene" })
+    })
+
+    it("should set the place as enabled with no disabled_reason", async () => {
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+
+      expect(place!.disabled).toBe(false)
+      expect(place!.disabled_reason).toBeNull()
     })
   })
 

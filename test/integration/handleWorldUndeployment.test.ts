@@ -5,6 +5,8 @@ import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extrac
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import PlaceModel from "../../src/entities/Place/model"
+import { DisabledReason } from "../../src/entities/Place/types"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
@@ -115,6 +117,18 @@ describe("when handling the WorldUndeploymentEvent", () => {
         .expect(200)
 
       expect(response.body.data).toHaveLength(0)
+    })
+
+    it("should set the disabled_reason to undeployment on the place record", async () => {
+      const event = createWorldUndeploymentEvent(worldName)
+      await handleWorldUndeployment(event)
+
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+
+      expect(place!.disabled_reason).toBe(DisabledReason.UNDEPLOYMENT)
     })
 
     it("should keep the world record but not return it in the worlds list", async () => {

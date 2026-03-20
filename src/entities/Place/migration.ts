@@ -74,6 +74,7 @@ export function createPlaceFromEntityScene(
     disabled: false,
     disabled_at:
       !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
+    disabled_reason: null,
     created_at: now,
     updated_at: now,
     deployed_at: now,
