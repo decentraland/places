@@ -1,5 +1,7 @@
 import { randomUUID } from "crypto"
 
+import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
@@ -94,12 +96,22 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       }
     }
 
-    // Upsert the world to keep the owner in sync on every scene deployment.
-    const world = await WorldModel.upsertWorld({
+    // Insert the world only if it doesn't already exist.
+    // If it already exists (configured via settings or a previous deployment),
+    // its data is left untouched.
+    const worldId = await WorldModel.insertWorldIfNotExists({
       world_name: worldName,
+      title:
+        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
+      description:
+        contentEntityScene?.metadata?.display?.description || undefined,
+      content_rating:
+        (contentEntityScene?.metadata?.policy
+          ?.contentRating as SceneContentRating) || undefined,
+      categories: contentEntityScene?.metadata?.tags || undefined,
       owner: contentEntityScene?.metadata?.owner || undefined,
+      show_in_places: isOptOut ? false : undefined,
     })
-    const worldId = world.id
 
     // Find the existing place for this scene by world_id and base_position
     const basePosition =

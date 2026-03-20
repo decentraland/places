@@ -145,7 +145,6 @@ describe("taskRunnerSqs integration", () => {
       const initialScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Original Scene",
-        owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(initialScene)
@@ -156,12 +155,11 @@ describe("taskRunnerSqs integration", () => {
 
       await taskRunnerSqs(job)
 
-      // Second deployment updates the existing scene with a new owner
+      // Second deployment updates the existing scene
       const updatedScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Updated Scene",
         description: "Updated description",
-        owner: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(updatedScene)
@@ -183,16 +181,13 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data[0].title).toBe("Updated Scene")
     })
 
-    it("should update the world record with the new owner", async () => {
+    it("should preserve the world record", async () => {
       const response = await supertest(app)
         .get("/api/worlds/existingworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.world_name).toBe("existingworld.dcl.eth")
-      expect(response.body.data.owner).toBe(
-        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      )
     })
 
     it("should reflect updated data via the place detail API", async () => {
@@ -241,13 +236,13 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data).toHaveLength(0)
     })
 
-    it("should create the world record", async () => {
+    it("should create the world with show_in_places set to false", async () => {
       const response = await supertest(app)
         .get("/api/worlds/optoutworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
-      expect(response.body.data.world_name).toBe("optoutworld.dcl.eth")
+      expect(response.body.data.show_in_places).toBe(false)
     })
   })
 

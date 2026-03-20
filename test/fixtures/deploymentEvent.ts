@@ -38,7 +38,6 @@ export function createWorldContentEntityScene(
     worldName?: string
     title?: string
     description?: string
-    owner?: string
     base?: string
     parcels?: string[]
     contentRating?: string
@@ -75,7 +74,7 @@ export function createWorldContentEntityScene(
         favicon: "favicon_asset",
         navmapThumbnail: "scene-thumbnail.png",
       },
-      owner: overrides.owner ?? "0x1234567890abcdef1234567890abcdef12345678",
+      owner: "0x1234567890abcdef1234567890abcdef12345678",
       contact: {
         name: "test-creator",
         email: "",
