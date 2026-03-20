@@ -167,8 +167,8 @@ export function createPlaceFromContentEntityScene(
     content_rating: getContentRating(contentEntityScene, data),
     created_at: now,
     deployed_at: new Date(contentEntityScene.timestamp),
-    disabled_at:
-      !!data.disabled && !data.disabled_at ? now : data.disabled_at || null,
+    disabled_at: data.disabled ? data.disabled_at || now : null,
+    disabled_reason: data.disabled ? data.disabled_reason || null : null,
     textsearch: undefined,
     categories: [],
     creator_address: options.creator || null,

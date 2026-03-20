@@ -40,6 +40,7 @@ export type HotScene = Pick<
 export type PlaceAttributes = BaseEntityAttributes & {
   disabled: boolean
   disabled_at: Date | null
+  disabled_reason: DisabledReason | null
   highlighted_image: string | null
   positions: string[]
   base_position: string
@@ -71,6 +72,12 @@ export type AggregatePlaceAttributes = PlaceAttributes &
 
 export type GetPlaceParams = {
   place_id: string
+}
+
+export enum DisabledReason {
+  OPT_OUT = "opt_out",
+  UNDEPLOYMENT = "undeployment",
+  OVERWRITTEN = "overwritten",
 }
 
 export enum PlaceListOrderBy {

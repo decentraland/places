@@ -243,6 +243,13 @@ export const placeSchema = schema({
       type: "string",
       format: "date-time",
     },
+    disabled_reason: {
+      type: "string",
+      description:
+        "The reason why the place is disabled: opt_out, undeployment, or overwritten",
+      enum: ["opt_out", "undeployment", "overwritten"],
+      nullable: true as any,
+    },
     created_at: {
       description: "the time the place was created",
       type: "string",

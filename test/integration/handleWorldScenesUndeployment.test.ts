@@ -5,6 +5,8 @@ import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extrac
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import PlaceModel from "../../src/entities/Place/model"
+import { DisabledReason } from "../../src/entities/Place/types"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
@@ -138,6 +140,20 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         .expect(200)
 
       expect(response.body.data).toHaveLength(0)
+    })
+
+    it("should set the disabled_reason to undeployment on the place record", async () => {
+      const event = createWorldScenesUndeploymentEvent(worldName, [
+        { entityId: "entity-1", baseParcel: "20,24" },
+      ])
+      await handleWorldScenesUndeployment(event)
+
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "20,24"
+      )
+
+      expect(place!.disabled_reason).toBe(DisabledReason.UNDEPLOYMENT)
     })
 
     it("should not return the world in the worlds list after the last scene is removed", async () => {

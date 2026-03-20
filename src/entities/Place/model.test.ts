@@ -18,6 +18,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "content_rating",
   "disabled",
   "disabled_at",
+  "disabled_reason",
   "created_at",
   "updated_at",
   "deployed_at",
@@ -27,7 +28,6 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
 ]
 
 const namedQuery = jest.spyOn(PlaceModel, "namedQuery")
-const updateTo = jest.spyOn(PlaceModel, "updateTo")
 const namedRowCount = jest.spyOn(PlaceModel, "namedRowCount")
 
 beforeEach(() => {
@@ -622,10 +622,15 @@ describe(`countPlaces`, () => {
 })
 
 describe(`disablePlaces`, () => {
-  test(`should run an update query and return how many records were updated`, async () => {
-    updateTo.mockResolvedValueOnce(1)
-    expect(await PlaceModel.disablePlaces([placeGenesisPlaza.id])).toBe(1)
-    expect(updateTo.mock.calls.length).toBe(1)
+  test(`should run an update query to disable places with overwritten reason`, async () => {
+    namedQuery.mockResolvedValue([])
+    await PlaceModel.disablePlaces([placeGenesisPlaza.id])
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("disable_places")
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toContain(
+      `"disabled_reason" = 'overwritten'`
+    )
   })
 })
 
@@ -763,8 +768,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "creator_address", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "disabled_reason", "created_at", "updated_at", "deployed_at", "world", "world_name", "creator_address", "id")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -783,11 +788,11 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "updated_at" = $12, "deployed_at" = $13, "world" = $14, "world_name" = $15, "creator_address" = $16
-      WHERE disabled is false AND world is false AND "base_position" IN 
-      ( 
-        SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $17
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "disabled_reason" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "creator_address" = $17
+      WHERE disabled is false AND world is false AND "base_position" IN
+      (
+        SELECT DISTINCT("base_position")
+        FROM "place_positions" "pp" WHERE "pp"."position" = $18
       )
       `
         .trim()
@@ -807,8 +812,8 @@ describe(`insertPlace`, () => {
     expect(name).toBe("insert_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "created_at", "updated_at", "deployed_at", "world", "world_name", "creator_address", "id") 
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+      INSERT INTO "places" ("title", "description", "image", "owner", "positions", "base_position", "contact_name", "contact_email", "content_rating", "disabled", "disabled_at", "disabled_reason", "created_at", "updated_at", "deployed_at", "world", "world_name", "creator_address", "id")
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -827,15 +832,30 @@ describe(`updatePlace`, () => {
     expect(name).toBe("update_place")
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
-      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "updated_at" = $12, "deployed_at" = $13, "world" = $14, "world_name" = $15, "creator_address" = $16
-      WHERE disabled is false AND world is false AND "base_position" IN 
-      ( 
-        SELECT DISTINCT("base_position") 
-        FROM "place_positions" "pp" WHERE "pp"."position" = $17
+      UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "disabled_reason" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "creator_address" = $17
+      WHERE disabled is false AND world is false AND "base_position" IN
+      (
+        SELECT DISTINCT("base_position")
+        FROM "place_positions" "pp" WHERE "pp"."position" = $18
       )
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
+    )
+  })
+})
+
+describe(`updatePlace for world places`, () => {
+  test(`should only allow updates for enabled or opt_out disabled places`, async () => {
+    namedQuery.mockResolvedValue([])
+    await PlaceModel.updatePlace(worldPlaceParalax, placesAttributes)
+    expect(namedQuery.mock.calls.length).toBe(1)
+    const [name, sql] = namedQuery.mock.calls[0]
+    expect(name).toBe("update_place")
+    const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
+    expect(normalizedSql).toContain(`world is true AND "world_id" = $`)
+    expect(normalizedSql).toContain(
+      `("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
     )
   })
 })

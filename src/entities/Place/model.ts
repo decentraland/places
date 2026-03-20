@@ -459,10 +459,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
   static async disablePlaces(placesIds: string[]) {
     const now = new Date()
-    return this.updateTo(
-      { disabled: true, disabled_at: now },
-      { id: placesIds }
-    )
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'overwritten'
+      WHERE "id" = ANY(${placesIds})
+    `
+    await this.namedQuery("disable_places", sql)
   }
 
   /**
@@ -480,7 +482,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const now = new Date()
     const sql = SQL`
       UPDATE ${table(this)}
-      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}
+      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE "world_id" = ${normalizedWorldId}
         AND "deployed_at" < ${eventDate}
         AND "disabled" IS FALSE
@@ -504,7 +506,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const now = new Date()
     const sql = SQL`
       UPDATE ${table(this)}
-      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}
+      SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE "world_id" = ${normalizedWorldId}
         AND "base_position" = ANY(${basePositions})
         AND "deployed_at" < ${eventDate}
@@ -581,10 +583,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
-    )} WHERE disabled is false
-    ${conditional(
+    )} WHERE ${conditional(
       !place.world,
-      SQL`AND world is false AND "base_position" IN (
+      SQL`disabled is false AND world is false AND "base_position" IN (
         SELECT DISTINCT("base_position")
         FROM ${table(PlacePositionModel)} "pp"
         WHERE "pp"."position" = ${place.base_position}
@@ -592,7 +593,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )}
     ${conditional(
       !!place.world,
-      SQL` AND world is true AND "world_id" = ${place.world_id} AND "base_position" = ${place.base_position}`
+      SQL`world is true AND "world_id" = ${place.world_id} AND "base_position" = ${place.base_position} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
     )}`
 
     return this.namedQuery("update_place", sql)
