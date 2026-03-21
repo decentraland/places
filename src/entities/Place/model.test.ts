@@ -881,7 +881,7 @@ describe(`updatePlace for world places`, () => {
     const [name, sql] = namedQuery.mock.calls[0]
     expect(name).toBe("update_place")
     const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
-    expect(normalizedSql).toContain(`world is true AND "world_id" = $`)
+    expect(normalizedSql).toContain(`world is true AND "id" = $`)
     expect(normalizedSql).toContain(
       `("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
     )
