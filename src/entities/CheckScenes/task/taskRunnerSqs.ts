@@ -17,7 +17,11 @@ import {
 import WorldModel from "../../World/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { fetchNameOwner, updateGenesisCityManifest } from "../utils"
+import {
+  fetchNameOwner,
+  findNewDeployedPlace,
+  updateGenesisCityManifest,
+} from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import {
@@ -120,88 +124,88 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       })
     }
 
-    // Find the existing place for this scene by world_id and base_position
-    const basePosition =
-      contentEntityScene?.metadata?.scene?.base ||
-      (contentEntityScene?.pointers || [])[0]
-    const existingPlace = await PlaceModel.findByWorldIdAndBasePosition(
+    // World-specific overlap logic: in worlds, positions can change freely
+    // between deployments, so identity is based on overlap count rather than
+    // exact position matching (which is what Genesis City uses).
+    //  - 0 overlapping → new scene in this world
+    //  - 1 overlapping → same scene, possibly reshaped → update
+    //  - 2+ overlapping → new scene supersedes multiple old ones → create + disable
+    const overlappingPlaces = await PlaceModel.findActiveByWorldIdAndPositions(
       worldId,
-      basePosition
+      contentEntityScene.pointers
     )
 
-    const shouldCreateNewPlace =
-      !existingPlace ||
-      (existingPlace.disabled &&
-        (existingPlace.disabled_reason === DisabledReason.UNDEPLOYMENT ||
-          existingPlace.disabled_reason === DisabledReason.OVERWRITTEN))
+    const options = {
+      url: job.contentServerUrls![0],
+      creator: sceneJsonData.creator,
+      sdk: sceneJsonData.runtimeVersion,
+      worldId,
+    }
 
-    if (shouldCreateNewPlace) {
-      // Create a new place: either no existing place, or the existing one was
-      // disabled by undeployment/overlap and should not be resurrected.
-      const placefromContentEntity = createPlaceFromContentEntityScene(
+    // Stale deployment protection: skip if a newer deployment already exists
+    const newerPlace = findNewDeployedPlace(
+      contentEntityScene,
+      overlappingPlaces
+    )
+    if (newerPlace) {
+      placesToProcess = null
+    } else if (overlappingPlaces.length === 1) {
+      // Single overlap → update that place (same scene, possibly reshaped)
+      const existingPlace = overlappingPlaces[0]
+      const place = createPlaceFromContentEntityScene(
         contentEntityScene,
-        {
-          disabled: isOptOut,
-          disabled_reason: isOptOut ? DisabledReason.OPT_OUT : null,
-        },
-        {
-          url: job.contentServerUrls![0],
-          creator: sceneJsonData.creator,
-          sdk: sceneJsonData.runtimeVersion,
-          worldId,
-        }
-      )
-      placesToProcess = {
-        new: placefromContentEntity,
-        rating: {
-          id: randomUUID(),
-          entity_id: placefromContentEntity.id,
-          original_rating: null,
-          update_rating: placefromContentEntity.content_rating,
-          moderator: null,
-          comment: null,
-          created_at: new Date(),
-        },
-        disabled: [],
-      }
-    } else {
-      // Update the existing place: either it's enabled, or it was disabled
-      // by opt_out and can be re-enabled if opt-out is now removed.
-      const placefromContentEntity = createPlaceFromContentEntityScene(
-        contentEntityScene,
-        {
-          ...existingPlace,
-          disabled: isOptOut,
-          disabled_reason: isOptOut ? DisabledReason.OPT_OUT : null,
-        },
-        {
-          url: job.contentServerUrls![0],
-          creator: sceneJsonData.creator,
-          sdk: sceneJsonData.runtimeVersion,
-          worldId,
-        }
+        existingPlace,
+        options
       )
 
       let rating = null
-
-      if (
-        placefromContentEntity.content_rating !== existingPlace.content_rating
-      ) {
+      if (place.content_rating !== existingPlace.content_rating) {
         rating = {
           id: randomUUID(),
           entity_id: existingPlace.id,
           original_rating: existingPlace.content_rating,
-          update_rating: placefromContentEntity.content_rating,
+          update_rating: place.content_rating,
           moderator: null,
           comment: null,
           created_at: new Date(),
         }
       }
 
+      placesToProcess = { update: place, rating, disabled: [] }
+    } else {
+      // 0 or 2+ overlapping → create a new place, disable all overlapping
+      const place = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {},
+        options
+      )
+
       placesToProcess = {
-        update: placefromContentEntity,
-        rating,
-        disabled: [],
+        new: place,
+        rating: {
+          id: randomUUID(),
+          entity_id: place.id,
+          original_rating: null,
+          update_rating: place.content_rating,
+          moderator: null,
+          comment: null,
+          created_at: new Date(),
+        },
+        disabled: overlappingPlaces,
+      }
+    }
+
+    // Apply opt-out override on top of the standard result
+    if (placesToProcess) {
+      const place = placesToProcess.new || placesToProcess.update
+      if (isOptOut) {
+        place.disabled = true
+        place.disabled_reason = DisabledReason.OPT_OUT
+        place.disabled_at = place.disabled_at || new Date()
+      } else {
+        place.disabled = false
+        place.disabled_reason = null
+        place.disabled_at = null
       }
     }
   } else {

@@ -529,6 +529,296 @@ describe("taskRunnerSqs integration", () => {
     })
   })
 
+  describe("when a world scene is redeployed with different positions (reshaped)", () => {
+    let worldName: string
+    let originalPlaceId: string
+
+    beforeEach(async () => {
+      worldName = "reshaped-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Original Scene",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      const originalPlace = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      originalPlaceId = originalPlace!.id
+
+      // Redeploy with different positions that overlap the original
+      await deployWorldScene({
+        worldName,
+        title: "Reshaped Scene",
+        base: "0,1",
+        parcels: ["0,1", "0,2"],
+      })
+    })
+
+    it("should update the existing place preserving its id", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(1)
+      expect(enabledPlaces[0].id).toBe(originalPlaceId)
+      expect(enabledPlaces[0].title).toBe("Reshaped Scene")
+    })
+
+    it("should update the positions and base_position on the place", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces[0].base_position).toBe("0,1")
+      expect(enabledPlaces[0].positions).toEqual(["0,1", "0,2"])
+    })
+  })
+
+  describe("when a world has an existing scene and a new scene is deployed without overlapping positions", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "no-overlap-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "5,5",
+        parcels: ["5,5"],
+      })
+    })
+
+    it("should keep both places enabled", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(2)
+      expect(enabledPlaces.map((p) => p.title).sort()).toEqual([
+        "Scene A",
+        "Scene B",
+      ])
+    })
+  })
+
+  describe("when a world has multiple scenes and a new scene overlaps only one of them", () => {
+    let worldName: string
+    let sceneAPlaceId: string
+
+    beforeEach(async () => {
+      worldName = "partial-overlap-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      const sceneAPlace = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      sceneAPlaceId = sceneAPlace!.id
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "5,5",
+        parcels: ["5,5"],
+      })
+
+      // Scene C overlaps only Scene A (on parcel 0,1)
+      await deployWorldScene({
+        worldName,
+        title: "Scene C",
+        base: "0,1",
+        parcels: ["0,1", "0,2"],
+      })
+    })
+
+    it("should update the overlapping scene with the new title", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(2)
+      expect(enabledPlaces.map((p) => p.title).sort()).toEqual([
+        "Scene B",
+        "Scene C",
+      ])
+    })
+
+    it("should preserve the original place id of the overlapping scene", async () => {
+      const allPlaces = await PlaceModel.findByWorldId(worldName)
+      const sceneCPlace = allPlaces.find((p) => p.title === "Scene C")
+
+      expect(sceneCPlace!.id).toBe(sceneAPlaceId)
+    })
+
+    it("should keep the non-overlapping scene enabled", async () => {
+      const sceneB = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "5,5"
+      )
+
+      expect(sceneB!.disabled).toBe(false)
+    })
+  })
+
+  describe("when a new world scene overlaps multiple existing scenes", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "multi-overlap-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "0,2",
+        parcels: ["0,2", "0,3"],
+      })
+
+      // Scene C overlaps both Scene A (on 0,1) and Scene B (on 0,2)
+      await deployWorldScene({
+        worldName,
+        title: "Scene C",
+        base: "0,1",
+        parcels: ["0,1", "0,2"],
+      })
+    })
+
+    it("should disable all overlapping scenes with overwritten reason", async () => {
+      const sceneA = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      const sceneB = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,2"
+      )
+
+      expect(sceneA!.disabled).toBe(true)
+      expect(sceneA!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+      expect(sceneB!.disabled).toBe(true)
+      expect(sceneB!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+
+    it("should create the new scene as enabled", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(1)
+      expect(enabledPlaces[0].title).toBe("Scene C")
+    })
+  })
+
+  describe("when a newer world scene deployment already exists for overlapping positions", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "stale-deploy-world.dcl.eth"
+
+      // Deploy a scene with a recent timestamp
+      await deployWorldScene({
+        worldName,
+        title: "Newer Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+    })
+
+    it("should skip the stale deployment and keep the newer place", async () => {
+      const job: DeploymentToSqs = createWorldDeploymentMessage()
+
+      const staleScene = createWorldContentEntityScene({
+        worldName,
+        title: "Stale Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      // Override the timestamp to be clearly older than the existing scene.
+      // Use a large offset (1 day) to account for timezone differences between
+      // Date.now() and the DB's timestamptz storage/retrieval.
+      staleScene.timestamp = Date.now() - 86_400_000
+
+      mockProcessEntityId.mockResolvedValueOnce(staleScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: "0x1234567890abcdef1234567890abcdef12345678",
+        runtimeVersion: "7.0.0",
+      })
+
+      await taskRunnerSqs(job)
+
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(1)
+      expect(enabledPlaces[0].title).toBe("Newer Scene")
+    })
+  })
+
+  describe("when a world scene is deployed to positions previously held by an overwritten place", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "redeploy-after-overwrite.dcl.eth"
+
+      // Deploy Scene A
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      // Deploy Scene B overlapping Scene A on both parcels → 1 overlap → updates A
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "0,1",
+        parcels: ["0,1", "0,2"],
+      })
+
+      // Deploy Scene C overlapping the updated place on 0,2 + a new parcel
+      // that also overlaps nothing else → 1 overlap → updates again
+      await deployWorldScene({
+        worldName,
+        title: "Scene C",
+        base: "0,2",
+        parcels: ["0,2", "0,3"],
+      })
+
+      // Now the single active place has positions [0,2, 0,3].
+      // Deploy a scene at the original positions [0,0] which no active place holds
+      await deployWorldScene({
+        worldName,
+        title: "Scene D",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+    })
+
+    it("should create a new place at the previously abandoned positions", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(2)
+      expect(enabledPlaces.map((p) => p.title).sort()).toEqual([
+        "Scene C",
+        "Scene D",
+      ])
+    })
+  })
+
   describe("when the name owner differs from the metadata owner", () => {
     describe("and both are present", () => {
       beforeEach(async () => {
