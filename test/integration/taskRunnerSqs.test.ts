@@ -5,6 +5,7 @@ import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extrac
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason } from "../../src/entities/Place/types"
 import {
@@ -29,10 +30,11 @@ jest.mock("../../src/entities/Slack/utils", () => ({
   notifyDisablePlaces: jest.fn(),
 }))
 
-// Mock the genesis city manifest update (requires S3)
+// Mock the genesis city manifest update (requires S3) and name owner fetch (requires subgraph)
 jest.mock("../../src/entities/CheckScenes/utils", () => ({
   ...jest.requireActual("../../src/entities/CheckScenes/utils"),
   updateGenesisCityManifest: jest.fn(),
+  fetchNameOwner: jest.fn().mockResolvedValue(undefined),
 }))
 
 // Mock modules with persistent timers to prevent Jest from hanging
@@ -54,6 +56,9 @@ const mockProcessEntityId = processEntityId as jest.MockedFunction<
 >
 const mockExtractSceneJsonData = extractSceneJsonData as jest.MockedFunction<
   typeof extractSceneJsonData
+>
+const mockFetchNameOwner = fetchNameOwner as jest.MockedFunction<
+  typeof fetchNameOwner
 >
 
 const app = createTestApp()
@@ -144,7 +149,6 @@ describe("taskRunnerSqs integration", () => {
       const initialScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Original Scene",
-        owner: "0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(initialScene)
@@ -155,12 +159,11 @@ describe("taskRunnerSqs integration", () => {
 
       await taskRunnerSqs(job)
 
-      // Second deployment updates the existing scene with a new owner
+      // Second deployment updates the existing scene
       const updatedScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Updated Scene",
         description: "Updated description",
-        owner: "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(updatedScene)
@@ -182,16 +185,15 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data[0].title).toBe("Updated Scene")
     })
 
-    it("should update the world record with the new owner", async () => {
+    it("should not overwrite the world record with data from the second deployment", async () => {
       const response = await supertest(app)
         .get("/api/worlds/existingworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.world_name).toBe("existingworld.dcl.eth")
-      expect(response.body.data.owner).toBe(
-        "0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-      )
+      expect(response.body.data.title).toBe("Original Scene")
+      expect(response.body.data.description).toBeNull()
     })
 
     it("should reflect updated data via the place detail API", async () => {
@@ -814,6 +816,184 @@ describe("taskRunnerSqs integration", () => {
         "Scene C",
         "Scene D",
       ])
+    })
+  })
+
+  describe("when the name owner differs from the metadata owner", () => {
+    describe("and both are present", () => {
+      beforeEach(async () => {
+        const scene = createWorldContentEntityScene({
+          worldName: "ownertest.dcl.eth",
+          title: "Owner Test Scene",
+        })
+        // scene fixture has metadata.owner = 0x1234...
+
+        mockFetchNameOwner.mockResolvedValueOnce(
+          "0xnameowner0000000000000000000000000000000"
+        )
+
+        mockProcessEntityId.mockResolvedValueOnce(scene)
+        mockExtractSceneJsonData.mockResolvedValueOnce({
+          creator: null,
+          runtimeVersion: null,
+        })
+
+        const job = createWorldDeploymentMessage()
+        await taskRunnerSqs(job)
+      })
+
+      it("should set the world owner to the name owner", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/ownertest.dcl.eth")
+          .expect(200)
+
+        expect(response.body.ok).toBe(true)
+        expect(response.body.data.owner).toBe(
+          "0xnameowner0000000000000000000000000000000"
+        )
+      })
+
+      it("should set the place owner to the metadata owner", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "ownertest.dcl.eth" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].owner).toBe(
+          "0x1234567890abcdef1234567890abcdef12345678"
+        )
+      })
+    })
+  })
+
+  describe("when the world owner changes between deployments", () => {
+    beforeEach(async () => {
+      const firstScene = createWorldContentEntityScene({
+        worldName: "ownerchange.dcl.eth",
+        title: "First Deploy",
+      })
+
+      mockFetchNameOwner.mockResolvedValueOnce(
+        "0xoriginalowner000000000000000000000000000"
+      )
+
+      mockProcessEntityId.mockResolvedValueOnce(firstScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      const job = createWorldDeploymentMessage()
+      await taskRunnerSqs(job)
+
+      // Second deployment with a new name owner (name was transferred)
+      const secondScene = createWorldContentEntityScene({
+        worldName: "ownerchange.dcl.eth",
+        title: "Second Deploy",
+      })
+
+      mockFetchNameOwner.mockResolvedValueOnce(
+        "0xnewowner00000000000000000000000000000000"
+      )
+
+      mockProcessEntityId.mockResolvedValueOnce(secondScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(job)
+    })
+
+    it("should update the world owner to the new name owner", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/ownerchange.dcl.eth")
+        .expect(200)
+
+      expect(response.body.ok).toBe(true)
+      expect(response.body.data.owner).toBe(
+        "0xnewowner00000000000000000000000000000000"
+      )
+    })
+  })
+
+  describe("when a world scene deployment is received without an owner in the metadata", () => {
+    describe("and fetchNameOwner returns the owner", () => {
+      beforeEach(async () => {
+        const scene = createWorldContentEntityScene({
+          worldName: "noowner.dcl.eth",
+          title: "No Owner Scene",
+        })
+        // Remove owner from the scene metadata to trigger the fallback
+        delete (scene.metadata as Record<string, unknown>).owner
+
+        mockFetchNameOwner.mockResolvedValueOnce(
+          "0xfallbackowner000000000000000000000000000"
+        )
+
+        mockProcessEntityId.mockResolvedValueOnce(scene)
+        mockExtractSceneJsonData.mockResolvedValueOnce({
+          creator: null,
+          runtimeVersion: null,
+        })
+
+        const job = createWorldDeploymentMessage()
+        await taskRunnerSqs(job)
+      })
+
+      it("should set the world owner to the name owner", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/noowner.dcl.eth")
+          .expect(200)
+
+        expect(response.body.ok).toBe(true)
+        expect(response.body.data.owner).toBe(
+          "0xfallbackowner000000000000000000000000000"
+        )
+      })
+
+      it("should use the name owner as fallback for the place owner", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "noowner.dcl.eth" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].owner).toBe(
+          "0xfallbackowner000000000000000000000000000"
+        )
+      })
+    })
+
+    describe("and fetchNameOwner returns undefined", () => {
+      beforeEach(async () => {
+        const scene = createWorldContentEntityScene({
+          worldName: "noowner-nofallback.dcl.eth",
+          title: "No Owner No Fallback",
+        })
+        delete (scene.metadata as Record<string, unknown>).owner
+
+        mockFetchNameOwner.mockResolvedValueOnce(undefined)
+
+        mockProcessEntityId.mockResolvedValueOnce(scene)
+        mockExtractSceneJsonData.mockResolvedValueOnce({
+          creator: null,
+          runtimeVersion: null,
+        })
+
+        const job = createWorldDeploymentMessage()
+        await taskRunnerSqs(job)
+      })
+
+      it("should create the world with a null owner", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/noowner-nofallback.dcl.eth")
+          .expect(200)
+
+        expect(response.body.ok).toBe(true)
+        expect(response.body.data.owner).toBeNull()
+      })
     })
   })
 })
