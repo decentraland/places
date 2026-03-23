@@ -286,6 +286,25 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("find_by_world_id", sql)
   }
 
+  static async findActiveByWorldIdAndPositions(
+    worldId: string,
+    positions: string[]
+  ): Promise<PlaceAttributes[]> {
+    if (positions.length === 0) {
+      return []
+    }
+
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE ("disabled" is false OR "disabled_reason" = 'opt_out')
+        AND "world" is true
+        AND "world_id" = ${worldId}
+        AND "positions" && ${positions}
+    `
+
+    return this.namedQuery("find_active_by_world_id_and_positions", sql)
+  }
+
   /**
    * Find a place by world_id and base_position (unique identifier for a scene in a world)
    */
@@ -599,7 +618,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )}
     ${conditional(
       !!place.world,
-      SQL`world is true AND "world_id" = ${place.world_id} AND "base_position" = ${place.base_position} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
+      SQL`world is true AND "id" = ${place.id} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
     )}`
 
     return this.namedQuery("update_place", sql)
