@@ -829,7 +829,7 @@ describe("taskRunnerSqs integration", () => {
         // scene fixture has metadata.owner = 0x1234...
 
         mockFetchNameOwner.mockResolvedValueOnce(
-          "0xnameowner00000000000000000000000000000000"
+          "0xnameowner0000000000000000000000000000000"
         )
 
         mockProcessEntityId.mockResolvedValueOnce(scene)
@@ -849,7 +849,7 @@ describe("taskRunnerSqs integration", () => {
 
         expect(response.body.ok).toBe(true)
         expect(response.body.data.owner).toBe(
-          "0xnameowner00000000000000000000000000000000"
+          "0xnameowner0000000000000000000000000000000"
         )
       })
 
@@ -875,7 +875,7 @@ describe("taskRunnerSqs integration", () => {
       })
 
       mockFetchNameOwner.mockResolvedValueOnce(
-        "0xoriginalowner0000000000000000000000000000"
+        "0xoriginalowner000000000000000000000000000"
       )
 
       mockProcessEntityId.mockResolvedValueOnce(firstScene)
@@ -894,7 +894,7 @@ describe("taskRunnerSqs integration", () => {
       })
 
       mockFetchNameOwner.mockResolvedValueOnce(
-        "0xnewowner000000000000000000000000000000000"
+        "0xnewowner00000000000000000000000000000000"
       )
 
       mockProcessEntityId.mockResolvedValueOnce(secondScene)
@@ -913,7 +913,7 @@ describe("taskRunnerSqs integration", () => {
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.owner).toBe(
-        "0xnewowner000000000000000000000000000000000"
+        "0xnewowner00000000000000000000000000000000"
       )
     })
   })
