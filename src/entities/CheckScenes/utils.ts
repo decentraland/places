@@ -21,26 +21,107 @@ interface ManifestResponse {
   empty: Pointer[]
 }
 
-export async function fetchWorldInformation(
-  worldName: string,
-  url: string
-): Promise<ContentEntityScene | undefined> {
-  try {
-    const response = await fetch(`${url}/entities/active`, {
-      method: "POST",
-      body: JSON.stringify({
-        pointers: [worldName],
-      }),
-    })
+const MARKETPLACE_SUBGRAPH_URL = env(
+  "MARKETPLACE_SUBGRAPH_URL",
+  "https://subgraph.decentraland.org/marketplace"
+)
+const ENS_SUBGRAPH_URL = env(
+  "ENS_SUBGRAPH_URL",
+  "https://subgraph.decentraland.org/ens"
+)
 
-    if (!response.ok) {
-      return undefined // prevent failing
+const DCL_NAME_SUFFIX = ".dcl.eth"
+
+/**
+ * Fetches the on-chain owner of a world name by querying the appropriate
+ * subgraph based on the name suffix:
+ * - `.dcl.eth` names — Marketplace subgraph (NFT owner).
+ * - External ENS names — ENS subgraph (wrapped owner).
+ *
+ * Returns `undefined` on any error so that a subgraph outage never
+ * blocks scene deployment processing.
+ *
+ * @param worldName - The world name, e.g. `"myworld.dcl.eth"` or `"myworld.eth"`.
+ * @returns The owner address, or `undefined` if resolution fails.
+ */
+export async function fetchNameOwner(
+  worldName: string
+): Promise<string | undefined> {
+  try {
+    if (worldName.endsWith(DCL_NAME_SUFFIX)) {
+      return await fetchDclNameOwner(worldName)
     }
 
-    return (await response.json())[0] as Promise<ContentEntityScene | undefined>
-  } catch (error) {
-    return undefined // prevent failing
+    return await fetchEnsNameOwner(worldName)
+  } catch {
+    return undefined
   }
+}
+
+/**
+ * Resolves the owner of a `.dcl.eth` name by querying the Marketplace
+ * subgraph. The subdomain (without the `.dcl.eth` suffix) is looked up
+ * as an ENS-category NFT and the current NFT owner address is returned.
+ *
+ * @param worldName - Full DCL world name, e.g. `"myworld.dcl.eth"`.
+ * @returns The owner address, or `undefined` if the name is not found or the query fails.
+ */
+async function fetchDclNameOwner(
+  worldName: string
+): Promise<string | undefined> {
+  const subdomain = worldName.slice(0, -DCL_NAME_SUFFIX.length)
+
+  const response = await fetch(MARKETPLACE_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: `query getOwner($domains: [String!]) {
+        nfts(first: 1, where: { name_in: $domains, category: ens }) {
+          owner { address }
+        }
+      }`,
+      variables: { domains: [subdomain] },
+    }),
+  })
+
+  if (!response.ok) {
+    return undefined
+  }
+
+  const result = await response.json()
+  return result?.data?.nfts?.[0]?.owner?.address as string | undefined
+}
+
+/**
+ * Resolves the owner of an external ENS name (e.g. `"myworld.eth"`) by
+ * querying the ENS subgraph. Returns the `wrappedOwner` address, which
+ * represents the current controller of the name.
+ *
+ * @param worldName - Full ENS domain, e.g. `"myworld.eth"`.
+ * @returns The wrapped owner address, or `undefined` if the name is not found or the query fails.
+ */
+async function fetchEnsNameOwner(
+  worldName: string
+): Promise<string | undefined> {
+  const response = await fetch(ENS_SUBGRAPH_URL, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      query: `query getOwner($domains: [String]) {
+        domains(where: { name_in: $domains }) {
+          wrappedOwner { id }
+        }
+      }`,
+      variables: { domains: [worldName] },
+    }),
+  })
+
+  if (!response.ok) {
+    return undefined
+  }
+
+  const result = await response.json()
+  return result?.data?.domains?.[0]?.wrappedOwner?.id as string | undefined
 }
 
 async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {

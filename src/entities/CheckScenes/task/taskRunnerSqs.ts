@@ -17,7 +17,7 @@ import {
 import WorldModel from "../../World/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import { fetchWorldInformation, updateGenesisCityManifest } from "../utils"
+import { fetchNameOwner, updateGenesisCityManifest } from "../utils"
 import { DeploymentToSqs } from "./consumer"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import {
@@ -84,21 +84,19 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     const isOptOut =
       !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    // fallback to get the owner of the world in case is missing
-    if (!contentEntityScene.metadata.owner) {
-      const worldInformation = await fetchWorldInformation(
-        worldName,
-        job.contentServerUrls![0]
-      )
+    // Resolve the on-chain name owner. This is the authoritative owner for
+    // the world record, while the place uses metadata.owner as primary and
+    // falls back to the name owner.
+    const nameOwner = await fetchNameOwner(worldName)
 
-      if (worldInformation) {
-        contentEntityScene.metadata.owner = worldInformation?.metadata?.owner
-      }
+    // Ensure the place gets an owner: prefer the deployment metadata, fall
+    // back to the on-chain name owner.
+    if (!contentEntityScene.metadata.owner && nameOwner) {
+      contentEntityScene.metadata.owner = nameOwner
     }
 
-    // Insert the world only if it doesn't already exist.
-    // If it already exists (configured via settings or a previous deployment),
-    // its data is left untouched.
+    // Insert the world if it doesn't exist yet. The world owner is always
+    // the on-chain name owner, not the deployment metadata owner.
     const worldId = await WorldModel.insertWorldIfNotExists({
       world_name: worldName,
       title:
@@ -109,9 +107,18 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         (contentEntityScene?.metadata?.policy
           ?.contentRating as SceneContentRating) || undefined,
       categories: contentEntityScene?.metadata?.tags || undefined,
-      owner: contentEntityScene?.metadata?.owner || undefined,
+      owner: nameOwner || undefined,
       show_in_places: isOptOut ? false : undefined,
     })
+
+    // Update the world owner on every deployment to keep it in sync with
+    // the current on-chain name ownership.
+    if (nameOwner) {
+      await WorldModel.upsertWorld({
+        world_name: worldName,
+        owner: nameOwner,
+      })
+    }
 
     // Find the existing place for this scene by world_id and base_position
     const basePosition =
