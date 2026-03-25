@@ -104,7 +104,7 @@ describe("fetchNameOwner", () => {
   describe("when the world name is an external ENS name", () => {
     const worldName = "myworld.eth"
 
-    describe("and the ENS subgraph returns an owner", () => {
+    describe("and the ENS subgraph returns a wrapped owner", () => {
       let result: string | undefined
 
       beforeEach(async () => {
@@ -112,7 +112,7 @@ describe("fetchNameOwner", () => {
           ok: true,
           json: async () => ({
             data: {
-              domains: [{ wrappedOwner: { id: "0xensowner456" } }],
+              domains: [{ owner: { id: "0xowner789" }, wrappedOwner: { id: "0xensowner456" } }],
             },
           }),
         } as Response)
@@ -129,6 +129,51 @@ describe("fetchNameOwner", () => {
 
       it("should return the wrapped owner id", () => {
         expect(result).toBe("0xensowner456")
+      })
+    })
+
+    describe("and the world name has mixed casing", () => {
+      const mixedCaseEnsName = "MyWorld.eth"
+
+      beforeEach(async () => {
+        jest.spyOn(global, "fetch").mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: {
+              domains: [{ owner: { id: "0xowner789" }, wrappedOwner: null }],
+            },
+          }),
+        } as Response)
+
+        await fetchNameOwner(mixedCaseEnsName)
+      })
+
+      it("should lowercase the domain in the query variables", () => {
+        const callBody = JSON.parse(
+          (global.fetch as jest.Mock).mock.calls[0][1].body
+        )
+        expect(callBody.variables).toEqual({ domains: ["myworld.eth"] })
+      })
+    })
+
+    describe("and the ENS subgraph returns an owner without wrappedOwner", () => {
+      let result: string | undefined
+
+      beforeEach(async () => {
+        jest.spyOn(global, "fetch").mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: {
+              domains: [{ owner: { id: "0xowner789" }, wrappedOwner: null }],
+            },
+          }),
+        } as Response)
+
+        result = await fetchNameOwner(worldName)
+      })
+
+      it("should fall back to the owner id", () => {
+        expect(result).toBe("0xowner789")
       })
     })
 
