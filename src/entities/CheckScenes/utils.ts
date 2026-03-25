@@ -109,10 +109,11 @@ async function fetchEnsNameOwner(
     body: JSON.stringify({
       query: `query getOwner($domains: [String]) {
         domains(where: { name_in: $domains }) {
+          owner { id }
           wrappedOwner { id }
         }
       }`,
-      variables: { domains: [worldName] },
+      variables: { domains: [worldName.toLowerCase()] },
     }),
   })
 
@@ -121,7 +122,8 @@ async function fetchEnsNameOwner(
   }
 
   const result = await response.json()
-  return result?.data?.domains?.[0]?.wrappedOwner?.id as string | undefined
+  const domain = result?.data?.domains?.[0]
+  return (domain?.wrappedOwner?.id || domain?.owner?.id) as string | undefined
 }
 
 async function calculateGenesisCityManifestPositions(): Promise<ManifestResponse> {
