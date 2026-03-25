@@ -112,7 +112,12 @@ describe("fetchNameOwner", () => {
           ok: true,
           json: async () => ({
             data: {
-              domains: [{ owner: { id: "0xowner789" }, wrappedOwner: { id: "0xensowner456" } }],
+              domains: [
+                {
+                  owner: { id: "0xowner789" },
+                  wrappedOwner: { id: "0xensowner456" },
+                },
+              ],
             },
           }),
         } as Response)
