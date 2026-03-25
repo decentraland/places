@@ -76,11 +76,11 @@ async function fetchDclNameOwner(
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
       query: `query getOwner($domains: [String!]) {
-        nfts(first: 1, where: { name_in: $domains, category: ens }) {
+        nfts(first: 1, where: { searchText_in: $domains, category: ens }) {
           owner { address }
         }
       }`,
-      variables: { domains: [subdomain] },
+      variables: { domains: [subdomain.toLowerCase()] },
     }),
   })
 

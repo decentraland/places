@@ -42,15 +42,44 @@ describe("fetchNameOwner", () => {
         result = await fetchNameOwner(worldName)
       })
 
-      it("should query the marketplace subgraph with the subdomain (without .dcl.eth suffix)", () => {
+      it("should query the marketplace subgraph using searchText_in with the lowercased subdomain", () => {
         const callBody = JSON.parse(
           (global.fetch as jest.Mock).mock.calls[0][1].body
         )
+        expect(callBody.query).toContain("searchText_in")
         expect(callBody.variables).toEqual({ domains: ["testworld"] })
       })
 
       it("should return the owner address", () => {
         expect(result).toBe("0xdclowner123")
+      })
+    })
+
+    describe("and the world name has mixed casing", () => {
+      const mixedCaseWorldName = "TestWorld.dcl.eth"
+
+      beforeEach(async () => {
+        jest.spyOn(global, "fetch").mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            data: {
+              nfts: [
+                {
+                  owner: { address: "0xdclowner123" },
+                },
+              ],
+            },
+          }),
+        } as Response)
+
+        await fetchNameOwner(mixedCaseWorldName)
+      })
+
+      it("should lowercase the subdomain in the query variables", () => {
+        const callBody = JSON.parse(
+          (global.fetch as jest.Mock).mock.calls[0][1].body
+        )
+        expect(callBody.variables).toEqual({ domains: ["testworld"] })
       })
     })
 
