@@ -112,7 +112,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
           ?.contentRating as SceneContentRating) || undefined,
       categories: contentEntityScene?.metadata?.tags || undefined,
       owner: nameOwner || undefined,
-      show_in_places: isOptOut ? false : undefined,
+      show_in_places: !isOptOut,
     })
 
     // Update the world owner on every deployment to keep it in sync with

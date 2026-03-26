@@ -354,20 +354,40 @@ async function processWorldScene(
           nameOwner || "unknown"
         })`
       )
-    } else if (nameOwner && existingWorld.owner !== nameOwner) {
-      logger.log(
-        `    [DRY-RUN] Would update world owner: ${existingWorld.owner} → ${nameOwner}`
-      )
+    } else {
+      const worldChanges: string[] = []
+      if (nameOwner && existingWorld.owner !== nameOwner) {
+        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+      }
+      if (existingWorld.show_in_places !== !isOptOut) {
+        worldChanges.push(
+          `show_in_places: ${existingWorld.show_in_places} → ${!isOptOut}`
+        )
+      }
+      if (worldChanges.length > 0) {
+        logger.log(
+          `    [DRY-RUN] Would update world: ${worldChanges.join(", ")}`
+        )
+      }
     }
   } else {
     if (!existingWorld) {
       logger.log(
         `    Creating world: ${worldName} (owner: ${nameOwner || "unknown"})`
       )
-    } else if (nameOwner && existingWorld.owner !== nameOwner) {
-      logger.log(
-        `    Updating world owner: ${existingWorld.owner} → ${nameOwner}`
-      )
+    } else {
+      const worldChanges: string[] = []
+      if (nameOwner && existingWorld.owner !== nameOwner) {
+        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+      }
+      if (existingWorld.show_in_places !== !isOptOut) {
+        worldChanges.push(
+          `show_in_places: ${existingWorld.show_in_places} → ${!isOptOut}`
+        )
+      }
+      if (worldChanges.length > 0) {
+        logger.log(`    Updating world: ${worldChanges.join(", ")}`)
+      }
     }
     // Insert the world if it doesn't exist yet
     await WorldModel.insertWorldIfNotExists({
@@ -381,16 +401,16 @@ async function processWorldScene(
           ?.contentRating as SceneContentRating) || undefined,
       categories: contentEntityScene?.metadata?.tags || undefined,
       owner: nameOwner || undefined,
-      show_in_places: isOptOut ? false : undefined,
+      show_in_places: !isOptOut,
     })
 
-    // Update the world owner to keep it in sync with on-chain name ownership
-    if (nameOwner) {
-      await WorldModel.upsertWorld({
-        world_name: worldName,
-        owner: nameOwner,
-      })
-    }
+    // Update the world owner and fix show_in_places for worlds that were
+    // stuck with show_in_places=false after the opt-out was removed
+    await WorldModel.upsertWorld({
+      world_name: worldName,
+      ...(nameOwner && { owner: nameOwner }),
+      show_in_places: !isOptOut,
+    })
   }
 
   // Find overlapping places (read-only, always runs)
