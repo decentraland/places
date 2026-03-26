@@ -8,6 +8,7 @@ import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs
 import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason } from "../../src/entities/Place/types"
+import WorldModel from "../../src/entities/World/model"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
@@ -478,6 +479,13 @@ describe("taskRunnerSqs integration", () => {
 
       expect(place!.disabled).toBe(false)
       expect(place!.disabled_reason).toBeNull()
+    })
+
+    it("should create the world with show_in_places set to true", async () => {
+      const world = await WorldModel.findByWorldName(worldName)
+
+      expect(world).not.toBeNull()
+      expect(world!.show_in_places).toBe(true)
     })
   })
 

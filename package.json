@@ -89,7 +89,7 @@
     "prettier": "^2.6.2",
     "supertest": "^7.2.2",
     "ts-jest": "^29.2.5",
-    "ts-node": "^10.8.0",
+    "ts-node": "^10.9.2",
     "tsc-files": "^1.1.3",
     "typescript": "^5.9.3"
   },
@@ -121,7 +121,9 @@
     "husky-setup": "husky install",
     "precommit": "lint-staged --config .husky/pre-commit.js",
     "lint": "eslint --ext .ts,.tsx,.js,.jsx ./src",
-    "lint:fix": "npm run lint -- --fix"
+    "lint:fix": "npm run lint -- --fix",
+    "rebuild:worlds:dev": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
+    "rebuild:worlds:prd": "DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts"
   },
   "repository": {
     "type": "git",
