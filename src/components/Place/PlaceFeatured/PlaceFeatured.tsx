@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useState } from "react"
 
 import { withPrefix } from "gatsby"
 
+import { useAdvancedUserAgentData } from "@dcl/hooks"
 import DownloadModal from "decentraland-gatsby/dist/components/Modal/DownloadModal"
 import useTrackContext from "decentraland-gatsby/dist/context/Track/useTrackContext"
 import useFormatMessage from "decentraland-gatsby/dist/hooks/useFormatMessage"
@@ -19,6 +20,7 @@ import { SegmentPlace } from "../../../modules/segment"
 import { placeClientOptions } from "../../../modules/utils"
 import { getImageUrl } from "../../../utils/image"
 import UserCount from "../../Label/UserCount/UserCount"
+import { MobileDownloadModal } from "../../MobileDownloadModal/MobileDownloadModal"
 
 import "./PlaceFeatured.css"
 
@@ -31,6 +33,9 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
   const { item, loading } = props
 
   const l = useFormatMessage()
+  const [, userAgentData] = useAdvancedUserAgentData()
+  const isAndroidDevice =
+    (userAgentData?.mobile ?? false) && userAgentData?.os?.name === "Android"
 
   const placeDetailUrl = useMemo(() => {
     if (item.world) return locations.world(item.world_name!)
@@ -112,14 +117,21 @@ export default React.memo(function PlaceFeatured(props: PlaceFeaturedProps) {
           </Button>
         </Hero.Actions>
       </Hero>
-      <DownloadModal
-        open={showModal}
-        title={l("components.modal.download.title")}
-        description={l("components.modal.download.description")}
-        buttonLabel={l("components.modal.download.button_label")}
-        onClose={() => setShowModal(false)}
-        onDownloadClick={handleModalClick}
-      />
+      {isAndroidDevice ? (
+        <MobileDownloadModal
+          open={showModal}
+          onClose={() => setShowModal(false)}
+        />
+      ) : (
+        <DownloadModal
+          open={showModal}
+          title={l("components.modal.download.title")}
+          description={l("components.modal.download.description")}
+          buttonLabel={l("components.modal.download.button_label")}
+          onClose={() => setShowModal(false)}
+          onDownloadClick={handleModalClick}
+        />
+      )}
     </div>
   )
 })
