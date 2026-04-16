@@ -112,9 +112,11 @@ export function createPlaceFromContentEntityScene(
   }
 
   const worldName =
-    contentEntityScene?.metadata?.worldConfiguration?.name ||
-    contentEntityScene?.metadata?.worldConfiguration?.dclName ||
-    null
+    (
+      contentEntityScene?.metadata?.worldConfiguration?.name ||
+      contentEntityScene?.metadata?.worldConfiguration?.dclName ||
+      null
+    )?.toLowerCase() ?? null
 
   const contentEntitySceneRating =
     contentEntityScene?.metadata?.policy?.contentRating ||

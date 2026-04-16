@@ -228,6 +228,7 @@ export function isSameWorld(
 ) {
   return (
     place.world &&
-    place.world_name === contentEntityScene.metadata.worldConfiguration?.name
+    place.world_name?.toLowerCase() ===
+      contentEntityScene.metadata.worldConfiguration?.name?.toLowerCase()
   )
 }

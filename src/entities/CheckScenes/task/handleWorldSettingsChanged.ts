@@ -25,7 +25,7 @@ import WorldModel from "../../World/model"
 export async function handleWorldSettingsChanged(
   event: WorldSettingsChangedEvent
 ): Promise<void> {
-  const { worldName } = event.metadata
+  const worldName = event.metadata.worldName?.toLowerCase()
 
   if (!worldName) {
     logger.error("WorldSettingsChangedEvent missing world name (key)")

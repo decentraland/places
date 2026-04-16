@@ -268,7 +268,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE
         "disabled" is false
         AND "world" is true
-        AND "world_name" = ${world_name}
+        AND LOWER("world_name") = ${world_name.toLowerCase()}
     `
 
     return this.namedQuery("find_enabled_by_world_name", sql)
@@ -851,7 +851,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           WHERE position IN ${values(options.positions)}
         )
         OR
-        p.world_name IN ${values(options.names)}
+        LOWER(p.world_name) IN ${values(
+          options.names.map((n) => n.toLowerCase())
+        )}
       )`
     } else if (options.positions.length > 0) {
       placesOrWorldsCondition = SQL`AND p.base_position IN (
@@ -860,8 +862,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         WHERE position IN ${values(options.positions)}
       )`
     } else if (options.names.length > 0) {
-      placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
-        options.names
+      placesOrWorldsCondition = SQL`AND LOWER(p.world_name) IN ${values(
+        options.names.map((n) => n.toLowerCase())
       )}`
     } else {
       placesOrWorldsCondition = SQL`AND p.world is false`
@@ -970,7 +972,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           WHERE position IN ${values(options.positions)}
         )
         OR
-        p.world_name IN ${values(options.names)}
+        LOWER(p.world_name) IN ${values(
+          options.names.map((n) => n.toLowerCase())
+        )}
       )`
     } else if (options.positions.length > 0) {
       placesOrWorldsCondition = SQL`AND p.base_position IN (
@@ -979,8 +983,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         WHERE position IN ${values(options.positions)}
       )`
     } else if (options.names.length > 0) {
-      placesOrWorldsCondition = SQL`AND p.world_name IN ${values(
-        options.names
+      placesOrWorldsCondition = SQL`AND LOWER(p.world_name) IN ${values(
+        options.names.map((n) => n.toLowerCase())
       )}`
     } else {
       placesOrWorldsCondition = SQL`AND p.world is false`

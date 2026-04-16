@@ -79,7 +79,7 @@ describe(`findEnabledWorldName`, () => {
       `
         SELECT * FROM "places"
         WHERE "disabled" is false AND "world" is true
-          AND "world_name" = $1
+          AND LOWER("world_name") = $1
       `
         .trim()
         .replace(/\s{2,}/gi, " ")

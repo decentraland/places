@@ -82,7 +82,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   if (contentEntityScene.metadata.worldConfiguration) {
     const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
-      contentEntityScene.metadata.worldConfiguration.dclName) as string
+      contentEntityScene.metadata.worldConfiguration.dclName)!.toLowerCase()
 
     // Determine if opt-out is set
     const isOptOut =

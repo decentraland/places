@@ -417,7 +417,7 @@ export default class WorldModel extends Model<WorldAttributes> {
 
     return {
       id: worldId,
-      world_name: world.world_name,
+      world_name: worldId,
       title: world.title ?? null,
       description: world.description ?? null,
       image: world.image ?? null,

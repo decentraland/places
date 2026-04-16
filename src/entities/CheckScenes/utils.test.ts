@@ -295,6 +295,19 @@ describe("isSameWorld", () => {
     ).toBeTruthy()
   })
 
+  test("should return true when world names differ only in casing", async () => {
+    const upperCaseScene = {
+      ...worldContentEntitySceneParalax,
+      metadata: {
+        ...worldContentEntitySceneParalax.metadata,
+        worldConfiguration: {
+          name: "Paralax.DCL.eth",
+        },
+      },
+    }
+    expect(isSameWorld(upperCaseScene, worldPlaceParalax)).toBeTruthy()
+  })
+
   test("should return false, is not same world", async () => {
     expect(findSamePlace(contentEntitySceneGenesisPlaza, [])).toBeNull()
   })
