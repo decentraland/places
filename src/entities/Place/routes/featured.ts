@@ -1,0 +1,75 @@
+import withBearerToken from "decentraland-gatsby/dist/entities/Auth/routes/withBearerToken"
+import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
+import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
+import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
+import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
+import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
+import env from "decentraland-gatsby/dist/utils/env"
+
+import PlaceCategories from "../../PlaceCategories/model"
+import { createWkcValidator } from "../../shared/validate"
+import PlaceModel from "../model"
+import { getPlaceParamsSchema } from "../schemas"
+import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
+
+const FEATURED_CATEGORY = "featured"
+
+type FeaturedOperation = "add" | "remove"
+
+const validateParams = createWkcValidator<GetPlaceParams>(
+  getPlaceParamsSchema as AjvObjectSchema
+)
+
+async function handleFeatured(
+  ctx: Context<{ place_id: string }, "request" | "params">,
+  operation: FeaturedOperation
+): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
+  const token = env("PLACES_ADMIN_AUTH_TOKEN", "")
+  await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
+
+  const params = await validateParams(ctx.params)
+
+  const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
+    user: undefined,
+  })
+
+  if (!place) {
+    throw new ErrorResponse(
+      Response.NotFound,
+      `Not found place "${params.place_id}"`
+    )
+  }
+
+  const categories = new Set(place.categories ?? [])
+  const hasFeatured = categories.has(FEATURED_CATEGORY)
+  const shouldAdd = operation === "add" && !hasFeatured
+  const shouldRemove = operation === "remove" && hasFeatured
+
+  if (!shouldAdd && !shouldRemove) {
+    return new ApiResponse(place)
+  }
+
+  if (shouldAdd) {
+    await PlaceCategories.addCategoryToPlace(params.place_id, FEATURED_CATEGORY)
+    categories.add(FEATURED_CATEGORY)
+  } else {
+    await PlaceCategories.removeCategoryFromPlace(
+      params.place_id,
+      FEATURED_CATEGORY
+    )
+    categories.delete(FEATURED_CATEGORY)
+  }
+
+  const updatedCategories = Array.from(categories)
+  await PlaceModel.overrideCategories(params.place_id, updatedCategories)
+
+  return new ApiResponse({ ...place, categories: updatedCategories })
+}
+
+export const addFeatured = (
+  ctx: Context<{ place_id: string }, "request" | "params">
+) => handleFeatured(ctx, "add")
+
+export const removeFeatured = (
+  ctx: Context<{ place_id: string }, "request" | "params">
+) => handleFeatured(ctx, "remove")
