@@ -9,30 +9,22 @@ import env from "decentraland-gatsby/dist/utils/env"
 import PlaceCategories from "../../PlaceCategories/model"
 import { createWkcValidator } from "../../shared/validate"
 import PlaceModel from "../model"
-import { getPlaceParamsSchema, updatePlaceCategoriesBodySchema } from "../schemas"
-import {
-  AggregatePlaceAttributes,
-  GetPlaceParams,
-  UpdatePlaceCategoriesBody,
-} from "../types"
+import { getPlaceParamsSchema } from "../schemas"
+import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
 
-const validateUpdatePlaceCategoriesParams = createWkcValidator<GetPlaceParams>(
+const FEATURED_CATEGORY = "featured"
+
+const validateParams = createWkcValidator<GetPlaceParams>(
   getPlaceParamsSchema as AjvObjectSchema
 )
 
-const validateUpdatePlaceCategoriesBody =
-  createWkcValidator<UpdatePlaceCategoriesBody>(
-    updatePlaceCategoriesBodySchema as AjvObjectSchema
-  )
-
-export async function updatePlaceCategories(
-  ctx: Context<{ place_id: string }, "request" | "body" | "params">
+export async function removeFeatured(
+  ctx: Context<{ place_id: string }, "request" | "params">
 ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
   const token = env("PLACES_ADMIN_AUTH_TOKEN", "")
   await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
 
-  const params = await validateUpdatePlaceCategoriesParams(ctx.params)
-  const body = await validateUpdatePlaceCategoriesBody(ctx.body)
+  const params = await validateParams(ctx.params)
 
   const place = await PlaceModel.findByIdWithAggregates(params.place_id, {
     user: undefined,
@@ -47,16 +39,11 @@ export async function updatePlaceCategories(
 
   const currentCategories = new Set(place.categories || [])
 
-  for (const category of body.remove || []) {
-    if (currentCategories.has(category)) {
-      await PlaceCategories.removeCategoryFromPlace(params.place_id, category)
-    }
-  }
-
-  for (const category of body.add || []) {
-    if (!currentCategories.has(category)) {
-      await PlaceCategories.addCategoryToPlace(params.place_id, category)
-    }
+  if (currentCategories.has(FEATURED_CATEGORY)) {
+    await PlaceCategories.removeCategoryFromPlace(
+      params.place_id,
+      FEATURED_CATEGORY
+    )
   }
 
   const updatedPlace = await PlaceModel.findByIdWithAggregates(params.place_id, {
