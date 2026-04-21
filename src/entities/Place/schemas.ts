@@ -362,3 +362,24 @@ export const updateHighlightBodySchema = schema({
     },
   },
 })
+
+export const updatePlaceCategoriesBodySchema = schema({
+  type: "object",
+  description: "Place categories update body",
+  additionalProperties: false,
+  required: [],
+  properties: {
+    add: {
+      type: "array",
+      description: "Categories to add to the place",
+      items: { type: "string" },
+      nullable: true as any,
+    },
+    remove: {
+      type: "array",
+      description: "Categories to remove from the place",
+      items: { type: "string" },
+      nullable: true as any,
+    },
+  },
+})

@@ -145,3 +145,8 @@ export type UpdateRankingBody = {
 export type UpdateHighlightBody = {
   highlighted: boolean
 }
+
+export type UpdatePlaceCategoriesBody = {
+  add?: string[]
+  remove?: string[]
+}
