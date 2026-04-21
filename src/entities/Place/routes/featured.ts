@@ -14,12 +14,15 @@ import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
 
 const FEATURED_CATEGORY = "featured"
 
+type FeaturedOperation = "add" | "remove"
+
 const validateParams = createWkcValidator<GetPlaceParams>(
   getPlaceParamsSchema as AjvObjectSchema
 )
 
-export async function removeFeatured(
-  ctx: Context<{ place_id: string }, "request" | "params">
+async function handleFeatured(
+  ctx: Context<{ place_id: string }, "request" | "params">,
+  operation: FeaturedOperation
 ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
   const token = env("PLACES_ADMIN_AUTH_TOKEN", "")
   await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
@@ -37,18 +40,36 @@ export async function removeFeatured(
     )
   }
 
-  const currentCategories = new Set(place.categories || [])
+  const categories = new Set(place.categories ?? [])
+  const hasFeatured = categories.has(FEATURED_CATEGORY)
+  const shouldAdd = operation === "add" && !hasFeatured
+  const shouldRemove = operation === "remove" && hasFeatured
 
-  if (currentCategories.has(FEATURED_CATEGORY)) {
+  if (!shouldAdd && !shouldRemove) {
+    return new ApiResponse(place)
+  }
+
+  if (shouldAdd) {
+    await PlaceCategories.addCategoryToPlace(params.place_id, FEATURED_CATEGORY)
+    categories.add(FEATURED_CATEGORY)
+  } else {
     await PlaceCategories.removeCategoryFromPlace(
       params.place_id,
       FEATURED_CATEGORY
     )
+    categories.delete(FEATURED_CATEGORY)
   }
 
-  const updatedPlace = await PlaceModel.findByIdWithAggregates(params.place_id, {
-    user: undefined,
-  })
+  const updatedCategories = Array.from(categories)
+  await PlaceModel.overrideCategories(params.place_id, updatedCategories)
 
-  return new ApiResponse(updatedPlace!)
+  return new ApiResponse({ ...place, categories: updatedCategories })
 }
+
+export const addFeatured = (
+  ctx: Context<{ place_id: string }, "request" | "params">
+) => handleFeatured(ctx, "add")
+
+export const removeFeatured = (
+  ctx: Context<{ place_id: string }, "request" | "params">
+) => handleFeatured(ctx, "remove")
