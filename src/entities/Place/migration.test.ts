@@ -169,7 +169,6 @@ describe("createPlaceFromDefaultPlaces", () => {
   test("should return a place", async () => {
     const data = await createPlaceFromDefaultPlaces([{ base_position: "0,0" }])
 
-    console.log(data)
     expect(data).toEqual([
       {
         ...placeGenesisPlaza,
@@ -179,6 +178,7 @@ describe("createPlaceFromDefaultPlaces", () => {
         deployed_at: data[0].deployed_at,
         image: data[0].image,
         id: data[0].id,
+        positions: data[0].positions,
       },
     ])
   })
