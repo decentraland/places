@@ -35,7 +35,7 @@ export default class PlaceCategories extends Model<PlaceCategoriesAttributes> {
   static async addCategoryToPlace(placeId: string, category: string) {
     const query = SQL`INSERT INTO ${table(
       PlaceCategories
-    )} (place_id, category_id) VALUES (${placeId}, ${category}) ON CONFLICT DO NOTHING`
+    )} (place_id, category_id) VALUES (${placeId}, ${category})`
 
     await PlaceCategories.namedQuery("add_category_to_place", query)
   }

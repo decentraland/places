@@ -2,7 +2,7 @@ import withCors from "decentraland-gatsby/dist/entities/Route/middleware/withCor
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { addFeatured, removeFeatured } from "./featured"
+import { featured } from "./featured"
 import { getPlace } from "./getPlace"
 import { getPlaceCategories } from "./getPlaceCategories"
 import { getPlaceList } from "./getPlaceList"
@@ -39,7 +39,7 @@ export default routes((router) => {
   router.put("/places/:place_id/ranking", updateRanking)
   router.put("/places/:place_id/highlight", updateHighlight)
   router.get("/places/:place_id/categories", getPlaceCategories)
-  router.put("/places/:place_id/featured", addFeatured)
-  router.delete("/places/:place_id/featured", removeFeatured)
+  router.put("/places/:place_id/featured", featured)
+  router.delete("/places/:place_id/featured", featured)
   router.post("/places/status", getPlaceStatusListById)
 }, {})
