@@ -11,15 +11,24 @@ import PlaceModel from "../model"
 import { getPlaceParamsSchema } from "../schemas"
 import { AggregatePlaceAttributes, GetPlaceParams } from "../types"
 
+const ADMIN_TOKEN = env("PLACES_ADMIN_AUTH_TOKEN", "")
+
+const requireAdminToken = withBearerToken({
+  tokens: ADMIN_TOKEN ? [ADMIN_TOKEN] : [],
+  optional: false,
+})
+
 const validateParams = createWkcValidator<GetPlaceParams>(
   getPlaceParamsSchema as AjvObjectSchema
 )
 
-export async function featured(
-  ctx: Context<{ place_id: string }, "request" | "params">
+// The `/featured` endpoints toggle the `highlighted` DB column, renamed from
+// `featured` to `highlighted` in migration 1667844930518_add-highlighted.ts.
+async function setHighlighted(
+  ctx: Context<{ place_id: string }, "request" | "params">,
+  highlighted: boolean
 ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
-  const token = env("PLACES_ADMIN_AUTH_TOKEN", "")
-  await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
+  await requireAdminToken(ctx)
 
   const params = await validateParams(ctx.params)
 
@@ -34,9 +43,20 @@ export async function featured(
     )
   }
 
-  const highlighted = ctx.request.method.toUpperCase() === "PUT"
   const newPlace = { ...place, highlighted }
   await PlaceModel.updatePlace(newPlace, ["highlighted"])
 
   return new ApiResponse(newPlace)
+}
+
+export function featurePlace(
+  ctx: Context<{ place_id: string }, "request" | "params">
+): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
+  return setHighlighted(ctx, true)
+}
+
+export function unfeaturePlace(
+  ctx: Context<{ place_id: string }, "request" | "params">
+): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
+  return setHighlighted(ctx, false)
 }
