@@ -2,6 +2,7 @@ import withCors from "decentraland-gatsby/dist/entities/Route/middleware/withCor
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { featureWorld, unfeatureWorld } from "./featured"
 import { getWorld } from "./getWorld"
 import { getWorldList } from "./getWorldList"
 import { getWorldNamesList } from "./getWorldNamesList"
@@ -39,4 +40,6 @@ export default routes((router) => {
   router.put("/worlds/:world_id/highlight", updateWorldHighlight)
   router.put("/worlds/:world_id/ranking", updateWorldRanking)
   router.put("/worlds/:world_id/rating", updateWorldRating)
+  router.put("/worlds/:world_id/featured", featureWorld)
+  router.delete("/worlds/:world_id/featured", unfeatureWorld)
 }, {})
