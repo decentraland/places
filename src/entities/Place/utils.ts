@@ -37,22 +37,21 @@ export function worldUrl(entity: AnyEntityAttributes) {
   return target
 }
 
-export function whatsOnPlaceUrl(place: PlaceAttributes) {
+function whatsOnUrl(param: "position" | "world", value: string) {
   const target = new URL(
     env("PLACES_BASE_URL", "https://decentraland.org/places")
   )
   target.pathname = "/whats-on"
-  target.searchParams.set("position", toCanonicalPosition(place.base_position)!)
+  target.searchParams.set(param, value)
   return target
 }
 
+export function whatsOnPlaceUrl(place: PlaceAttributes) {
+  return whatsOnUrl("position", toCanonicalPosition(place.base_position)!)
+}
+
 export function whatsOnWorldUrl(entity: AnyEntityAttributes) {
-  const target = new URL(
-    env("PLACES_BASE_URL", "https://decentraland.org/places")
-  )
-  target.pathname = "/whats-on"
-  target.searchParams.set("world", entity.world_name!)
-  return target
+  return whatsOnUrl("world", entity.world_name!)
 }
 
 export function siteUrl(pathname = "") {
