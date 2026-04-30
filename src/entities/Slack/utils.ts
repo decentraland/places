@@ -5,7 +5,7 @@ import isURL from "validator/lib/isURL"
 
 import { DeploymentToSqs } from "../CheckScenes/task/consumer"
 import { PlaceAttributes } from "../Place/types"
-import { placeUrl, worldUrl } from "../Place/utils"
+import { whatsOnPlaceUrl, whatsOnWorldUrl } from "../Place/utils"
 import { AnyEntityAttributes, isWorld } from "../shared/entityTypes"
 
 const SLACK_WEBHOOK = env("SLACK_WEBHOOK", "")
@@ -35,8 +35,8 @@ export async function notifyNewPlace(
           type: "mrkdwn",
           text: `:tada: New ${place.world ? "world" : "place"} added: ${
             place.world
-              ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place)}|${place.base_position}>`
+              ? `<${whatsOnWorldUrl(place)}|${place.world_name}>`
+              : `<${whatsOnPlaceUrl(place)}|${place.base_position}>`
           }`,
         },
       },
@@ -75,8 +75,8 @@ export async function notifyUpdatePlace(
             place.world ? "world" : "Place"
           } updated: ${
             place.world
-              ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place)}|${place.base_position}>`
+              ? `<${whatsOnWorldUrl(place)}|${place.world_name}>`
+              : `<${whatsOnPlaceUrl(place)}|${place.base_position}>`
           }`,
         },
       },
@@ -205,8 +205,8 @@ export async function notifyDowngradeRating(
             isWorldEntity ? "world" : "place"
           } updated trying to downgrade rating: ${
             isWorldEntity
-              ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place as PlaceAttributes)}|${
+              ? `<${whatsOnWorldUrl(place)}|${place.world_name}>`
+              : `<${whatsOnPlaceUrl(place as PlaceAttributes)}|${
                   (place as PlaceAttributes).base_position
                 }>`
           }`,
@@ -242,8 +242,8 @@ export async function notifyUpgradingRating(
             isWorldEntity ? "world" : "place"
           } upgrade rating: ${
             isWorldEntity
-              ? `<${worldUrl(place)}|${place.world_name}>`
-              : `<${placeUrl(place as PlaceAttributes)}|${
+              ? `<${whatsOnWorldUrl(place)}|${place.world_name}>`
+              : `<${whatsOnPlaceUrl(place as PlaceAttributes)}|${
                   (place as PlaceAttributes).base_position
                 }>`
           }`,

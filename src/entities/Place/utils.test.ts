@@ -6,6 +6,8 @@ import {
   placesWithUserCount,
   placesWithUserVisits,
   siteUrl,
+  whatsOnPlaceUrl,
+  whatsOnWorldUrl,
 } from "./utils"
 import { contentEntitySceneGenesisPlaza } from "../../__data__/contentEntitySceneGenesisPlaza"
 import { genesisPlazaThumbnailMap } from "../../__data__/entities"
@@ -14,7 +16,10 @@ import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
 import { sqsMessageWorld } from "../../__data__/sqs"
-import { worldContentEntitySceneParalax } from "../../__data__/world"
+import {
+  worldContentEntitySceneParalax,
+  worldPlaceParalax,
+} from "../../__data__/world"
 
 describe("Instance of URL", () => {
   test("should return an URL instance of a place in places", () => {
@@ -29,6 +34,22 @@ describe("Instance of URL", () => {
     const url = siteUrl()
     expect(url).toBeInstanceOf(URL)
     expect(url.toString()).toBe("https://decentraland.org/places/")
+  })
+
+  test("should return a whats-on URL for a place", () => {
+    const url = whatsOnPlaceUrl(placeGenesisPlaza)
+    expect(url).toBeInstanceOf(URL)
+    expect(url.toString()).toBe(
+      "https://decentraland.org/whats-on?position=0.0"
+    )
+  })
+
+  test("should return a whats-on URL for a world", () => {
+    const url = whatsOnWorldUrl(worldPlaceParalax)
+    expect(url).toBeInstanceOf(URL)
+    expect(url.toString()).toBe(
+      "https://decentraland.org/whats-on?world=paralax.dcl.eth"
+    )
   })
 })
 
