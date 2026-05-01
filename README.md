@@ -27,7 +27,6 @@
 - **Social Features**: User likes, dislikes, favorites, content ratings, and aggregated place statistics
 - **Category Management**: Dynamic categorization with automatic POI categorization
 - **Hot Scenes Tracking**: Real-time monitoring of active scenes with user counts from Catalyst realms
-- **Gatsby Frontend**: Static site generation for place exploration interface
 
 ## Dependencies & Related Services
 
@@ -154,23 +153,6 @@ Create a `.env.development` file in the project root with the following variable
 | `ADMIN_ADDRESSES`                  | Comma-separated admin wallet addresses        | -                                           | `0x...,0x...`                                |
 | `NEW_ROLLOUT`                      | Enable new features rollout                   | `false`                                     | `true`                                       |
 
-#### Gatsby-Specific Variables
-
-These variables are used by the Gatsby frontend (prefixed with `GATSBY_`):
-
-| Variable                           | Description                     | Example                             |
-| ---------------------------------- | ------------------------------- | ----------------------------------- |
-| `GATSBY_PLACES_URL`                | Places API URL for frontend     | `https://localhost:8000/api`        |
-| `GATSBY_LAND_URL`                  | Land API URL                    | `https://api.decentraland.org`      |
-| `GATSBY_DECENTRALAND_URL`          | Decentraland play URL           | `https://play.decentraland.org`     |
-| `GATSBY_PROFILE_URL`               | Profile server URL              | `https://peer.decentraland.org`     |
-| `GATSBY_DCL_DEFAULT_ENV`           | Default environment             | `dev` or `prod`                     |
-| `GATSBY_ROLLBAR_TOKEN`             | Rollbar error tracking token    | `local` or token                    |
-| `GATSBY_SEGMENT_KEY`               | Segment analytics key           | `local` or key                      |
-| `GATSBY_ADMIN_ADDRESSES`           | Admin addresses for frontend    | `0x...`                             |
-| `GATSBY_NEW_ROLLOUT`               | Enable new features in frontend | `true` or `false`                   |
-| `GATSBY_DECENTRALAND_DOWNLOAD_URL` | Download page URL               | `https://decentraland.org/download` |
-
 #### Minimal Development Configuration
 
 For local development with LocalStack and PostgreSQL via docker-compose:
@@ -183,13 +165,6 @@ CONNECTION_STRING=postgres://postgres:postgres@localhost:5432/postgres
 AWS_REGION=us-east-1
 AWS_ENDPOINT=http://localhost:4566
 QUEUE_URL=http://localhost:4566/000000000000/places_test
-
-# Gatsby Frontend
-GATSBY_PLACES_URL=https://localhost:8000/api
-GATSBY_LAND_URL=https://api.decentraland.org
-GATSBY_DCL_DEFAULT_ENV=dev
-GATSBY_ROLLBAR_TOKEN=local
-GATSBY_SEGMENT_KEY=local
 ```
 
 The configuration uses [LocalStack](https://localstack.cloud/) to emulate AWS services (SQS) locally. The `docker-compose` setup automatically creates the LocalStack SQS queue. For manual LocalStack configuration, see [SQS Setup](docs/sqs-setup.md).
@@ -217,10 +192,7 @@ The `docker-compose` command starts:
 The service will then start:
 
 - Express API server with hot reload
-- Gatsby development server on HTTPS at `https://localhost:8000`
 - Background tasks for processing SQS messages
-
-> **Note:** The server runs over HTTPS by default. First time might need `sudo`. To disable HTTPS, remove the `--https` flag from the `develop` script in `package.json`.
 
 #### SQS Message Processing
 
@@ -337,19 +309,11 @@ npm run migrate up
 
 ### Development Server Issues
 
-**Problem: HTTPS certificate errors or sudo required**
-
-- First-time setup may require `sudo` for HTTPS certificate creation
-- To disable HTTPS, remove `--https` flag from the `develop` script in `package.json`
-- Browser may show security warning on first access - this is normal for self-signed certificates
-
 **Problem: Port already in use**
 
 ```bash
-# Check what's using port 8000
-lsof -i :8000
-
-# Kill the process or change port in gatsby-config.js
+# Find the process using the configured port and stop it
+lsof -i :<PORT>
 ```
 
 **Problem: Build errors after npm install**
@@ -358,9 +322,6 @@ lsof -i :8000
 # Clear cache and reinstall
 rm -rf node_modules package-lock.json
 npm install
-
-# Clear Gatsby cache
-npm run clean
 npm run build
 ```
 
@@ -390,8 +351,6 @@ npm run build
 
 **Problem: High memory usage**
 
-- Gatsby development server can be memory-intensive
-- Try building for production: `npm run build && npm run serve`
 - Increase Node.js memory: `NODE_OPTIONS="--max-old-space-size=4096" npm start`
 
 ### Common Development Errors
@@ -436,4 +395,4 @@ For detailed information about the service architecture, key concepts, and techn
 - **[Database Schemas](docs/database-schemas.md)** - Detailed database schema documentation with ERD diagram, constraints, and business rules
 - **[Database Operations](docs/database-operations.md)** - Commands for clearing and re-populating the database
 - **[SQS Setup](docs/sqs-setup.md)** - Manual LocalStack setup and SQS message format details
-- **[Project Structure](docs/project-structure.md)** - Gatsby + Node.js architecture overview
+- **[Project Structure](docs/project-structure.md)** - Backend service architecture overview
