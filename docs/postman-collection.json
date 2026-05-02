@@ -1,0 +1,640 @@
+{
+  "info": {
+    "_postman_id": "places-api-collection",
+    "name": "Decentraland Places API",
+    "description": "Backend HTTP API for the Decentraland Places service. Endpoints for place/world discovery, favorites, likes, ratings, admin actions and social/og metadata.\n\nAuthentication: most write endpoints (PUT/PATCH/DELETE/POST that mutate state) require a Decentraland auth-chain Bearer token. Set `{{auth_token}}` in the collection variables.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://places.decentraland.zone",
+      "description": "Server base URL. Production: https://places.decentraland.org · Staging: https://places.decentraland.today · Dev: https://places.decentraland.zone · Local: http://localhost:4000",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "description": "Decentraland auth-chain Bearer token. Required for endpoints marked with 🔒.",
+      "type": "string"
+    },
+    {
+      "key": "place_id",
+      "value": "",
+      "description": "Sample place UUID for path-param requests",
+      "type": "string"
+    },
+    {
+      "key": "world_id",
+      "value": "",
+      "description": "Sample world id (lowercased name) for path-param requests",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"]
+            },
+            "description": "Returns all available place categories with their localized i18n names."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Places",
+      "item": [
+        {
+          "name": "List places",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places?limit=24&offset=0&only_favorites=false&only_highlighted=false&order_by=like_score_best&order=desc&with_realms_detail=false&search=&categories=",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places"],
+              "query": [
+                { "key": "limit", "value": "24", "description": "1-100" },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "positions",
+                  "value": "",
+                  "description": "Comma-separated positions like `-23,-96`",
+                  "disabled": true
+                },
+                { "key": "only_favorites", "value": "false" },
+                { "key": "only_highlighted", "value": "false" },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "description": "updated_at | created_at | most_active | like_score_best | likes"
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "description": "asc | desc"
+                },
+                { "key": "with_realms_detail", "value": "false" },
+                { "key": "search", "value": "" },
+                {
+                  "key": "categories",
+                  "value": "",
+                  "description": "Comma-separated category names"
+                },
+                { "key": "owner", "value": "", "disabled": true },
+                {
+                  "key": "sdk",
+                  "value": "",
+                  "description": "sdk6 | sdk7",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get place by id or position",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}?with_realms_detail=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}"],
+              "query": [{ "key": "with_realms_detail", "value": "false" }]
+            },
+            "description": "`place_id` accepts a UUID or a position like `-23,-96`."
+          }
+        },
+        {
+          "name": "Get places by ids (POST)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"00000000-0000-0000-0000-000000000000\"]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places"]
+            },
+            "description": "Returns a list of places by their UUIDs."
+          }
+        },
+        {
+          "name": "Get place statuses by ids",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"00000000-0000-0000-0000-000000000000\"]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "status"]
+            },
+            "description": "Lightweight enabled/disabled status lookup for a batch of place UUIDs."
+          }
+        },
+        {
+          "name": "Get place categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "categories"]
+            }
+          }
+        },
+        {
+          "name": "Update place rating 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content_rating\": \"T\",\n  \"comment\": \"Manual review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/rating",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "rating"]
+            },
+            "description": "Admin-only. Sets content rating (E/T/A/RR)."
+          }
+        },
+        {
+          "name": "Update place ranking 🔒 data-team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "DATA_TEAM_AUTH_TOKEN bearer"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"world\": false,\n  \"hot\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/ranking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "ranking"]
+            },
+            "description": "Updates ranking flags. Uses the data-team token, not the user auth token."
+          }
+        },
+        {
+          "name": "Update place highlight 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"highlighted\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/highlight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "highlight"]
+            }
+          }
+        },
+        {
+          "name": "Feature place 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Unfeature place 🔒 admin",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Update place like 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"like\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/likes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "likes"]
+            },
+            "description": "`like: true` = like, `false` = dislike, `null` = clear."
+          }
+        },
+        {
+          "name": "Update place favorite 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorites\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/favorites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "favorites"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Worlds",
+      "item": [
+        {
+          "name": "List worlds",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds?limit=24&offset=0&only_favorites=false&order_by=like_score_best&order=desc&search=&categories=&disabled=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds"],
+              "query": [
+                { "key": "limit", "value": "24" },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "names",
+                  "value": "",
+                  "description": "Comma-separated world names",
+                  "disabled": true
+                },
+                { "key": "only_favorites", "value": "false" },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "description": "updated_at | created_at | most_active | like_score_best | likes"
+                },
+                { "key": "order", "value": "desc" },
+                { "key": "search", "value": "" },
+                { "key": "categories", "value": "" },
+                { "key": "disabled", "value": "false" },
+                { "key": "owner", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get world by id or name",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}"]
+            },
+            "description": "`world_id` is the lowercased world name (e.g. `mycoolworld.dcl.eth`)."
+          }
+        },
+        {
+          "name": "List world names",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/world_names?limit=100&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "world_names"],
+              "query": [
+                { "key": "limit", "value": "100" },
+                { "key": "offset", "value": "0" },
+                { "key": "pointer", "value": "", "disabled": true }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update world favorite 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorites\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/favorites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "favorites"]
+            }
+          }
+        },
+        {
+          "name": "Update world like 🔒",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"like\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/likes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "likes"]
+            }
+          }
+        },
+        {
+          "name": "Update world highlight 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"highlighted\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/highlight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "highlight"]
+            }
+          }
+        },
+        {
+          "name": "Update world ranking 🔒 data-team",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{auth_token}}",
+                "description": "DATA_TEAM_AUTH_TOKEN bearer"
+              },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"hot\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/ranking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "ranking"]
+            }
+          }
+        },
+        {
+          "name": "Update world rating 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content_rating\": \"T\",\n  \"comment\": \"Manual review\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/rating",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "rating"]
+            }
+          }
+        },
+        {
+          "name": "Feature world 🔒 admin",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "featured"]
+            }
+          }
+        },
+        {
+          "name": "Unfeature world 🔒 admin",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "featured"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Destinations",
+      "item": [
+        {
+          "name": "List destinations",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/destinations?limit=20&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "destinations"],
+              "query": [
+                { "key": "limit", "value": "20" },
+                { "key": "offset", "value": "0" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get destinations by ids",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\"00000000-0000-0000-0000-000000000000\"]"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/destinations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "destinations"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Map",
+      "item": [
+        {
+          "name": "Get map places (most active)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/map",
+              "host": ["{{base_url}}"],
+              "path": ["api", "map"]
+            },
+            "description": "Returns the active places on the map (used by the world map renderer)."
+          }
+        },
+        {
+          "name": "Get all map places",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/map/places",
+              "host": ["{{base_url}}"],
+              "path": ["api", "map", "places"]
+            },
+            "description": "Returns all places (full dataset for map indexing)."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Create report (signed upload URL) 🔒",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"place_id\": \"{{place_id}}\",\n  \"reason\": \"inappropriate_content\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/report",
+              "host": ["{{base_url}}"],
+              "path": ["api", "report"]
+            },
+            "description": "Returns a signed S3 URL the client uploads the report payload to."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Social (OG metadata)",
+      "description": "Mounted under `/places` (NOT `/api`). Returns HTML with injected OG/Twitter meta tags for link unfurl previews.",
+      "item": [
+        {
+          "name": "Place social metadata",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{base_url}}/places/place/?id={{place_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["places", "place", ""],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{place_id}}",
+                  "description": "Place UUID (alternative to position)"
+                },
+                {
+                  "key": "position",
+                  "value": "-23,-96",
+                  "description": "Comma-separated parcel position",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "HTML with og:* / twitter:* meta tags for share-link previews."
+          }
+        },
+        {
+          "name": "World social metadata",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{base_url}}/places/world/?name=mycoolworld.dcl.eth",
+              "host": ["{{base_url}}"],
+              "path": ["places", "world", ""],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "mycoolworld.dcl.eth",
+                  "description": "World name (lowercased)"
+                },
+                {
+                  "key": "id",
+                  "value": "",
+                  "description": "Alternative: world UUID/id",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
