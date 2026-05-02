@@ -1,10 +1,6 @@
-import { resolve } from "path"
-
 import { replaceHelmetMetadata } from "decentraland-gatsby/dist/entities/Gatsby/utils"
 import { handleRaw } from "decentraland-gatsby/dist/entities/Route/handle"
 import routes from "decentraland-gatsby/dist/entities/Route/routes"
-import { readOnce } from "decentraland-gatsby/dist/entities/Route/routes/file"
-import env from "decentraland-gatsby/dist/utils/env"
 import { Request, Response } from "express"
 import { escape } from "html-escaper"
 import isUUID from "validator/lib/isUUID"
@@ -22,20 +18,11 @@ export default routes((router) => {
   router.get("/world/", handleRaw(injectWorldMetadata, "html"))
 })
 
-async function readFile(req: Request) {
-  const path = resolve(
-    process.cwd(),
-    "./public",
-    "." + req.path,
-    "./index.html"
-  )
-  return readOnce(path)
-}
+const SOCIAL_HTML_TEMPLATE = `<!DOCTYPE html><html><head><title data-react-helmet="true"></title><meta data-react-helmet="true" name="description" content="" /></head><body></body></html>`
 
 export async function injectPlaceMetadata(req: Request, res: Response) {
   const position = String(req.query.position || "")
   const id = String(req.query.id || "")
-  const page = await readFile(req)
   const canonicalPosition = toCanonicalPosition(position, ",")
 
   let place: AggregatePlaceAttributes | null = null
@@ -63,7 +50,7 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
     const url = placeUrl(place)
     res.set("link", `<${url.toString()}>; rel=canonical`)
 
-    return replaceHelmetMetadata(page.toString(), {
+    return replaceHelmetMetadata(SOCIAL_HTML_TEMPLATE, {
       ...(copies.social.place as any),
       title: escape(place.title || "") + " | Decentraland Place",
       description: escape((place.description || "").trim()),
@@ -74,7 +61,7 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
   }
 
   const url = siteUrl().toString() + req.originalUrl.slice(1)
-  return replaceHelmetMetadata(page.toString(), {
+  return replaceHelmetMetadata(SOCIAL_HTML_TEMPLATE, {
     ...(copies.social.place as any),
     url,
   })
@@ -82,7 +69,6 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
 
 export async function injectWorldMetadata(req: Request, res: Response) {
   const worldId = String(req.query.id || req.query.name || "").toLowerCase()
-  const page = await readFile(req)
 
   let world: AggregateWorldAttributes | null = null
   if (worldId) {
@@ -95,7 +81,7 @@ export async function injectWorldMetadata(req: Request, res: Response) {
     const url = worldUrl(world)
     res.set("link", `<${url.toString()}>; rel=canonical`)
 
-    return replaceHelmetMetadata(page.toString(), {
+    return replaceHelmetMetadata(SOCIAL_HTML_TEMPLATE, {
       ...(copies.social.place as any),
       title: escape(world.title || "") + " | Decentraland Place",
       description: escape((world.description || "").trim()),
@@ -106,7 +92,7 @@ export async function injectWorldMetadata(req: Request, res: Response) {
   }
 
   const url = siteUrl().toString() + req.originalUrl.slice(1)
-  return replaceHelmetMetadata(page.toString(), {
+  return replaceHelmetMetadata(SOCIAL_HTML_TEMPLATE, {
     ...(copies.social.place as any),
     url,
   })
