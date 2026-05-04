@@ -9,7 +9,7 @@ import {
 import { PlaceCategoriesAttributes } from "./types"
 
 export default class PlaceCategories extends Model<PlaceCategoriesAttributes> {
-  static tableName: string = "place_categories"
+  static tableName = "place_categories"
 
   static async getCountPerCategory() {
     const query = SQL`SELECT category_id, COUNT(place_id) as count FROM ${table(
