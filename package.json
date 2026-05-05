@@ -72,7 +72,7 @@
     "test:sqs-message": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/testSqsMessage.ts",
     "rebuild:worlds:dev": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
     "rebuild:worlds:prd": "DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
-    "compare:envs": "./scripts/compare-environments.sh"
+    "smoke-test": "ts-node --transpile-only bin/smokeTest.ts"
   },
   "repository": {
     "type": "git",
