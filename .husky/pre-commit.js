@@ -1,8 +1,8 @@
 module.exports = {
-  "**/*.{js,jsx,ts,tsx}": [
+  "**/*.{js,ts}": [
     "jest --bail --watchAll=false --findRelatedTests --passWithNoTests",
     () => "tsc-files --noEmit",
   ],
-  "**/*.{ts,tsx,js,jsx,json,md,mdx,css}": ["prettier --write"],
-  "*.{js,jsx,ts,tsx}": ["eslint --fix"],
+  "**/*.{ts,js,json,md,yml,yaml}": ["prettier --write"],
+  "*.{js,ts}": ["eslint --fix"],
 }

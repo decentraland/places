@@ -1,0 +1,922 @@
+{
+  "info": {
+    "_postman_id": "places-api-collection",
+    "name": "Decentraland Places API",
+    "description": "Backend HTTP API for the Decentraland Places service. Endpoints for place / world discovery, favorites, likes, ratings, admin actions and social/og metadata.\n\n## Environments\n\n- Production: `https://places.decentraland.org`\n- Staging: `https://places.decentraland.today`\n- Dev: `https://places.decentraland.zone`\n- Local: `http://localhost:4000`\n\nSet `{{base_url}}` accordingly.\n\n## Authentication\n\nThree different mechanisms are used by this API:\n\n1. **Decentraland auth-chain** — the standard wallet-signed identity. The collection variable `{{auth_token}}` is intended to hold a Bearer token compatible with `decentraland-gatsby` `withAuth*` middleware (or you can override the request to set `x-identity-*` headers manually). Required for endpoints that act on behalf of a user (favorites, likes, reports) or admin endpoints.\n2. **`PLACES_ADMIN_AUTH_TOKEN`** — opaque bearer token for the `featured` admin endpoints. Stored in `{{admin_auth_token}}`.\n3. **`DATA_TEAM_AUTH_TOKEN`** — opaque bearer token for the `ranking` endpoints. Stored in `{{data_team_auth_token}}`.\n\nThe collection sends the auth-chain token as `Authorization: Bearer` by default. Each request that needs a different token overrides its own `auth` block.\n\n## Conventions\n\n- `place_id` is a UUID v4.\n- `world_id` is the lowercased world name (e.g. `myworld.dcl.eth`).\n- `entity_id` is one of the two — the `/places/:entity_id/{favorites,likes}` endpoints accept both for backward compatibility.\n",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://places.decentraland.zone",
+      "description": "Server base URL.",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "description": "Decentraland auth-chain Bearer token. Required for user-acting and admin endpoints.",
+      "type": "string"
+    },
+    {
+      "key": "admin_auth_token",
+      "value": "",
+      "description": "PLACES_ADMIN_AUTH_TOKEN — bearer token for `/featured` endpoints.",
+      "type": "string"
+    },
+    {
+      "key": "data_team_auth_token",
+      "value": "",
+      "description": "DATA_TEAM_AUTH_TOKEN — bearer token for `/ranking` endpoints.",
+      "type": "string"
+    },
+    {
+      "key": "place_id",
+      "value": "00000000-0000-0000-0000-000000000000",
+      "description": "Sample place UUID.",
+      "type": "string"
+    },
+    {
+      "key": "world_id",
+      "value": "myworld.dcl.eth",
+      "description": "Sample world id (lowercased name).",
+      "type": "string"
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "Categories",
+      "description": "Catalog of place / world categories with localized names.",
+      "item": [
+        {
+          "name": "List categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/categories?target=all",
+              "host": ["{{base_url}}"],
+              "path": ["api", "categories"],
+              "query": [
+                {
+                  "key": "target",
+                  "value": "all",
+                  "description": "all (default) | places | worlds — scope of the per-category counts."
+                }
+              ]
+            },
+            "description": "Returns every active category with its localized i18n name and a `count` field with how many places (or worlds) currently use it."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Places",
+      "description": "Place CRUD-ish operations. Reads are public, writes require authentication or admin tokens.",
+      "item": [
+        {
+          "name": "List places",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places?limit=24&offset=0&order_by=like_score_best&order=desc&with_realms_detail=false&only_favorites=false&only_highlighted=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "24",
+                  "description": "0-100. Default 100."
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Skip N items."
+                },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "description": "like_score_best | most_active | updated_at | created_at | user_visits"
+                },
+                {
+                  "key": "order",
+                  "value": "desc",
+                  "description": "asc | desc"
+                },
+                {
+                  "key": "with_realms_detail",
+                  "value": "false",
+                  "description": "Include per-realm user counts (experimental, slow)."
+                },
+                {
+                  "key": "only_favorites",
+                  "value": "false",
+                  "description": "If true, requires auth — returns only the caller's favorites."
+                },
+                { "key": "only_highlighted", "value": "false" },
+                {
+                  "key": "search",
+                  "value": "",
+                  "description": "Full-text search; needs >= 3 chars to take effect.",
+                  "disabled": true
+                },
+                {
+                  "key": "categories",
+                  "value": "",
+                  "description": "Comma-separated list of category names.",
+                  "disabled": true
+                },
+                {
+                  "key": "positions",
+                  "value": "-23,-96",
+                  "description": "Repeatable. Filter by parcel position (`x,y`).",
+                  "disabled": true
+                },
+                {
+                  "key": "names",
+                  "value": "",
+                  "description": "Repeatable. Filter places belonging to a world by world name.",
+                  "disabled": true
+                },
+                {
+                  "key": "owner",
+                  "value": "",
+                  "description": "Lowercased 0x-address. Filters places whose lands the wallet operates.",
+                  "disabled": true
+                },
+                {
+                  "key": "creator_address",
+                  "value": "",
+                  "description": "Lowercased 0x-address. Filter by scene creator wallet.",
+                  "disabled": true
+                },
+                {
+                  "key": "sdk",
+                  "value": "",
+                  "description": "`6` (sdk6 + legacy) or `7` (sdk7).",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Public listing. The optional auth token is used to compute `user_like`, `user_dislike`, `user_favorite` flags. With `order_by=most_active`, results are taken from the realm-provider hot-scenes feed; with `order_by=user_visits`, from `data-team` scene-stats."
+          }
+        },
+        {
+          "name": "Get place by id",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}?with_realms_detail=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}"],
+              "query": [{ "key": "with_realms_detail", "value": "false" }]
+            },
+            "description": "Returns a single aggregated place. 404 if not found. The auth header is optional and only enriches `user_*` flags."
+          }
+        },
+        {
+          "name": "Get places by ids",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"00000000-0000-0000-0000-000000000000\",\n  \"11111111-1111-1111-1111-111111111111\"\n]",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places?limit=100&offset=0",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places"],
+              "query": [
+                { "key": "limit", "value": "100" },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "disabled": true
+                },
+                { "key": "order", "value": "desc", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Body is a JSON array of place UUIDs (max 100). Returns the aggregated places with the same shape as `GET /api/places`. 400 if the body is not an array or exceeds 100 ids."
+          }
+        },
+        {
+          "name": "Get places status by ids",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"00000000-0000-0000-0000-000000000000\"\n]",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "status"]
+            },
+            "description": "Lighter version of `POST /places` that returns only the raw place rows (no aggregated likes/scenes data). Body is a JSON array of UUIDs (max 100)."
+          }
+        },
+        {
+          "name": "Get place categories",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/categories",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "categories"]
+            },
+            "description": "Returns the list of category ids associated with a single place: `{ data: { categories: string[] } }`."
+          }
+        },
+        {
+          "name": "Toggle place favorite",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorites\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/favorites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "favorites"]
+            },
+            "description": "Adds (`favorites: true`) or removes (`favorites: false`) the calling user's favorite mark for the entity. Accepts both place UUIDs and world ids in the path for backward compatibility — newer clients should use `PATCH /api/worlds/:world_id/favorites` for worlds. Requires auth-chain. Returns `{ favorites: number, user_favorite: boolean }`."
+          }
+        },
+        {
+          "name": "Toggle place like / dislike",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"like\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/likes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "likes"]
+            },
+            "description": "Sets the user's reaction: `true` like, `false` dislike, `null` clears it. Accepts both place UUIDs and world ids for backward compatibility — prefer `PATCH /api/worlds/:world_id/likes` for worlds. Requires auth-chain. Returns `{ likes, dislikes, user_like, user_dislike }`."
+          }
+        },
+        {
+          "name": "Update content rating (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content_rating\": \"E\",\n  \"comment\": \"Reviewed by moderator\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/rating",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "rating"]
+            },
+            "description": "Sets the content rating. Allowed values: `PR`, `E`, `T`, `A`, `R`. Comment is optional. Requires auth-chain from a wallet listed in `decentraland-gatsby`'s admin allowlist. Records the change in `place_content_rating` and triggers a Slack notification when the rating is upgraded."
+          }
+        },
+        {
+          "name": "Update highlight (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"highlighted\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/highlight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "highlight"]
+            },
+            "description": "Toggles the `highlighted` flag. Auth-chain from an admin wallet required. Same effect as the `featured` endpoints below (kept as separate auth surface)."
+          }
+        },
+        {
+          "name": "Update ranking (data team)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{data_team_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ranking\": 100\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/ranking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "ranking"]
+            },
+            "description": "Sets the manual ranking score (higher values surface first). Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN` Bearer."
+          }
+        },
+        {
+          "name": "Feature place (admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "featured"]
+            },
+            "description": "Marks the place as featured (sets `highlighted = true`). Authorized via `PLACES_ADMIN_AUTH_TOKEN` Bearer. Idempotent."
+          }
+        },
+        {
+          "name": "Unfeature place (admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/places/{{place_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "places", "{{place_id}}", "featured"]
+            },
+            "description": "Unmarks the place as featured (sets `highlighted = false`). Authorized via `PLACES_ADMIN_AUTH_TOKEN` Bearer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Worlds",
+      "description": "World endpoints — symmetric to Places but keyed by lowercased world name.",
+      "item": [
+        {
+          "name": "List worlds",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds?limit=24&offset=0&order_by=most_active&order=desc&only_favorites=false",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds"],
+              "query": [
+                { "key": "limit", "value": "24" },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "order_by",
+                  "value": "most_active",
+                  "description": "most_active | like_score_best | created_at"
+                },
+                { "key": "order", "value": "desc" },
+                {
+                  "key": "only_favorites",
+                  "value": "false",
+                  "description": "If true, requires auth."
+                },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "categories", "value": "", "disabled": true },
+                {
+                  "key": "names",
+                  "value": "",
+                  "description": "Repeatable. Filter by world names.",
+                  "disabled": true
+                },
+                {
+                  "key": "owner",
+                  "value": "",
+                  "description": "Lowercased 0x-address.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Public worlds listing. `most_active` order is computed from worlds-content-server live user counts (refreshed every minute)."
+          }
+        },
+        {
+          "name": "Get world by id",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}"]
+            },
+            "description": "Returns a single aggregated world. 404 if not found."
+          }
+        },
+        {
+          "name": "List world names",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/world_names",
+              "host": ["{{base_url}}"],
+              "path": ["api", "world_names"]
+            },
+            "description": "Lightweight endpoint that returns just the array of world names (`string[]`) plus a `total` count. Used by autocomplete-like flows."
+          }
+        },
+        {
+          "name": "Toggle world favorite",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"favorites\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/favorites",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "favorites"]
+            },
+            "description": "Dedicated world-favorites endpoint. Returns `400` if a place UUID is passed instead of a world id (use the place endpoint for those). Requires auth-chain."
+          }
+        },
+        {
+          "name": "Toggle world like / dislike",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"like\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/likes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "likes"]
+            },
+            "description": "Sets the user's reaction on a world: `true` like, `false` dislike, `null` clears it. Returns `400` if a place UUID is passed. Requires auth-chain."
+          }
+        },
+        {
+          "name": "Update world content rating (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content_rating\": \"T\",\n  \"comment\": \"Manual review by moderator\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/rating",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "rating"]
+            },
+            "description": "Sets the content rating for a world. Allowed values: `PR`, `E`, `T`, `A`, `R`. Comment optional. Auth-chain from an admin wallet required. Triggers Slack notification on upgrades."
+          }
+        },
+        {
+          "name": "Update world highlight (admin)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"highlighted\": true\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/highlight",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "highlight"]
+            },
+            "description": "Toggles the `highlighted` flag on a world. Auth-chain from admin wallet required."
+          }
+        },
+        {
+          "name": "Update world ranking (data team)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{data_team_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ranking\": 50\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/ranking",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "ranking"]
+            },
+            "description": "Sets manual ranking for a world. Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN`."
+          }
+        },
+        {
+          "name": "Feature world (admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "featured"]
+            },
+            "description": "Sets `highlighted = true` on the world. Authorized via `PLACES_ADMIN_AUTH_TOKEN` Bearer."
+          }
+        },
+        {
+          "name": "Unfeature world (admin)",
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{admin_auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/worlds/{{world_id}}/featured",
+              "host": ["{{base_url}}"],
+              "path": ["api", "worlds", "{{world_id}}", "featured"]
+            },
+            "description": "Sets `highlighted = false` on the world. Authorized via `PLACES_ADMIN_AUTH_TOKEN` Bearer."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Map",
+      "description": "Map-tailored aggregations of places (and the merged places + worlds endpoint).",
+      "item": [
+        {
+          "name": "Get map places (parcels)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/map?limit=2000&offset=0&order_by=like_score_best&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "map"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "2000",
+                  "description": "0-2000 (DEFAULT_MAX_LIMIT)."
+                },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "description": "like_score_best | most_active | updated_at | created_at"
+                },
+                { "key": "order", "value": "desc" },
+                {
+                  "key": "with_realms_detail",
+                  "value": "false",
+                  "disabled": true
+                },
+                { "key": "only_favorites", "value": "false", "disabled": true },
+                {
+                  "key": "only_highlighted",
+                  "value": "false",
+                  "disabled": true
+                },
+                { "key": "positions", "value": "", "disabled": true },
+                { "key": "categories", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Returns places projected onto map coordinates. Same query params as `/api/places` but with a higher default `limit` (`DEFAULT_MAX_LIMIT`)."
+          }
+        },
+        {
+          "name": "Get map places + worlds (merged)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/map/places?limit=2000&offset=0&order_by=like_score_best&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "map", "places"],
+              "query": [
+                { "key": "limit", "value": "2000" },
+                { "key": "offset", "value": "0" },
+                { "key": "order_by", "value": "like_score_best" },
+                { "key": "order", "value": "desc" },
+                {
+                  "key": "with_realms_detail",
+                  "value": "false",
+                  "disabled": true
+                },
+                { "key": "only_favorites", "value": "false", "disabled": true },
+                {
+                  "key": "only_highlighted",
+                  "value": "false",
+                  "disabled": true
+                },
+                { "key": "positions", "value": "", "disabled": true },
+                { "key": "names", "value": "", "disabled": true },
+                { "key": "categories", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "creator_address", "value": "", "disabled": true },
+                { "key": "sdk", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Newer endpoint that returns places **and** worlds in one merged listing. Used by the map client to render both kinds of entities at once."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Destinations",
+      "description": "Aggregated places + worlds with optional connected-users and live-events enrichment.",
+      "item": [
+        {
+          "name": "List destinations",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/destinations?limit=24&offset=0&order_by=like_score_best&order=desc",
+              "host": ["{{base_url}}"],
+              "path": ["api", "destinations"],
+              "query": [
+                { "key": "limit", "value": "24" },
+                { "key": "offset", "value": "0" },
+                {
+                  "key": "order_by",
+                  "value": "like_score_best",
+                  "description": "like_score_best | most_active | updated_at | created_at"
+                },
+                { "key": "order", "value": "desc" },
+                {
+                  "key": "with_realms_detail",
+                  "value": "false",
+                  "disabled": true
+                },
+                {
+                  "key": "with_connected_users",
+                  "value": "false",
+                  "description": "Adds connected-user counts via comms-gatekeeper.",
+                  "disabled": true
+                },
+                {
+                  "key": "with_live_events",
+                  "value": "false",
+                  "description": "Adds live-events info via events service.",
+                  "disabled": true
+                },
+                { "key": "only_favorites", "value": "false", "disabled": true },
+                {
+                  "key": "only_highlighted",
+                  "value": "false",
+                  "disabled": true
+                },
+                { "key": "only_worlds", "value": "false", "disabled": true },
+                { "key": "only_places", "value": "false", "disabled": true },
+                {
+                  "key": "pointer",
+                  "value": "",
+                  "description": "Repeatable. Filter by parcel position.",
+                  "disabled": true
+                },
+                {
+                  "key": "world_names",
+                  "value": "",
+                  "description": "Repeatable.",
+                  "disabled": true
+                },
+                {
+                  "key": "names",
+                  "value": "",
+                  "description": "Repeatable.",
+                  "disabled": true
+                },
+                { "key": "categories", "value": "", "disabled": true },
+                { "key": "owner", "value": "", "disabled": true },
+                { "key": "creator_address", "value": "", "disabled": true },
+                { "key": "search", "value": "", "disabled": true },
+                { "key": "sdk", "value": "", "disabled": true }
+              ]
+            },
+            "description": "Unified listing of places and worlds (\"destinations\") with optional realtime enrichment. Used by Decentraland Explorer's discovery surfaces."
+          }
+        },
+        {
+          "name": "Get destinations by ids",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "[\n  \"00000000-0000-0000-0000-000000000000\",\n  \"myworld.dcl.eth\"\n]",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{base_url}}/api/destinations",
+              "host": ["{{base_url}}"],
+              "path": ["api", "destinations"]
+            },
+            "description": "Body is a JSON array (max 100) of place UUIDs and/or world ids. Returns the merged aggregated rows."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "User-generated content reports stored on S3 via signed urls.",
+      "item": [
+        {
+          "name": "Request report signed URL",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/report",
+              "host": ["{{base_url}}"],
+              "path": ["api", "report"]
+            },
+            "description": "Returns a `{ signed_url: string }` that the client uses to PUT a JSON report payload directly to S3. The URL is bound to the caller's wallet address (recorded in S3 object metadata) and expires in ~60s. Requires auth-chain."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Service",
+      "description": "Operational endpoints exposed by `decentraland-gatsby`.",
+      "item": [
+        {
+          "name": "Status",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "status"]
+            },
+            "description": "Liveness probe. Returns `{ ok: true, ... }` and basic version info."
+          }
+        },
+        {
+          "name": "Prometheus metrics",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/metrics",
+              "host": ["{{base_url}}"],
+              "path": ["metrics"]
+            },
+            "description": "Prometheus exposition endpoint. Aggregates `decentraland-gatsby` defaults plus `prom-client` global registry."
+          }
+        }
+      ]
+    },
+    {
+      "name": "Social",
+      "description": "Server-rendered HTML used for social/og link previews. Mounted under `/places` (NOT `/api`).",
+      "item": [
+        {
+          "name": "Place social HTML",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{base_url}}/places/place/?id={{place_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["places", "place", ""],
+              "query": [
+                {
+                  "key": "id",
+                  "value": "{{place_id}}",
+                  "description": "Place UUID. Mutually exclusive with `position`."
+                },
+                {
+                  "key": "position",
+                  "value": "-23,-96",
+                  "description": "Parcel position `x,y`. Used when `id` is missing.",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns an HTML document with OG / Twitter meta tags injected for the requested place. Used by Slack / Discord / Twitter / Facebook unfurlers. Falls back to default site metadata when neither `id` nor a valid `position` resolves to a place."
+          }
+        },
+        {
+          "name": "World social HTML",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [{ "key": "Accept", "value": "text/html" }],
+            "url": {
+              "raw": "{{base_url}}/places/world/?name={{world_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["places", "world", ""],
+              "query": [
+                {
+                  "key": "name",
+                  "value": "{{world_id}}",
+                  "description": "World name (lowercased). Same as `id`."
+                },
+                {
+                  "key": "id",
+                  "value": "{{world_id}}",
+                  "description": "World id (lowercased name).",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Returns an HTML document with OG / Twitter meta tags injected for the requested world. Falls back to default site metadata when the world is not found."
+          }
+        }
+      ]
+    }
+  ]
+}
