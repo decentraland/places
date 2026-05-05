@@ -71,7 +71,8 @@
     "send:snapshot-to-sqs": "npm run send:snapshot-to-files && npm run send:files-to-sqs",
     "test:sqs-message": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/testSqsMessage.ts",
     "rebuild:worlds:dev": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
-    "rebuild:worlds:prd": "DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts"
+    "rebuild:worlds:prd": "DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
+    "smoke-test": "ts-node bin/smokeTest.ts"
   },
   "repository": {
     "type": "git",
