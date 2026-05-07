@@ -1013,7 +1013,7 @@ describe("taskRunnerSqs integration", () => {
           title: "Fallback From Metadata",
         })
         Object.assign(scene.metadata, {
-          creator: "0xcreatorfrommetadata00000000000000000000",
+          creator: "0xcreatorfrommetadata000000000000000000000",
           runtimeVersion: "7",
         })
 
@@ -1035,7 +1035,7 @@ describe("taskRunnerSqs integration", () => {
 
         expect(response.body.data).toHaveLength(1)
         expect(response.body.data[0].creator_address).toBe(
-          "0xcreatorfrommetadata00000000000000000000"
+          "0xcreatorfrommetadata000000000000000000000"
         )
         expect(response.body.data[0].sdk).toBe("7")
       })
