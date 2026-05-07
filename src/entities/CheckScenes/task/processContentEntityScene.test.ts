@@ -67,6 +67,31 @@ describe("createPlaceFromContentEntityScene", () => {
       expect(result.disabled_reason).toBe(DisabledReason.OPT_OUT)
     })
   })
+
+  describe("when an existing place is passed in as data", () => {
+    let result: ReturnType<typeof createPlaceFromContentEntityScene>
+    let existingUpdatedAt: Date
+    let beforeCallTimestamp: number
+
+    beforeEach(() => {
+      existingUpdatedAt = new Date("2023-05-10T02:47:12.090Z")
+      beforeCallTimestamp = Date.now()
+      result = createPlaceFromContentEntityScene(
+        contentEntitySceneGenesisPlaza,
+        {
+          ...placeGenesisPlaza,
+          updated_at: existingUpdatedAt,
+        }
+      )
+    })
+
+    it("should refresh updated_at to the current time, not preserve the existing place's stale value", () => {
+      expect(result.updated_at.getTime()).toBeGreaterThanOrEqual(
+        beforeCallTimestamp
+      )
+      expect(result.updated_at).not.toEqual(existingUpdatedAt)
+    })
+  })
 })
 
 describe("processContentEntityScene", () => {
