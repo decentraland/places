@@ -381,6 +381,10 @@ type Result = {
   error?: string
 }
 
+type FixtureResponse = {
+  data?: Array<{ id?: string }>
+}
+
 function fillPlaceholders(value: string, env: EnvName): string {
   return value
     .replace(/{{place_id}}/g, FIXTURES[env].place_id)
@@ -502,6 +506,12 @@ function pad(text: string, width: number): string {
   return text + " ".repeat(width - text.length)
 }
 
+function hasNonJsonContentType(contentType: string): boolean {
+  return ["text/html", "application/xml", "text/xml", "text/plain"].some(
+    (type) => contentType.includes(type)
+  )
+}
+
 type Diff = {
   check: Check
   zone: Result
@@ -544,9 +554,9 @@ function compare(check: Check, zone: Result, prod: Result): Diff {
       )
       severity = severity === "fail" ? "fail" : "warn"
     }
-    if (check.expectJson === false && !res.contentType.includes("text/html")) {
+    if (check.expectJson === false && !hasNonJsonContentType(res.contentType)) {
       issues.push(
-        `${envName}: expected HTML but got content-type "${res.contentType}"`
+        `${envName}: expected non-JSON content but got content-type "${res.contentType}"`
       )
       severity = severity === "fail" ? "fail" : "warn"
     }
@@ -626,15 +636,15 @@ function fmtRow(d: Diff): string {
 
 async function discoverFixturesFor(env: EnvName) {
   const [places, worlds] = await Promise.all([
-    fetch(`${ENVS[env]}/api/places?limit=10&order_by=like_score_best`).then(
-      (r) => r.json()
-    ),
-    fetch(`${ENVS[env]}/api/worlds?limit=10&order_by=like_score_best`).then(
-      (r) => r.json()
-    ),
+    fetch(`${ENVS[env]}/api/places?limit=10&order_by=like_score_best`)
+      .then((r) => r.json() as Promise<FixtureResponse>)
+      .catch(() => ({ data: [] })),
+    fetch(`${ENVS[env]}/api/worlds?limit=10&order_by=like_score_best`)
+      .then((r) => r.json() as Promise<FixtureResponse>)
+      .catch(() => ({ data: [] })),
   ])
-  const firstPlace = (places.data ?? [])[0] as { id?: string } | undefined
-  const firstWorld = (worlds.data ?? [])[0] as { id?: string } | undefined
+  const firstPlace = (places.data ?? [])[0]
+  const firstWorld = (worlds.data ?? [])[0]
   if (firstPlace?.id) FIXTURES[env].place_id = firstPlace.id
   if (firstWorld?.id) FIXTURES[env].world_id = firstWorld.id
 }
@@ -649,6 +659,31 @@ async function discoverFixtures() {
   )
 }
 
+function usesFixture(
+  check: Check,
+  placeholder: "{{place_id}}" | "{{world_id}}"
+) {
+  return (
+    check.path.includes(placeholder) ||
+    JSON.stringify(check.body ?? "").includes(placeholder)
+  )
+}
+
+function filterResolvedFixtureChecks(checks: Check[]): Check[] {
+  const placeResolved =
+    FIXTURES.zone.place_id !== PLACE_ID_GENESIS ||
+    FIXTURES.prod.place_id !== PLACE_ID_GENESIS
+  const worldResolved =
+    FIXTURES.zone.world_id !== FAKE_WORLD &&
+    FIXTURES.prod.world_id !== FAKE_WORLD
+
+  return checks.filter((check) => {
+    if (!placeResolved && usesFixture(check, "{{place_id}}")) return false
+    if (!worldResolved && usesFixture(check, "{{world_id}}")) return false
+    return true
+  })
+}
+
 async function main() {
   const filter =
     process.argv[2] && !process.argv[2].startsWith("--")
@@ -656,9 +691,12 @@ async function main() {
       : undefined
   const verbose = process.argv.includes("--verbose")
 
-  const checks = filter
+  const matchingChecks = filter
     ? CHECKS.filter((c) => c.name.toLowerCase().includes(filter.toLowerCase()))
     : CHECKS
+
+  await discoverFixtures()
+  const checks = filterResolvedFixtureChecks(matchingChecks)
 
   console.log(
     color(
@@ -666,8 +704,6 @@ async function main() {
       "bold"
     )
   )
-
-  await discoverFixtures()
   console.log("")
 
   const results: Diff[] = []
