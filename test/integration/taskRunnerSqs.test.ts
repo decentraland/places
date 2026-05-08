@@ -1004,4 +1004,70 @@ describe("taskRunnerSqs integration", () => {
       })
     })
   })
+
+  describe("when extractSceneJsonData fails to read scene.json", () => {
+    describe("and the entity metadata still carries creator and runtimeVersion", () => {
+      beforeEach(async () => {
+        const scene = createWorldContentEntityScene({
+          worldName: "fallback-meta.dcl.eth",
+          title: "Fallback From Metadata",
+        })
+        Object.assign(scene.metadata, {
+          creator: "0xcreatorfrommetadata000000000000000000000",
+          runtimeVersion: "7",
+        })
+
+        mockProcessEntityId.mockResolvedValueOnce(scene)
+        mockExtractSceneJsonData.mockResolvedValueOnce({
+          creator: null,
+          runtimeVersion: null,
+        })
+
+        const job = createWorldDeploymentMessage()
+        await taskRunnerSqs(job)
+      })
+
+      it("should populate creator_address and sdk from entity metadata", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "fallback-meta.dcl.eth" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].creator_address).toBe(
+          "0xcreatorfrommetadata000000000000000000000"
+        )
+        expect(response.body.data[0].sdk).toBe("7")
+      })
+    })
+
+    describe("and the entity metadata does not carry creator or runtimeVersion", () => {
+      beforeEach(async () => {
+        const scene = createWorldContentEntityScene({
+          worldName: "no-fallback-meta.dcl.eth",
+          title: "No Fallback Available",
+        })
+
+        mockProcessEntityId.mockResolvedValueOnce(scene)
+        mockExtractSceneJsonData.mockResolvedValueOnce({
+          creator: null,
+          runtimeVersion: null,
+        })
+
+        const job = createWorldDeploymentMessage()
+        await taskRunnerSqs(job)
+      })
+
+      it("should leave creator_address and sdk null", async () => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ names: "no-fallback-meta.dcl.eth" })
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(1)
+        expect(response.body.data[0].creator_address).toBeNull()
+        expect(response.body.data[0].sdk).toBeNull()
+      })
+    })
+  })
 })

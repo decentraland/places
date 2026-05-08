@@ -62,11 +62,25 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     return null
   }
 
-  // Extract creator address and SDK version from scene.json
+  // Extract creator address and SDK version from scene.json. Fall back to
+  // entity metadata when the secondary blob fetch fails or returns nulls —
+  // metadata is the same scene.json already parsed by the content server, so
+  // it's the authoritative source even when the standalone fetch hiccups
+  // (CDN replication lag, transient network errors, etc).
   const sceneJsonData = await extractSceneJsonData(
     contentEntityScene,
     job.contentServerUrls![0]
   )
+  const creator =
+    sceneJsonData.creator ||
+    (contentEntityScene.metadata as { creator?: string } | undefined)
+      ?.creator ||
+    null
+  const sdk =
+    sceneJsonData.runtimeVersion ||
+    (contentEntityScene.metadata as { runtimeVersion?: string } | undefined)
+      ?.runtimeVersion ||
+    null
 
   let placesToProcess: ProcessEntitySceneResult | null = null
 
@@ -137,8 +151,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
     const options = {
       url: job.contentServerUrls![0],
-      creator: sceneJsonData.creator,
-      sdk: sceneJsonData.runtimeVersion,
+      creator,
+      sdk,
       worldId,
     }
 
@@ -214,8 +228,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     )
     placesToProcess = processContentEntityScene(contentEntityScene, places, {
       url: job.contentServerUrls![0],
-      creator: sceneJsonData.creator,
-      sdk: sceneJsonData.runtimeVersion,
+      creator,
+      sdk,
     })
   }
 
