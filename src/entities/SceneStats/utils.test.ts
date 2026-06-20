@@ -1,17 +1,8 @@
-import fetch from "node-fetch"
-
 import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
 import DataTeam from "../SceneStats/utils"
 
-jest.mock("node-fetch", () => jest.fn())
-
 describe("DataTeam", () => {
   const url = "https://cdn-url/"
-  const mockFetch = fetch as jest.MockedFunction<typeof fetch>
-
-  beforeEach(() => {
-    mockFetch.mockClear()
-  })
 
   describe("from", () => {
     it("should return a DataTeam instance from cache if exists", () => {
@@ -34,11 +25,21 @@ describe("DataTeam", () => {
   })
 
   describe("getSceneStats", () => {
+    let mockFetch: jest.SpyInstance
+
+    beforeEach(() => {
+      mockFetch = jest.spyOn(globalThis, "fetch")
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
     it("should fetch scene stats and return the data", async () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: jest.fn().mockResolvedValueOnce(sceneStatsGenesisPlaza),
-      } as any)
+      } as unknown as Response)
 
       const instance = DataTeam.from(url)
       const data = await instance.getSceneStats()
@@ -50,7 +51,7 @@ describe("DataTeam", () => {
       mockFetch.mockResolvedValueOnce({
         ok: false,
         statusText: "Not Found",
-      } as any)
+      } as unknown as Response)
 
       const instance = DataTeam.from(url)
       await expect(instance.getSceneStats()).rejects.toThrow(

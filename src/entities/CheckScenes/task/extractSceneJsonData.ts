@@ -1,5 +1,4 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import fetch from "node-fetch"
 
 export type SceneJsonData = {
   creator: string | null

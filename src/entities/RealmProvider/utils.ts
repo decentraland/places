@@ -1,6 +1,5 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch, { RequestInit } from "node-fetch"
 
 import { HotScene } from "../Place/types"
 
@@ -40,7 +39,7 @@ export default class RealmProvider {
 
     try {
       const response = await fetch(`${this.url}hot-scenes`, {
-        signal: controller.signal as RequestInit["signal"],
+        signal: controller.signal,
       })
       if (!response.ok) {
         throw new Error(`Failed to fetch hot scenes: ${response.statusText}`)

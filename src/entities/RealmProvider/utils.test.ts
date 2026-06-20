@@ -1,26 +1,27 @@
-import fetch from "node-fetch"
-
 import RealmProvider from "./utils"
 import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 
-jest.mock("node-fetch", () => jest.fn())
 jest.mock("decentraland-gatsby/dist/utils/env", () =>
   jest.fn(() => "https://realm-provider/")
 )
 
 describe("RealmProvider", () => {
   const url = "https://realm-provider/hot-scenes"
-  const mockFetch = fetch as jest.MockedFunction<typeof fetch>
+  let mockFetch: jest.SpyInstance
 
   beforeEach(() => {
-    jest.clearAllMocks()
+    mockFetch = jest.spyOn(globalThis, "fetch")
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
   })
 
   it("should fetch hot scenes successfully", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: jest.fn().mockResolvedValueOnce(hotSceneGenesisPlaza),
-    } as any)
+    } as unknown as Response)
 
     const realmProvider = RealmProvider.get()
     const hotScenes = await realmProvider.getHotScenes()
@@ -33,7 +34,7 @@ describe("RealmProvider", () => {
     mockFetch.mockResolvedValueOnce({
       ok: false,
       statusText: "Internal Server Error",
-    } as any)
+    } as unknown as Response)
 
     const realmProvider = RealmProvider.get()
 

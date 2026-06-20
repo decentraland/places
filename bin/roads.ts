@@ -1,8 +1,6 @@
 import { writeFileSync } from "fs"
 import { resolve } from "path"
 
-import fetch from "node-fetch"
-
 Promise.resolve().then(async () => {
   const req = await fetch(
     "https://raw.githubusercontent.com/decentraland/atlas-server/master/src/modules/map/data/specialTiles.json"
