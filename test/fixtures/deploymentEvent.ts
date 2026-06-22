@@ -71,6 +71,7 @@ export function createWorldContentEntityScene(
     metadata: {
       display: {
         title: overrides.title ?? "Test World Scene",
+        description: overrides.description,
         favicon: "favicon_asset",
         navmapThumbnail: "scene-thumbnail.png",
       },
