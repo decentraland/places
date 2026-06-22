@@ -129,14 +129,22 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       show_in_places: !isOptOut,
     })
 
-    // Update the world owner on every deployment to keep it in sync with
-    // the current on-chain name ownership.
-    if (nameOwner) {
-      await WorldModel.upsertWorld({
-        world_name: worldName,
-        owner: nameOwner,
-      })
-    }
+    // Refresh the world's display metadata on every (re)deploy so the world
+    // card reflects the current scene, and keep the owner in sync with the
+    // on-chain name ownership. upsertWorld only writes the fields explicitly
+    // passed here, so moderator-managed fields (content_rating, categories,
+    // highlighted, ranking, show_in_places) set on first insert are never
+    // clobbered on redeploy. `image` is intentionally omitted so the world
+    // keeps falling back to the latest place thumbnail via
+    // COALESCE(w.image, lp.image) instead of freezing a stale image.
+    await WorldModel.upsertWorld({
+      world_name: worldName,
+      title:
+        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
+      description:
+        contentEntityScene?.metadata?.display?.description || undefined,
+      owner: nameOwner || undefined,
+    })
 
     // World-specific overlap logic: in worlds, positions can change freely
     // between deployments, so identity is based on overlap count rather than
