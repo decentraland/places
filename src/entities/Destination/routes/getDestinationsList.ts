@@ -22,6 +22,7 @@ import {
 import {
   ConnectedUsersMap,
   LiveEventsMap,
+  buildRealtimeUserCounts,
   destinationsWithAggregates,
   fetchConnectedUsersForDestinations,
   fetchLiveEventsForDestinations,
@@ -110,19 +111,23 @@ export const getDestinationsList = Router.memo(
       }
     }
 
-    // Get positions from hot scenes for MOST_ACTIVE ordering
-    const hotScenesPositions =
-      query.order_by === PlaceListOrderBy.MOST_ACTIVE
-        ? hotScenes
-            .map((scene) => scene.parcels.map((parcel) => parcel.join(",")))
-            .flat()
-        : []
+    // Fetched once and reused for both the realtime-count injection and the response enrichment.
+    const worldsLiveData = getWorldsLiveData()
 
-    // Add operatedPositions and hotScenesPositions to options for enhanced query
+    // Realtime connected-user counts injected into the query so MOST_ACTIVE orders by the actual
+    // number of users — across places (hot scenes) AND worlds (world live data). See issue #7344.
+    const { placeUserCounts, worldUserCounts } = buildRealtimeUserCounts(
+      query.order_by,
+      hotScenes,
+      worldsLiveData
+    )
+
+    // Add operatedPositions and realtime counts to options for the enhanced query
     const enhancedOptions = {
       ...options,
       operatedPositions,
-      hotScenesPositions,
+      placeUserCounts,
+      worldUserCounts,
     }
 
     const [data, total, sceneStats] = await Promise.all([
@@ -130,7 +135,6 @@ export const getDestinationsList = Router.memo(
       DestinationModel.count(enhancedOptions),
       getSceneStats(),
     ])
-    const worldsLiveData = getWorldsLiveData()
 
     // Fetch connected users if requested
     const withConnectedUsers = !!bool(query.with_connected_users)
