@@ -82,7 +82,6 @@ export type DestinationsListOptions = CommonFilterFields & {
 export type FindDestinationsWithAggregatesOptions = DestinationsListOptions & {
   user?: string
   operatedPositions?: string[]
-  hotScenesPositions?: string[]
   ids?: string[]
   /**
    * Realtime connected-user counts injected into the query for MOST_ACTIVE ordering.
