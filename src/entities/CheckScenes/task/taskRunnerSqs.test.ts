@@ -177,4 +177,61 @@ describe("taskRunnerSqs", () => {
       expect(upsertArg).not.toHaveProperty("image")
     })
   })
+
+  describe("when a world scene is deployed and the name has no on-chain owner", () => {
+    let upsertArg: Record<string, unknown>
+
+    beforeEach(async () => {
+      mockProcessEntityId.mockResolvedValue(
+        buildWorldScene(
+          { title: "Ownerless Title", description: "Ownerless description" },
+          SceneContentRating.TEEN
+        )
+      )
+      mockExtractSceneJsonData.mockResolvedValue({
+        creator: null,
+        runtimeVersion: null,
+      })
+      // No resolvable on-chain owner for this name.
+      mockFetchNameOwner.mockResolvedValue(undefined)
+      mockFindNewDeployedPlace.mockReturnValue(null)
+      mockCreatePlace.mockReturnValue({
+        id: "place-1",
+        positions: ["0,0"],
+        base_position: "0,0",
+        content_rating: SceneContentRating.TEEN,
+      } as unknown as ReturnType<typeof createPlaceFromContentEntityScene>)
+      ;(WorldModel.insertWorldIfNotExists as jest.Mock).mockResolvedValue(
+        WORLD_NAME
+      )
+      ;(WorldModel.upsertWorld as jest.Mock).mockResolvedValue({})
+      ;(
+        PlaceModel.findActiveByWorldIdAndPositions as jest.Mock
+      ).mockResolvedValue([])
+      ;(PlaceModel.insertPlace as jest.Mock).mockResolvedValue(undefined)
+
+      await taskRunnerSqs(sqsMessageWorld)
+
+      upsertArg = (WorldModel.upsertWorld as jest.Mock).mock.calls[0][0]
+    })
+
+    afterEach(() => {
+      jest.clearAllMocks()
+    })
+
+    it("should still refresh the world title and description", () => {
+      expect(upsertArg).toMatchObject({
+        world_name: WORLD_NAME,
+        title: "Ownerless Title",
+        description: "Ownerless description",
+      })
+    })
+
+    it("should pass owner as undefined so a null name owner does not null out an existing owner", () => {
+      // `owner: nameOwner || undefined` resolves to undefined when the name has
+      // no on-chain owner, and upsertWorld only writes non-undefined fields —
+      // so an existing world owner is preserved on an ownerless redeploy.
+      expect(upsertArg.owner).toBeUndefined()
+    })
+  })
 })

@@ -150,6 +150,7 @@ describe("taskRunnerSqs integration", () => {
       const initialScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Original Scene",
+        contentRating: "T",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(initialScene)
@@ -160,11 +161,13 @@ describe("taskRunnerSqs integration", () => {
 
       await taskRunnerSqs(job)
 
-      // Second deployment updates the existing scene
+      // Second deployment updates the existing scene with new display metadata
+      // and a different content rating.
       const updatedScene = createWorldContentEntityScene({
         worldName: "existingworld.dcl.eth",
         title: "Updated Scene",
         description: "Updated description",
+        contentRating: "A",
       })
 
       mockProcessEntityId.mockResolvedValueOnce(updatedScene)
@@ -186,15 +189,25 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data[0].title).toBe("Updated Scene")
     })
 
-    it("should not overwrite the world record with data from the second deployment", async () => {
+    it("should refresh the world title and description from the second deployment", async () => {
       const response = await supertest(app)
         .get("/api/worlds/existingworld.dcl.eth")
         .expect(200)
 
       expect(response.body.ok).toBe(true)
       expect(response.body.data.world_name).toBe("existingworld.dcl.eth")
-      expect(response.body.data.title).toBe("Original Scene")
-      expect(response.body.data.description).toBeNull()
+      expect(response.body.data.title).toBe("Updated Scene")
+      expect(response.body.data.description).toBe("Updated description")
+    })
+
+    it("should preserve the world content rating set on the first deployment", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/existingworld.dcl.eth")
+        .expect(200)
+
+      // content_rating is moderator-managed: only set on first insert, never
+      // clobbered by a redeploy even when the scene reports a different rating.
+      expect(response.body.data.content_rating).toBe("T")
     })
 
     it("should reflect updated data via the place detail API", async () => {
