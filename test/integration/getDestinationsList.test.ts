@@ -1281,7 +1281,7 @@ describe("when fetching destinations via GET /destinations", () => {
       })
 
       describe("and there are multiple most_active places", () => {
-        it("should order them by like_score descending", async () => {
+        it("should order them by live connected users descending", async () => {
           const response = await supertest(app)
             .get("/api/destinations")
             .query({ order_by: "most_active", offset: 0, limit: 100 })
@@ -1304,9 +1304,11 @@ describe("when fetching destinations via GET /destinations", () => {
           const indexGarden = mostActivePlaces.findIndex(
             (d) => d.base_position === "20,20"
           )
-          expect(indexMuseum).toBeLessThan(indexGarden)
-          expect(mostActivePlaces[indexMuseum].like_score).toBe(30)
-          expect(mostActivePlaces[indexGarden].like_score).toBe(10)
+          // Garden (20,20) has 15 live users vs Museum (10,10) with 5, so it ranks first
+          // even though Museum has the higher like_score (30 vs 10). See #7344.
+          expect(indexGarden).toBeLessThan(indexMuseum)
+          expect(mostActivePlaces[indexGarden].base_position).toBe("20,20")
+          expect(mostActivePlaces[indexMuseum].base_position).toBe("10,10")
         })
       })
     })

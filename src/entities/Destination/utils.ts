@@ -2,11 +2,42 @@ import { AggregateDestinationAttributes } from "./types"
 import CommsGatekeeper from "../../api/CommsGatekeeper"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
 import Events from "../../api/Events"
-import { HotScene } from "../Place/types"
+import { HotScene, PlaceListOrderBy } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
 export type ConnectedUsersMap = Map<string, string[]>
 export type LiveEventsMap = Map<string, boolean>
+
+export type RealtimeUserCounts = {
+  placeUserCounts: { base_position: string; count: number }[]
+  worldUserCounts: { world_name: string; count: number }[]
+}
+
+/**
+ * Build the realtime connected-user counts injected into the destinations query for MOST_ACTIVE
+ * ordering: places keyed by `base_position` (from hot scenes) and worlds by `world_name` (from
+ * world live data). Returns empty arrays unless ordering by most_active. See issue #7344.
+ */
+export function buildRealtimeUserCounts(
+  orderBy: string,
+  hotScenes: HotScene[],
+  worldsLiveData: WorldLiveDataProps
+): RealtimeUserCounts {
+  if (orderBy !== PlaceListOrderBy.MOST_ACTIVE) {
+    return { placeUserCounts: [], worldUserCounts: [] }
+  }
+
+  return {
+    placeUserCounts: hotScenes.map((scene) => ({
+      base_position: scene.baseCoords.join(","),
+      count: scene.usersTotalCount,
+    })),
+    worldUserCounts: (worldsLiveData.perWorld ?? []).map((world) => ({
+      world_name: world.worldName,
+      count: world.users,
+    })),
+  }
+}
 
 /**
  * Fetches connected users for a list of destinations from comms-gatekeeper.
