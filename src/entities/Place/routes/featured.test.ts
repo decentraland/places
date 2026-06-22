@@ -26,7 +26,7 @@ const findByIdWithAggregates = jest.spyOn(PlaceModel, "findByIdWithAggregates")
 const updatePlace = jest.spyOn(PlaceModel, "updatePlace")
 
 const buildAuthenticatedRequest = (method: "PUT" | "DELETE") => {
-  const request = new Request("/", { method })
+  const request = new Request("http://0.0.0.0/", { method })
   request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
   return request
 }
@@ -60,7 +60,7 @@ describe("featured endpoints", () => {
         const handler = method === "PUT" ? featurePlace : unfeaturePlace
         await expect(() =>
           handler({
-            request: new Request("/", { method }),
+            request: new Request("http://0.0.0.0/", { method }),
             params: { place_id },
             url: buildUrl(),
           } as any)
@@ -72,7 +72,7 @@ describe("featured endpoints", () => {
       "%s returns 403 when authorization token is invalid",
       async (method) => {
         const handler = method === "PUT" ? featurePlace : unfeaturePlace
-        const request = new Request("/", { method })
+        const request = new Request("http://0.0.0.0/", { method })
         request.headers.set("Authorization", "Bearer invalid-token")
 
         await expect(() =>

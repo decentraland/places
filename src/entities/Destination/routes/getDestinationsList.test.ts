@@ -57,7 +57,7 @@ describe("getDestinationsList", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_connected_users=true")
         const response = await getDestinationsList({
           request,
@@ -106,7 +106,7 @@ describe("getDestinationsList", () => {
         catalystSceneStats.mockResolvedValueOnce(Promise.resolve({}))
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL(
           "https://localhost/?with_connected_users=true&only_worlds=true"
         )
@@ -156,7 +156,7 @@ describe("getDestinationsList", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_connected_users=true")
         const response = await getDestinationsList({
           request,
@@ -189,7 +189,7 @@ describe("getDestinationsList", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_connected_users=true")
         const response = await getDestinationsList({
           request,
@@ -214,7 +214,7 @@ describe("getDestinationsList", () => {
       )
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/")
       const response = await getDestinationsList({
         request,
@@ -238,7 +238,7 @@ describe("getDestinationsList", () => {
       )
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/?with_connected_users=false")
       const response = await getDestinationsList({
         request,
@@ -258,7 +258,7 @@ describe("getDestinationsList", () => {
       catalystSceneStats.mockResolvedValueOnce(Promise.resolve({}))
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/?with_connected_users=true")
       const response = await getDestinationsList({
         request,
@@ -300,7 +300,7 @@ describe("getDestinationsList", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_live_events=true")
         const response = await getDestinationsList({
           request,
@@ -341,7 +341,7 @@ describe("getDestinationsList", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_live_events=true")
         const response = await getDestinationsList({
           request,
@@ -365,7 +365,7 @@ describe("getDestinationsList", () => {
       )
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/")
       const response = await getDestinationsList({
         request,

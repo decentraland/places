@@ -13,7 +13,7 @@ const findActiveCategories = jest.spyOn(CategoryModel, "findActiveCategories")
 test("should return list of categories", async () => {
   findActiveCategories.mockResolvedValueOnce(Promise.resolve([]))
   findCategoriesWithPlaces.mockResolvedValueOnce(Promise.resolve([]))
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/")
   const placeResponse = await getCategoryList({ request, url })
   expect(placeResponse.body).toEqual({

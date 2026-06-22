@@ -49,7 +49,7 @@ describe("getDestinationsListById", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/")
         const response = await getDestinationsListById({
           request,
@@ -85,7 +85,7 @@ describe("getDestinationsListById", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL(
           "https://localhost/?limit=10&offset=0&order_by=like_score&order=desc"
         )
@@ -133,7 +133,7 @@ describe("getDestinationsListById", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?with_connected_users=true")
         const response = await getDestinationsListById({
           request,
@@ -172,7 +172,7 @@ describe("getDestinationsListById", () => {
         )
         getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/")
         const response = await getDestinationsListById({
           request,
@@ -189,7 +189,7 @@ describe("getDestinationsListById", () => {
   describe("when the request body is invalid", () => {
     describe("and body is not an array", () => {
       it("should throw an error with BadRequest status", async () => {
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/")
 
         await expect(
@@ -206,7 +206,7 @@ describe("getDestinationsListById", () => {
 
     describe("and more than 100 IDs are provided", () => {
       it("should throw an error with BadRequest status", async () => {
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/")
         const tooManyIds = Array.from({ length: 101 }, (_, i) => `id-${i}`)
 
@@ -224,7 +224,7 @@ describe("getDestinationsListById", () => {
   describe("when only_favorites is true", () => {
     describe("and user is not authenticated", () => {
       it("should return empty array with total 0", async () => {
-        const request = new Request("/")
+        const request = new Request("http://0.0.0.0/")
         const url = new URL("https://localhost/?only_favorites=true")
         const response = await getDestinationsListById({
           request,
@@ -253,7 +253,7 @@ describe("getDestinationsListById", () => {
       )
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/?with_connected_users=false")
       const response = await getDestinationsListById({
         request,
@@ -274,7 +274,7 @@ describe("getDestinationsListById", () => {
       catalystSceneStats.mockResolvedValueOnce(Promise.resolve({}))
       getWorldsLiveDataMock.mockReturnValueOnce(worldsLiveData)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/?with_connected_users=true")
       const response = await getDestinationsListById({
         request,

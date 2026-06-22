@@ -30,7 +30,7 @@ test("should return a list of places with no query", async () => {
     Promise.resolve(sceneStatsGenesisPlaza)
   )
   worldsContentServerLiveData.mockReturnValueOnce(worldsLiveData)
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/")
   const placeResponse = await getAllPlacesList({
     request,
@@ -69,7 +69,7 @@ test("should return a list of places with query", async () => {
     Promise.resolve(sceneStatsGenesisPlaza)
   )
   worldsContentServerLiveData.mockReturnValueOnce(worldsLiveData)
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL(
     "https://localhost/?position=0,0&limit=1&offset=1&order_by=like_rate&order=asc"
   )
@@ -102,7 +102,7 @@ test("should return a list of places with order by most_active", async () => {
     Promise.resolve(sceneStatsGenesisPlaza)
   )
   worldsContentServerLiveData.mockReturnValueOnce(worldsLiveData)
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/?&order_by=most_active")
   const placeResponse = await getAllPlacesList({
     request,
@@ -140,7 +140,7 @@ test("should return a list of places with Realm details", async () => {
     Promise.resolve(sceneStatsGenesisPlaza)
   )
   worldsContentServerLiveData.mockReturnValueOnce(worldsLiveData)
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/?with_realms_detail=true")
   const placeResponse = await getAllPlacesList({
     request,
@@ -171,7 +171,7 @@ test("should return a list of places with Realm details", async () => {
 })
 
 test("should return 0 as total list when query onlyFavorites with no auth", async () => {
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/?only_favorites=true")
   const placeResponse = await getAllPlacesList({
     request,
@@ -187,7 +187,7 @@ test("should return 0 as total list when query onlyFavorites with no auth", asyn
 })
 
 test("should return an error when a wrong value has been sent in the query", async () => {
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/?order_by=fake")
 
   expect(async () =>

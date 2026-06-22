@@ -23,7 +23,7 @@ afterEach(() => {
   findPC.mockReset()
 })
 test("should return 400 when UUID is incorrect", async () => {
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/")
   await expect(() =>
     getPlace({ request, params: { place_id: "123" }, url })
@@ -34,7 +34,7 @@ test("should return 404 when UUID do not exist in the model", async () => {
   findOne.mockResolvedValueOnce(Promise.resolve([]))
   findPC.mockResolvedValueOnce(Promise.resolve([]))
 
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/")
   await expect(async () =>
     getPlace({ request, params: { place_id: place_id }, url })
@@ -52,7 +52,7 @@ test("should return place if the module found it", async () => {
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/")
   const placeResponse = await getPlace({
     request,
@@ -81,7 +81,7 @@ test("should return place with Realms detail", async () => {
   catalystSceneStats.mockResolvedValueOnce(
     Promise.resolve(sceneStatsGenesisPlaza)
   )
-  const request = new Request("/")
+  const request = new Request("http://0.0.0.0/")
   const url = new URL("https://localhost/?with_realms_detail=true")
 
   const placeResponse = await getPlace({

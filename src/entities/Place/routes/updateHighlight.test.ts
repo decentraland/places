@@ -40,7 +40,7 @@ describe("when updating the highlight status of a place", () => {
     })
 
     it("should throw unauthorized error", async () => {
-      const request = new Request("/", { method: "PUT" })
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
       await expect(() =>
         updateHighlight({
@@ -62,7 +62,7 @@ describe("when updating the highlight status of a place", () => {
     })
 
     it("should throw forbidden error", async () => {
-      const request = new Request("/", { method: "PUT" })
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
       await expect(() =>
         updateHighlight({
@@ -81,7 +81,7 @@ describe("when updating the highlight status of a place", () => {
       })
 
       it("should throw not found error", async () => {
-        const request = new Request("/", { method: "PUT" })
+        const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
         await expect(() =>
           updateHighlight({
@@ -95,7 +95,7 @@ describe("when updating the highlight status of a place", () => {
 
     describe("and place exists", () => {
       it("should update place highlight to true", async () => {
-        const request = new Request("/", { method: "PUT" })
+        const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
         const response = await updateHighlight({
           request,
@@ -114,7 +114,7 @@ describe("when updating the highlight status of a place", () => {
       })
 
       it("should update place highlight to false", async () => {
-        const request = new Request("/", { method: "PUT" })
+        const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
         const response = await updateHighlight({
           request,
@@ -136,7 +136,7 @@ describe("when updating the highlight status of a place", () => {
 
   describe("when place_id is invalid", () => {
     it("should throw validation error", async () => {
-      const request = new Request("/", { method: "PUT" })
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
       await expect(() =>
         updateHighlight({
@@ -150,7 +150,7 @@ describe("when updating the highlight status of a place", () => {
 
   describe("when body is invalid", () => {
     it("should throw validation error for missing highlighted field", async () => {
-      const request = new Request("/", { method: "PUT" })
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
 
       await expect(() =>
         updateHighlight({
