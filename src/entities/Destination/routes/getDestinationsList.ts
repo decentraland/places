@@ -111,12 +111,15 @@ export const getDestinationsList = Router.memo(
       }
     }
 
+    // Fetched once and reused for both the realtime-count injection and the response enrichment.
+    const worldsLiveData = getWorldsLiveData()
+
     // Realtime connected-user counts injected into the query so MOST_ACTIVE orders by the actual
     // number of users — across places (hot scenes) AND worlds (world live data). See issue #7344.
     const { placeUserCounts, worldUserCounts } = buildRealtimeUserCounts(
       query.order_by,
       hotScenes,
-      getWorldsLiveData()
+      worldsLiveData
     )
 
     // Add operatedPositions and realtime counts to options for the enhanced query
@@ -132,7 +135,6 @@ export const getDestinationsList = Router.memo(
       DestinationModel.count(enhancedOptions),
       getSceneStats(),
     ])
-    const worldsLiveData = getWorldsLiveData()
 
     // Fetch connected users if requested
     const withConnectedUsers = !!bool(query.with_connected_users)
