@@ -1,10 +1,9 @@
 import { createWriteStream } from "node:fs"
-import { pipeline } from "node:stream"
+import { Readable, pipeline } from "node:stream"
 import { promisify } from "node:util"
 import { resolve } from "path"
 
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import fetch from "node-fetch"
 
 const streamPipeline = promisify(pipeline)
 
@@ -19,8 +18,18 @@ Promise.resolve().then(async () => {
       `https://peer.decentraland.org/content/contents/${snapshot.hash}`
     )
 
+    if (!content.body) {
+      logger.log(`No content body for snapshot ${snapshot.hash}, skipping`)
+      continue
+    }
+
     const newTarget = resolve(__dirname, `./${snapshot.hash}.txt`)
-    await streamPipeline(content.body, createWriteStream(newTarget))
+    await streamPipeline(
+      Readable.fromWeb(
+        content.body as unknown as Parameters<typeof Readable.fromWeb>[0]
+      ),
+      createWriteStream(newTarget)
+    )
     logger.log(`Done writing file: ${newTarget}`)
   }
   return

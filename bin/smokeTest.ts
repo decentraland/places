@@ -1,5 +1,3 @@
-import fetch from "node-fetch"
-
 type EnvName = "zone" | "prod"
 
 const ENVS: Record<EnvName, string> = {
@@ -430,8 +428,8 @@ async function runOneOnce(env: EnvName, check: Check): Promise<Result> {
         ...check.headers,
       },
       body: check.body ? JSON.stringify(fillBody(check.body, env)) : undefined,
-      timeout: 30_000,
-    } as never)
+      signal: AbortSignal.timeout(30_000),
+    })
     const ms = Date.now() - started
     const raw = await res.text()
     const contentType = res.headers.get("content-type") ?? ""

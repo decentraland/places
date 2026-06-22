@@ -36,7 +36,7 @@ afterEach(() => {
 describe("updateRanking", () => {
   describe("authentication", () => {
     test("should return 401 when authorization header is missing", async () => {
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       const url = new URL("https://localhost/")
 
       await expect(() =>
@@ -50,7 +50,7 @@ describe("updateRanking", () => {
     })
 
     test("should return 403 when authorization token is invalid", async () => {
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", "Bearer invalid-token")
       const url = new URL("https://localhost/")
 
@@ -67,7 +67,7 @@ describe("updateRanking", () => {
     test("should return error when DATA_TEAM_AUTH_TOKEN is not configured", async () => {
       mockEnvToken = ""
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -87,7 +87,7 @@ describe("updateRanking", () => {
       )
       updatePlace.mockResolvedValueOnce([] as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -104,7 +104,7 @@ describe("updateRanking", () => {
 
   describe("validation", () => {
     test("should return 400 when place_id is not a valid UUID", async () => {
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -119,7 +119,7 @@ describe("updateRanking", () => {
     })
 
     test("should return 400 when ranking is not provided", async () => {
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -134,7 +134,7 @@ describe("updateRanking", () => {
     })
 
     test("should return 400 when ranking is a string", async () => {
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -153,7 +153,7 @@ describe("updateRanking", () => {
     test("should return 404 when place does not exist", async () => {
       findByIdWithAggregates.mockResolvedValueOnce(null as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -179,7 +179,7 @@ describe("updateRanking", () => {
       )
       updatePlace.mockResolvedValueOnce([] as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -209,7 +209,7 @@ describe("updateRanking", () => {
       )
       updatePlace.mockResolvedValueOnce([] as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -233,7 +233,7 @@ describe("updateRanking", () => {
       )
       updatePlace.mockResolvedValueOnce([] as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 
@@ -253,7 +253,7 @@ describe("updateRanking", () => {
       )
       updatePlace.mockResolvedValueOnce([] as any)
 
-      const request = new Request("/")
+      const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
       const url = new URL("https://localhost/")
 

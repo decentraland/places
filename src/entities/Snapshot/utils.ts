@@ -1,5 +1,4 @@
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import fetch from "node-fetch"
 import isEthereumAddress from "validator/lib/isEthereumAddress"
 
 const strategies = [
@@ -90,7 +89,7 @@ export async function fetchScore(address: string) {
   try {
     const res = await fetch(`https://score.snapshot.org/`, {
       method: "POST",
-      timeout: 10000,
+      signal: AbortSignal.timeout(10000),
       headers: {
         "content-type": "application/json",
       },

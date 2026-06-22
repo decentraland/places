@@ -1,5 +1,4 @@
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch from "node-fetch"
 
 import { SceneStatsMap } from "./types"
 

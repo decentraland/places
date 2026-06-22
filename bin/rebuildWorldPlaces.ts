@@ -31,7 +31,6 @@ import {
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch from "node-fetch"
 
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"

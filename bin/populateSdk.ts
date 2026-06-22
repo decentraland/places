@@ -28,7 +28,6 @@ import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
-import fetch from "node-fetch"
 import { Pool } from "pg"
 
 // Configuration
