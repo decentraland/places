@@ -84,6 +84,13 @@ export type FindDestinationsWithAggregatesOptions = DestinationsListOptions & {
   operatedPositions?: string[]
   hotScenesPositions?: string[]
   ids?: string[]
+  /**
+   * Realtime connected-user counts injected into the query for MOST_ACTIVE ordering.
+   * Places are keyed by `base_position` (from hot scenes), worlds by `world_name`
+   * (from world live data). See issue #7344.
+   */
+  placeUserCounts?: { base_position: string; count: number }[]
+  worldUserCounts?: { world_name: string; count: number }[]
 }
 
 /**

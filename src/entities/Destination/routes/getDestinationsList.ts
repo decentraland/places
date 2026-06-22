@@ -110,19 +110,30 @@ export const getDestinationsList = Router.memo(
       }
     }
 
-    // Get positions from hot scenes for MOST_ACTIVE ordering
-    const hotScenesPositions =
-      query.order_by === PlaceListOrderBy.MOST_ACTIVE
-        ? hotScenes
-            .map((scene) => scene.parcels.map((parcel) => parcel.join(",")))
-            .flat()
-        : []
+    // Realtime connected-user counts injected into the query so MOST_ACTIVE orders by the actual
+    // number of users — across places (hot scenes) AND worlds (world live data). See issue #7344.
+    const isMostActive = query.order_by === PlaceListOrderBy.MOST_ACTIVE
 
-    // Add operatedPositions and hotScenesPositions to options for enhanced query
+    const placeUserCounts = isMostActive
+      ? hotScenes.map((scene) => ({
+          base_position: scene.baseCoords.join(","),
+          count: scene.usersTotalCount,
+        }))
+      : []
+
+    const worldUserCounts = isMostActive
+      ? (getWorldsLiveData().perWorld ?? []).map((world) => ({
+          world_name: world.worldName,
+          count: world.users,
+        }))
+      : []
+
+    // Add operatedPositions and realtime counts to options for the enhanced query
     const enhancedOptions = {
       ...options,
       operatedPositions,
-      hotScenesPositions,
+      placeUserCounts,
+      worldUserCounts,
     }
 
     const [data, total, sceneStats] = await Promise.all([

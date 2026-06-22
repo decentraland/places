@@ -1,5 +1,6 @@
 import {
   SQL,
+  SQLStatement,
   conditional,
   limit,
   offset,
@@ -47,8 +48,36 @@ const WORLDS_DESTINATION_SELECT = SQL`
   lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
   0 as user_visits`
 
-/** Cast to int so UNION type matches places (is_most_active_place is (x)::int there). */
-const WORLDS_IS_MOST_ACTIVE_PLACE = SQL`, 0::int as is_most_active_place`
+/** Fallback when there is no realtime data: every destination ranks as 0 active users. */
+const ZERO_LIVE_USER_COUNT = SQL`, 0::int as live_user_count`
+
+/**
+ * Build a `live_user_count` SELECT column for places from the realtime hot-scenes counts,
+ * matching on `base_position`. Values are bound as query params (no string interpolation).
+ * Returns a 0 column when there is no realtime data so the UNION stays column-aligned.
+ */
+function placesLiveUserCountSelect(
+  counts: { base_position: string; count: number }[] | undefined
+): SQLStatement {
+  if (!counts || counts.length === 0) return ZERO_LIVE_USER_COUNT
+  let cases = SQL``
+  for (const c of counts) cases = SQL`${cases} WHEN ${c.base_position} THEN ${c.count}`
+  return SQL`, COALESCE(CASE p.base_position${cases} ELSE 0 END, 0)::int as live_user_count`
+}
+
+/**
+ * Build a `live_user_count` SELECT column for worlds from the realtime world live-data counts,
+ * matching on `world_name` (case-insensitive). Mirrors {@link placesLiveUserCountSelect}.
+ */
+function worldsLiveUserCountSelect(
+  counts: { world_name: string; count: number }[] | undefined
+): SQLStatement {
+  if (!counts || counts.length === 0) return ZERO_LIVE_USER_COUNT
+  let cases = SQL``
+  for (const c of counts)
+    cases = SQL`${cases} WHEN ${c.world_name.toLowerCase()} THEN ${c.count}`
+  return SQL`, COALESCE(CASE LOWER(w.world_name)${cases} ELSE 0 END, 0)::int as live_user_count`
+}
 
 export default class DestinationModel {
   /**
@@ -74,14 +103,25 @@ export default class DestinationModel {
 
     const orderDirection = oneOf(options.order, ["asc", "desc"]) ?? "desc"
 
-    const filterMostActivePlaces =
-      options.order_by === PlaceListOrderBy.MOST_ACTIVE &&
-      !!options.hotScenesPositions &&
-      options.hotScenesPositions.length > 0
+    const filterMostActive = options.order_by === PlaceListOrderBy.MOST_ACTIVE
+
+    // When ordering by MOST_ACTIVE, expose a `live_user_count` column built from the realtime
+    // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
+    // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
+    const placesSelect = filterMostActive
+      ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
+          options.placeUserCounts
+        )}`
+      : PLACES_DESTINATION_SELECT
+    const worldsSelect = filterMostActive
+      ? SQL`${WORLDS_DESTINATION_SELECT}${worldsLiveUserCountSelect(
+          options.worldUserCounts
+        )}`
+      : WORLDS_DESTINATION_SELECT
 
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(options, {
-        selectColumns: PLACES_DESTINATION_SELECT,
+        selectColumns: placesSelect,
         worldFilter: "always",
       })
       const sql = SQL`
@@ -89,10 +129,7 @@ export default class DestinationModel {
         ORDER BY
           p.highlighted DESC,
           p.ranking DESC NULLS LAST,
-          ${conditional(
-            filterMostActivePlaces,
-            SQL`is_most_active_place DESC, `
-          )}
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
@@ -121,13 +158,14 @@ export default class DestinationModel {
           sdk: options.sdk,
           creator_address: options.creator_address,
         },
-        { selectColumns: WORLDS_DESTINATION_SELECT }
+        { selectColumns: worldsSelect }
       )
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
           w.highlighted DESC,
           w.ranking DESC NULLS LAST,
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC`
@@ -141,9 +179,9 @@ export default class DestinationModel {
       )
     }
 
-    // UNION ALL strategy (both subqueries must have the same columns; places add is_most_active_place when order_by=most_active)
+    // UNION ALL strategy (both subqueries must have the same columns; both add live_user_count when order_by=most_active)
     const placesQuery = PlaceModel.buildSubQuery(options, {
-      selectColumns: PLACES_DESTINATION_SELECT,
+      selectColumns: placesSelect,
       worldFilter: "always",
     })
     const worldsQuery = WorldModel.buildSubQuery(
@@ -161,10 +199,7 @@ export default class DestinationModel {
         creator_address: options.creator_address,
       },
       {
-        selectColumns: WORLDS_DESTINATION_SELECT,
-        extraSelectAfterUserColumns: filterMostActivePlaces
-          ? WORLDS_IS_MOST_ACTIVE_PLACE
-          : undefined,
+        selectColumns: worldsSelect,
       }
     )
 
@@ -177,10 +212,7 @@ export default class DestinationModel {
       ORDER BY
         sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
-        ${conditional(
-          filterMostActivePlaces,
-          SQL`sub.is_most_active_place DESC, `
-        )}
+        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(
           `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC`
