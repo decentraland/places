@@ -61,7 +61,8 @@ function placesLiveUserCountSelect(
 ): SQLStatement {
   if (!counts || counts.length === 0) return ZERO_LIVE_USER_COUNT
   let cases = SQL``
-  for (const c of counts) cases = SQL`${cases} WHEN ${c.base_position} THEN ${c.count}`
+  for (const c of counts)
+    cases = SQL`${cases} WHEN ${c.base_position} THEN ${c.count}`
   return SQL`, COALESCE(CASE p.base_position${cases} ELSE 0 END, 0)::int as live_user_count`
 }
 
