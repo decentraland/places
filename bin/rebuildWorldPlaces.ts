@@ -215,6 +215,9 @@ async function fetchAllWorlds(
     const url = `${baseUrl}/worlds?has_deployed_scenes=true&limit=${WORLDS_PAGE_SIZE}&offset=${offset}`
     const response = await fetch(url)
     if (!response.ok) {
+      if (!response.bodyUsed) {
+        await response.body?.cancel().catch(() => undefined)
+      }
       throw new Error(
         `Failed to fetch worlds list: ${response.status} ${response.statusText}`
       )
@@ -246,6 +249,9 @@ async function fetchWorldScenes(
   const url = `${baseUrl}/world/${encodeURIComponent(worldName)}/scenes`
   const response = await fetch(url)
   if (!response.ok) {
+    if (!response.bodyUsed) {
+      await response.body?.cancel().catch(() => undefined)
+    }
     throw new Error(
       `Failed to fetch scenes for ${worldName}: ${response.status} ${response.statusText}`
     )

@@ -34,6 +34,9 @@ export async function extractSceneJsonData(
     const response = await fetch(contentUrl)
 
     if (!response.ok) {
+      if (!response.bodyUsed) {
+        await response.body?.cancel().catch(() => undefined)
+      }
       return { creator: null, runtimeVersion: null }
     }
 

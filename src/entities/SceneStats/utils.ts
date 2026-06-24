@@ -28,6 +28,9 @@ export default class DataTeam {
   async getSceneStats(): Promise<SceneStatsMap> {
     const response = await fetch(`${this.url}scenes/scene-stats.json`)
     if (!response.ok) {
+      if (!response.bodyUsed) {
+        await response.body?.cancel().catch(() => undefined)
+      }
       throw new Error(`Failed to fetch scene stats: ${response.statusText}`)
     }
 

@@ -42,6 +42,9 @@ export default class RealmProvider {
         signal: controller.signal,
       })
       if (!response.ok) {
+        if (!response.bodyUsed) {
+          await response.body?.cancel().catch(() => undefined)
+        }
         throw new Error(`Failed to fetch hot scenes: ${response.statusText}`)
       }
       return await response.json()

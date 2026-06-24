@@ -67,6 +67,9 @@ async function fetchSceneJsonFromContent(
     const response = await fetch(contentUrl)
 
     if (!response.ok) {
+      if (!response.bodyUsed) {
+        await response.body?.cancel().catch(() => undefined)
+      }
       return null
     }
 
@@ -90,6 +93,9 @@ async function fetchWorldRuntimeVersion(
     const aboutResponse = await fetch(entityUrl)
 
     if (!aboutResponse.ok) {
+      if (!aboutResponse.bodyUsed) {
+        await aboutResponse.body?.cancel().catch(() => undefined)
+      }
       return null
     }
 
@@ -115,6 +121,9 @@ async function fetchWorldRuntimeVersion(
     const contentResponse = await fetch(contentUrl)
 
     if (!contentResponse.ok) {
+      if (!contentResponse.bodyUsed) {
+        await contentResponse.body?.cancel().catch(() => undefined)
+      }
       return null
     }
 
@@ -141,6 +150,9 @@ async function fetchWorldRuntimeVersion(
     const sceneJsonResponse = await fetch(sceneJsonUrl)
 
     if (!sceneJsonResponse.ok) {
+      if (!sceneJsonResponse.bodyUsed) {
+        await sceneJsonResponse.body?.cancel().catch(() => undefined)
+      }
       return null
     }
 

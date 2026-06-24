@@ -85,6 +85,9 @@ async function fetchDclNameOwner(
   })
 
   if (!response.ok) {
+    if (!response.bodyUsed) {
+      await response.body?.cancel().catch(() => undefined)
+    }
     return undefined
   }
 
@@ -118,6 +121,9 @@ async function fetchEnsNameOwner(
   })
 
   if (!response.ok) {
+    if (!response.bodyUsed) {
+      await response.body?.cancel().catch(() => undefined)
+    }
     return undefined
   }
 
