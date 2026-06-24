@@ -24,6 +24,8 @@
 
 import { randomUUID } from "crypto"
 
+import { drainResponse } from "../src/utils/fetch"
+
 import database from "decentraland-gatsby/dist/entities/Database/database"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import {
@@ -215,9 +217,7 @@ async function fetchAllWorlds(
     const url = `${baseUrl}/worlds?has_deployed_scenes=true&limit=${WORLDS_PAGE_SIZE}&offset=${offset}`
     const response = await fetch(url)
     if (!response.ok) {
-      if (!response.bodyUsed) {
-        await response.body?.cancel().catch(() => undefined)
-      }
+      await drainResponse(response)
       throw new Error(
         `Failed to fetch worlds list: ${response.status} ${response.statusText}`
       )
@@ -249,9 +249,7 @@ async function fetchWorldScenes(
   const url = `${baseUrl}/world/${encodeURIComponent(worldName)}/scenes`
   const response = await fetch(url)
   if (!response.ok) {
-    if (!response.bodyUsed) {
-      await response.body?.cancel().catch(() => undefined)
-    }
+    await drainResponse(response)
     throw new Error(
       `Failed to fetch scenes for ${worldName}: ${response.status} ${response.statusText}`
     )

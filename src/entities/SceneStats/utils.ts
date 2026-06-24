@@ -1,6 +1,7 @@
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { SceneStatsMap } from "./types"
+import { drainResponse } from "../../utils/fetch"
 
 export default class DataTeam {
   static Url = env("DATA_TEAM_URL", "https://cdn-data.decentraland.org/")
@@ -28,9 +29,7 @@ export default class DataTeam {
   async getSceneStats(): Promise<SceneStatsMap> {
     const response = await fetch(`${this.url}scenes/scene-stats.json`)
     if (!response.ok) {
-      if (!response.bodyUsed) {
-        await response.body?.cancel().catch(() => undefined)
-      }
+      await drainResponse(response)
       throw new Error(`Failed to fetch scene stats: ${response.statusText}`)
     }
 
