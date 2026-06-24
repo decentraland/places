@@ -6,6 +6,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 import allCoordinates from "../../__data__/AllCoordinates.json"
 import roadCoordinates from "../../__data__/RoadCoordinates.json"
 import areSamePositions from "../../utils/array/areSamePositions"
+import { drainResponse } from "../../utils/fetch"
 import { PlaceAttributes } from "../Place/types"
 import PlacePositionModel from "../PlacePosition/model"
 
@@ -85,6 +86,7 @@ async function fetchDclNameOwner(
   })
 
   if (!response.ok) {
+    await drainResponse(response)
     return undefined
   }
 
@@ -118,6 +120,7 @@ async function fetchEnsNameOwner(
   })
 
   if (!response.ok) {
+    await drainResponse(response)
     return undefined
   }
 

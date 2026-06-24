@@ -1,5 +1,7 @@
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { drainResponse } from "../../../utils/fetch"
+
 export type SceneJsonData = {
   creator: string | null
   runtimeVersion: string | null
@@ -34,6 +36,7 @@ export async function extractSceneJsonData(
     const response = await fetch(contentUrl)
 
     if (!response.ok) {
+      await drainResponse(response)
       return { creator: null, runtimeVersion: null }
     }
 

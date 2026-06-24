@@ -1,6 +1,7 @@
 import Time from "decentraland-gatsby/dist/utils/date/Time"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { drainResponse } from "../../utils/fetch"
 import { HotScene } from "../Place/types"
 
 const DEFAULT_HOST_SCENE = [] as HotScene[]
@@ -42,6 +43,7 @@ export default class RealmProvider {
         signal: controller.signal,
       })
       if (!response.ok) {
+        await drainResponse(response)
         throw new Error(`Failed to fetch hot scenes: ${response.statusText}`)
       }
       return await response.json()

@@ -25,6 +25,8 @@
  */
 
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
+
+import { drainResponse } from "../src/utils/fetch"
 import Catalyst from "decentraland-gatsby/dist/utils/api/Catalyst"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
@@ -67,6 +69,7 @@ async function fetchSceneJsonFromContent(
     const response = await fetch(contentUrl)
 
     if (!response.ok) {
+      await drainResponse(response)
       return null
     }
 
@@ -90,6 +93,7 @@ async function fetchWorldRuntimeVersion(
     const aboutResponse = await fetch(entityUrl)
 
     if (!aboutResponse.ok) {
+      await drainResponse(aboutResponse)
       return null
     }
 
@@ -115,6 +119,7 @@ async function fetchWorldRuntimeVersion(
     const contentResponse = await fetch(contentUrl)
 
     if (!contentResponse.ok) {
+      await drainResponse(contentResponse)
       return null
     }
 
@@ -141,6 +146,7 @@ async function fetchWorldRuntimeVersion(
     const sceneJsonResponse = await fetch(sceneJsonUrl)
 
     if (!sceneJsonResponse.ok) {
+      await drainResponse(sceneJsonResponse)
       return null
     }
 

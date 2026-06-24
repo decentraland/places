@@ -217,6 +217,31 @@ describe("fetchNameOwner", () => {
     })
   })
 
+  describe("when the ENS subgraph response is not ok", () => {
+    let result: string | undefined
+    let cancel: jest.Mock
+
+    beforeEach(async () => {
+      cancel = jest.fn().mockResolvedValue(undefined)
+      jest.spyOn(global, "fetch").mockResolvedValueOnce({
+        ok: false,
+        status: 500,
+        bodyUsed: false,
+        body: { cancel },
+      } as unknown as Response)
+
+      result = await fetchNameOwner("myworld.eth")
+    })
+
+    it("should return undefined", () => {
+      expect(result).toBeUndefined()
+    })
+
+    it("should release the response body", () => {
+      expect(cancel).toHaveBeenCalledTimes(1)
+    })
+  })
+
   describe("when the fetch throws an error", () => {
     let result: string | undefined
 
