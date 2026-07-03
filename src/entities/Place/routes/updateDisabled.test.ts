@@ -111,7 +111,8 @@ describe("when updating the disabled status of a place", () => {
         expect(updateDisabledModel).toHaveBeenCalledWith(
           place_id,
           true,
-          DisabledReason.MODERATION
+          DisabledReason.MODERATION,
+          expect.any(Date)
         )
         expect(response.body).toEqual({
           ok: true,
@@ -154,7 +155,12 @@ describe("when updating the disabled status of a place", () => {
           body: { disabled: false },
         })
 
-        expect(updateDisabledModel).toHaveBeenCalledWith(place_id, false, null)
+        expect(updateDisabledModel).toHaveBeenCalledWith(
+          place_id,
+          false,
+          null,
+          expect.any(Date)
+        )
         expect(response.body).toEqual({
           ok: true,
           data: expect.objectContaining({
@@ -165,6 +171,70 @@ describe("when updating the disabled status of a place", () => {
         })
         expect(notifyDisablePlaces).not.toHaveBeenCalled()
       })
+    })
+  })
+
+  describe("when disabling an already disabled place", () => {
+    beforeEach(() => {
+      findByIdWithAggregates.mockResolvedValue({
+        ...placeGenesisPlazaWithAggregatedAttributes,
+        id: place_id,
+        disabled: true,
+        disabled_at: new Date("2026-01-01"),
+        disabled_reason: DisabledReason.MODERATION,
+      } as any)
+    })
+
+    it("should succeed idempotently", async () => {
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
+
+      const response = await updateDisabled({
+        request,
+        params: { place_id },
+        body: { disabled: true },
+      })
+
+      expect(updateDisabledModel).toHaveBeenCalledWith(
+        place_id,
+        true,
+        DisabledReason.MODERATION,
+        expect.any(Date)
+      )
+      expect(response.body).toEqual({
+        ok: true,
+        data: expect.objectContaining({
+          disabled: true,
+          disabled_reason: DisabledReason.MODERATION,
+        }),
+      })
+    })
+  })
+
+  describe("when re-enabling an already enabled place", () => {
+    it("should succeed idempotently", async () => {
+      const request = new Request("http://0.0.0.0/", { method: "PUT" })
+
+      const response = await updateDisabled({
+        request,
+        params: { place_id },
+        body: { disabled: false },
+      })
+
+      expect(updateDisabledModel).toHaveBeenCalledWith(
+        place_id,
+        false,
+        null,
+        expect.any(Date)
+      )
+      expect(response.body).toEqual({
+        ok: true,
+        data: expect.objectContaining({
+          disabled: false,
+          disabled_at: null,
+          disabled_reason: null,
+        }),
+      })
+      expect(notifyDisablePlaces).not.toHaveBeenCalled()
     })
   })
 

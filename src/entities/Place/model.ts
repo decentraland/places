@@ -496,9 +496,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async updateDisabled(
     placeId: string,
     disabled: boolean,
-    reason: DisabledReason | null
+    reason: DisabledReason | null,
+    now: Date = new Date()
   ) {
-    const now = new Date()
     const sql = SQL`
       UPDATE ${table(this)}
       SET "disabled" = ${disabled},

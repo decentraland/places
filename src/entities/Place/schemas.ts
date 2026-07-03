@@ -246,8 +246,8 @@ export const placeSchema = schema({
     disabled_reason: {
       type: "string",
       description:
-        "The reason why the place is disabled: opt_out, undeployment, or overwritten",
-      enum: ["opt_out", "undeployment", "overwritten"],
+        "The reason why the place is disabled: opt_out, undeployment, overwritten, or moderation",
+      enum: ["opt_out", "undeployment", "overwritten", "moderation"],
       nullable: true as any,
     },
     created_at: {

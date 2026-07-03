@@ -62,7 +62,8 @@ export async function updateDisabled(
   await PlaceModel.updateDisabled(
     params.place_id,
     body.disabled,
-    body.disabled ? DisabledReason.MODERATION : null
+    body.disabled ? DisabledReason.MODERATION : null,
+    now
   )
 
   if (body.disabled) {
