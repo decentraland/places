@@ -25,6 +25,7 @@ function sanitizeSearch(search: string): string {
 
 import {
   AggregatePlaceAttributes,
+  DisabledReason,
   FindWithAggregatesOptions,
   HotScene,
   PlaceAttributes,
@@ -490,6 +491,23 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "id" = ANY(${placesIds})
     `
     await this.namedQuery("disable_places", sql)
+  }
+
+  static async updateDisabled(
+    placeId: string,
+    disabled: boolean,
+    reason: DisabledReason | null,
+    now: Date = new Date()
+  ) {
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET "disabled" = ${disabled},
+        "disabled_at" = ${disabled ? now : null},
+        "disabled_reason" = ${disabled ? reason : null},
+        "updated_at" = ${now}
+      WHERE "id" = ${placeId}
+    `
+    await this.namedQuery("update_disabled", sql)
   }
 
   /**

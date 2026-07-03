@@ -78,6 +78,7 @@ export enum DisabledReason {
   OPT_OUT = "opt_out",
   UNDEPLOYMENT = "undeployment",
   OVERWRITTEN = "overwritten",
+  MODERATION = "moderation",
 }
 
 export enum PlaceListOrderBy {
@@ -144,4 +145,8 @@ export type UpdateRankingBody = {
 
 export type UpdateHighlightBody = {
   highlighted: boolean
+}
+
+export type UpdateDisabledBody = {
+  disabled: boolean
 }

@@ -246,8 +246,8 @@ export const placeSchema = schema({
     disabled_reason: {
       type: "string",
       description:
-        "The reason why the place is disabled: opt_out, undeployment, or overwritten",
-      enum: ["opt_out", "undeployment", "overwritten"],
+        "The reason why the place is disabled: opt_out, undeployment, overwritten, or moderation",
+      enum: ["opt_out", "undeployment", "overwritten", "moderation"],
       nullable: true as any,
     },
     created_at: {
@@ -359,6 +359,20 @@ export const updateHighlightBodySchema = schema({
     highlighted: {
       type: "boolean",
       description: "Whether the place should be highlighted",
+    },
+  },
+})
+
+export const updateDisabledBodySchema = schema({
+  type: "object",
+  description: "Disabled update body",
+  additionalProperties: false,
+  required: ["disabled"],
+  properties: {
+    disabled: {
+      type: "boolean",
+      description:
+        "Whether the place should be disabled (hidden from all listings)",
     },
   },
 })
