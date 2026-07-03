@@ -362,3 +362,17 @@ export const updateHighlightBodySchema = schema({
     },
   },
 })
+
+export const updateDisabledBodySchema = schema({
+  type: "object",
+  description: "Disabled update body",
+  additionalProperties: false,
+  required: ["disabled"],
+  properties: {
+    disabled: {
+      type: "boolean",
+      description:
+        "Whether the place should be disabled (hidden from all listings)",
+    },
+  },
+})
