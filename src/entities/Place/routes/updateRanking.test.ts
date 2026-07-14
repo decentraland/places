@@ -7,15 +7,20 @@ import PlaceModel from "../model"
 import { updateRanking } from "./updateRanking"
 
 const VALID_TOKEN = "test-service-token-12345"
+const ADMIN_TOKEN = "test-admin-token-67890"
 const place_id = randomUUID()
 
-let mockEnvToken: string | undefined = VALID_TOKEN
+let mockDataTeamToken: string | undefined = VALID_TOKEN
+let mockAdminToken: string | undefined = ADMIN_TOKEN
 
 // Mock the env module
 jest.mock("decentraland-gatsby/dist/utils/env", () => {
   return jest.fn((key: string, defaultValue?: string) => {
     if (key === "DATA_TEAM_AUTH_TOKEN") {
-      return mockEnvToken ?? defaultValue
+      return mockDataTeamToken ?? defaultValue
+    }
+    if (key === "PLACES_ADMIN_AUTH_TOKEN") {
+      return mockAdminToken ?? defaultValue
     }
     return defaultValue
   })
@@ -25,7 +30,8 @@ const findByIdWithAggregates = jest.spyOn(PlaceModel, "findByIdWithAggregates")
 const updatePlace = jest.spyOn(PlaceModel, "updatePlace")
 
 beforeEach(() => {
-  mockEnvToken = VALID_TOKEN
+  mockDataTeamToken = VALID_TOKEN
+  mockAdminToken = ADMIN_TOKEN
 })
 
 afterEach(() => {
@@ -64,8 +70,9 @@ describe("updateRanking", () => {
       ).rejects.toThrow("Invalid Bearer Token")
     })
 
-    test("should return error when DATA_TEAM_AUTH_TOKEN is not configured", async () => {
-      mockEnvToken = ""
+    test("should return error when no ranking token is configured", async () => {
+      mockDataTeamToken = ""
+      mockAdminToken = ""
 
       const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
@@ -89,6 +96,47 @@ describe("updateRanking", () => {
 
       const request = new Request("http://0.0.0.0/")
       request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
+      const url = new URL("https://localhost/")
+
+      const response = await updateRanking({
+        request,
+        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        body: { ranking: 0.85 },
+        url,
+      } as any)
+
+      expect(response.body.ok).toBe(true)
+    })
+
+    test("should accept the places admin token", async () => {
+      findByIdWithAggregates.mockResolvedValueOnce(
+        placeGenesisPlazaWithAggregatedAttributes
+      )
+      updatePlace.mockResolvedValueOnce([] as any)
+
+      const request = new Request("http://0.0.0.0/")
+      request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      const url = new URL("https://localhost/")
+
+      const response = await updateRanking({
+        request,
+        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        body: { ranking: 0.85 },
+        url,
+      } as any)
+
+      expect(response.body.ok).toBe(true)
+    })
+
+    test("should accept the admin token when the data team token is not configured", async () => {
+      mockDataTeamToken = ""
+      findByIdWithAggregates.mockResolvedValueOnce(
+        placeGenesisPlazaWithAggregatedAttributes
+      )
+      updatePlace.mockResolvedValueOnce([] as any)
+
+      const request = new Request("http://0.0.0.0/")
+      request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
       const url = new URL("https://localhost/")
 
       const response = await updateRanking({

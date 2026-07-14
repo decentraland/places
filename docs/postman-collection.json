@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "places-api-collection",
     "name": "Decentraland Places API",
-    "description": "Backend HTTP API for the Decentraland Places service. Endpoints for place / world discovery, favorites, likes, ratings, admin actions and social/og metadata.\n\n## Environments\n\n- Production: `https://places.decentraland.org`\n- Staging: `https://places.decentraland.today`\n- Dev: `https://places.decentraland.zone`\n- Local: `http://localhost:4000`\n\nSet `{{base_url}}` accordingly.\n\n## Authentication\n\nThree different mechanisms are used by this API:\n\n1. **Decentraland auth-chain** — the standard wallet-signed identity. The collection variable `{{auth_token}}` is intended to hold a Bearer token compatible with `decentraland-gatsby` `withAuth*` middleware (or you can override the request to set `x-identity-*` headers manually). Required for endpoints that act on behalf of a user (favorites, likes, reports) or admin endpoints.\n2. **`PLACES_ADMIN_AUTH_TOKEN`** — opaque bearer token for the `featured` admin endpoints. Stored in `{{admin_auth_token}}`.\n3. **`DATA_TEAM_AUTH_TOKEN`** — opaque bearer token for the `ranking` endpoints. Stored in `{{data_team_auth_token}}`.\n\nThe collection sends the auth-chain token as `Authorization: Bearer` by default. Each request that needs a different token overrides its own `auth` block.\n\n## Conventions\n\n- `place_id` is a UUID v4.\n- `world_id` is the lowercased world name (e.g. `myworld.dcl.eth`).\n- `entity_id` is one of the two — the `/places/:entity_id/{favorites,likes}` endpoints accept both for backward compatibility.\n",
+    "description": "Backend HTTP API for the Decentraland Places service. Endpoints for place / world discovery, favorites, likes, ratings, admin actions and social/og metadata.\n\n## Environments\n\n- Production: `https://places.decentraland.org`\n- Staging: `https://places.decentraland.today`\n- Dev: `https://places.decentraland.zone`\n- Local: `http://localhost:4000`\n\nSet `{{base_url}}` accordingly.\n\n## Authentication\n\nThree different mechanisms are used by this API:\n\n1. **Decentraland auth-chain** — the standard wallet-signed identity. The collection variable `{{auth_token}}` is intended to hold a Bearer token compatible with `decentraland-gatsby` `withAuth*` middleware (or you can override the request to set `x-identity-*` headers manually). Required for endpoints that act on behalf of a user (favorites, likes, reports) or admin endpoints.\n2. **`PLACES_ADMIN_AUTH_TOKEN`** — opaque bearer token for the `featured` admin endpoints. Stored in `{{admin_auth_token}}`.\n3. **`DATA_TEAM_AUTH_TOKEN`** — opaque bearer token for the `ranking` endpoints (`PLACES_ADMIN_AUTH_TOKEN` is also accepted on them). Stored in `{{data_team_auth_token}}`.\n\nThe collection sends the auth-chain token as `Authorization: Bearer` by default. Each request that needs a different token overrides its own `auth` block.\n\n## Conventions\n\n- `place_id` is a UUID v4.\n- `world_id` is the lowercased world name (e.g. `myworld.dcl.eth`).\n- `entity_id` is one of the two — the `/places/:entity_id/{favorites,likes}` endpoints accept both for backward compatibility.\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -27,7 +27,7 @@
     {
       "key": "data_team_auth_token",
       "value": "",
-      "description": "DATA_TEAM_AUTH_TOKEN — bearer token for `/ranking` endpoints.",
+      "description": "DATA_TEAM_AUTH_TOKEN — bearer token for `/ranking` endpoints (PLACES_ADMIN_AUTH_TOKEN also accepted).",
       "type": "string"
     },
     {
@@ -349,7 +349,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "places", "{{place_id}}", "ranking"]
             },
-            "description": "Sets the manual ranking score (higher values surface first). Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN` Bearer."
+            "description": "Sets the manual ranking score (higher values surface first). Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN` or `PLACES_ADMIN_AUTH_TOKEN` Bearer."
           }
         },
         {
@@ -572,7 +572,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "worlds", "{{world_id}}", "ranking"]
             },
-            "description": "Sets manual ranking for a world. Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN`."
+            "description": "Sets manual ranking for a world. Body: `{ ranking: number | null }`. Authorized via `DATA_TEAM_AUTH_TOKEN` or `PLACES_ADMIN_AUTH_TOKEN`."
           }
         },
         {

@@ -1,11 +1,10 @@
-import withBearerToken from "decentraland-gatsby/dist/entities/Auth/routes/withBearerToken"
 import Context from "decentraland-gatsby/dist/entities/Route/wkc/context/Context"
 import ApiResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ApiResponse"
 import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/ErrorResponse"
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
-import env from "decentraland-gatsby/dist/utils/env"
 
+import { requireRankingToken } from "../../shared/auth"
 import { createWkcValidator } from "../../shared/validate"
 import WorldModel from "../model"
 import {
@@ -29,8 +28,7 @@ const validateBody = createWkcValidator<UpdateWorldRankingBody>(
 export async function updateWorldRanking(
   ctx: Context<{ world_id: string }, "request" | "body" | "params">
 ): Promise<ApiResponse<AggregateWorldAttributes, {}>> {
-  const token = env("DATA_TEAM_AUTH_TOKEN", "")
-  await withBearerToken({ tokens: token ? [token] : [], optional: false })(ctx)
+  await requireRankingToken(ctx)
 
   const params = await validateParams(ctx.params)
   const body = await validateBody(ctx.body)
