@@ -730,6 +730,66 @@ describe("taskRunnerSqs integration", () => {
     })
   })
 
+  describe("when a new world scene overlaps multiple existing scenes and shares one of their base parcels", () => {
+    let worldName: string
+    let sceneAPlaceId: string
+    let sceneBPlaceId: string
+
+    beforeEach(async () => {
+      worldName = "multi-overlap-samebase-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "0,2",
+        parcels: ["0,2", "0,3"],
+      })
+
+      sceneAPlaceId = (await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      ))!.id
+      sceneBPlaceId = (await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,2"
+      ))!.id
+
+      // Scene C overlaps both A (on 0,1) and B (on 0,2) but keeps Scene A's base (0,0)
+      await deployWorldScene({
+        worldName,
+        title: "Scene C",
+        base: "0,0",
+        parcels: ["0,0", "0,1", "0,2"],
+      })
+    })
+
+    it("should reuse the shared-base place id instead of creating a new one", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(1)
+      expect(enabledPlaces[0].id).toBe(sceneAPlaceId)
+      expect(enabledPlaces[0].title).toBe("Scene C")
+    })
+
+    it("should disable only the other overlapping scene", async () => {
+      const sceneB = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,2"
+      )
+
+      expect(sceneB!.id).toBe(sceneBPlaceId)
+      expect(sceneB!.disabled).toBe(true)
+      expect(sceneB!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+  })
+
   describe("when a newer world scene deployment already exists for overlapping positions", () => {
     let worldName: string
 

@@ -187,25 +187,66 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
       placesToProcess = { update: place, rating, disabled: [] }
     } else {
-      // 0 or 2+ overlapping → create a new place, disable all overlapping
-      const place = createPlaceFromContentEntityScene(
-        contentEntityScene,
-        {},
-        options
-      )
+      // 0 or 2+ overlapping. If one of the overlapping places shares this
+      // scene's base parcel, it is the same scene (reshaped to overlap its
+      // neighbors): update it in place so its id is preserved, and disable the
+      // rest. This also keeps a single active row per (world_id, base_position),
+      // which the places_active_world_scene_uniq index now enforces. Otherwise
+      // this is a genuinely new scene superseding the overlapping ones: create a
+      // new place and disable them all.
+      const positions = (contentEntityScene?.pointers || []).slice().sort()
+      const base = contentEntityScene.metadata.scene?.base || positions[0]
+      const sameBasePlace = base
+        ? overlappingPlaces.find((place) => place.base_position === base)
+        : undefined
 
-      placesToProcess = {
-        new: place,
-        rating: {
-          id: randomUUID(),
-          entity_id: place.id,
-          original_rating: null,
-          update_rating: place.content_rating,
-          moderator: null,
-          comment: null,
-          created_at: new Date(),
-        },
-        disabled: overlappingPlaces,
+      if (sameBasePlace) {
+        const place = createPlaceFromContentEntityScene(
+          contentEntityScene,
+          sameBasePlace,
+          options
+        )
+
+        let rating = null
+        if (place.content_rating !== sameBasePlace.content_rating) {
+          rating = {
+            id: randomUUID(),
+            entity_id: sameBasePlace.id,
+            original_rating: sameBasePlace.content_rating,
+            update_rating: place.content_rating,
+            moderator: null,
+            comment: null,
+            created_at: new Date(),
+          }
+        }
+
+        placesToProcess = {
+          update: place,
+          rating,
+          disabled: overlappingPlaces.filter(
+            (place) => place.id !== sameBasePlace.id
+          ),
+        }
+      } else {
+        const place = createPlaceFromContentEntityScene(
+          contentEntityScene,
+          {},
+          options
+        )
+
+        placesToProcess = {
+          new: place,
+          rating: {
+            id: randomUUID(),
+            entity_id: place.id,
+            original_rating: null,
+            update_rating: place.content_rating,
+            moderator: null,
+            comment: null,
+            created_at: new Date(),
+          },
+          disabled: overlappingPlaces,
+        }
       }
     }
 
