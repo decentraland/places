@@ -1,10 +1,12 @@
 import { randomUUID } from "crypto"
 
+import database from "decentraland-gatsby/dist/entities/Database/database"
 import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
+import { createPlaceFromContentEntityScene } from "../../src/entities/CheckScenes/task/processContentEntityScene"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import {
   placesAttributes,
@@ -856,6 +858,109 @@ describe("taskRunnerSqs integration", () => {
       await expect(
         PlaceModel.insertPlace(replacement, placesAttributes)
       ).resolves.not.toThrow()
+    })
+  })
+
+  describe("the active world place dedup step of the uniqueness migration", () => {
+    const UNIQUE_INDEX = "places_active_world_scene_uniq"
+
+    // Verbatim copy of the dedup step in
+    // src/migrations/1784295151000_guard-active-world-place-uniqueness.ts.
+    // That migration is immutable, so this snapshot cannot drift out from under it.
+    const DEDUP_SQL = `
+      UPDATE places p
+      SET "disabled" = TRUE,
+          "disabled_at" = now(),
+          "updated_at" = now(),
+          "disabled_reason" = 'overwritten'
+      WHERE p.world IS TRUE
+        AND p.disabled IS FALSE
+        AND p.world_id IS NOT NULL
+        AND EXISTS (
+          SELECT 1 FROM places q
+          WHERE q.world IS TRUE
+            AND q.disabled IS FALSE
+            AND q.world_id = p.world_id
+            AND q.base_position = p.base_position
+            AND (
+              q.deployed_at > p.deployed_at
+              OR (q.deployed_at = p.deployed_at AND q.id > p.id)
+            )
+        )
+    `
+
+    const worldName = "dedup-world.dcl.eth"
+    let newestId: string
+    let olderIds: string[]
+
+    beforeEach(async () => {
+      // Reintroduce the pre-migration duplicate-active-row state (which the index
+      // now forbids) and feed it to the dedup step. All rows are inserted through
+      // the same path with hour-apart deployed_at values so their relative order
+      // survives however the naive timestamp column stores them.
+      await database.query(`DROP INDEX IF EXISTS "${UNIQUE_INDEX}"`)
+
+      const scene = createWorldContentEntityScene({
+        worldName,
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      const worldId = await WorldModel.insertWorldIfNotExists({
+        world_name: worldName,
+      })
+
+      const buildPlace = (title: string, deployedAt: Date) => ({
+        ...createPlaceFromContentEntityScene(scene, {}, { worldId }),
+        id: randomUUID(),
+        title,
+        deployed_at: deployedAt,
+      })
+
+      const baseMs = 1_700_000_000_000
+      const older = buildPlace("Older", new Date(baseMs))
+      const middle = buildPlace("Middle", new Date(baseMs + 3_600_000))
+      const newest = buildPlace("Newest", new Date(baseMs + 7_200_000))
+
+      await PlaceModel.insertPlace(older, placesAttributes)
+      await PlaceModel.insertPlace(middle, placesAttributes)
+      await PlaceModel.insertPlace(newest, placesAttributes)
+
+      newestId = newest.id
+      olderIds = [older.id, middle.id]
+
+      await database.query(DEDUP_SQL)
+    })
+
+    afterEach(async () => {
+      // Restore the index for the rest of the suite (dedup leaves a single active
+      // row, so the unique index can be recreated).
+      await database.query(
+        `CREATE UNIQUE INDEX IF NOT EXISTS "${UNIQUE_INDEX}" ON places ("world_id", "base_position") WHERE world IS TRUE AND disabled IS FALSE AND world_id IS NOT NULL`
+      )
+    })
+
+    it("should keep exactly one active place, the most recently deployed", async () => {
+      const active = (await PlaceModel.findByWorldId(worldName)).filter(
+        (place) => !place.disabled
+      )
+
+      expect(active).toHaveLength(1)
+      expect(active[0].id).toBe(newestId)
+    })
+
+    it("should disable the older duplicates with the overwritten reason", async () => {
+      const disabled = (await PlaceModel.findByWorldId(worldName)).filter(
+        (place) => place.disabled
+      )
+
+      expect(disabled.map((place) => place.id).sort()).toEqual(
+        [...olderIds].sort()
+      )
+      expect(
+        disabled.every(
+          (place) => place.disabled_reason === DisabledReason.OVERWRITTEN
+        )
+      ).toBe(true)
     })
   })
 
