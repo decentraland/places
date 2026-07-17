@@ -1,10 +1,15 @@
+import { randomUUID } from "crypto"
+
 import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
-import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import {
+  placesAttributes,
+  taskRunnerSqs,
+} from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason } from "../../src/entities/Place/types"
@@ -778,6 +783,13 @@ describe("taskRunnerSqs integration", () => {
       expect(enabledPlaces[0].title).toBe("Scene C")
     })
 
+    it("should update the reused place with the redeployed positions", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces[0].base_position).toBe("0,0")
+      expect(enabledPlaces[0].positions.sort()).toEqual(["0,0", "0,1", "0,2"])
+    })
+
     it("should disable only the other overlapping scene", async () => {
       const sceneB = await PlaceModel.findByWorldIdAndBasePosition(
         worldName,
@@ -787,6 +799,63 @@ describe("taskRunnerSqs integration", () => {
       expect(sceneB!.id).toBe(sceneBPlaceId)
       expect(sceneB!.disabled).toBe(true)
       expect(sceneB!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+  })
+
+  describe("the active world scene uniqueness guard", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "uniqueness-guard-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Only Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+    })
+
+    it("should reject a second active place for the same world scene", async () => {
+      const existing = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+
+      // A second active row for the same (world_id, base_position) is exactly the
+      // divergent-id state the check-then-insert race used to produce.
+      const duplicate = {
+        ...existing!,
+        id: randomUUID(),
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+
+      await expect(
+        PlaceModel.insertPlace(duplicate, placesAttributes)
+      ).rejects.toThrow()
+    })
+
+    it("should allow a second row once the original is disabled", async () => {
+      const existing = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      await PlaceModel.disablePlaces([existing!.id])
+
+      const replacement = {
+        ...existing!,
+        id: randomUUID(),
+        disabled: false,
+        disabled_at: null,
+        disabled_reason: null,
+        created_at: new Date(),
+        updated_at: new Date(),
+      }
+
+      await expect(
+        PlaceModel.insertPlace(replacement, placesAttributes)
+      ).resolves.not.toThrow()
     })
   })
 

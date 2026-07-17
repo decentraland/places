@@ -31,7 +31,7 @@ import {
 } from "./processContentEntityScene"
 import { processEntityId } from "./processEntityId"
 
-const placesAttributes: Array<keyof PlaceAttributes> = [
+export const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
   "description",
   "image",
