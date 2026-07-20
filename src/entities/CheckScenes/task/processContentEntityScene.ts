@@ -11,7 +11,10 @@ import getContentRating, {
 } from "../../../utils/rating/contentRating"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
-import { getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene } from "../../Place/utils"
+import {
+  getThumbnailFromContentDeployment as getThumbnailFromContentEntityScene,
+  sanitizePlaceDescription,
+} from "../../Place/utils"
 import { PlaceContentRatingAttributes } from "../../PlaceContentRating/types"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
@@ -156,7 +159,17 @@ export function createPlaceFromContentEntityScene(
     world_id: options.worldId || null,
     ...data,
     title: title ? title.slice(0, 50) : "Untitled",
-    description: contentEntityScene?.metadata?.display?.description || null,
+    // Strip markup from the creator-authored description before storing so
+    // TMP tags like `<link="decentraland://…">` / `smb://` / `file://`
+    // that the Unity client renders (and opens on click, unprompted) are
+    // neutralized at rest, covering every read path uniformly. Stripping
+    // rather than html-escaping keeps the text clean, since the client is
+    // TextMeshPro (which does not decode HTML entities), not an HTML
+    // renderer. The social/OG HTML path keeps its own escape() in
+    // Social/routes.ts.
+    description: sanitizePlaceDescription(
+      contentEntityScene?.metadata?.display?.description
+    ),
     owner: contentEntityScene?.metadata?.owner || null,
     image: thumbnail,
     base_position: contentEntityScene?.metadata?.scene?.base || positions[0],

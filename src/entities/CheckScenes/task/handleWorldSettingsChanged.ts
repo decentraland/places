@@ -6,7 +6,7 @@ import {
   isDowngradingRating,
   isUpgradingRating,
 } from "../../../utils/rating/contentRating"
-import { sanitizeImageUrl } from "../../Place/utils"
+import { sanitizeImageUrl, sanitizePlaceDescription } from "../../Place/utils"
 import {
   notifyDowngradeRating,
   notifyError,
@@ -74,7 +74,13 @@ export async function handleWorldSettingsChanged(
     await WorldModel.upsertWorld({
       world_name: worldName,
       title: event.metadata.title,
-      description: event.metadata.description,
+      // Preserve upsertWorld's "omitted means do not update" contract: only
+      // sanitize when a description was actually provided (worlds render in
+      // the same TMP client UI, so the same markup rules apply).
+      description:
+        event.metadata.description === undefined
+          ? undefined
+          : sanitizePlaceDescription(event.metadata.description),
       content_rating: contentRatingToUse,
       categories: event.metadata.categories,
       // Preserve upsertWorld's "omitted means do not update" contract: only

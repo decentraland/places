@@ -6,6 +6,7 @@ import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
 import { DisabledReason, PlaceAttributes } from "../../Place/types"
+import { sanitizePlaceDescription } from "../../Place/utils"
 import PlaceCategories from "../../PlaceCategories/model"
 import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import PlacePositionModel from "../../PlacePosition/model"
@@ -120,7 +121,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       title:
         contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
       description:
-        contentEntityScene?.metadata?.display?.description || undefined,
+        sanitizePlaceDescription(
+          contentEntityScene?.metadata?.display?.description
+        ) || undefined,
       content_rating:
         (contentEntityScene?.metadata?.policy
           ?.contentRating as SceneContentRating) || undefined,

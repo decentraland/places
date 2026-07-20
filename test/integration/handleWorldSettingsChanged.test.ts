@@ -126,6 +126,33 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
+    describe("and the description contains client-rendered markup", () => {
+      beforeEach(async () => {
+        const markupEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: {
+            worldName: "existingworld.dcl.eth",
+            title: "Updated Title",
+            description:
+              'Join <link="decentraland://?position=0,0">here</link> and <link="https://decentraland.org">site</link>',
+            contentRating: "T",
+            categories: ["game"],
+          },
+        })
+        await handleWorldSettingsChanged(markupEvent)
+      })
+
+      it("should strip the unsafe link and keep the safe one", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.description).toBe(
+          'Join here and <link="https://decentraland.org">site</link>'
+        )
+      })
+    })
+
     describe("and the rating is upgraded", () => {
       beforeEach(async () => {
         const upgradeEvent = createWorldSettingsUpgradeRatingEvent(
