@@ -171,6 +171,59 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
+  describe("when a settings event omits thumbnailUrl for an existing world that has an image", () => {
+    beforeEach(async () => {
+      const createEvent = createWorldSettingsChangedEvent({
+        key: "imageworld.dcl.eth",
+        metadata: {
+          worldName: "imageworld.dcl.eth",
+          title: "Image World",
+          thumbnailUrl: "https://example.com/thumb.png",
+        },
+      })
+      await handleWorldSettingsChanged(createEvent)
+
+      const updateEvent = createWorldSettingsChangedEvent({
+        key: "imageworld.dcl.eth",
+        metadata: {
+          worldName: "imageworld.dcl.eth",
+          title: "Image World Updated",
+        },
+      })
+      await handleWorldSettingsChanged(updateEvent)
+    })
+
+    it("should preserve the existing image instead of clearing it", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/imageworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.image).toBe("https://example.com/thumb.png")
+    })
+  })
+
+  describe("when a settings event provides a thumbnailUrl with HTML-breakout characters", () => {
+    beforeEach(async () => {
+      const event = createWorldSettingsChangedEvent({
+        key: "xssworld.dcl.eth",
+        metadata: {
+          worldName: "xssworld.dcl.eth",
+          title: "XSS World",
+          thumbnailUrl: `https://a"><script>alert(1)</script><meta name="x`,
+        },
+      })
+      await handleWorldSettingsChanged(event)
+    })
+
+    it("should not store the crafted value as the world image", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds/xssworld.dcl.eth")
+        .expect(200)
+
+      expect(response.body.data.image).toBeNull()
+    })
+  })
+
   describe("when the event is missing the world name (key)", () => {
     beforeEach(async () => {
       const event = createWorldSettingsEventMissingKey()

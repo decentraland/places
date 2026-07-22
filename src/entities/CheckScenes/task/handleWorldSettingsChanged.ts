@@ -77,7 +77,13 @@ export async function handleWorldSettingsChanged(
       description: event.metadata.description,
       content_rating: contentRatingToUse,
       categories: event.metadata.categories,
-      image: sanitizeImageUrl(event.metadata.thumbnailUrl),
+      // Preserve upsertWorld's "omitted means do not update" contract: only
+      // convert to null when a thumbnail was actually provided but is unsafe, so
+      // a settings event without a thumbnailUrl never clears an existing image.
+      image:
+        event.metadata.thumbnailUrl === undefined
+          ? undefined
+          : sanitizeImageUrl(event.metadata.thumbnailUrl),
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,
