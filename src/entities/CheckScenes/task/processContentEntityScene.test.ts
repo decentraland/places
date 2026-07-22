@@ -1,4 +1,5 @@
 import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import {
   createPlaceFromContentEntityScene,
@@ -21,6 +22,30 @@ describe("createPlaceFromContentEntityScene", () => {
       updated_at: contentEntityDeployment.updated_at,
       created_at: contentEntityDeployment.created_at,
       textsearch: expect.any(SQLStatement),
+    })
+  })
+
+  describe("when the scene description contains client-rendered markup", () => {
+    let contentEntityScene: ContentEntityScene
+    let result: ReturnType<typeof createPlaceFromContentEntityScene>
+
+    beforeEach(() => {
+      contentEntityScene = {
+        ...contentEntitySceneGenesisPlaza,
+        metadata: {
+          ...contentEntitySceneGenesisPlaza.metadata,
+          display: {
+            ...contentEntitySceneGenesisPlaza.metadata?.display,
+            description:
+              'Join us <link="decentraland://?position=0,0">click here</link>',
+          },
+        },
+      } as ContentEntityScene
+      result = createPlaceFromContentEntityScene(contentEntityScene)
+    })
+
+    it("should strip the markup so it cannot be rendered as a live tag", () => {
+      expect(result.description).toBe("Join us click here")
     })
   })
 
