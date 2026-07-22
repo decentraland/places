@@ -6,6 +6,7 @@ import {
   isDowngradingRating,
   isUpgradingRating,
 } from "../../../utils/rating/contentRating"
+import { sanitizeImageUrl } from "../../Place/utils"
 import {
   notifyDowngradeRating,
   notifyError,
@@ -76,7 +77,7 @@ export async function handleWorldSettingsChanged(
       description: event.metadata.description,
       content_rating: contentRatingToUse,
       categories: event.metadata.categories,
-      image: event.metadata.thumbnailUrl,
+      image: sanitizeImageUrl(event.metadata.thumbnailUrl),
       show_in_places: event.metadata.showInPlaces,
       single_player: event.metadata.singlePlayer,
       skybox_time: event.metadata.skyboxTime,

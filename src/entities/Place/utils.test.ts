@@ -5,6 +5,7 @@ import {
   placeUrl,
   placesWithUserCount,
   placesWithUserVisits,
+  sanitizeImageUrl,
   siteUrl,
   whatsOnPlaceUrl,
   whatsOnWorldUrl,
@@ -130,6 +131,104 @@ describe("getThumbnail", () => {
     expect(url).toBe(
       "https://peer.decentraland.org/content/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
     )
+  })
+})
+
+describe("sanitizeImageUrl", () => {
+  describe("when the value is a valid https url", () => {
+    let value: string
+
+    beforeEach(() => {
+      value = "https://cdn.decentraland.org/thumb.png"
+    })
+
+    it("should return the normalized url", () => {
+      expect(sanitizeImageUrl(value)).toBe(
+        "https://cdn.decentraland.org/thumb.png"
+      )
+    })
+  })
+
+  describe("when the value contains HTML-breakout characters", () => {
+    let value: string
+
+    beforeEach(() => {
+      value = `https://a"><meta http-equiv="refresh" content="0;url=https://example.com"><meta name="x`
+    })
+
+    it("should return null so the payload is never stored", () => {
+      expect(sanitizeImageUrl(value)).toBeNull()
+    })
+  })
+
+  describe("when the value uses a non-http(s) protocol", () => {
+    let value: string
+
+    beforeEach(() => {
+      value = "javascript:alert(document.domain)"
+    })
+
+    it("should return null", () => {
+      expect(sanitizeImageUrl(value)).toBeNull()
+    })
+  })
+
+  describe("when the value is undefined", () => {
+    let value: string | undefined
+
+    beforeEach(() => {
+      value = undefined
+    })
+
+    it("should return null", () => {
+      expect(sanitizeImageUrl(value)).toBeNull()
+    })
+  })
+})
+
+describe("getThumbnailFromContentDeployment breakout handling", () => {
+  describe("when navmapThumbnail is a verbatim https url with breakout characters", () => {
+    let deployment: typeof contentEntitySceneGenesisPlaza
+
+    beforeEach(() => {
+      deployment = {
+        ...contentEntitySceneGenesisPlaza,
+        metadata: {
+          ...contentEntitySceneGenesisPlaza.metadata,
+          display: {
+            navmapThumbnail: `https://a"><script>alert(1)</script><meta name="x`,
+          },
+        },
+      }
+    })
+
+    it("should drop the payload and fall back to the map thumbnail", () => {
+      expect(getThumbnailFromContentDeployment(deployment)).toBe(
+        genesisPlazaThumbnailMap
+      )
+    })
+  })
+
+  describe("when navmapThumbnail is a valid external https url", () => {
+    let deployment: typeof contentEntitySceneGenesisPlaza
+
+    beforeEach(() => {
+      deployment = {
+        ...contentEntitySceneGenesisPlaza,
+        metadata: {
+          ...contentEntitySceneGenesisPlaza.metadata,
+          display: {
+            navmapThumbnail: "https://cdn.decentraland.org/thumb.png",
+          },
+        },
+      }
+    })
+
+    it("should preserve the external thumbnail url", () => {
+      expect(getThumbnailFromContentDeployment(deployment)).toBe(
+        "https://cdn.decentraland.org/thumb.png"
+      )
+    })
   })
 })
 
