@@ -99,6 +99,35 @@ function explorerWorldUrl(place: Pick<PlaceAttributes, "world_name">): string {
   return target.toString()
 }
 
+/**
+ * Validates that a user-supplied image/thumbnail value is a safe absolute http(s)
+ * URL and returns it normalized, or `null` when it is not parseable as such.
+ *
+ * Scene `navmapThumbnail` and world `thumbnailUrl` values are attacker-controlled and
+ * were previously stored verbatim into `Place.image` / `World.image`. A value such as
+ * `https://a"><meta http-equiv="refresh" ...>` would then be injected unescaped into
+ * the social/OpenGraph HTML (and returned raw in API responses), enabling stored XSS /
+ * open redirect. Parsing through `URL` rejects non-URL payloads and percent-encodes any
+ * HTML-breakout characters, so the stored value can never carry a raw `"`, `<` or `>`.
+ */
+export function sanitizeImageUrl(
+  value: string | null | undefined
+): string | null {
+  if (!value) {
+    return null
+  }
+
+  try {
+    const url = new URL(value)
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      return null
+    }
+    return url.toString()
+  } catch {
+    return null
+  }
+}
+
 /** @deprecated */
 export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
   const positions = (deployment?.pointers || []).sort()
@@ -112,6 +141,10 @@ export function getThumbnailFromDeployment(deployment: ContentEntityScene) {
     } else {
       thumbnail = `${CONTENT_SERVER_URL}/content/contents/${content.hash}`
     }
+  } else if (thumbnail) {
+    // A verbatim `https://` navmapThumbnail is attacker-controlled and stored as-is.
+    // Keep it only if it is a safe http(s) URL so it cannot inject markup downstream.
+    thumbnail = sanitizeImageUrl(thumbnail)
   }
 
   if (!thumbnail) {
@@ -141,6 +174,10 @@ export function getThumbnailFromContentDeployment(
     } else {
       thumbnail = `${contentServerUrl}/contents/${content.hash}`
     }
+  } else if (thumbnail) {
+    // A verbatim `https://` navmapThumbnail is attacker-controlled and stored as-is.
+    // Keep it only if it is a safe http(s) URL so it cannot inject markup downstream.
+    thumbnail = sanitizeImageUrl(thumbnail)
   }
 
   if (!thumbnail && deployment?.metadata?.worldConfiguration) {

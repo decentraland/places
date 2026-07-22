@@ -9,7 +9,7 @@ import copies from "../../intl/en.json"
 import toCanonicalPosition from "../../utils/position/toCanonicalPosition"
 import PlaceModel from "../Place/model"
 import { AggregatePlaceAttributes, PlaceListOrderBy } from "../Place/types"
-import { placeUrl, siteUrl, worldUrl } from "../Place/utils"
+import { placeUrl, sanitizeImageUrl, siteUrl, worldUrl } from "../Place/utils"
 import WorldModel from "../World/model"
 import { AggregateWorldAttributes } from "../World/types"
 
@@ -54,7 +54,10 @@ export async function injectPlaceMetadata(req: Request, res: Response) {
       ...(copies.social.place as any),
       title: escape(place.title || "") + " | Decentraland Place",
       description: escape((place.description || "").trim()),
-      image: place.image || "",
+      // Sanitize at the sink too: a malicious value persisted before ingestion
+      // sanitization existed (or written by any other path) would otherwise be
+      // rendered raw into the OG/social HTML by the locked decentraland-gatsby.
+      image: sanitizeImageUrl(place.image) || "",
       url: placeUrl(place),
       "twitter:card": "summary_large_image",
     })
@@ -85,7 +88,10 @@ export async function injectWorldMetadata(req: Request, res: Response) {
       ...(copies.social.place as any),
       title: escape(world.title || "") + " | Decentraland Place",
       description: escape((world.description || "").trim()),
-      image: world.image || "",
+      // Sanitize at the sink too: a malicious value persisted before ingestion
+      // sanitization existed (or written by any other path) would otherwise be
+      // rendered raw into the OG/social HTML by the locked decentraland-gatsby.
+      image: sanitizeImageUrl(world.image) || "",
       url: worldUrl(world),
       "twitter:card": "summary_large_image",
     })
