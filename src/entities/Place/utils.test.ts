@@ -385,6 +385,54 @@ describe("sanitizePlaceDescription", () => {
     })
   })
 
+  describe("when a malformed opener embeds a nested tag before its closing bracket", () => {
+    let result: string | null
+
+    beforeEach(() => {
+      // Without failing closed, the outer `<link…` fragment would survive and
+      // the leftover pieces could re-assemble into a live
+      // `<link="javascript:alert(1)">` opener.
+      result = sanitizePlaceDescription(
+        '<link="javascript:alert(1)"<b>>click</link>'
+      )
+    })
+
+    it("should not leave a live unsafe link in the output", () => {
+      expect(result).not.toMatch(/<link/i)
+    })
+  })
+
+  describe("when a stripped tag reassembles the surrounding text into a new opener", () => {
+    let result: string | null
+
+    beforeEach(() => {
+      // A single pass removes `<b>` and the orphan `</link>`, leaving `<` fused to
+      // `link="javascript:alert(1)">` — a live opener that only a fixed point catches.
+      result = sanitizePlaceDescription(
+        '<<b>link="javascript:alert(1)">click</link>'
+      )
+    })
+
+    it("should not leave a live unsafe link in the output", () => {
+      expect(result).not.toMatch(/<link/i)
+    })
+  })
+
+  describe("when the input contains an unclosed <link opener with no closing bracket", () => {
+    let result: string | null
+
+    beforeEach(() => {
+      // A real TMP link needs its `>`; the tag strip leaves this fragment, so the `<` is dropped.
+      result = sanitizePlaceDescription(
+        "see <color=red><link=javascript:alert(1)"
+      )
+    })
+
+    it("should not leave a <link opener in the output", () => {
+      expect(result).not.toMatch(/<link/i)
+    })
+  })
+
   describe("when a link points at the cloud-metadata IP", () => {
     let result: string | null
 
@@ -449,6 +497,56 @@ describe("sanitizePlaceDescription", () => {
 
     it("should strip these local-looking hosts", () => {
       expect(result).toBe("a x b y c z d")
+    })
+  })
+
+  describe("when a link points at a fully-qualified internal host (trailing dot)", () => {
+    let result: string | null
+
+    beforeEach(() => {
+      result = sanitizePlaceDescription(
+        'a <link="http://localhost./">x</link> b <link="http://nas.local./">y</link> c <link="http://router./">z</link> d'
+      )
+    })
+
+    it("should strip hosts whose trailing dot would otherwise bypass the check", () => {
+      expect(result).toBe("a x b y c z d")
+    })
+  })
+
+  describe("when a link points at a fully-qualified public host (trailing dot)", () => {
+    let result: string | null
+
+    beforeEach(() => {
+      result = sanitizePlaceDescription(
+        '<link="https://example.com./">ok</link>'
+      )
+    })
+
+    it("should keep it (a trailing dot does not make a public host internal)", () => {
+      expect(result).toBe('<link="https://example.com./">ok</link>')
+    })
+  })
+
+  describe("when a link tag has mismatched quotes", () => {
+    let openQuoteOnly: string | null
+    let closeQuoteOnly: string | null
+
+    beforeEach(() => {
+      openQuoteOnly = sanitizePlaceDescription(
+        '<link="https://example.com>click'
+      )
+      closeQuoteOnly = sanitizePlaceDescription(
+        '<link=https://example.com">click'
+      )
+    })
+
+    it("should strip a tag with an opening quote but no closing quote", () => {
+      expect(openQuoteOnly).not.toMatch(/<link/i)
+    })
+
+    it("should strip a tag with a closing quote but no opening quote", () => {
+      expect(closeQuoteOnly).not.toMatch(/<link/i)
     })
   })
 
