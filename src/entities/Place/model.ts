@@ -37,6 +37,8 @@ import {
   FindAllPlacesWithAggregatesOptions,
 } from "../Map/types"
 import PlaceCategories from "../PlaceCategories/model"
+import PlaceContentRatingModel from "../PlaceContentRating/model"
+import { PlaceContentRatingAttributes } from "../PlaceContentRating/types"
 import PlacePositionModel from "../PlacePosition/model"
 import {
   MIN_USER_ACTIVITY,
@@ -566,6 +568,53 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async updateLikes(placeId: string) {
     const sql = buildUpdateLikesQuery(this, placeId)
     return this.namedQuery("update_likes", sql)
+  }
+
+  static async updateRatingWithAudit(
+    place: Pick<PlaceAttributes, "id" | "world" | "base_position">,
+    audit: PlaceContentRatingAttributes
+  ): Promise<number> {
+    const sql = SQL`
+      WITH updated_places AS (
+        UPDATE ${table(this)}
+        SET "content_rating" = ${audit.update_rating}
+        WHERE ${conditional(
+          !place.world,
+          SQL`disabled is false AND world is false AND "base_position" IN (
+            SELECT DISTINCT("base_position")
+            FROM ${table(PlacePositionModel)} "pp"
+            WHERE "pp"."position" = ${place.base_position}
+          )`
+        )}
+        ${conditional(
+          place.world,
+          SQL`world is true AND "id" = ${place.id} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
+        )}
+        RETURNING "id"
+      ),
+      inserted_audit AS (
+        INSERT INTO ${table(PlaceContentRatingModel)}
+          ("id", "entity_id", "original_rating", "update_rating", "moderator", "comment", "created_at")
+        SELECT
+          ${audit.id},
+          ${audit.entity_id},
+          ${audit.original_rating},
+          ${audit.update_rating},
+          ${audit.moderator},
+          ${audit.comment},
+          ${audit.created_at}
+        WHERE EXISTS (SELECT 1 FROM updated_places)
+        RETURNING "entity_id"
+      )
+      SELECT COUNT(*)::int AS "updated_count"
+      FROM updated_places
+    `
+
+    const [result] = await this.namedQuery<{ updated_count: number }>(
+      "update_rating_with_audit",
+      sql
+    )
+    return result?.updated_count ?? 0
   }
 
   static async findWithHotScenes(

@@ -22,7 +22,6 @@ COPY ./package.json         /app/package.json
 RUN npm install
 
 COPY ./src                  /app/src
-COPY ./.env                 /app/.env.production
 COPY ./entrypoint.sh        /app/entrypoint.sh
 COPY ./tsconfig.json        /app/tsconfig.json
 

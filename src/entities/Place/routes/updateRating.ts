@@ -10,7 +10,6 @@ import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
-import PlaceContentRatingModel from "../../PlaceContentRating/model"
 import { createWkcValidator } from "../../shared/validate"
 import { notifyUpgradingRating } from "../../Slack/utils"
 import PlaceModel from "../model"
@@ -55,18 +54,22 @@ export async function updateRating(
   }
 
   const newPlace = { ...place, content_rating: body.content_rating }
-  Promise.all([
-    PlaceModel.updatePlace(newPlace, ["content_rating"]),
-    PlaceContentRatingModel.create({
-      id: randomUUID(),
-      entity_id: place.id,
-      original_rating: place.content_rating,
-      update_rating: body.content_rating,
-      moderator: userAuth.address,
-      comment: body.comment || null,
-      created_at: new Date(),
-    }),
-  ])
+  const updatedCount = await PlaceModel.updateRatingWithAudit(place, {
+    id: randomUUID(),
+    entity_id: place.id,
+    original_rating: place.content_rating,
+    update_rating: body.content_rating,
+    moderator: userAuth.address,
+    comment: body.comment || null,
+    created_at: new Date(),
+  })
+
+  if (updatedCount === 0) {
+    throw new ErrorResponse(
+      Response.Conflict,
+      `Place "${params.place_id}" could not be updated`
+    )
+  }
 
   if (
     place.content_rating &&
@@ -75,7 +78,7 @@ export async function updateRating(
       place.content_rating as SceneContentRating
     )
   ) {
-    notifyUpgradingRating(place, "Content Moderator", body.content_rating)
+    await notifyUpgradingRating(place, "Content Moderator", body.content_rating)
   }
 
   return new ApiResponse(newPlace)

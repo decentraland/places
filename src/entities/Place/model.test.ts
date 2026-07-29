@@ -5,6 +5,7 @@ import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { worldPlaceParalax } from "../../__data__/world"
+import { PlaceContentRatingAttributes } from "../PlaceContentRating/types"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -734,6 +735,53 @@ describe(`updateLikes`, () => {
         .trim()
         .replace(/\s{2,}/gi, " ")
     )
+  })
+})
+
+describe("updateRatingWithAudit", () => {
+  let audit: PlaceContentRatingAttributes
+  let place: Pick<PlaceAttributes, "id" | "world" | "base_position">
+
+  beforeEach(() => {
+    audit = {
+      id: "96be5815-95f8-4ed2-9dd1-3f4f2b90ac5c",
+      entity_id: placeGenesisPlaza.id,
+      original_rating: placeGenesisPlaza.content_rating,
+      update_rating: "T",
+      moderator: "0x1234567890123456789012345678901234567890",
+      comment: "Reviewed by moderation",
+      created_at: new Date("2026-07-29T00:00:00.000Z"),
+    }
+    place = {
+      id: placeGenesisPlaza.id,
+      world: false,
+      base_position: placeGenesisPlaza.base_position,
+    }
+  })
+
+  describe("when eligible place rows are updated", () => {
+    beforeEach(() => {
+      namedQuery.mockResolvedValue([{ updated_count: 2 }])
+    })
+
+    it("should return the affected row count", async () => {
+      await expect(
+        PlaceModel.updateRatingWithAudit(place, audit)
+      ).resolves.toBe(2)
+    })
+  })
+
+  describe("when no eligible world row remains", () => {
+    beforeEach(() => {
+      place = { ...place, world: true }
+      namedQuery.mockResolvedValue([])
+    })
+
+    it("should return zero", async () => {
+      await expect(
+        PlaceModel.updateRatingWithAudit(place, audit)
+      ).resolves.toBe(0)
+    })
   })
 })
 
