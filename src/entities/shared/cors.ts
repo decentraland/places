@@ -8,5 +8,6 @@ export const API_CORS_ORIGINS: RegExp[] = [
   /^https:\/\/(?:[a-zA-Z0-9_-]+\.)*decentraland\.zone$/,
   /^https:\/\/(?:[a-zA-Z0-9_-]+\.)*decentraland\.org$/,
   /^https:\/\/decentraland\.github\.io$/,
+  /^https:\/\/dcl-preview\.vercel\.app$/,
   /^https:\/\/[a-zA-Z0-9_-]+-decentraland1\.vercel\.app$/,
 ]

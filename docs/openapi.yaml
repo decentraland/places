@@ -108,7 +108,7 @@ tags:
       Users can like or dislike places to help others discover quality content.
   - name: Report
     description: |
-      Generate constrained signed POST policies for uploading content reports (requires authentication).
+      Generate signed upload credentials for content reports (requires authentication).
 
 paths:
   /places:
@@ -1691,27 +1691,30 @@ paths:
     post:
       tags:
         - Report
-      summary: Get signed S3 upload policy 🔒
+      summary: Get signed S3 upload credentials 🔒
       security:
         - BearerAuth: []
       description: |
-        Generate a pre-signed S3 POST policy for uploading JSON content reports. **Requires authentication.**
+        Generate signed S3 credentials for uploading JSON content reports. **Requires authentication.**
 
         **Use Case:** Users can report inappropriate content or issues. This endpoint provides a secure
-        upload policy that expires after 60 seconds and accepts at most 1 MiB.
+        multipart POST policy that expires after 60 seconds and accepts at most 1 MiB.
 
         **Process:**
-        1. Call this endpoint to get a signed URL and form fields
-        2. POST the report to `signed_url` as `multipart/form-data`, including every returned field
+        1. Call this endpoint to get the `upload` object
+        2. POST the report to `upload.url` as `multipart/form-data`, including every returned field
            and a `file` part containing JSON
         3. Report is stored privately for moderation review
 
         **Security:** The policy is temporary, content-type and size constrained, uses an unpredictable
         object key, and records the authenticated wallet in S3 metadata.
+
+        **Compatibility:** `signed_url` remains temporarily available for legacy clients that upload
+        with PUT. New clients must use the constrained `upload` object.
       operationId: getReportSignedUrl
       responses:
         '200':
-          description: Signed POST policy generated successfully
+          description: Signed upload credentials generated successfully
           content:
             application/json:
               schema:
@@ -1725,33 +1728,52 @@ paths:
                       signed_url:
                         type: string
                         format: uri
-                        description: S3 endpoint for a multipart POST upload (expires in 60s)
-                      fields:
+                        deprecated: true
+                        description: Temporary pre-signed S3 URL for legacy PUT clients (expires in 60s)
+                      upload:
                         type: object
-                        additionalProperties:
-                          type: string
-                        description: Fields that must be included unchanged in the multipart form
-                      max_file_size:
-                        type: integer
-                        format: int32
-                        description: Maximum accepted file size in bytes
-                        minimum: 1
-                        maximum: 1048576
+                        properties:
+                          method:
+                            type: string
+                            enum:
+                              - POST
+                          url:
+                            type: string
+                            format: uri
+                            description: S3 endpoint for the multipart POST upload
+                          fields:
+                            type: object
+                            additionalProperties:
+                              type: string
+                            description: Fields that must be included unchanged in the multipart form
+                          max_file_size:
+                            type: integer
+                            format: int32
+                            description: Maximum accepted file size in bytes
+                            minimum: 1
+                            maximum: 1048576
+                        required:
+                          - method
+                          - url
+                          - fields
+                          - max_file_size
                     required:
                       - signed_url
-                      - fields
-                      - max_file_size
+                      - upload
               example:
                 ok: true
                 data:
-                  signed_url: "https://s3.amazonaws.com/content-moderation-bucket"
-                  fields:
-                    key: "8a51d63d-0634-4c3c-a809-89f7499bbfc5.json"
-                    Content-Type: "application/json"
-                    acl: "private"
-                    Policy: "eyJleHBpcmF0aW9uIjoi..."
-                    X-Amz-Signature: "..."
-                  max_file_size: 1048576
+                  signed_url: "https://s3.amazonaws.com/content-moderation-bucket/report.json?X-Amz-Signature=..."
+                  upload:
+                    method: "POST"
+                    url: "https://s3.amazonaws.com/content-moderation-bucket"
+                    fields:
+                      key: "8a51d63d-0634-4c3c-a809-89f7499bbfc5.json"
+                      Content-Type: "application/json"
+                      acl: "private"
+                      Policy: "eyJleHBpcmF0aW9uIjoi..."
+                      X-Amz-Signature: "..."
+                    max_file_size: 1048576
         '401':
           $ref: '#/components/responses/Unauthorized'
 

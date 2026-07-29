@@ -23,6 +23,7 @@ describe("API CORS origins", () => {
   describe.each([
     "https://decentraland.org",
     "https://events.decentraland.org",
+    "https://dcl-preview.vercel.app",
     "https://places-decentraland1.vercel.app",
   ])("when the origin is %s", (origin) => {
     it("should allow the origin", () => {
