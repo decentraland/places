@@ -1,4 +1,3 @@
-import withCors from "decentraland-gatsby/dist/entities/Route/middleware/withCors"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import env from "decentraland-gatsby/dist/utils/env"
 
@@ -11,16 +10,10 @@ import { updateWorldHighlight } from "./updateWorldHighlight"
 import { updateWorldLikes } from "./updateWorldLikes"
 import { updateWorldRanking } from "./updateWorldRanking"
 import { updateWorldRating } from "./updateWorldRating"
-import { API_CORS_ORIGINS } from "../../shared/cors"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
 export default routes((router) => {
-  router.getRouter().use(
-    withCors({
-      corsOrigin: API_CORS_ORIGINS,
-    })
-  )
   router.get("/worlds/:world_id", getWorld)
   router.get("/worlds", getWorldList)
   router.get("/world_names", getWorldNamesList)

@@ -3,6 +3,7 @@ import { randomUUID } from "crypto"
 import isAdmin from "decentraland-gatsby/dist/entities/Auth/isAdmin"
 import * as decentralandAuth from "decentraland-gatsby/dist/entities/Auth/routes/withDecentralandAuth"
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
+import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
@@ -20,13 +21,16 @@ describe("place rating updates", () => {
   describe("when an administrator updates a place rating", () => {
     let placeId: string
     let request: Request
-    let resolveUpdate: () => void
-    let updatePromise: Promise<void>
+    let resolveUpdate: (updatedCount: number) => void
+    let updatePromise: Promise<number>
+    let updateRatingWithAuditMock: jest.SpiedFunction<
+      typeof PlaceModel.updateRatingWithAudit
+    >
 
     beforeEach(() => {
       placeId = randomUUID()
       request = new Request("http://0.0.0.0/", { method: "PUT" })
-      updatePromise = new Promise<void>((resolve) => {
+      updatePromise = new Promise<number>((resolve) => {
         resolveUpdate = resolve
       })
 
@@ -40,7 +44,7 @@ describe("place rating updates", () => {
         id: placeId,
         content_rating: SceneContentRating.EVERYONE,
       })
-      jest
+      updateRatingWithAuditMock = jest
         .spyOn(PlaceModel, "updateRatingWithAudit")
         .mockReturnValue(updatePromise)
     })
@@ -56,10 +60,28 @@ describe("place rating updates", () => {
         Promise.resolve("pending"),
       ])
 
-      resolveUpdate()
+      resolveUpdate(1)
       await responsePromise
 
       expect(state).toBe("pending")
+    })
+
+    describe("and no eligible database row remains", () => {
+      beforeEach(() => {
+        updateRatingWithAuditMock.mockResolvedValueOnce(0)
+      })
+
+      it("should respond with a conflict", async () => {
+        const responsePromise = updateRating({
+          request,
+          params: { place_id: placeId },
+          body: { content_rating: "T" },
+        })
+
+        await expect(responsePromise).rejects.toMatchObject({
+          status: Response.Conflict,
+        })
+      })
     })
   })
 })

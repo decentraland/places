@@ -573,7 +573,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   static async updateRatingWithAudit(
     place: Pick<PlaceAttributes, "id" | "world" | "base_position">,
     audit: PlaceContentRatingAttributes
-  ): Promise<void> {
+  ): Promise<number> {
     const sql = SQL`
       WITH updated_places AS (
         UPDATE ${table(this)}
@@ -591,21 +591,30 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           SQL`world is true AND "id" = ${place.id} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
         )}
         RETURNING "id"
+      ),
+      inserted_audit AS (
+        INSERT INTO ${table(PlaceContentRatingModel)}
+          ("id", "entity_id", "original_rating", "update_rating", "moderator", "comment", "created_at")
+        SELECT
+          ${audit.id},
+          ${audit.entity_id},
+          ${audit.original_rating},
+          ${audit.update_rating},
+          ${audit.moderator},
+          ${audit.comment},
+          ${audit.created_at}
+        WHERE EXISTS (SELECT 1 FROM updated_places)
+        RETURNING "entity_id"
       )
-      INSERT INTO ${table(PlaceContentRatingModel)}
-        ("id", "entity_id", "original_rating", "update_rating", "moderator", "comment", "created_at")
-      SELECT
-        ${audit.id},
-        ${audit.entity_id},
-        ${audit.original_rating},
-        ${audit.update_rating},
-        ${audit.moderator},
-        ${audit.comment},
-        ${audit.created_at}
-      WHERE EXISTS (SELECT 1 FROM updated_places)
+      SELECT COUNT(*)::int AS "updated_count"
+      FROM updated_places
     `
 
-    await this.namedQuery("update_rating_with_audit", sql)
+    const [result] = await this.namedQuery<{ updated_count: number }>(
+      "update_rating_with_audit",
+      sql
+    )
+    return result?.updated_count ?? 0
   }
 
   static async findWithHotScenes(

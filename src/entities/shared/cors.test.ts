@@ -13,6 +13,7 @@ describe("API CORS origins", () => {
     "https://decentraland.org.attacker.example",
     "https://foo.decentraland.org.attacker.example",
     "https://trusted.pages.dev.attacker.example",
+    "https://trusted.pages.dev",
   ])("when the origin is %s", (origin) => {
     it("should reject the origin", () => {
       expect(isAllowed(origin)).toBe(false)
@@ -22,7 +23,7 @@ describe("API CORS origins", () => {
   describe.each([
     "https://decentraland.org",
     "https://events.decentraland.org",
-    "https://trusted.pages.dev",
+    "https://places-decentraland1.vercel.app",
   ])("when the origin is %s", (origin) => {
     it("should allow the origin", () => {
       expect(isAllowed(origin)).toBe(true)

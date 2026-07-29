@@ -530,6 +530,12 @@ paths:
                 $ref: '#/components/schemas/Error'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          description: Conflict - the place became ineligible before the rating update completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
 
   /places/{place_id}/ranking:
     put:

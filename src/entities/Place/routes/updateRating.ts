@@ -54,7 +54,7 @@ export async function updateRating(
   }
 
   const newPlace = { ...place, content_rating: body.content_rating }
-  await PlaceModel.updateRatingWithAudit(place, {
+  const updatedCount = await PlaceModel.updateRatingWithAudit(place, {
     id: randomUUID(),
     entity_id: place.id,
     original_rating: place.content_rating,
@@ -63,6 +63,13 @@ export async function updateRating(
     comment: body.comment || null,
     created_at: new Date(),
   })
+
+  if (updatedCount === 0) {
+    throw new ErrorResponse(
+      Response.Conflict,
+      `Place "${params.place_id}" could not be updated`
+    )
+  }
 
   if (
     place.content_rating &&
