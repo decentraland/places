@@ -1,0 +1,7 @@
+node_modules
+lib
+.cache
+.git
+.env*
+coverage
+tmp

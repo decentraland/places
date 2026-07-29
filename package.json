@@ -5,8 +5,8 @@
   "version": "0.0.0-development",
   "author": "",
   "engines": {
-    "node": "18.*",
-    "npm": "8.* || 9.*"
+    "node": "24.*",
+    "npm": "10.* || 11.*"
   },
   "dependencies": {
     "@dcl/schemas": "^25.0.0",
@@ -50,7 +50,9 @@
     "typescript": "^5.9.3"
   },
   "overrides": {
-    "@dcl/schemas": "^25.0.0"
+    "@dcl/schemas": "^25.0.0",
+    "sharp": "^0.35.3",
+    "swiper": "^12.1.2"
   },
   "license": "MIT",
   "scripts": {

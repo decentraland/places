@@ -28,6 +28,7 @@ import placeRoute from "./entities/Place/routes"
 import { checkPoisForCategoryUpdate } from "./entities/PlaceCategories/tasks/poi"
 import { hotScenesUpdate } from "./entities/RealmProvider/tasks/hotScenesUpdate"
 import reportRoute from "./entities/Report/routes"
+import { API_CORS_ORIGINS } from "./entities/shared/cors"
 import socialRoutes from "./entities/Social/routes"
 import userFavoriteRoute from "./entities/UserFavorite/routes"
 import userLikesRoute from "./entities/UserLikes/routes"
@@ -62,12 +63,7 @@ app.set("x-powered-by", false)
 app.use(withLogs())
 app.use("/api", [
   withCors({
-    corsOrigin: [
-      /^http:\/\/localhost:[0-9]{1,10}$/,
-      /^https:\/\/(.{1,50}\.)?decentraland\.(zone|today|org)$/,
-      /https:\/\/dcl-preview\.vercel\.app/,
-      /https:\/\/([a-zA-Z0-9\-_])+-decentraland1\.vercel\.app/,
-    ],
+    corsOrigin: API_CORS_ORIGINS,
     allowedHeaders: "*",
   }),
   withBody(),

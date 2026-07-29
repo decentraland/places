@@ -12,7 +12,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **Category Management**: Dynamic categorization with automatic POI (Point of Interest) categorization
 - **Hot Scenes Tracking**: Real-time monitoring of active scenes with user counts from Catalyst realms
 - **Map Integration**: Specialized endpoints for coordinate-based queries optimized for map visualization
-- **Content Moderation**: Content rating system (PR/E/T/A/R) and report generation with S3 signed URLs
+- **Content Moderation**: Content rating system (PR/E/T/A/R) and report generation with constrained S3 signed POST policies
 - **Gatsby Frontend**: Static site generation for place exploration interface with HTTPS support
 
 ## Communication Pattern
@@ -43,7 +43,7 @@ The Decentraland Places service is a comprehensive API solution for discovering,
 - **Decentraland Catalyst**: Source of scene metadata and deployment information (`https://peer.decentraland.org` by default)
 - **World Content Server**: Source of world metadata and deployment information for Decentraland Worlds
 - **Decentraland Realm Provider**: Real-time hot scenes data and user count information from active realms
-- **AWS S3**: Content moderation report storage with pre-signed upload URLs (60s expiry)
+- **AWS S3**: Private content moderation report storage with pre-signed POST policies (60s expiry, JSON-only, 1 MiB maximum)
 - **Decentraland Data Team CDN**: Scene statistics and visit data (`https://cdn-data.decentraland.org/`)
 
 ## Key Concepts
@@ -74,7 +74,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 - **Map**: `/api/map`, `/api/map/places` (coordinate-based queries with higher limits)
 - **Categories**: `/api/categories` (with optional `target` filter for places/worlds/all)
 - **Interactions**: `/api/places/:id/likes`, `/api/places/:id/favorites` (authentication required)
-- **Reports**: `/api/report` (authentication required, returns S3 signed URL)
+- **Reports**: `/api/report` (authentication required, returns a constrained S3 signed POST policy)
 - **Social**: `/places/place/`, `/places/world/` (metadata injection for social sharing)
 - **Creator Queries**: `/api/places?creator_address=0x...` (lookup places by scene creator for tipping integration)
 - **SDK Filtering**: `/api/places?sdk=7` (filter by SDK version, major version prefix match - sdk=7 matches 7, 7.0.0, 7.3.27, etc.)

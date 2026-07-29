@@ -807,10 +807,10 @@
     },
     {
       "name": "Reports",
-      "description": "User-generated content reports stored on S3 via signed urls.",
+      "description": "User-generated JSON content reports stored privately on S3 via constrained signed POST policies.",
       "item": [
         {
-          "name": "Request report signed URL",
+          "name": "Request report signed POST policy",
           "request": {
             "method": "POST",
             "header": [],
@@ -819,7 +819,7 @@
               "host": ["{{base_url}}"],
               "path": ["api", "report"]
             },
-            "description": "Returns a `{ signed_url: string }` that the client uses to PUT a JSON report payload directly to S3. The URL is bound to the caller's wallet address (recorded in S3 object metadata) and expires in ~60s. Requires auth-chain."
+            "description": "Returns `{ signed_url, fields, max_file_size }`. POST a multipart form to `signed_url`, copy every entry in `fields` unchanged, and include the JSON report as the `file` part. The policy expires in 60 seconds, permits at most 1 MiB, stores the object privately, and records the authenticated wallet in S3 metadata. Requires auth-chain."
           }
         }
       ]

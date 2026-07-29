@@ -11,25 +11,14 @@ import { updateWorldHighlight } from "./updateWorldHighlight"
 import { updateWorldLikes } from "./updateWorldLikes"
 import { updateWorldRanking } from "./updateWorldRanking"
 import { updateWorldRating } from "./updateWorldRating"
+import { API_CORS_ORIGINS } from "../../shared/cors"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
 export default routes((router) => {
   router.getRouter().use(
     withCors({
-      corsOrigin: [
-        /https?:\/\/localhost(:\d{4,6})?/,
-        /https?:\/\/127\.0\.0\.1(:\d{4,6})?/,
-        /https?:\/\/192\.168\.\d{1,3}\.\d{1,3}(:\d{4,6})?/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*dcl\.gg/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*decentraland\.systems/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*decentraland\.today/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*decentraland\.zone/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*decentraland\.org/,
-        /https:\/\/decentraland\.github\.io/,
-        /https:\/\/([a-zA-Z0-9\-_]+\.)*pages\.dev/,
-        /https:\/\/([a-zA-Z0-9\-_])+-decentraland1\.vercel\.app/,
-      ],
+      corsOrigin: API_CORS_ORIGINS,
     })
   )
   router.get("/worlds/:world_id", getWorld)

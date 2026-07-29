@@ -108,7 +108,7 @@ tags:
       Users can like or dislike places to help others discover quality content.
   - name: Report
     description: |
-      Generate signed URLs for uploading content reports (requires authentication).
+      Generate constrained signed POST policies for uploading content reports (requires authentication).
 
 paths:
   /places:
@@ -1685,25 +1685,27 @@ paths:
     post:
       tags:
         - Report
-      summary: Get signed S3 upload URL 🔒
+      summary: Get signed S3 upload policy 🔒
       security:
         - BearerAuth: []
       description: |
-        Generate a pre-signed S3 URL for uploading content reports. **Requires authentication.**
+        Generate a pre-signed S3 POST policy for uploading JSON content reports. **Requires authentication.**
 
         **Use Case:** Users can report inappropriate content or issues. This endpoint provides a secure
-        upload URL that expires after 60 seconds.
+        upload policy that expires after 60 seconds and accepts at most 1 MiB.
 
         **Process:**
-        1. Call this endpoint to get a signed URL
-        2. PUT your report JSON directly to the signed URL
+        1. Call this endpoint to get a signed URL and form fields
+        2. POST the report to `signed_url` as `multipart/form-data`, including every returned field
+           and a `file` part containing JSON
         3. Report is stored privately for moderation review
 
-        **Security:** The signed URL is temporary and scoped to the authenticated user.
+        **Security:** The policy is temporary, content-type and size constrained, uses an unpredictable
+        object key, and records the authenticated wallet in S3 metadata.
       operationId: getReportSignedUrl
       responses:
         '200':
-          description: Signed URL generated successfully
+          description: Signed POST policy generated successfully
           content:
             application/json:
               schema:
@@ -1717,11 +1719,33 @@ paths:
                       signed_url:
                         type: string
                         format: uri
-                        description: Pre-signed S3 URL for PUT upload (expires in 60s)
+                        description: S3 endpoint for a multipart POST upload (expires in 60s)
+                      fields:
+                        type: object
+                        additionalProperties:
+                          type: string
+                        description: Fields that must be included unchanged in the multipart form
+                      max_file_size:
+                        type: integer
+                        format: int32
+                        description: Maximum accepted file size in bytes
+                        minimum: 1
+                        maximum: 1048576
+                    required:
+                      - signed_url
+                      - fields
+                      - max_file_size
               example:
                 ok: true
                 data:
-                  signed_url: "https://s3.amazonaws.com/bucket/path?signature=..."
+                  signed_url: "https://s3.amazonaws.com/content-moderation-bucket"
+                  fields:
+                    key: "8a51d63d-0634-4c3c-a809-89f7499bbfc5.json"
+                    Content-Type: "application/json"
+                    acl: "private"
+                    Policy: "eyJleHBpcmF0aW9uIjoi..."
+                    X-Amz-Signature: "..."
+                  max_file_size: 1048576
         '401':
           $ref: '#/components/responses/Unauthorized'
 
