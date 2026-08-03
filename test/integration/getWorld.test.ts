@@ -100,6 +100,7 @@ async function seedPlaceForWorld(worldId: string): Promise<void> {
     world_name: worldId,
     world_id: worldId,
     deployed_at: new Date(),
+    deployment_id: null,
     textsearch: null,
     creator_address: null,
     sdk: null,

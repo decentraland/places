@@ -125,6 +125,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         title: "Scene to Undeploy",
         base: "20,24",
         parcels: ["20,24"],
+        entityId: "entity-1",
       })
     })
 
@@ -178,12 +179,14 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         title: "Scene A - Keep",
         base: "0,0",
         parcels: ["0,0"],
+        entityId: "entity-a",
       })
       await deployWorldScene({
         worldName,
         title: "Scene B - Remove",
         base: "5,5",
         parcels: ["5,5"],
+        entityId: "entity-b",
       })
     })
 
@@ -226,18 +229,21 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         title: "Scene X",
         base: "10,10",
         parcels: ["10,10"],
+        entityId: "entity-x",
       })
       await deployWorldScene({
         worldName,
         title: "Scene Y",
         base: "20,20",
         parcels: ["20,20"],
+        entityId: "entity-y",
       })
       await deployWorldScene({
         worldName,
         title: "Scene Z",
         base: "30,30",
         parcels: ["30,30"],
+        entityId: "entity-z",
       })
     })
 
@@ -267,6 +273,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         title: "Existing Scene",
         base: "0,0",
         parcels: ["0,0"],
+        entityId: "entity-existing",
       })
     })
 
@@ -295,6 +302,7 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
         title: "Re-deployed Scene",
         base: "10,10",
         parcels: ["10,10"],
+        entityId: "entity-stale",
       })
     })
 
