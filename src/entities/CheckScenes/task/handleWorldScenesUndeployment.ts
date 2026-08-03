@@ -7,7 +7,7 @@ import { notifyError } from "../../Slack/utils"
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
  * Disables the place records corresponding to the undeployed scenes,
- * identified by world name and each scene's base parcel.
+ * identified by world name and immutable deployment id, with a guarded fallback for legacy rows.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -34,6 +34,7 @@ export async function handleWorldScenesUndeployment(
 
   try {
     const basePositions = scenes.map((scene) => scene.baseParcel)
+    const deploymentIds = scenes.map((scene) => scene.entityId)
 
     loggerExtended.log(
       `Processing scene undeployment for world: ${worldName}, parcels: ${basePositions.join(
@@ -41,8 +42,9 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.disableByWorldIdAndPositions(
+    await PlaceModel.disableByWorldIdAndDeployments(
       worldName,
+      deploymentIds,
       basePositions,
       event.timestamp
     )
@@ -52,14 +54,15 @@ export async function handleWorldScenesUndeployment(
         ", "
       )}`
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
     loggerExtended.error(
-      `Error handling WorldScenesUndeploymentEvent for ${worldName}: ${error.message}`
+      `Error handling WorldScenesUndeploymentEvent for ${worldName}: ${message}`
     )
     notifyError([
       `Error handling WorldScenesUndeploymentEvent`,
       `World: ${worldName}`,
-      error.message,
+      message,
     ])
     throw error
   }

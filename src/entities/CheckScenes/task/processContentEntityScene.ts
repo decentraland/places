@@ -19,6 +19,47 @@ import { PlaceContentRatingAttributes } from "../../PlaceContentRating/types"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
 
+export class InvalidSceneBaseError extends Error {
+  constructor(base: string | undefined) {
+    super(`Scene base '${base || ""}' must be included in the entity pointers.`)
+    this.name = "InvalidSceneBaseError"
+  }
+}
+
+const PARCEL_PATTERN = /^(?:0|-?[1-9]\d*),(?:0|-?[1-9]\d*)$/
+const MAX_SCENE_PARCELS = 1000
+
+export function assertSceneBaseIsAuthorized(
+  contentEntityScene: ContentEntityScene
+): void {
+  const base = contentEntityScene.metadata?.scene?.base
+  const parcels = contentEntityScene.metadata?.scene?.parcels
+  const pointers = contentEntityScene.pointers
+  const validList = (values: unknown): values is string[] =>
+    Array.isArray(values) &&
+    values.length > 0 &&
+    values.length <= MAX_SCENE_PARCELS &&
+    values.every(
+      (value) =>
+        typeof value === "string" &&
+        value.length <= 32 &&
+        PARCEL_PATTERN.test(value)
+    ) &&
+    new Set(values).size === values.length
+
+  if (
+    typeof base !== "string" ||
+    !PARCEL_PATTERN.test(base) ||
+    !validList(parcels) ||
+    !validList(pointers) ||
+    !parcels.includes(base) ||
+    parcels.length !== pointers.length ||
+    parcels.some((parcel) => !pointers.includes(parcel))
+  ) {
+    throw new InvalidSceneBaseError(contentEntityScene.metadata?.scene?.base)
+  }
+}
+
 export type ProcessEntitySceneResult =
   | {
       new: PlaceAttributes
@@ -36,7 +77,12 @@ export type ProcessEntitySceneResult =
 export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[],
-  options: { url?: string; creator?: string | null; sdk?: string | null } = {}
+  options: {
+    url?: string
+    creator?: string | null
+    sdk?: string | null
+    deploymentId?: string | null
+  } = {}
 ): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
   const newDeployedPlace = findNewDeployedPlace(contentEntityScene, places)
@@ -98,6 +144,7 @@ export function createPlaceFromContentEntityScene(
     creator?: string | null
     sdk?: string | null
     worldId?: string | null
+    deploymentId?: string | null
   } = {}
 ) {
   const now = new Date()
@@ -158,6 +205,7 @@ export function createPlaceFromContentEntityScene(
     world_name: worldName,
     world_id: options.worldId || null,
     ...data,
+    deployment_id: options.deploymentId || null,
     title: title ? title.slice(0, 50) : "Untitled",
     // Strip markup from the creator-authored description before storing so
     // TMP tags like `<link="decentraland://…">` / `smb://` / `file://`

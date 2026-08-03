@@ -817,11 +817,7 @@ describe(`updatePlace`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
       UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "disabled_reason" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "creator_address" = $17
-      WHERE disabled is false AND world is false AND "base_position" IN
-      (
-        SELECT DISTINCT("base_position")
-        FROM "place_positions" "pp" WHERE "pp"."position" = $18
-      )
+      WHERE disabled is false AND world is false AND "id" = $18
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -861,11 +857,7 @@ describe(`updatePlace`, () => {
     expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toEqual(
       `
       UPDATE "places" SET "title" = $1, "description" = $2, "image" = $3, "owner" = $4, "positions" = $5, "base_position" = $6, "contact_name" = $7, "contact_email" = $8, "content_rating" = $9, "disabled" = $10, "disabled_at" = $11, "disabled_reason" = $12, "updated_at" = $13, "deployed_at" = $14, "world" = $15, "world_name" = $16, "creator_address" = $17
-      WHERE disabled is false AND world is false AND "base_position" IN
-      (
-        SELECT DISTINCT("base_position")
-        FROM "place_positions" "pp" WHERE "pp"."position" = $18
-      )
+      WHERE disabled is false AND world is false AND "id" = $18
       `
         .trim()
         .replace(/\s{2,}/gi, " ")
@@ -885,6 +877,31 @@ describe(`updatePlace for world places`, () => {
     expect(normalizedSql).toContain(
       `("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
     )
+  })
+})
+
+describe("when disabling world scenes by deployment identity", () => {
+  let eventTimestamp: number
+
+  beforeEach(() => {
+    eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
+    namedQuery.mockResolvedValue([])
+  })
+
+  it("should use the immutable deployment ids and an unambiguous legacy fallback", async () => {
+    await PlaceModel.disableByWorldIdAndDeployments(
+      "Example.DCL.ETH",
+      ["deployment-a"],
+      ["1,1"],
+      eventTimestamp
+    )
+
+    const [name, sql] = namedQuery.mock.calls[0]
+    const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
+    expect({ name, normalizedSql }).toEqual({
+      name: "disable_by_world_id_and_deployments",
+      normalizedSql: expect.stringContaining('target."deployment_id" = ANY($'),
+    })
   })
 })
 

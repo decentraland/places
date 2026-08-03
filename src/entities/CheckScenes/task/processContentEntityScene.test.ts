@@ -2,6 +2,8 @@ import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import {
+  InvalidSceneBaseError,
+  assertSceneBaseIsAuthorized,
   createPlaceFromContentEntityScene,
   processContentEntityScene,
 } from "./processContentEntityScene"
@@ -10,6 +12,41 @@ import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentE
 import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { DisabledReason } from "../../Place/types"
+
+describe("when asserting that the scene base is authorized", () => {
+  let contentEntityScene: ContentEntityScene
+
+  beforeEach(() => {
+    contentEntityScene = {
+      ...contentEntitySceneGenesisPlaza,
+      pointers: ["0,0"],
+      metadata: {
+        ...contentEntitySceneGenesisPlaza.metadata,
+        scene: { base: "0,0", parcels: ["0,0"] },
+      },
+    } as ContentEntityScene
+  })
+
+  describe("and the base is included in the pointers", () => {
+    it("should accept the scene", () => {
+      expect(() =>
+        assertSceneBaseIsAuthorized(contentEntityScene)
+      ).not.toThrow()
+    })
+  })
+
+  describe("and the base is outside the pointers", () => {
+    beforeEach(() => {
+      contentEntityScene.metadata.scene!.base = "1,1"
+    })
+
+    it("should reject the scene with a typed error", () => {
+      expect(() => assertSceneBaseIsAuthorized(contentEntityScene)).toThrow(
+        InvalidSceneBaseError
+      )
+    })
+  })
+})
 
 describe("createPlaceFromContentEntityScene", () => {
   test("should accept a contentEntityScene and return a formatted place", async () => {
@@ -115,6 +152,23 @@ describe("createPlaceFromContentEntityScene", () => {
         beforeCallTimestamp
       )
       expect(result.updated_at).not.toEqual(existingUpdatedAt)
+    })
+
+    describe("and a new deployment id is supplied", () => {
+      beforeEach(() => {
+        result = createPlaceFromContentEntityScene(
+          contentEntitySceneGenesisPlaza,
+          {
+            ...placeGenesisPlaza,
+            deployment_id: "previous-deployment",
+          },
+          { deploymentId: "current-deployment" }
+        )
+      })
+
+      it("should replace the previous deployment identity", () => {
+        expect(result.deployment_id).toBe("current-deployment")
+      })
     })
   })
 })

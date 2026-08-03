@@ -2,8 +2,18 @@ import { randomUUID } from "crypto"
 
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { DeploymentToSqs } from "./consumer"
+import { extractSceneJsonData } from "./extractSceneJsonData"
+import {
+  ProcessEntitySceneResult,
+  assertSceneBaseIsAuthorized,
+  createPlaceFromContentEntityScene,
+  processContentEntityScene,
+} from "./processContentEntityScene"
+import { getTrustedContentServerUrl, processEntityId } from "./processEntityId"
 import CategoryModel from "../../Category/model"
 import { DecentralandCategories } from "../../Category/types"
+import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { DisabledReason, PlaceAttributes } from "../../Place/types"
 import { sanitizePlaceDescription } from "../../Place/utils"
@@ -23,14 +33,6 @@ import {
   findNewDeployedPlace,
   updateGenesisCityManifest,
 } from "../utils"
-import { DeploymentToSqs } from "./consumer"
-import { extractSceneJsonData } from "./extractSceneJsonData"
-import {
-  ProcessEntitySceneResult,
-  createPlaceFromContentEntityScene,
-  processContentEntityScene,
-} from "./processContentEntityScene"
-import { processEntityId } from "./processEntityId"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -51,17 +53,21 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world",
   "world_name",
   "world_id",
+  "deployment_id",
   "textsearch",
   "creator_address",
   "sdk",
 ]
 
 export async function taskRunnerSqs(job: DeploymentToSqs) {
+  const contentServerUrl = getTrustedContentServerUrl(job)
   const contentEntityScene = await processEntityId(job)
 
   if (!contentEntityScene) {
     return null
   }
+
+  assertSceneBaseIsAuthorized(contentEntityScene)
 
   // Extract creator address and SDK version from scene.json. Fall back to
   // entity metadata when the secondary blob fetch fails or returns nulls —
@@ -70,7 +76,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   // (CDN replication lag, transient network errors, etc).
   const sceneJsonData = await extractSceneJsonData(
     contentEntityScene,
-    job.contentServerUrls![0]
+    contentServerUrl
   )
   const creator =
     sceneJsonData.creator ||
@@ -83,251 +89,254 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       ?.runtimeVersion ||
     null
 
-  let placesToProcess: ProcessEntitySceneResult | null = null
-
+  const worldConfiguration = contentEntityScene.metadata.worldConfiguration
   if (
-    contentEntityScene.metadata.worldConfiguration &&
-    !(
-      contentEntityScene.metadata.worldConfiguration.name ||
-      contentEntityScene.metadata.worldConfiguration.dclName
-    )
+    worldConfiguration &&
+    !(worldConfiguration.name || worldConfiguration.dclName)
   ) {
     throw new Error("worldConfiguration without name")
   }
+  const worldName = worldConfiguration
+    ? ((worldConfiguration.name || worldConfiguration.dclName) as string)
+    : null
+  const nameOwner = worldName ? await fetchNameOwner(worldName) : null
 
-  if (contentEntityScene.metadata.worldConfiguration) {
-    const worldName = (contentEntityScene.metadata.worldConfiguration.name ||
-      contentEntityScene.metadata.worldConfiguration.dclName) as string
+  if (worldConfiguration && !contentEntityScene.metadata.owner && nameOwner) {
+    contentEntityScene.metadata.owner = nameOwner
+  }
 
-    // Determine if opt-out is set
-    const isOptOut =
-      !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
+  const processedPlaces = await withDatabaseTransaction(async () => {
+    let placesToProcess: ProcessEntitySceneResult | null = null
 
-    // Resolve the on-chain name owner. This is the authoritative owner for
-    // the world record, while the place uses metadata.owner as primary and
-    // falls back to the name owner.
-    const nameOwner = await fetchNameOwner(worldName)
+    if (worldConfiguration && worldName) {
+      // Determine if opt-out is set
+      const isOptOut =
+        !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-    // Ensure the place gets an owner: prefer the deployment metadata, fall
-    // back to the on-chain name owner.
-    if (!contentEntityScene.metadata.owner && nameOwner) {
-      contentEntityScene.metadata.owner = nameOwner
-    }
-
-    // Insert the world if it doesn't exist yet. The world owner is always
-    // the on-chain name owner, not the deployment metadata owner.
-    const worldId = await WorldModel.insertWorldIfNotExists({
-      world_name: worldName,
-      title:
-        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
-      description:
-        sanitizePlaceDescription(
-          contentEntityScene?.metadata?.display?.description
-        ) || undefined,
-      content_rating:
-        (contentEntityScene?.metadata?.policy
-          ?.contentRating as SceneContentRating) || undefined,
-      categories: contentEntityScene?.metadata?.tags || undefined,
-      owner: nameOwner || undefined,
-      show_in_places: !isOptOut,
-    })
-
-    // Update the world owner on every deployment to keep it in sync with
-    // the current on-chain name ownership.
-    if (nameOwner) {
-      await WorldModel.upsertWorld({
+      // Resolve the on-chain name owner. This is the authoritative owner for
+      // the world record, while the place uses metadata.owner as primary and
+      // falls back to the name owner.
+      // Insert the world if it doesn't exist yet. The world owner is always
+      // the on-chain name owner, not the deployment metadata owner.
+      const worldId = await WorldModel.insertWorldIfNotExists({
         world_name: worldName,
-        owner: nameOwner,
+        title:
+          contentEntityScene?.metadata?.display?.title?.slice(0, 50) ||
+          undefined,
+        description:
+          sanitizePlaceDescription(
+            contentEntityScene?.metadata?.display?.description
+          ) || undefined,
+        content_rating:
+          (contentEntityScene?.metadata?.policy
+            ?.contentRating as SceneContentRating) || undefined,
+        categories: contentEntityScene?.metadata?.tags || undefined,
+        owner: nameOwner || undefined,
+        show_in_places: !isOptOut,
       })
-    }
 
-    // World-specific overlap logic: in worlds, positions can change freely
-    // between deployments, so identity is based on overlap count rather than
-    // exact position matching (which is what Genesis City uses).
-    //  - 0 overlapping → new scene in this world
-    //  - 1 overlapping → same scene, possibly reshaped → update
-    //  - 2+ overlapping → new scene supersedes multiple old ones → create + disable
-    const overlappingPlaces = await PlaceModel.findActiveByWorldIdAndPositions(
-      worldId,
-      contentEntityScene.pointers
-    )
+      // Update the world owner on every deployment to keep it in sync with
+      // the current on-chain name ownership.
+      if (nameOwner) {
+        await WorldModel.upsertWorld({
+          world_name: worldName,
+          owner: nameOwner,
+        })
+      }
 
-    const options = {
-      url: job.contentServerUrls![0],
-      creator,
-      sdk,
-      worldId,
-    }
+      // World-specific overlap logic: in worlds, positions can change freely
+      // between deployments, so identity is based on overlap count rather than
+      // exact position matching (which is what Genesis City uses).
+      //  - 0 overlapping → new scene in this world
+      //  - 1 overlapping → same scene, possibly reshaped → update
+      //  - 2+ overlapping → new scene supersedes multiple old ones → create + disable
+      const overlappingPlaces =
+        await PlaceModel.findActiveByWorldIdAndPositions(
+          worldId,
+          contentEntityScene.pointers
+        )
 
-    // Stale deployment protection: skip if a newer deployment already exists
-    const newerPlace = findNewDeployedPlace(
-      contentEntityScene,
-      overlappingPlaces
-    )
-    if (newerPlace) {
-      placesToProcess = null
-    } else if (overlappingPlaces.length === 1) {
-      // Single overlap → update that place (same scene, possibly reshaped)
-      const existingPlace = overlappingPlaces[0]
-      const place = createPlaceFromContentEntityScene(
+      const options = {
+        url: contentServerUrl,
+        creator,
+        sdk,
+        worldId,
+        deploymentId: job.entity.entityId,
+      }
+
+      // Stale deployment protection: skip if a newer deployment already exists
+      const newerPlace = findNewDeployedPlace(
         contentEntityScene,
-        existingPlace,
-        options
+        overlappingPlaces
       )
+      if (newerPlace) {
+        placesToProcess = null
+      } else if (overlappingPlaces.length === 1) {
+        // Single overlap → update that place (same scene, possibly reshaped)
+        const existingPlace = overlappingPlaces[0]
+        const place = createPlaceFromContentEntityScene(
+          contentEntityScene,
+          existingPlace,
+          options
+        )
 
-      let rating = null
-      if (place.content_rating !== existingPlace.content_rating) {
-        rating = {
-          id: randomUUID(),
-          entity_id: existingPlace.id,
-          original_rating: existingPlace.content_rating,
-          update_rating: place.content_rating,
-          moderator: null,
-          comment: null,
-          created_at: new Date(),
+        let rating = null
+        if (place.content_rating !== existingPlace.content_rating) {
+          rating = {
+            id: randomUUID(),
+            entity_id: existingPlace.id,
+            original_rating: existingPlace.content_rating,
+            update_rating: place.content_rating,
+            moderator: null,
+            comment: null,
+            created_at: new Date(),
+          }
+        }
+
+        placesToProcess = { update: place, rating, disabled: [] }
+      } else {
+        // 0 or 2+ overlapping → create a new place, disable all overlapping
+        const place = createPlaceFromContentEntityScene(
+          contentEntityScene,
+          {},
+          options
+        )
+
+        placesToProcess = {
+          new: place,
+          rating: {
+            id: randomUUID(),
+            entity_id: place.id,
+            original_rating: null,
+            update_rating: place.content_rating,
+            moderator: null,
+            comment: null,
+            created_at: new Date(),
+          },
+          disabled: overlappingPlaces,
         }
       }
 
-      placesToProcess = { update: place, rating, disabled: [] }
+      // Apply opt-out override on top of the standard result
+      if (placesToProcess) {
+        const place = placesToProcess.new || placesToProcess.update
+        if (isOptOut) {
+          place.disabled = true
+          place.disabled_reason = DisabledReason.OPT_OUT
+          place.disabled_at = place.disabled_at || new Date()
+        } else {
+          place.disabled = false
+          place.disabled_reason = null
+          place.disabled_at = null
+        }
+      }
     } else {
-      // 0 or 2+ overlapping → create a new place, disable all overlapping
-      const place = createPlaceFromContentEntityScene(
-        contentEntityScene,
-        {},
-        options
+      const places = await PlaceModel.findEnabledByPositions(
+        contentEntityScene.pointers
       )
-
-      placesToProcess = {
-        new: place,
-        rating: {
-          id: randomUUID(),
-          entity_id: place.id,
-          original_rating: null,
-          update_rating: place.content_rating,
-          moderator: null,
-          comment: null,
-          created_at: new Date(),
-        },
-        disabled: overlappingPlaces,
-      }
+      placesToProcess = processContentEntityScene(contentEntityScene, places, {
+        url: contentServerUrl,
+        creator,
+        sdk,
+        deploymentId: job.entity.entityId,
+      })
     }
 
-    // Apply opt-out override on top of the standard result
-    if (placesToProcess) {
-      const place = placesToProcess.new || placesToProcess.update
-      if (isOptOut) {
-        place.disabled = true
-        place.disabled_reason = DisabledReason.OPT_OUT
-        place.disabled_at = place.disabled_at || new Date()
-      } else {
-        place.disabled = false
-        place.disabled_reason = null
-        place.disabled_at = null
-      }
+    if (!placesToProcess) {
+      await CheckScenesModel.createOne({
+        entity_id: job.entity.entityId,
+        content_server_url: contentServerUrl,
+        base_position: contentEntityScene.metadata.scene!.base,
+        positions: contentEntityScene.metadata.scene!.parcels,
+        action: CheckSceneLogsTypes.AVOID,
+        deploy_at: new Date(contentEntityScene.timestamp),
+      })
     }
-  } else {
-    const places = await PlaceModel.findEnabledByPositions(
-      contentEntityScene.pointers
-    )
-    placesToProcess = processContentEntityScene(contentEntityScene, places, {
-      url: job.contentServerUrls![0],
-      creator,
-      sdk,
-    })
-  }
 
-  if (!placesToProcess) {
-    await CheckScenesModel.createOne({
-      entity_id: job.entity.entityId,
-      content_server_url: job.contentServerUrls![0],
-      base_position: contentEntityScene.metadata.scene!.base,
-      positions: contentEntityScene.metadata.scene!.parcels,
-      action: CheckSceneLogsTypes.AVOID,
-      deploy_at: new Date(contentEntityScene.timestamp),
-    })
-  }
+    if (placesToProcess?.new) {
+      await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
+      await Promise.all([
+        !contentEntityScene.metadata.worldConfiguration &&
+          PlacePositionModel.syncBasePosition(placesToProcess.new),
+        overridePlaceCategories(
+          placesToProcess.new.id,
+          contentEntityScene.metadata.tags || []
+        ),
+        CheckScenesModel.createOne({
+          entity_id: job.entity.entityId,
+          content_server_url: contentServerUrl,
+          base_position: contentEntityScene.metadata.scene!.base,
+          positions: contentEntityScene.metadata.scene!.parcels,
+          action: CheckSceneLogsTypes.NEW,
+          deploy_at: new Date(contentEntityScene.timestamp),
+        }),
+      ])
+    }
 
-  if (placesToProcess?.new) {
-    await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
-    notifyNewPlace(placesToProcess.new, job)
+    if (placesToProcess?.update) {
+      await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
+      await Promise.all([
+        !contentEntityScene.metadata.worldConfiguration &&
+          PlacePositionModel.syncBasePosition(placesToProcess.update),
+        overridePlaceCategories(
+          placesToProcess.update.id,
+          contentEntityScene.metadata.tags || []
+        ),
+        CheckScenesModel.createOne({
+          entity_id: job.entity.entityId,
+          content_server_url: contentServerUrl,
+          base_position: contentEntityScene.metadata.scene!.base,
+          positions: contentEntityScene.metadata.scene!.parcels,
+          action: CheckSceneLogsTypes.UPDATE,
+          deploy_at: new Date(contentEntityScene.timestamp),
+        }),
+      ])
+    }
+
     await Promise.all([
-      !contentEntityScene.metadata.worldConfiguration &&
-        PlacePositionModel.syncBasePosition(placesToProcess.new),
-      overridePlaceCategories(
-        placesToProcess.new.id,
-        contentEntityScene.metadata.tags || []
-      ),
-      CheckScenesModel.createOne({
-        entity_id: job.entity.entityId,
-        content_server_url: job.contentServerUrls![0],
-        base_position: contentEntityScene.metadata.scene!.base,
-        positions: contentEntityScene.metadata.scene!.parcels,
-        action: CheckSceneLogsTypes.NEW,
-        deploy_at: new Date(contentEntityScene.timestamp),
-      }),
+      placesToProcess?.rating &&
+        PlaceContentRatingModel.createOne(placesToProcess.rating),
+      placesToProcess?.disabled.length &&
+        (async () => {
+          const placesIdToDisable = placesToProcess!.disabled.map(
+            (place) => place.id
+          )
+          await PlaceModel.disablePlaces(placesIdToDisable)
+
+          const positions = new Set(
+            placesToProcess!.disabled.flatMap((place) => place.positions)
+          )
+          placesToProcess?.new?.positions.forEach((position) =>
+            positions.delete(position)
+          )
+          placesToProcess?.update?.positions.forEach((position) =>
+            positions.delete(position)
+          )
+          await Promise.all([
+            !contentEntityScene.metadata.worldConfiguration &&
+              PlacePositionModel.removePositions([...positions]),
+            CheckScenesModel.createMany(
+              placesToProcess!.disabled.map((place) => ({
+                entity_id: job.entity.entityId,
+                content_server_url: contentServerUrl,
+                base_position: place.base_position,
+                positions: place.positions,
+                action: CheckSceneLogsTypes.DISABLED,
+              }))
+            ),
+          ])
+        })(),
     ])
+    return placesToProcess
+  })
+
+  if (processedPlaces?.new) notifyNewPlace(processedPlaces.new, job)
+  if (processedPlaces?.update) notifyUpdatePlace(processedPlaces.update, job)
+  if (processedPlaces?.disabled.length) {
+    notifyDisablePlaces(processedPlaces.disabled)
   }
 
-  if (placesToProcess?.update) {
-    await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
-    notifyUpdatePlace(placesToProcess.update, job)
-    await Promise.all([
-      !contentEntityScene.metadata.worldConfiguration &&
-        PlacePositionModel.syncBasePosition(placesToProcess.update),
-      overridePlaceCategories(
-        placesToProcess.update.id,
-        contentEntityScene.metadata.tags || []
-      ),
-      CheckScenesModel.createOne({
-        entity_id: job.entity.entityId,
-        content_server_url: job.contentServerUrls![0],
-        base_position: contentEntityScene.metadata.scene!.base,
-        positions: contentEntityScene.metadata.scene!.parcels,
-        action: CheckSceneLogsTypes.UPDATE,
-        deploy_at: new Date(contentEntityScene.timestamp),
-      }),
-    ])
-  }
-
-  await Promise.all([
-    placesToProcess?.rating &&
-      PlaceContentRatingModel.create(placesToProcess.rating),
-    placesToProcess?.disabled.length &&
-      (async () => {
-        const placesIdToDisable = placesToProcess!.disabled.map(
-          (place) => place.id
-        )
-        await PlaceModel.disablePlaces(placesIdToDisable)
-
-        const positions = new Set(
-          placesToProcess!.disabled.flatMap((place) => place.positions)
-        )
-        placesToProcess?.new?.positions.forEach((position) =>
-          positions.delete(position)
-        )
-        placesToProcess?.update?.positions.forEach((position) =>
-          positions.delete(position)
-        )
-        notifyDisablePlaces(placesToProcess!.disabled)
-
-        await Promise.all([
-          !contentEntityScene.metadata.worldConfiguration &&
-            PlacePositionModel.removePositions([...positions]),
-          CheckScenesModel.createMany(
-            placesToProcess!.disabled.map((place) => ({
-              entity_id: job.entity.entityId,
-              content_server_url: job.contentServerUrls![0],
-              base_position: place.base_position,
-              positions: place.positions,
-              action: CheckSceneLogsTypes.DISABLED,
-            }))
-          ),
-        ])
-      })(),
-  ])
-
-  // do not await so it is done on background
-  updateGenesisCityManifest()
+  void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
 }
 
 async function getValidCategories(creatorTags: string[]) {

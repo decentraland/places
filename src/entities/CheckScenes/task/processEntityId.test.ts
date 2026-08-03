@@ -2,39 +2,57 @@ import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { processEntityId } from "./processEntityId"
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
-import {
-  sqsMessage,
-  sqsMessageProfile,
-  sqsMessageRoad,
-} from "../../../__data__/sqs"
+import { sqsMessage, sqsMessageRoad } from "../../../__data__/sqs"
 
-const contentEntityScene = jest.spyOn(
-  ContentServer.getInstanceFrom(sqsMessage.contentServerUrls![0]),
-  "getContentEntity"
-)
+describe("when processing an entity id", () => {
+  let getContentEntity: jest.SpyInstance
 
-afterEach(() => {
-  contentEntityScene.mockReset()
-})
+  beforeEach(() => {
+    getContentEntity = jest.spyOn(
+      ContentServer.getInstanceFrom(sqsMessage.contentServerUrls![0]),
+      "getContentEntity"
+    )
+  })
 
-test("should return a ContentEntityScene", async () => {
-  contentEntityScene.mockResolvedValueOnce(
-    Promise.resolve(contentEntitySceneGenesisPlaza)
-  )
+  afterEach(() => {
+    getContentEntity.mockRestore()
+    delete process.env.ALLOWED_CONTENT_SERVER_HOSTS
+  })
 
-  const contentDeployment = await processEntityId(sqsMessage)
-  expect(contentDeployment).toEqual(contentEntitySceneGenesisPlaza)
+  describe("and the content server is trusted", () => {
+    beforeEach(() => {
+      getContentEntity.mockResolvedValueOnce(contentEntitySceneGenesisPlaza)
+    })
 
-  expect(contentEntityScene.mock.calls.length).toBe(1)
-})
+    it("should return the scene deployment", async () => {
+      await expect(processEntityId(sqsMessage)).resolves.toEqual(
+        contentEntitySceneGenesisPlaza
+      )
+    })
 
-test("should throw an error when there is no contentServerUrls", async () => {
-  await expect(async () =>
-    processEntityId({ ...sqsMessageRoad, contentServerUrls: undefined })
-  ).rejects.toThrowError()
-})
+    it("should fetch the requested entity once", async () => {
+      await processEntityId(sqsMessage)
 
-test.skip("should throw an error when is not an escene", async () => {
-  const profileEntity = await processEntityId(sqsMessageProfile)
-  expect(profileEntity).toBeNull()
+      expect(getContentEntity).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe("and no content server URL is provided", () => {
+    it("should reject the message", async () => {
+      await expect(
+        processEntityId({ ...sqsMessageRoad, contentServerUrls: undefined })
+      ).rejects.toThrow("contentServerUrls is required")
+    })
+  })
+
+  describe("and the content server host is not allowlisted", () => {
+    it("should reject the message before fetching content", async () => {
+      await expect(
+        processEntityId({
+          ...sqsMessage,
+          contentServerUrls: ["https://untrusted.example/contents"],
+        })
+      ).rejects.toThrow("contentServerUrls contains an untrusted host")
+    })
+  })
 })

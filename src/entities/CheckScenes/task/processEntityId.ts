@@ -3,13 +3,50 @@ import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { DeploymentToSqs } from "./consumer"
 
-export async function processEntityId(job: DeploymentToSqs) {
-  if (!job.contentServerUrls || job.contentServerUrls.length === 0) {
-    throw new Error("contentServerUrls is required")
+const DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS = [
+  "peer.decentraland.org",
+  "peer.decentraland.zone",
+  "worlds-content-server.decentraland.org",
+  "worlds-content-server.decentraland.zone",
+]
+
+export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
+  const rawUrl = job.contentServerUrls?.[0]
+  if (!rawUrl) throw new Error("contentServerUrls is required")
+
+  let url: URL
+  try {
+    url = new URL(rawUrl)
+  } catch {
+    throw new Error("contentServerUrls contains an invalid URL")
   }
+  const allowedHosts = new Set(
+    (
+      process.env.ALLOWED_CONTENT_SERVER_HOSTS ||
+      DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS.join(",")
+    )
+      .split(",")
+      .map((host) => host.trim().toLowerCase())
+      .filter(Boolean)
+  )
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    !allowedHosts.has(url.hostname.toLowerCase())
+  ) {
+    throw new Error("contentServerUrls contains an untrusted host")
+  }
+  url.hash = ""
+  url.search = ""
+  return url.toString().replace(/\/+$/, "")
+}
+
+export async function processEntityId(job: DeploymentToSqs) {
+  const contentServerUrl = getTrustedContentServerUrl(job)
 
   const contentDeployment = await ContentServer.getInstanceFrom(
-    job.contentServerUrls[0]
+    contentServerUrl
   ).getContentEntity(job.entity.entityId)
 
   if (!contentDeployment) {

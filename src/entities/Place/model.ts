@@ -1,4 +1,3 @@
-import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   SQLStatement,
@@ -31,6 +30,7 @@ import {
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
+import { Model } from "../Database/model"
 import {
   type AggregateCoordinatePlaceAttributes,
   DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
@@ -534,13 +534,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable place records matching a world and specific base positions
-   * that were deployed before the given event timestamp. This prevents
-   * stale undeployment events from disabling places that were re-deployed
-   * after the event was emitted.
+   * Disable world-scene places by immutable deployment id. Rows created before deployment ids
+   * were stored may fall back to base position only when that position identifies exactly one
+   * active row, preventing a forged or duplicated base from disabling another scene.
    */
-  static async disableByWorldIdAndPositions(
+  static async disableByWorldIdAndDeployments(
     worldId: string,
+    deploymentIds: string[],
     basePositions: string[],
     eventTimestamp: number
   ): Promise<void> {
@@ -548,14 +548,28 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const eventDate = new Date(eventTimestamp)
     const now = new Date()
     const sql = SQL`
-      UPDATE ${table(this)}
+      UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
-      WHERE "world_id" = ${normalizedWorldId}
-        AND "base_position" = ANY(${basePositions})
-        AND "deployed_at" < ${eventDate}
-        AND "disabled" IS FALSE
+      WHERE target."world_id" = ${normalizedWorldId}
+        AND target."deployed_at" < ${eventDate}
+        AND target."disabled" IS FALSE
+        AND (
+          target."deployment_id" = ANY(${deploymentIds})
+          OR (
+            target."deployment_id" IS NULL
+            AND target."base_position" = ANY(${basePositions})
+            AND NOT EXISTS (
+              SELECT 1
+              FROM ${table(this)} conflicting
+              WHERE conflicting."world_id" = target."world_id"
+                AND conflicting."base_position" = target."base_position"
+                AND conflicting."disabled" IS FALSE
+                AND conflicting."id" <> target."id"
+            )
+          )
+        )
     `
-    await this.namedQuery("disable_by_world_id_and_positions", sql)
+    await this.namedQuery("disable_by_world_id_and_deployments", sql)
   }
 
   static async updateFavorites(placeId: string) {
@@ -628,11 +642,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       place
     )} WHERE ${conditional(
       !place.world,
-      SQL`disabled is false AND world is false AND "base_position" IN (
-        SELECT DISTINCT("base_position")
-        FROM ${table(PlacePositionModel)} "pp"
-        WHERE "pp"."position" = ${place.base_position}
-      )`
+      SQL`disabled is false AND world is false AND "id" = ${place.id}`
     )}
     ${conditional(
       !!place.world,

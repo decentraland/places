@@ -5,6 +5,7 @@ import {
   WorldSettingsChangedEvent,
   WorldUndeploymentEvent,
 } from "@dcl/schemas/dist/platform/events/world"
+import { generateLazyValidator } from "@dcl/schemas/dist/validation"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
@@ -25,51 +26,101 @@ export type WorldSqsMessage =
   | WorldScenesUndeploymentEvent
   | WorldUndeploymentEvent
 
+const validateWorldSettingsChanged = generateLazyValidator(
+  WorldSettingsChangedEvent.schema
+)
+const ENTITY_ID_PATTERN = /^(?:Qm[a-zA-Z0-9]{44}|ba[a-zA-Z0-9]{57})$/
+const PARCEL_PATTERN = /^(?:0|-?[1-9]\d*),(?:0|-?[1-9]\d*)$/
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 /** Type guard to check if message is a deployment event */
 export function isDeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is DeploymentToSqs {
-  return "entity" in message && "entityId" in message.entity
+  if (!isRecord(message) || !isRecord(message.entity)) return false
+  const contentServerUrls = message.contentServerUrls
+  return (
+    typeof message.entity.entityId === "string" &&
+    ENTITY_ID_PATTERN.test(message.entity.entityId) &&
+    AuthChain.validate(message.entity.authChain) &&
+    Array.isArray(contentServerUrls) &&
+    contentServerUrls.length > 0 &&
+    contentServerUrls.length <= 10 &&
+    new Set(contentServerUrls).size === contentServerUrls.length &&
+    contentServerUrls.every((url) => {
+      if (typeof url !== "string" || url.length > 2048) return false
+      try {
+        const parsed = new URL(url)
+        return parsed.protocol === "https:"
+      } catch {
+        return false
+      }
+    })
+  )
 }
 
 /** Type guard to check if message is a settings changed event */
 export function isSettingsChangedEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldSettingsChangedEvent {
   return (
-    "type" in message &&
+    isRecord(message) &&
     message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_SETTINGS_CHANGED
+    message.subType === Events.SubType.Worlds.WORLD_SETTINGS_CHANGED &&
+    validateWorldSettingsChanged(message)
   )
 }
 
 /** Type guard to check if message is a scene undeployment event */
 export function isScenesUndeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldScenesUndeploymentEvent {
+  if (!isRecord(message) || !WorldScenesUndeploymentEvent.validate(message)) {
+    return false
+  }
   return (
-    "type" in message &&
     message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT
+    message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT &&
+    message.metadata.scenes.length <= 1000 &&
+    message.metadata.scenes.every(
+      (scene) =>
+        ENTITY_ID_PATTERN.test(scene.entityId) &&
+        PARCEL_PATTERN.test(scene.baseParcel)
+    ) &&
+    new Set(message.metadata.scenes.map((scene) => scene.entityId)).size ===
+      message.metadata.scenes.length
   )
 }
 
 /** Type guard to check if message is a full world undeployment event */
 export function isWorldUndeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldUndeploymentEvent {
   return (
-    "type" in message &&
+    isRecord(message) &&
     message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_UNDEPLOYMENT
+    message.subType === Events.SubType.Worlds.WORLD_UNDEPLOYMENT &&
+    WorldUndeploymentEvent.validate(message)
   )
+}
+
+export function parseWorldSqsMessage(value: unknown): WorldSqsMessage | null {
+  if (isDeploymentEvent(value)) return value
+  if (isSettingsChangedEvent(value)) return value
+  if (isScenesUndeploymentEvent(value)) return value
+  if (isWorldUndeploymentEvent(value)) return value
+  return null
 }
 
 export interface TaskQueueMessage {
   id: string
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
 }
 
 export class SQSConsumer {
@@ -117,7 +168,7 @@ export class SQSConsumer {
     return published.Successful!.map((it) => it.Id!)
   }
 
-  async consume(taskRunner: (job: WorldSqsMessage) => Promise<any>) {
+  async consume(taskRunner: (job: WorldSqsMessage) => Promise<unknown>) {
     try {
       const response = await this.sqs.receiveMessage(this.params).promise()
       const finalReturn = []
@@ -128,13 +179,31 @@ export class SQSConsumer {
       ) {
         for (const it of response.Messages) {
           const message: TaskQueueMessage = { id: it.MessageId! }
-          const body = JSON.parse(it.Body!) as WorldSqsMessage
+          let body: WorldSqsMessage | null = null
+          try {
+            body = parseWorldSqsMessage(JSON.parse(it.Body || ""))
+          } catch (error: unknown) {
+            logger.error(`Invalid SQS message JSON: ${errorMessage(error)}`)
+          }
           const loggerExtended = logger.extend({
             id: message.id,
-            message: body,
             QueueUrl: this.params.QueueUrl,
             ReceiptHandle: it.ReceiptHandle!,
           })
+
+          if (!body) {
+            loggerExtended.error(`Deleting invalid SQS message`)
+            if (it.ReceiptHandle) {
+              await this.sqs
+                .deleteMessage({
+                  QueueUrl: this.params.QueueUrl,
+                  ReceiptHandle: it.ReceiptHandle,
+                })
+                .promise()
+                .catch(() => loggerExtended.error(`Error deleting message`))
+            }
+            continue
+          }
 
           try {
             loggerExtended.log(`Processing job`)
@@ -143,7 +212,16 @@ export class SQSConsumer {
 
             loggerExtended.log(`Processed job`)
             finalReturn.push({ result, message })
-          } catch (err: any) {
+
+            loggerExtended.log(`Deleting message`)
+            await this.sqs
+              .deleteMessage({
+                QueueUrl: this.params.QueueUrl,
+                ReceiptHandle: it.ReceiptHandle!,
+              })
+              .promise()
+              .catch(() => loggerExtended.error(`Error deleting message`))
+          } catch (error: unknown) {
             // Build error message based on event type
             let errorContext = ""
             if (isDeploymentEvent(body)) {
@@ -160,27 +238,16 @@ export class SQSConsumer {
               errorContext = `WorldUndeployment: ${body.metadata.worldName}`
             }
 
-            notifyError([err.toString(), errorContext])
-            loggerExtended.error(err.toString())
+            notifyError([errorMessage(error), errorContext])
+            loggerExtended.error(errorMessage(error))
 
             finalReturn.push({ result: undefined, message })
-          } finally {
-            loggerExtended.log(`Deleting message`)
-            await this.sqs
-              .deleteMessage({
-                QueueUrl: this.params.QueueUrl,
-                ReceiptHandle: it.ReceiptHandle!,
-              })
-              .promise()
-              .catch(() => {
-                loggerExtended.error(`Error deleting message`)
-              })
           }
         }
       }
       return finalReturn
-    } catch (err: any) {
-      logger.error(err)
+    } catch (error: unknown) {
+      logger.error(errorMessage(error))
     }
   }
 }
