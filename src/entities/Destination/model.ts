@@ -128,9 +128,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${placesQuery}
         ORDER BY
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           p.highlighted DESC,
           p.ranking DESC NULLS LAST,
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
@@ -164,9 +164,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           w.highlighted DESC,
           w.ranking DESC NULLS LAST,
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC`
@@ -211,9 +211,9 @@ export default class DestinationModel {
         (${worldsQuery})
       ) sub
       ORDER BY
+        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
-        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(
           `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC`
