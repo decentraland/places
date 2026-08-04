@@ -46,6 +46,18 @@ describe("when asserting that the scene base is authorized", () => {
       )
     })
   })
+
+  describe("and a pointer uses a non-canonical coordinate", () => {
+    beforeEach(() => {
+      contentEntityScene.pointers = ["00,0"]
+    })
+
+    it("should reject the scene with a typed error", () => {
+      expect(() => assertSceneBaseIsAuthorized(contentEntityScene)).toThrow(
+        InvalidSceneBaseError
+      )
+    })
+  })
 })
 
 describe("createPlaceFromContentEntityScene", () => {
