@@ -30,7 +30,6 @@ const validateWorldSettingsChanged = generateLazyValidator(
   WorldSettingsChangedEvent.schema
 )
 const ENTITY_ID_PATTERN = /^(?:Qm[a-zA-Z0-9]{44}|ba[a-zA-Z0-9]{57})$/
-const PARCEL_PATTERN = /^(?:0|-?[1-9]\d*),(?:0|-?[1-9]\d*)$/
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
@@ -78,21 +77,7 @@ export function isSettingsChangedEvent(
 export function isScenesUndeploymentEvent(
   message: unknown
 ): message is WorldScenesUndeploymentEvent {
-  if (!isRecord(message) || !WorldScenesUndeploymentEvent.validate(message)) {
-    return false
-  }
-  return (
-    message.type === Events.Type.WORLD &&
-    message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT &&
-    message.metadata.scenes.length <= 1000 &&
-    message.metadata.scenes.every(
-      (scene) =>
-        ENTITY_ID_PATTERN.test(scene.entityId) &&
-        PARCEL_PATTERN.test(scene.baseParcel)
-    ) &&
-    new Set(message.metadata.scenes.map((scene) => scene.entityId)).size ===
-      message.metadata.scenes.length
-  )
+  return isRecord(message) && WorldScenesUndeploymentEvent.validate(message)
 }
 
 /** Type guard to check if message is a full world undeployment event */

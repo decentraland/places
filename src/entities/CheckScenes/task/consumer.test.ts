@@ -1,9 +1,83 @@
 import { SQS } from "aws-sdk"
 
-import { SQSConsumer, WorldSqsMessage } from "./consumer"
+import {
+  SQSConsumer,
+  WorldSqsMessage,
+  isScenesUndeploymentEvent,
+} from "./consumer"
 import { sqsMessage } from "../../../__data__/sqs"
 
 jest.mock("../../Slack/utils", () => ({ notifyError: jest.fn() }))
+
+describe("when validating a world scenes undeployment event", () => {
+  const event = {
+    type: "world",
+    subType: "world_scenes_undeployment",
+    key: "example.dcl.eth",
+    timestamp: 1,
+    metadata: {
+      worldName: "example.dcl.eth",
+      scenes: [
+        { entityId: "deployment-a", baseParcel: "1,1" },
+        { entityId: "deployment-b", baseParcel: "2,2" },
+      ],
+    },
+  }
+
+  describe("and every deployment identity is unique and canonical", () => {
+    it("should accept the event", () => {
+      expect(isScenesUndeploymentEvent(event)).toBe(true)
+    })
+  })
+
+  describe("and an entity id is duplicated", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              event.metadata.scenes[0],
+              { entityId: "deployment-a", baseParcel: "2,2" },
+            ],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+
+  describe("and a base parcel is duplicated", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              event.metadata.scenes[0],
+              { entityId: "deployment-b", baseParcel: "1,1" },
+            ],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+
+  describe("and a base parcel is not canonical", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [{ entityId: "deployment-a", baseParcel: "01,1" }],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+})
 
 describe("when consuming scene messages", () => {
   let deletePromise: jest.Mock
