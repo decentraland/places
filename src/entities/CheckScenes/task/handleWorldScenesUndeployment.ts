@@ -42,12 +42,18 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.disableByWorldIdAndDeployments(
+    const result = await PlaceModel.disableByWorldIdAndDeployments(
       worldName,
       deploymentIds,
       basePositions,
       event.timestamp
     )
+
+    if (result.legacyBaseMatches > 0) {
+      loggerExtended.log(
+        `WARNING: disabled ${result.legacyBaseMatches} legacy place records without deployment ids; replay world deployments to reconcile them`
+      )
+    }
 
     loggerExtended.log(
       `Disabled place records for world: ${worldName} at positions: ${basePositions.join(

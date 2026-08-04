@@ -543,7 +543,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     deploymentIds: string[],
     basePositions: string[],
     eventTimestamp: number
-  ): Promise<void> {
+  ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
     const now = new Date()
@@ -568,8 +568,18 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             )
           )
         )
+      RETURNING target."deployment_id"
     `
-    await this.namedQuery("disable_by_world_id_and_deployments", sql)
+    const disabled = await this.namedQuery<{ deployment_id: string | null }>(
+      "disable_by_world_id_and_deployments",
+      sql
+    )
+    return {
+      deploymentIdMatches: disabled.filter((row) => row.deployment_id !== null)
+        .length,
+      legacyBaseMatches: disabled.filter((row) => row.deployment_id === null)
+        .length,
+    }
   }
 
   static async updateFavorites(placeId: string) {

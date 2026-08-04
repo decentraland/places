@@ -5,6 +5,7 @@ import {
   WorldSqsMessage,
   isScenesUndeploymentEvent,
 } from "./consumer"
+import { InvalidWorldSqsMessageError } from "./errors"
 import { sqsMessage } from "../../../__data__/sqs"
 
 jest.mock("../../Slack/utils", () => ({ notifyError: jest.fn() }))
@@ -169,6 +170,32 @@ describe("when consuming scene messages", () => {
       await consumer.consume(taskRunner)
 
       expect(deleteMessage).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("and the task rejects a deterministically invalid message", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "invalid-host",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+      taskRunner.mockRejectedValue(
+        new InvalidWorldSqsMessageError("content server is not trusted")
+      )
+    })
+
+    it("should acknowledge the message instead of retrying forever", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(deleteMessage).toHaveBeenCalledWith({
+        QueueUrl: "https://sqs.example/queue",
+        ReceiptHandle: "receipt",
+      })
     })
   })
 })

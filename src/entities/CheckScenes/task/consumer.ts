@@ -9,6 +9,7 @@ import { generateLazyValidator } from "@dcl/schemas/dist/validation"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { notifyError } from "../../Slack/utils"
 
 export declare type DeploymentToSqs = {
@@ -207,6 +208,22 @@ export class SQSConsumer {
               .promise()
               .catch(() => loggerExtended.error(`Error deleting message`))
           } catch (error: unknown) {
+            if (error instanceof InvalidWorldSqsMessageError) {
+              loggerExtended.error(
+                `Deleting deterministically invalid SQS message: ${error.message}`
+              )
+              if (it.ReceiptHandle) {
+                await this.sqs
+                  .deleteMessage({
+                    QueueUrl: this.params.QueueUrl,
+                    ReceiptHandle: it.ReceiptHandle,
+                  })
+                  .promise()
+                  .catch(() => loggerExtended.error(`Error deleting message`))
+              }
+              continue
+            }
+
             // Build error message based on event type
             let errorContext = ""
             if (isDeploymentEvent(body)) {

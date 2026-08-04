@@ -903,6 +903,22 @@ describe("when disabling world scenes by deployment identity", () => {
       normalizedSql: expect.stringContaining('target."deployment_id" = ANY($'),
     })
   })
+
+  it("should report legacy fallback matches separately", async () => {
+    namedQuery.mockResolvedValue([
+      { deployment_id: "deployment-a" },
+      { deployment_id: null },
+    ])
+
+    const result = await PlaceModel.disableByWorldIdAndDeployments(
+      "example.dcl.eth",
+      ["deployment-a"],
+      ["1,1"],
+      eventTimestamp
+    )
+
+    expect(result).toEqual({ deploymentIdMatches: 1, legacyBaseMatches: 1 })
+  })
 })
 
 describe(`findWithCoordinatesAggregates`, () => {

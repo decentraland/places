@@ -1,5 +1,6 @@
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { processEntityId } from "./processEntityId"
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
 import { sqsMessage, sqsMessageRoad } from "../../../__data__/sqs"
@@ -53,6 +54,15 @@ describe("when processing an entity id", () => {
           contentServerUrls: ["https://untrusted.example/contents"],
         })
       ).rejects.toThrow("contentServerUrls contains an untrusted host")
+    })
+
+    it("should classify the failure as non-retryable", async () => {
+      await expect(
+        processEntityId({
+          ...sqsMessage,
+          contentServerUrls: ["https://untrusted.example/contents"],
+        })
+      ).rejects.toBeInstanceOf(InvalidWorldSqsMessageError)
     })
   })
 })

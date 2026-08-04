@@ -2,6 +2,7 @@ import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
 
 import { DeploymentToSqs } from "./consumer"
+import { InvalidWorldSqsMessageError } from "./errors"
 
 const DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS = [
   "peer.decentraland.org",
@@ -12,13 +13,16 @@ const DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS = [
 
 export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
   const rawUrl = job.contentServerUrls?.[0]
-  if (!rawUrl) throw new Error("contentServerUrls is required")
+  if (!rawUrl)
+    throw new InvalidWorldSqsMessageError("contentServerUrls is required")
 
   let url: URL
   try {
     url = new URL(rawUrl)
   } catch {
-    throw new Error("contentServerUrls contains an invalid URL")
+    throw new InvalidWorldSqsMessageError(
+      "contentServerUrls contains an invalid URL"
+    )
   }
   const allowedHosts = new Set(
     (
@@ -35,7 +39,9 @@ export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
     url.password ||
     !allowedHosts.has(url.hostname.toLowerCase())
   ) {
-    throw new Error("contentServerUrls contains an untrusted host")
+    throw new InvalidWorldSqsMessageError(
+      "contentServerUrls contains an untrusted host"
+    )
   }
   url.hash = ""
   url.search = ""

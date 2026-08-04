@@ -11,7 +11,7 @@ describe("when handling a world scenes undeployment event", () => {
   beforeEach(() => {
     disableByWorldIdAndDeployments = jest
       .spyOn(PlaceModel, "disableByWorldIdAndDeployments")
-      .mockResolvedValue(undefined)
+      .mockResolvedValue({ deploymentIdMatches: 2, legacyBaseMatches: 0 })
     event = {
       type: Events.Type.WORLD,
       subType: Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT,
