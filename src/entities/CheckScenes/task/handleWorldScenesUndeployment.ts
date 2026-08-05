@@ -6,8 +6,13 @@ import { notifyError } from "../../Slack/utils"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
- * Disables the place records corresponding to the undeployed scenes,
- * identified by world name and immutable deployment id, with a guarded fallback for legacy rows.
+ *
+ * A place id is a local catalog UUID that may be preserved across redeployments so favorites,
+ * moderation and other product state remain attached to the logical place. The worlds content
+ * server neither owns nor knows that UUID. Its entity id instead identifies the exact immutable
+ * deployment that produced the event. Matching the stored deployment id prevents a delayed
+ * undeployment for an older entity from disabling a place that already represents a newer one.
+ * Legacy rows without deployment ids use the guarded base-position fallback below.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
