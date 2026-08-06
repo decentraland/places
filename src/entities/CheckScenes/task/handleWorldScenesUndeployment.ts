@@ -1,8 +1,10 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
+import WorldModel from "../../World/model"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
@@ -47,12 +49,18 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    const result = await PlaceModel.disableByWorldIdAndDeployments(
-      worldName,
-      deploymentIds,
-      basePositions,
-      event.timestamp
-    )
+    // Same lock the deployment path takes, so an in-flight deployment for this world cannot
+    // commit an enabled place this event would have disabled
+    const result = await withDatabaseTransaction(async () => {
+      await WorldModel.lockWorldForDeployment(worldName)
+
+      return PlaceModel.disableByWorldIdAndDeployments(
+        worldName,
+        deploymentIds,
+        basePositions,
+        event.timestamp
+      )
+    })
 
     if (result.legacyBaseMatches > 0) {
       loggerExtended.log(

@@ -334,4 +334,103 @@ describe("when handling the WorldScenesUndeploymentEvent", () => {
       await expect(handleWorldScenesUndeployment(event)).resolves.not.toThrow()
     })
   })
+
+  describe("and the WorldScenesUndeploymentEvent arrives while a deployment for that world is still in flight", () => {
+    const worldName = "inflight-undeploy.dcl.eth"
+    let insertPlace: jest.SpyInstance
+
+    beforeEach(async () => {
+      const deploymentInserted = deferred()
+      const releaseDeployment = deferred()
+
+      // Hold the deployment transaction open with the new place inserted but uncommitted
+      const originalInsertPlace = PlaceModel.insertPlace.bind(PlaceModel)
+      insertPlace = jest
+        .spyOn(PlaceModel, "insertPlace")
+        .mockImplementation(async (place, attributes) => {
+          const result = await originalInsertPlace(place, attributes)
+          deploymentInserted.resolve()
+          await releaseDeployment.promise
+          return result
+        })
+
+      const scene = createWorldContentEntityScene({
+        worldName,
+        title: "In-flight Scene",
+        base: "30,30",
+        parcels: ["30,30"],
+      })
+      scene.timestamp = Date.now() - 60_000
+
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      const deployment = taskRunnerSqs(
+        createWorldDeploymentMessage({
+          entity: {
+            ...createWorldDeploymentMessage().entity,
+            entityId: "entity-inflight",
+          },
+        })
+      )
+      await deploymentInserted.promise
+
+      // The undeployment is emitted after the deployment, so its timestamp is newer
+      const undeployment = handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-inflight", baseParcel: "30,30" }],
+          { timestamp: Date.now() }
+        )
+      )
+
+      // Give the undeployment time to reach the lock while the deployment is uncommitted
+      await new Promise((resolve) => setTimeout(resolve, 300))
+      releaseDeployment.resolve()
+
+      await Promise.all([deployment, undeployment])
+    })
+
+    afterEach(() => {
+      insertPlace.mockRestore()
+    })
+
+    it("should disable the place the deployment committed after the event", async () => {
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "30,30"
+      )
+
+      expect(place!.disabled).toBe(true)
+    })
+
+    it("should set the undeployment reason on it", async () => {
+      const place = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "30,30"
+      )
+
+      expect(place!.disabled_reason).toBe(DisabledReason.UNDEPLOYMENT)
+    })
+
+    it("should not leave the world listing the undeployed scene", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ names: worldName })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(0)
+    })
+  })
 })
+
+function deferred(): { promise: Promise<void>; resolve: () => void } {
+  let resolve: () => void = () => undefined
+  const promise = new Promise<void>((res) => {
+    resolve = () => res()
+  })
+  return { promise, resolve }
+}
