@@ -5,6 +5,7 @@ import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
 /**
  * Handles WorldUndeploymentEvent from the worlds content server.
@@ -34,6 +35,10 @@ export async function handleWorldUndeployment(
     // commit an enabled place this event would have disabled
     await withDatabaseTransaction(async () => {
       await WorldModel.lockWorldForDeployment(worldName)
+
+      // Durable watermark: a deployment delivered later but produced before this event must not
+      // recreate the world, and disabling rows alone leaves no record once the lock is released
+      await WorldUndeploymentModel.recordWatermark(worldName, event.timestamp)
 
       await PlaceModel.disableByWorldId(worldName, event.timestamp)
     })

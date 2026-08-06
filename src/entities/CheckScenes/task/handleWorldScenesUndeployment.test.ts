@@ -4,10 +4,12 @@ import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/
 import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
+import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 
 describe("when handling a world scenes undeployment event", () => {
   let disableByWorldIdAndDeployments: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
+  let recordScenes: jest.SpyInstance
   let calls: string[]
   let event: WorldScenesUndeploymentEvent
 
@@ -17,6 +19,11 @@ describe("when handling a world scenes undeployment event", () => {
       .spyOn(WorldModel, "lockWorldForDeployment")
       .mockImplementation(async () => {
         calls.push("lock")
+      })
+    recordScenes = jest
+      .spyOn(WorldSceneUndeploymentModel, "recordScenes")
+      .mockImplementation(async () => {
+        calls.push("watermark")
       })
     disableByWorldIdAndDeployments = jest
       .spyOn(PlaceModel, "disableByWorldIdAndDeployments")
@@ -60,9 +67,19 @@ describe("when handling a world scenes undeployment event", () => {
     expect(lockWorldForDeployment).toHaveBeenCalledWith("example.dcl.eth")
   })
 
-  it("should take the lock before disabling any row", async () => {
+  it("should record every undeployed scene with the event timestamp", async () => {
     await handleWorldScenesUndeployment(event)
 
-    expect(calls).toEqual(["lock", "disable"])
+    expect(recordScenes).toHaveBeenCalledWith(
+      "example.dcl.eth",
+      event.metadata.scenes,
+      event.timestamp
+    )
+  })
+
+  it("should take the lock and persist the watermark before disabling any row", async () => {
+    await handleWorldScenesUndeployment(event)
+
+    expect(calls).toEqual(["lock", "watermark", "disable"])
   })
 })
