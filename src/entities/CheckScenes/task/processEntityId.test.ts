@@ -42,6 +42,27 @@ describe("when processing an entity id", () => {
     })
   })
 
+  describe("and a trusted content server follows an untrusted one", () => {
+    let job: typeof sqsMessage
+
+    beforeEach(() => {
+      job = {
+        ...sqsMessage,
+        contentServerUrls: [
+          "https://untrusted.example/contents",
+          "https://peer.decentraland.org/content",
+        ],
+      }
+      getContentEntity.mockResolvedValueOnce(contentEntitySceneGenesisPlaza)
+    })
+
+    it("should fetch the entity from the first allowlisted content server", async () => {
+      await expect(
+        processEntityId(job, allowedContentServerHosts)
+      ).resolves.toEqual(contentEntitySceneGenesisPlaza)
+    })
+  })
+
   describe("and no content server URL is provided", () => {
     it("should reject the message", async () => {
       await expect(
@@ -63,7 +84,7 @@ describe("when processing an entity id", () => {
           },
           allowedContentServerHosts
         )
-      ).rejects.toThrow("contentServerUrls contains an untrusted host")
+      ).rejects.toThrow("contentServerUrls does not contain a trusted host")
     })
 
     it("should classify the failure as non-retryable", async () => {

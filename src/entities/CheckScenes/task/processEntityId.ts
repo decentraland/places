@@ -9,18 +9,10 @@ export function getTrustedContentServerUrl(
   job: DeploymentToSqs,
   allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
 ): string {
-  const rawUrl = job.contentServerUrls?.[0]
-  if (!rawUrl)
+  const contentServerUrls = job.contentServerUrls
+  if (!contentServerUrls?.length)
     throw new InvalidWorldSqsMessageError("contentServerUrls is required")
 
-  let url: URL
-  try {
-    url = new URL(rawUrl)
-  } catch {
-    throw new InvalidWorldSqsMessageError(
-      "contentServerUrls contains an invalid URL"
-    )
-  }
   const allowedHosts = new Set(
     allowedContentServerHosts
       .split(",")
@@ -32,19 +24,30 @@ export function getTrustedContentServerUrl(
       "ALLOWED_CONTENT_SERVER_HOSTS is not configured"
     )
   }
-  if (
-    url.protocol !== "https:" ||
-    url.username ||
-    url.password ||
-    !allowedHosts.has(url.hostname.toLowerCase())
-  ) {
-    throw new InvalidWorldSqsMessageError(
-      "contentServerUrls contains an untrusted host"
-    )
+
+  for (const rawUrl of contentServerUrls) {
+    let url: URL
+    try {
+      url = new URL(rawUrl)
+    } catch {
+      continue
+    }
+    if (
+      url.protocol !== "https:" ||
+      url.username ||
+      url.password ||
+      !allowedHosts.has(url.hostname.toLowerCase())
+    ) {
+      continue
+    }
+    url.hash = ""
+    url.search = ""
+    return url.toString().replace(/\/+$/, "")
   }
-  url.hash = ""
-  url.search = ""
-  return url.toString().replace(/\/+$/, "")
+
+  throw new InvalidWorldSqsMessageError(
+    "contentServerUrls does not contain a trusted host"
+  )
 }
 
 export async function processEntityId(
