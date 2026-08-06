@@ -880,6 +880,55 @@ describe(`updatePlace for world places`, () => {
   })
 })
 
+describe("when updating a place from a deployment", () => {
+  let place: PlaceAttributes
+
+  beforeEach(() => {
+    place = {
+      ...worldPlaceParalax,
+      deployed_at: new Date("2026-08-05T10:00:00.000Z"),
+    }
+    namedRowCount.mockResolvedValue(1)
+  })
+
+  it("should reject the write when the stored place holds a newer revision", async () => {
+    await PlaceModel.updatePlaceFromDeployment(place, placesAttributes)
+
+    const [, sql] = namedRowCount.mock.calls[0]
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toContain(
+      `AND ("deployed_at" IS NULL OR "deployed_at" <= $`
+    )
+  })
+
+  it("should return the number of rows the revision was written to", async () => {
+    expect(
+      await PlaceModel.updatePlaceFromDeployment(place, placesAttributes)
+    ).toBe(1)
+  })
+
+  it("should keep the world guard on enabled or opt_out places", async () => {
+    await PlaceModel.updatePlaceFromDeployment(place, placesAttributes)
+
+    const [, sql] = namedRowCount.mock.calls[0]
+    expect(sql.text.trim().replace(/\s{2,}/gi, " ")).toContain(
+      `world is true AND "id" = $`
+    )
+  })
+})
+
+describe("when updating a place outside a deployment", () => {
+  beforeEach(() => {
+    namedQuery.mockResolvedValue([])
+  })
+
+  it("should not guard the write with the deployment timestamp", async () => {
+    await PlaceModel.updatePlace(placeGenesisPlaza, placesAttributes)
+
+    const [, sql] = namedQuery.mock.calls[0]
+    expect(sql.text).not.toContain(`"deployed_at" <=`)
+  })
+})
+
 describe("when disabling world scenes by deployment identity", () => {
   let eventTimestamp: number
 

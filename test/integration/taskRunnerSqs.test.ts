@@ -1,13 +1,21 @@
 import supertest from "supertest"
 
-import type { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
+import CheckScenesModel from "../../src/entities/CheckScenes/model"
+import { InvalidWorldSqsMessageError } from "../../src/entities/CheckScenes/task/errors"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import {
+  CheckSceneLogs,
+  CheckSceneLogsTypes,
+} from "../../src/entities/CheckScenes/types"
 import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
-import { DisabledReason } from "../../src/entities/Place/types"
+import { DisabledReason, PlaceAttributes } from "../../src/entities/Place/types"
+import PlaceContentRatingModel from "../../src/entities/PlaceContentRating/model"
+import { PlaceContentRatingAttributes } from "../../src/entities/PlaceContentRating/types"
+import { notifyUpdatePlace } from "../../src/entities/Slack/utils"
 import WorldModel from "../../src/entities/World/model"
 import {
   createWorldContentEntityScene,
@@ -16,6 +24,9 @@ import {
 import { createWorldUndeploymentEvent } from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
+
+import type { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
+import type { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 // Mock external HTTP calls
 jest.mock("../../src/entities/CheckScenes/task/processEntityId")
@@ -61,6 +72,34 @@ const mockExtractSceneJsonData = extractSceneJsonData as jest.MockedFunction<
 const mockFetchNameOwner = fetchNameOwner as jest.MockedFunction<
   typeof fetchNameOwner
 >
+
+const notifyUpdatePlaceMock = notifyUpdatePlace as jest.MockedFunction<
+  typeof notifyUpdatePlace
+>
+
+// Distinct deployment revisions used to tell which one a place ended up holding
+const OLDER_ENTITY_ID =
+  "bafkreigmbmwtfptb7uocny5fpnnxl2vvbzxxzbdkzpmneqgbjw2if62f2e"
+const NEWER_ENTITY_ID =
+  "bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+const NEIGHBOUR_ENTITY_ID =
+  "bafkreidxb345bwbdtiuyghqn5dizgxcavwnvgcyw5rzegfn2gp2rgv334e"
+
+function deploymentMessageWithEntityId(entityId: string): DeploymentToSqs {
+  const message = createWorldDeploymentMessage()
+  return { ...message, entity: { ...message.entity, entityId } }
+}
+
+/** Same scene fixture without worldConfiguration, so it is ingested as a Genesis City place. */
+function createGenesisContentEntityScene(options: {
+  title: string
+  base: string
+  parcels: string[]
+}): ContentEntityScene {
+  const scene = createWorldContentEntityScene(options)
+  delete (scene.metadata as { worldConfiguration?: unknown }).worldConfiguration
+  return scene
+}
 
 const app = createTestApp()
 
@@ -381,8 +420,19 @@ describe("taskRunnerSqs integration", () => {
     base?: string
     parcels?: string[]
     optOut?: boolean
+    entityId?: string
+    timestamp?: number
   }): Promise<void> {
-    const job: DeploymentToSqs = createWorldDeploymentMessage()
+    const job: DeploymentToSqs = createWorldDeploymentMessage(
+      options.entityId
+        ? {
+            entity: {
+              ...createWorldDeploymentMessage().entity,
+              entityId: options.entityId,
+            },
+          }
+        : {}
+    )
 
     const scene = createWorldContentEntityScene({
       worldName: options.worldName,
@@ -391,6 +441,10 @@ describe("taskRunnerSqs integration", () => {
       parcels: options.parcels ?? ["0,0"],
       optOut: options.optOut,
     })
+
+    if (options.timestamp !== undefined) {
+      scene.timestamp = options.timestamp
+    }
 
     mockProcessEntityId.mockResolvedValueOnce(scene)
     mockExtractSceneJsonData.mockResolvedValueOnce({
@@ -1111,6 +1165,282 @@ describe("taskRunnerSqs integration", () => {
         expect(response.body.data[0].creator_address).toBeNull()
         expect(response.body.data[0].sdk).toBeNull()
       })
+    })
+  })
+
+  describe("when a deployment declares a scene base outside its authorized pointers", () => {
+    let worldName: string
+    let thrownError: unknown
+
+    beforeEach(async () => {
+      worldName = "forged-base.dcl.eth"
+
+      const scene = createWorldContentEntityScene({
+        worldName,
+        title: "Forged Identity",
+        base: "100,100",
+        parcels: ["0,0"],
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      thrownError = await taskRunnerSqs(createWorldDeploymentMessage()).then(
+        () => null,
+        (error: unknown) => error
+      )
+    })
+
+    it("should reject the deployment as a deterministically invalid message", () => {
+      expect(thrownError).toBeInstanceOf(InvalidWorldSqsMessageError)
+    })
+
+    it("should not create a place for the forged scene identity", async () => {
+      expect(await PlaceModel.findEnabledWorldName(worldName)).toHaveLength(0)
+    })
+  })
+
+  describe("when an older deployment is applied after a newer revision was already stored", () => {
+    let worldName: string
+    let findActiveByWorldIdAndPositions: jest.SpyInstance
+    let olderTimestamp: number
+    let storedPlaceId: string
+
+    beforeEach(async () => {
+      worldName = "revision-race-world.dcl.eth"
+      olderTimestamp = Date.now() - 86_400_000
+
+      await deployWorldScene({
+        worldName,
+        title: "Newer Scene",
+        entityId: NEWER_ENTITY_ID,
+      })
+
+      const [storedPlace] = await PlaceModel.findEnabledWorldName(worldName)
+      storedPlaceId = storedPlace.id
+
+      // Hand the older deployment the snapshot it would have read before the newer revision
+      // committed, so its in-memory stale check passes and only the write guard can stop it.
+      findActiveByWorldIdAndPositions = jest
+        .spyOn(PlaceModel, "findActiveByWorldIdAndPositions")
+        .mockResolvedValueOnce([
+          {
+            ...storedPlace,
+            deployment_id: null,
+            deployed_at: new Date(olderTimestamp - 1000),
+          },
+        ])
+
+      // A different rating so the discarded update would otherwise log a rating change
+      const scene = createWorldContentEntityScene({
+        worldName,
+        title: "Older Scene",
+        contentRating: "T",
+      })
+      scene.timestamp = olderTimestamp
+
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: "0x1234567890abcdef1234567890abcdef12345678",
+        runtimeVersion: "7.0.0",
+      })
+
+      await taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID))
+    })
+
+    afterEach(() => {
+      findActiveByWorldIdAndPositions.mockRestore()
+    })
+
+    it("should keep the newer revision metadata on the place", async () => {
+      const [place] = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(place.title).toBe("Newer Scene")
+    })
+
+    it("should keep the newer deployment id on the place", async () => {
+      const [place] = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(place.deployment_id).toBe(NEWER_ENTITY_ID)
+    })
+
+    it("should not notify the discarded update", () => {
+      expect(notifyUpdatePlaceMock).not.toHaveBeenCalled()
+    })
+
+    it("should log the discarded deployment as avoided", async () => {
+      const logs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: OLDER_ENTITY_ID,
+      })
+
+      expect(logs.map((log) => log.action)).toEqual([CheckSceneLogsTypes.AVOID])
+    })
+
+    it("should not record a content rating change for the discarded update", async () => {
+      const ratings =
+        await PlaceContentRatingModel.find<PlaceContentRatingAttributes>({
+          entity_id: storedPlaceId,
+        })
+
+      expect(ratings.map((rating) => rating.update_rating)).toEqual(["RP"])
+    })
+  })
+
+  describe("when two workers deploy revisions of the same world scene concurrently", () => {
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "concurrent-world.dcl.eth"
+
+      const olderScene = createWorldContentEntityScene({
+        worldName,
+        title: "Older Scene",
+      })
+      olderScene.timestamp = Date.now() - 86_400_000
+
+      const newerScene = createWorldContentEntityScene({
+        worldName,
+        title: "Newer Scene",
+      })
+
+      mockProcessEntityId
+        .mockResolvedValueOnce(olderScene)
+        .mockResolvedValueOnce(newerScene)
+      mockExtractSceneJsonData.mockResolvedValue({
+        creator: "0x1234567890abcdef1234567890abcdef12345678",
+        runtimeVersion: "7.0.0",
+      })
+
+      await Promise.all([
+        taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID)),
+        taskRunnerSqs(deploymentMessageWithEntityId(NEWER_ENTITY_ID)),
+      ])
+    })
+
+    it("should keep a single active place for the world scene", async () => {
+      expect(await PlaceModel.findEnabledWorldName(worldName)).toHaveLength(1)
+    })
+
+    it("should leave the newest revision stored on it", async () => {
+      const [place] = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(place.deployment_id).toBe(NEWER_ENTITY_ID)
+    })
+  })
+
+  describe("when an older genesis city deployment is applied after a newer revision was already stored", () => {
+    let findEnabledByPositions: jest.SpyInstance
+
+    async function deployGenesisScene(options: {
+      title: string
+      base: string
+      parcels: string[]
+      entityId: string
+    }): Promise<void> {
+      mockProcessEntityId.mockResolvedValueOnce(
+        createGenesisContentEntityScene(options)
+      )
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(deploymentMessageWithEntityId(options.entityId))
+    }
+
+    beforeEach(async () => {
+      const olderTimestamp = Date.now() - 86_400_000
+
+      await deployGenesisScene({
+        title: "Newer Genesis Scene",
+        base: "10,10",
+        parcels: ["10,10"],
+        entityId: NEWER_ENTITY_ID,
+      })
+      await deployGenesisScene({
+        title: "Neighbour Scene",
+        base: "11,11",
+        parcels: ["11,11"],
+        entityId: NEIGHBOUR_ENTITY_ID,
+      })
+
+      const [storedPlace] = await PlaceModel.find<PlaceAttributes>({
+        base_position: "10,10",
+      })
+      const [neighbourPlace] = await PlaceModel.find<PlaceAttributes>({
+        base_position: "11,11",
+      })
+
+      // The snapshot the older deployment would have read before the newer revision committed:
+      // it resolves to an update of the stored place that also supersedes the neighbour.
+      findEnabledByPositions = jest
+        .spyOn(PlaceModel, "findEnabledByPositions")
+        .mockResolvedValueOnce([
+          {
+            ...storedPlace,
+            deployment_id: null,
+            deployed_at: new Date(olderTimestamp - 1000),
+          },
+          {
+            ...neighbourPlace,
+            deployment_id: null,
+            deployed_at: new Date(olderTimestamp - 1000),
+          },
+        ])
+
+      const scene = createGenesisContentEntityScene({
+        title: "Older Genesis Scene",
+        base: "10,10",
+        parcels: ["10,10"],
+      })
+      scene.timestamp = olderTimestamp
+
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+
+      await taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID))
+    })
+
+    afterEach(() => {
+      findEnabledByPositions.mockRestore()
+    })
+
+    it("should keep the newer revision on the genesis place", async () => {
+      const [place] = await PlaceModel.find<PlaceAttributes>({
+        base_position: "10,10",
+      })
+
+      expect(place.title).toBe("Newer Genesis Scene")
+    })
+
+    it("should keep the newer deployment id on the genesis place", async () => {
+      const [place] = await PlaceModel.find<PlaceAttributes>({
+        base_position: "10,10",
+      })
+
+      expect(place.deployment_id).toBe(NEWER_ENTITY_ID)
+    })
+
+    it("should not disable the place the discarded deployment claimed to supersede", async () => {
+      const [neighbourPlace] = await PlaceModel.find<PlaceAttributes>({
+        base_position: "11,11",
+      })
+
+      expect(neighbourPlace.disabled).toBe(false)
+    })
+
+    it("should log the discarded deployment as avoided", async () => {
+      const logs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: OLDER_ENTITY_ID,
+      })
+
+      expect(logs.map((log) => log.action)).toEqual([CheckSceneLogsTypes.AVOID])
     })
   })
 })

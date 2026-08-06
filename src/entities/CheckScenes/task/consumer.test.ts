@@ -8,6 +8,7 @@ import {
 } from "./consumer"
 import {
   ContentServerConfigurationError,
+  InvalidSceneBaseError,
   InvalidWorldSqsMessageError,
 } from "./errors"
 import {
@@ -15,8 +16,11 @@ import {
   sqsMessageRoad,
   sqsMessageWithWrongEntityId,
 } from "../../../__data__/sqs"
+import { notifyError } from "../../Slack/utils"
 
 jest.mock("../../Slack/utils", () => ({ notifyError: jest.fn() }))
+
+const notifyErrorMock = notifyError as jest.MockedFunction<typeof notifyError>
 
 describe("when validating a deployment event", () => {
   describe("and the entity id is an IPFSv2 hash", () => {
@@ -127,6 +131,7 @@ describe("when consuming scene messages", () => {
       QueueUrl: "https://sqs.example/queue",
     })
     taskRunner = jest.fn().mockResolvedValue(undefined)
+    notifyErrorMock.mockReset()
   })
 
   describe("and the message body is malformed JSON", () => {
@@ -247,6 +252,36 @@ describe("when consuming scene messages", () => {
         QueueUrl: "https://sqs.example/queue",
         ReceiptHandle: "receipt",
       })
+    })
+  })
+
+  describe("and the task rejects a deployment whose scene identity is not authorized", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "invalid-scene-base",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+      taskRunner.mockRejectedValue(new InvalidSceneBaseError("100,100"))
+    })
+
+    it("should acknowledge the message instead of retrying forever", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(deleteMessage).toHaveBeenCalledWith({
+        QueueUrl: "https://sqs.example/queue",
+        ReceiptHandle: "receipt",
+      })
+    })
+
+    it("should not notify the deterministic failure to Slack", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(notifyErrorMock).not.toHaveBeenCalled()
     })
   })
 

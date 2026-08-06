@@ -640,14 +640,15 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("insert_place", sql)
   }
 
-  static updatePlace = (
+  private static buildUpdatePlaceQuery(
     place: Partial<PlaceAttributes>,
-    attributes: Array<keyof PlaceAttributes>
-  ) => {
+    attributes: Array<keyof PlaceAttributes>,
+    rejectOlderDeployment = false
+  ): SQLStatement {
     const keys = unique(diff(attributes, ["id", "created_at"])) as Array<
       keyof PlaceAttributes
     >
-    const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
+    return SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
     )} WHERE ${conditional(
@@ -657,9 +658,35 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     ${conditional(
       !!place.world,
       SQL`world is true AND "id" = ${place.id} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
+    )}
+    ${conditional(
+      rejectOlderDeployment,
+      SQL`AND ("deployed_at" IS NULL OR "deployed_at" <= ${place.deployed_at})`
     )}`
+  }
 
-    return this.namedQuery("update_place", sql)
+  static updatePlace = (
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) => {
+    return this.namedQuery(
+      "update_place",
+      this.buildUpdatePlaceQuery(place, attributes)
+    )
+  }
+
+  /**
+   * Store a new deployment revision on an existing place, rejecting the write when the stored row
+   * already holds a newer revision. Returns the number of updated rows: 0 means the write was stale.
+   */
+  static async updatePlaceFromDeployment(
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ): Promise<number> {
+    return this.namedRowCount(
+      "update_place_from_deployment",
+      this.buildUpdatePlaceQuery(place, attributes, true)
+    )
   }
 
   static overrideCategories(placeId: string, newCategories: string[]) {

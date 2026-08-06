@@ -109,6 +109,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     let placesToProcess: ProcessEntitySceneResult | null = null
 
     if (worldConfiguration && worldName) {
+      // Serialize deployments for this world so overlap resolution can't interleave
+      await WorldModel.lockWorldForDeployment(worldName)
+
       // Determine if opt-out is set
       const isOptOut =
         !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
@@ -242,17 +245,6 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       })
     }
 
-    if (!placesToProcess) {
-      await CheckScenesModel.createOne({
-        entity_id: job.entity.entityId,
-        content_server_url: contentServerUrl,
-        base_position: contentEntityScene.metadata.scene!.base,
-        positions: contentEntityScene.metadata.scene!.parcels,
-        action: CheckSceneLogsTypes.AVOID,
-        deploy_at: new Date(contentEntityScene.timestamp),
-      })
-    }
-
     if (placesToProcess?.new) {
       await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
       await Promise.all([
@@ -274,23 +266,43 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     }
 
     if (placesToProcess?.update) {
-      await PlaceModel.updatePlace(placesToProcess.update, placesAttributes)
-      await Promise.all([
-        !contentEntityScene.metadata.worldConfiguration &&
-          PlacePositionModel.syncBasePosition(placesToProcess.update),
-        overridePlaceCategories(
-          placesToProcess.update.id,
-          contentEntityScene.metadata.tags || []
-        ),
-        CheckScenesModel.createOne({
-          entity_id: job.entity.entityId,
-          content_server_url: contentServerUrl,
-          base_position: contentEntityScene.metadata.scene!.base,
-          positions: contentEntityScene.metadata.scene!.parcels,
-          action: CheckSceneLogsTypes.UPDATE,
-          deploy_at: new Date(contentEntityScene.timestamp),
-        }),
-      ])
+      const updatedPlaces = await PlaceModel.updatePlaceFromDeployment(
+        placesToProcess.update,
+        placesAttributes
+      )
+
+      // No row matched: the stored place already holds a newer revision, discard this one
+      if (updatedPlaces === 0) {
+        placesToProcess = null
+      } else {
+        await Promise.all([
+          !contentEntityScene.metadata.worldConfiguration &&
+            PlacePositionModel.syncBasePosition(placesToProcess.update),
+          overridePlaceCategories(
+            placesToProcess.update.id,
+            contentEntityScene.metadata.tags || []
+          ),
+          CheckScenesModel.createOne({
+            entity_id: job.entity.entityId,
+            content_server_url: contentServerUrl,
+            base_position: contentEntityScene.metadata.scene!.base,
+            positions: contentEntityScene.metadata.scene!.parcels,
+            action: CheckSceneLogsTypes.UPDATE,
+            deploy_at: new Date(contentEntityScene.timestamp),
+          }),
+        ])
+      }
+    }
+
+    if (!placesToProcess) {
+      await CheckScenesModel.createOne({
+        entity_id: job.entity.entityId,
+        content_server_url: contentServerUrl,
+        base_position: contentEntityScene.metadata.scene!.base,
+        positions: contentEntityScene.metadata.scene!.parcels,
+        action: CheckSceneLogsTypes.AVOID,
+        deploy_at: new Date(contentEntityScene.timestamp),
+      })
     }
 
     await Promise.all([

@@ -6,6 +6,7 @@ import {
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { InvalidSceneBaseError } from "./errors"
 import getContentRating, {
   isDowngradingRating,
   isUpgradingRating,
@@ -19,13 +20,6 @@ import {
 import { PlaceContentRatingAttributes } from "../../PlaceContentRating/types"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
-
-export class InvalidSceneBaseError extends Error {
-  constructor(base: string | undefined) {
-    super(`Scene base '${base || ""}' must be included in the entity pointers.`)
-    this.name = "InvalidSceneBaseError"
-  }
-}
 
 export function assertSceneBaseIsAuthorized(
   contentEntityScene: ContentEntityScene

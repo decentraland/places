@@ -1,8 +1,8 @@
 import { SQLStatement } from "decentraland-gatsby/dist/entities/Database/utils"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { InvalidSceneBaseError, InvalidWorldSqsMessageError } from "./errors"
 import {
-  InvalidSceneBaseError,
   assertSceneBaseIsAuthorized,
   createPlaceFromContentEntityScene,
   processContentEntityScene,
@@ -43,6 +43,12 @@ describe("when asserting that the scene base is authorized", () => {
     it("should reject the scene with a typed error", () => {
       expect(() => assertSceneBaseIsAuthorized(contentEntityScene)).toThrow(
         InvalidSceneBaseError
+      )
+    })
+
+    it("should reject the scene as a non-retryable invalid SQS message", () => {
+      expect(() => assertSceneBaseIsAuthorized(contentEntityScene)).toThrow(
+        InvalidWorldSqsMessageError
       )
     })
   })

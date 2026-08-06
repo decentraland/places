@@ -33,6 +33,9 @@ import {
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
 
+/** Advisory-lock class id, keeps world deployment locks from colliding with other lock users. */
+const WORLD_DEPLOYMENT_LOCK_NAMESPACE = 8471
+
 export default class WorldModel extends Model<WorldAttributes> {
   static tableName = "worlds"
 
@@ -442,6 +445,15 @@ export default class WorldModel extends Model<WorldAttributes> {
       created_at: now,
       updated_at: now,
     }
+  }
+
+  /**
+   * Take the per-world deployment lock for the current transaction so concurrent workers cannot
+   * interleave overlap resolution for the same world. Released on COMMIT/ROLLBACK.
+   */
+  static async lockWorldForDeployment(worldName: string): Promise<void> {
+    const sql = SQL`SELECT pg_advisory_xact_lock(${WORLD_DEPLOYMENT_LOCK_NAMESPACE}::int, hashtext(${worldName.toLowerCase()}))`
+    await this.namedQuery("lock_world_for_deployment", sql)
   }
 
   /**
