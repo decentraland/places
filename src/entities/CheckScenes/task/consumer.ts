@@ -105,8 +105,35 @@ export interface TaskQueueMessage {
   id: string
 }
 
+type TaskExecutionResult = {
+  result: unknown
+  message: TaskQueueMessage
+}
+
+type MessageProcessingOutcome =
+  | { kind: "processed"; taskResult: TaskExecutionResult }
+  | { kind: "discarded" }
+  | { kind: "retry"; taskResult: TaskExecutionResult }
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error)
+}
+
+function errorContext(body: WorldSqsMessage): string {
+  if (isDeploymentEvent(body)) {
+    return `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
+  }
+  if (isSettingsChangedEvent(body)) {
+    return `WorldSettingsChanged: ${body.key}`
+  }
+  if (isScenesUndeploymentEvent(body)) {
+    return `WorldScenesUndeployment: ${
+      body.key
+    } - scenes: ${body.metadata.scenes
+      .map((scene) => scene.entityId)
+      .join(", ")}`
+  }
+  return `WorldUndeployment: ${body.metadata.worldName}`
 }
 
 export class SQSConsumer {
@@ -154,96 +181,96 @@ export class SQSConsumer {
     return published.Successful!.map((it) => it.Id!)
   }
 
+  private async processMessage(
+    sqsMessage: AWS.SQS.Message,
+    taskRunner: (job: WorldSqsMessage) => Promise<unknown>
+  ): Promise<MessageProcessingOutcome> {
+    const message: TaskQueueMessage = { id: sqsMessage.MessageId || "" }
+    const loggerExtended = logger.extend({
+      id: message.id,
+      QueueUrl: this.params.QueueUrl,
+      ReceiptHandle: sqsMessage.ReceiptHandle || "",
+    })
+
+    let body: WorldSqsMessage | null
+    try {
+      body = parseWorldSqsMessage(JSON.parse(sqsMessage.Body || ""))
+    } catch (error: unknown) {
+      loggerExtended.error(
+        `Discarding malformed SQS message JSON: ${errorMessage(error)}`
+      )
+      return { kind: "discarded" }
+    }
+
+    if (!body) {
+      loggerExtended.error(`Discarding invalid SQS message`)
+      return { kind: "discarded" }
+    }
+
+    try {
+      loggerExtended.log(`Processing job`)
+      const result = await taskRunner(body)
+      loggerExtended.log(`Processed job`)
+      return { kind: "processed", taskResult: { result, message } }
+    } catch (error: unknown) {
+      if (error instanceof InvalidWorldSqsMessageError) {
+        loggerExtended.error(
+          `Discarding deterministically invalid SQS message: ${error.message}`
+        )
+        return { kind: "discarded" }
+      }
+
+      notifyError([errorMessage(error), errorContext(body)])
+      loggerExtended.error(errorMessage(error))
+      return {
+        kind: "retry",
+        taskResult: { result: undefined, message },
+      }
+    }
+  }
+
+  private async acknowledgeMessage(sqsMessage: AWS.SQS.Message): Promise<void> {
+    const loggerExtended = logger.extend({
+      id: sqsMessage.MessageId || "",
+      QueueUrl: this.params.QueueUrl,
+      ReceiptHandle: sqsMessage.ReceiptHandle || "",
+    })
+
+    if (!sqsMessage.ReceiptHandle) {
+      loggerExtended.error(`Cannot delete SQS message without a receipt handle`)
+      return
+    }
+
+    loggerExtended.log(`Deleting message`)
+    try {
+      await this.sqs
+        .deleteMessage({
+          QueueUrl: this.params.QueueUrl,
+          ReceiptHandle: sqsMessage.ReceiptHandle,
+        })
+        .promise()
+    } catch (error: unknown) {
+      loggerExtended.error(`Error deleting SQS message: ${errorMessage(error)}`)
+    }
+  }
+
   async consume(taskRunner: (job: WorldSqsMessage) => Promise<unknown>) {
     try {
       const response = await this.sqs.receiveMessage(this.params).promise()
-      const finalReturn = []
+      const finalReturn: TaskExecutionResult[] = []
       if (
         typeof response !== "string" &&
         response?.Messages &&
         response.Messages.length > 0
       ) {
-        for (const it of response.Messages) {
-          const message: TaskQueueMessage = { id: it.MessageId! }
-          let body: WorldSqsMessage | null = null
-          try {
-            body = parseWorldSqsMessage(JSON.parse(it.Body || ""))
-          } catch (error: unknown) {
-            logger.error(`Invalid SQS message JSON: ${errorMessage(error)}`)
+        for (const sqsMessage of response.Messages) {
+          const outcome = await this.processMessage(sqsMessage, taskRunner)
+
+          if (outcome.kind !== "discarded") {
+            finalReturn.push(outcome.taskResult)
           }
-          const loggerExtended = logger.extend({
-            id: message.id,
-            QueueUrl: this.params.QueueUrl,
-            ReceiptHandle: it.ReceiptHandle!,
-          })
-
-          if (!body) {
-            loggerExtended.error(`Deleting invalid SQS message`)
-            if (it.ReceiptHandle) {
-              await this.sqs
-                .deleteMessage({
-                  QueueUrl: this.params.QueueUrl,
-                  ReceiptHandle: it.ReceiptHandle,
-                })
-                .promise()
-                .catch(() => loggerExtended.error(`Error deleting message`))
-            }
-            continue
-          }
-
-          try {
-            loggerExtended.log(`Processing job`)
-
-            const result = await taskRunner(body)
-
-            loggerExtended.log(`Processed job`)
-            finalReturn.push({ result, message })
-
-            loggerExtended.log(`Deleting message`)
-            await this.sqs
-              .deleteMessage({
-                QueueUrl: this.params.QueueUrl,
-                ReceiptHandle: it.ReceiptHandle!,
-              })
-              .promise()
-              .catch(() => loggerExtended.error(`Error deleting message`))
-          } catch (error: unknown) {
-            if (error instanceof InvalidWorldSqsMessageError) {
-              loggerExtended.error(
-                `Deleting deterministically invalid SQS message: ${error.message}`
-              )
-              if (it.ReceiptHandle) {
-                await this.sqs
-                  .deleteMessage({
-                    QueueUrl: this.params.QueueUrl,
-                    ReceiptHandle: it.ReceiptHandle,
-                  })
-                  .promise()
-                  .catch(() => loggerExtended.error(`Error deleting message`))
-              }
-              continue
-            }
-
-            // Build error message based on event type
-            let errorContext = ""
-            if (isDeploymentEvent(body)) {
-              errorContext = `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
-            } else if (isSettingsChangedEvent(body)) {
-              errorContext = `WorldSettingsChanged: ${body.key}`
-            } else if (isScenesUndeploymentEvent(body)) {
-              errorContext = `WorldScenesUndeployment: ${
-                body.key
-              } - scenes: ${body.metadata.scenes
-                .map((s) => s.entityId)
-                .join(", ")}`
-            } else if (isWorldUndeploymentEvent(body)) {
-              errorContext = `WorldUndeployment: ${body.metadata.worldName}`
-            }
-
-            notifyError([errorMessage(error), errorContext])
-            loggerExtended.error(errorMessage(error))
-
-            finalReturn.push({ result: undefined, message })
+          if (outcome.kind !== "retry") {
+            await this.acknowledgeMessage(sqsMessage)
           }
         }
       }

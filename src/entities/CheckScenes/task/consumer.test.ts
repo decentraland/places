@@ -126,6 +126,29 @@ describe("when consuming scene messages", () => {
     })
   })
 
+  describe("and the message body does not match a supported event schema", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "invalid-schema",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify({ unexpected: "message" }),
+          },
+        ],
+      })
+    })
+
+    it("should delete the invalid message", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(deleteMessage).toHaveBeenCalledWith({
+        QueueUrl: "https://sqs.example/queue",
+        ReceiptHandle: "receipt",
+      })
+    })
+  })
+
   describe("and the validated task succeeds", () => {
     beforeEach(() => {
       receivePromise.mockResolvedValue({
@@ -196,6 +219,91 @@ describe("when consuming scene messages", () => {
         QueueUrl: "https://sqs.example/queue",
         ReceiptHandle: "receipt",
       })
+    })
+  })
+
+  describe("and an acknowledged message has no receipt handle", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "missing-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+    })
+
+    it("should not attempt to delete the message", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(deleteMessage).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("and deleting an acknowledged message fails", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "first",
+            ReceiptHandle: "first-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+          {
+            MessageId: "second",
+            ReceiptHandle: "second-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+      deletePromise
+        .mockRejectedValueOnce(new Error("temporary delete failure"))
+        .mockResolvedValueOnce({})
+    })
+
+    it("should continue processing the remaining batch messages", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(taskRunner).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe("and a batch has processed, retryable, and invalid messages", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "processed",
+            ReceiptHandle: "processed-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+          {
+            MessageId: "retry",
+            ReceiptHandle: "retry-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+          {
+            MessageId: "invalid",
+            ReceiptHandle: "invalid-receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+      taskRunner
+        .mockResolvedValueOnce(undefined)
+        .mockRejectedValueOnce(new Error("temporary failure"))
+        .mockRejectedValueOnce(
+          new InvalidWorldSqsMessageError("deterministically invalid")
+        )
+    })
+
+    it("should acknowledge only processed and deterministically invalid messages", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(
+        deleteMessage.mock.calls.map(([request]) => request.ReceiptHandle)
+      ).toEqual(["processed-receipt", "invalid-receipt"])
     })
   })
 })
