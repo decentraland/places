@@ -1,4 +1,5 @@
-import { AuthChain } from "@dcl/schemas/dist/misc/auth-chain"
+import { IPFSv1, IPFSv2 } from "@dcl/schemas/dist/misc"
+import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { Events } from "@dcl/schemas/dist/platform/events/base"
 import {
   WorldScenesUndeploymentEvent,
@@ -12,13 +13,7 @@ import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import { InvalidWorldSqsMessageError } from "./errors"
 import { notifyError } from "../../Slack/utils"
 
-export declare type DeploymentToSqs = {
-  entity: {
-    entityId: string
-    authChain: AuthChain
-  }
-  contentServerUrls?: string[]
-}
+export { DeploymentToSqs }
 
 /** Union type for all possible SQS message types */
 export type WorldSqsMessage =
@@ -30,8 +25,6 @@ export type WorldSqsMessage =
 const validateWorldSettingsChanged = generateLazyValidator(
   WorldSettingsChangedEvent.schema
 )
-const ENTITY_ID_PATTERN = /^(?:Qm[a-zA-Z0-9]{44}|ba[a-zA-Z0-9]{57})$/
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value)
 }
@@ -40,12 +33,11 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 export function isDeploymentEvent(
   message: unknown
 ): message is DeploymentToSqs {
-  if (!isRecord(message) || !isRecord(message.entity)) return false
+  if (!DeploymentToSqs.validate(message)) return false
   const contentServerUrls = message.contentServerUrls
   return (
-    typeof message.entity.entityId === "string" &&
-    ENTITY_ID_PATTERN.test(message.entity.entityId) &&
-    AuthChain.validate(message.entity.authChain) &&
+    (IPFSv1.validate(message.entity.entityId) ||
+      IPFSv2.validate(message.entity.entityId)) &&
     Array.isArray(contentServerUrls) &&
     contentServerUrls.length > 0 &&
     contentServerUrls.length <= 10 &&

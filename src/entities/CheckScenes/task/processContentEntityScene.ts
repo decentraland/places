@@ -27,17 +27,6 @@ export class InvalidSceneBaseError extends Error {
   }
 }
 
-const MAX_SCENE_PARCELS = 1000
-
-function isBoundedParcelList(values: unknown): values is string[] {
-  return (
-    Array.isArray(values) &&
-    values.length > 0 &&
-    values.length <= MAX_SCENE_PARCELS &&
-    values.every((value) => typeof value === "string" && value.length <= 32)
-  )
-}
-
 export function assertSceneBaseIsAuthorized(
   contentEntityScene: ContentEntityScene
 ): void {
@@ -45,13 +34,8 @@ export function assertSceneBaseIsAuthorized(
   const scene = contentEntityScene.metadata?.scene
 
   if (
-    !scene ||
-    typeof scene.base !== "string" ||
-    scene.base.length > 32 ||
-    !isBoundedParcelList(scene.parcels) ||
-    !isBoundedParcelList(pointers) ||
     !SceneParcels.validate(scene) ||
-    !SceneParcels.validate({ base: pointers[0], parcels: pointers }) ||
+    !SceneParcels.validate({ base: pointers?.[0], parcels: pointers }) ||
     scene.parcels.length !== pointers.length ||
     scene.parcels.some((parcel) => !pointers.includes(parcel))
   ) {

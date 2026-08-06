@@ -58,6 +58,20 @@ describe("when asserting that the scene base is authorized", () => {
       )
     })
   })
+
+  describe("and the schema-valid scene has more than 1000 parcels", () => {
+    beforeEach(() => {
+      const parcels = Array.from({ length: 1001 }, (_, index) => `${index},0`)
+      contentEntityScene.pointers = parcels
+      contentEntityScene.metadata.scene = { base: "0,0", parcels }
+    })
+
+    it("should defer parcel limits to the deployment producer", () => {
+      expect(() =>
+        assertSceneBaseIsAuthorized(contentEntityScene)
+      ).not.toThrow()
+    })
+  })
 })
 
 describe("createPlaceFromContentEntityScene", () => {

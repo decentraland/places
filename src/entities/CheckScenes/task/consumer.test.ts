@@ -3,12 +3,37 @@ import { SQS } from "aws-sdk"
 import {
   SQSConsumer,
   WorldSqsMessage,
+  isDeploymentEvent,
   isScenesUndeploymentEvent,
 } from "./consumer"
 import { InvalidWorldSqsMessageError } from "./errors"
-import { sqsMessage } from "../../../__data__/sqs"
+import {
+  sqsMessage,
+  sqsMessageRoad,
+  sqsMessageWithWrongEntityId,
+} from "../../../__data__/sqs"
 
 jest.mock("../../Slack/utils", () => ({ notifyError: jest.fn() }))
+
+describe("when validating a deployment event", () => {
+  describe("and the entity id is an IPFSv2 hash", () => {
+    it("should accept the event", () => {
+      expect(isDeploymentEvent(sqsMessage)).toBe(true)
+    })
+  })
+
+  describe("and the entity id is an IPFSv1 hash", () => {
+    it("should accept the event", () => {
+      expect(isDeploymentEvent(sqsMessageRoad)).toBe(true)
+    })
+  })
+
+  describe("and the entity id is not an IPFS hash", () => {
+    it("should reject the event", () => {
+      expect(isDeploymentEvent(sqsMessageWithWrongEntityId)).toBe(false)
+    })
+  })
+})
 
 describe("when validating a world scenes undeployment event", () => {
   const event = {
