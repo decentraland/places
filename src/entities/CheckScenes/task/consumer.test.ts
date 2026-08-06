@@ -6,7 +6,10 @@ import {
   isDeploymentEvent,
   isScenesUndeploymentEvent,
 } from "./consumer"
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
 import {
   sqsMessage,
   sqsMessageRoad,
@@ -244,6 +247,31 @@ describe("when consuming scene messages", () => {
         QueueUrl: "https://sqs.example/queue",
         ReceiptHandle: "receipt",
       })
+    })
+  })
+
+  describe("and the task fails because the content-server allowlist is missing", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "missing-configuration",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify(sqsMessage),
+          },
+        ],
+      })
+      taskRunner.mockRejectedValue(
+        new ContentServerConfigurationError(
+          "ALLOWED_CONTENT_SERVER_HOSTS is not configured"
+        )
+      )
+    })
+
+    it("should leave the message unacknowledged for retry", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(deleteMessage).not.toHaveBeenCalled()
     })
   })
 

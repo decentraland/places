@@ -1,9 +1,16 @@
+import { hashV0, hashV1 } from "@dcl/hashing"
+import { IPFSv1 } from "@dcl/schemas/dist/misc"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
-import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { DeploymentToSqs } from "./consumer"
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
+import { drainResponse } from "../../../utils/fetch"
+
+import type { DeploymentToSqs } from "./consumer"
 
 export function getTrustedContentServerUrl(
   job: DeploymentToSqs,
@@ -20,7 +27,7 @@ export function getTrustedContentServerUrl(
       .filter(Boolean)
   )
   if (allowedHosts.size === 0) {
-    throw new InvalidWorldSqsMessageError(
+    throw new ContentServerConfigurationError(
       "ALLOWED_CONTENT_SERVER_HOSTS is not configured"
     )
   }
@@ -59,15 +66,48 @@ export async function processEntityId(
     allowedContentServerHosts
   )
 
-  const contentDeployment = await ContentServer.getInstanceFrom(
-    contentServerUrl
-  ).getContentEntity(job.entity.entityId)
-
-  if (!contentDeployment) {
+  const entityId = job.entity.entityId
+  const response = await fetch(
+    `${contentServerUrl}/contents/${encodeURIComponent(entityId)}`
+  )
+  if (!response.ok) {
+    await drainResponse(response)
     throw new Error(
-      `No content deployment found with entity id ${job.entity.entityId}`
+      `Unable to fetch content deployment ${entityId}: ${response.status} ${response.statusText}`
     )
   }
+
+  const rawEntity = new Uint8Array(await response.arrayBuffer())
+  const actualEntityId = IPFSv1.validate(entityId)
+    ? await hashV0(rawEntity)
+    : await hashV1(rawEntity)
+
+  if (actualEntityId !== entityId) {
+    throw new InvalidWorldSqsMessageError(
+      `Content deployment hash does not match requested entity id ${entityId}`
+    )
+  }
+
+  let parsedDeployment: unknown
+  try {
+    parsedDeployment = JSON.parse(Buffer.from(rawEntity).toString("utf8"))
+  } catch {
+    throw new InvalidWorldSqsMessageError(
+      `Content deployment ${entityId} is not valid JSON`
+    )
+  }
+
+  if (
+    typeof parsedDeployment !== "object" ||
+    parsedDeployment === null ||
+    Array.isArray(parsedDeployment)
+  ) {
+    throw new InvalidWorldSqsMessageError(
+      `Content deployment ${entityId} is not a JSON object`
+    )
+  }
+
+  const contentDeployment = parsedDeployment as ContentEntityScene
 
   if (contentDeployment.type !== EntityType.SCENE) {
     return null

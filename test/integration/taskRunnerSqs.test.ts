@@ -1,6 +1,6 @@
 import supertest from "supertest"
 
-import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
+import type { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
@@ -137,6 +137,49 @@ describe("taskRunnerSqs integration", () => {
       expect(response.body.data.title).toBe("New World Scene")
       expect(response.body.data.world).toBe(true)
       expect(response.body.data.world_name).toBe("newworld.dcl.eth")
+    })
+  })
+
+  describe("when persisting a new world place fails", () => {
+    let insertPlaceSpy: jest.SpyInstance
+    let taskError: Error | null
+    let world: Awaited<ReturnType<typeof WorldModel.findByWorldName>>
+
+    beforeEach(async () => {
+      const job = createWorldDeploymentMessage()
+      const contentEntityScene = createWorldContentEntityScene({
+        worldName: "rollback-world.dcl.eth",
+        title: "Rollback World",
+      })
+
+      mockProcessEntityId.mockResolvedValueOnce(contentEntityScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      insertPlaceSpy = jest
+        .spyOn(PlaceModel, "insertPlace")
+        .mockRejectedValueOnce(new Error("place persistence failed"))
+
+      taskError = null
+      try {
+        await taskRunnerSqs(job)
+      } catch (error: unknown) {
+        taskError = error as Error
+      }
+      world = await WorldModel.findByWorldName("rollback-world.dcl.eth")
+    })
+
+    afterEach(() => {
+      insertPlaceSpy.mockRestore()
+    })
+
+    it("should surface the persistence failure", () => {
+      expect(taskError).toEqual(new Error("place persistence failed"))
+    })
+
+    it("should roll back the world created in the same transaction", () => {
+      expect(world).toBeNull()
     })
   })
 

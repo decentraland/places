@@ -9,6 +9,7 @@
     "npm": "8.* || 9.*"
   },
   "dependencies": {
+    "@dcl/hashing": "^3.0.4",
     "@dcl/schemas": "^27.0.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "aws-sdk": "^2.1002.0",
