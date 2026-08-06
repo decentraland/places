@@ -198,6 +198,12 @@ WHERE world IS TRUE AND disabled IS FALSE AND deployment_id IS NULL;
 Keep the guarded base-parcel fallback enabled and monitor its warning until this
 count reaches zero, then remove the fallback in a later release.
 
+Undeployment watermarks live in `world_undeployments` and
+`world_scene_undeployments`. Both start empty, so deployments processed before
+this release are unaffected: only undeployments recorded from this release
+onwards can supersede a later-delivered deployment. No backfill is required, and
+no reconciliation job needs to run.
+
 The `docker-compose` command starts:
 
 - **PostgreSQL** database on port 5432

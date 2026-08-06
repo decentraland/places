@@ -4,10 +4,12 @@ import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import { handleWorldUndeployment } from "./handleWorldUndeployment"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
+import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
 describe("when handling a world undeployment event", () => {
   let disableByWorldId: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
+  let recordWatermark: jest.SpyInstance
   let calls: string[]
   let event: WorldUndeploymentEvent
 
@@ -17,6 +19,11 @@ describe("when handling a world undeployment event", () => {
       .spyOn(WorldModel, "lockWorldForDeployment")
       .mockImplementation(async () => {
         calls.push("lock")
+      })
+    recordWatermark = jest
+      .spyOn(WorldUndeploymentModel, "recordWatermark")
+      .mockImplementation(async () => {
+        calls.push("watermark")
       })
     disableByWorldId = jest
       .spyOn(PlaceModel, "disableByWorldId")
@@ -53,9 +60,18 @@ describe("when handling a world undeployment event", () => {
     expect(lockWorldForDeployment).toHaveBeenCalledWith("example.dcl.eth")
   })
 
-  it("should take the lock before disabling any row", async () => {
+  it("should record the undeployment watermark with the event timestamp", async () => {
     await handleWorldUndeployment(event)
 
-    expect(calls).toEqual(["lock", "disable"])
+    expect(recordWatermark).toHaveBeenCalledWith(
+      "example.dcl.eth",
+      event.timestamp
+    )
+  })
+
+  it("should take the lock and persist the watermark before disabling any row", async () => {
+    await handleWorldUndeployment(event)
+
+    expect(calls).toEqual(["lock", "watermark", "disable"])
   })
 })

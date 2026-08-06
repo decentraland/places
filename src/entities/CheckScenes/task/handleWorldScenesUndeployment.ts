@@ -5,6 +5,7 @@ import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
@@ -53,6 +54,14 @@ export async function handleWorldScenesUndeployment(
     // commit an enabled place this event would have disabled
     const result = await withDatabaseTransaction(async () => {
       await WorldModel.lockWorldForDeployment(worldName)
+
+      // Durable watermark: the undeployment can arrive before the deployment it refers to, so
+      // record it whether or not a place row matched
+      await WorldSceneUndeploymentModel.recordScenes(
+        worldName,
+        scenes,
+        event.timestamp
+      )
 
       return PlaceModel.disableByWorldIdAndDeployments(
         worldName,

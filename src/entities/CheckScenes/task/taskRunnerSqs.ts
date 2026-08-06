@@ -26,6 +26,8 @@ import {
   notifyUpdatePlace,
 } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
+import WorldUndeploymentModel from "../../WorldUndeployment/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
 import {
@@ -172,7 +174,21 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         contentEntityScene,
         overlappingPlaces
       )
-      if (newerPlace) {
+
+      // Undeployment watermarks outlive the disabled rows, so a deployment delivered after the
+      // undeployment that supersedes it cannot recreate the scene
+      const deployedAt = new Date(contentEntityScene.timestamp)
+      const [worldUndeployment, sceneUndeployment] = await Promise.all([
+        WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
+        WorldSceneUndeploymentModel.findSupersedingUndeployment(
+          worldId,
+          job.entity.entityId,
+          contentEntityScene.metadata.scene!.base,
+          deployedAt
+        ),
+      ])
+
+      if (newerPlace || worldUndeployment || sceneUndeployment) {
         placesToProcess = null
       } else if (overlappingPlaces.length === 1) {
         // Single overlap → update that place (same scene, possibly reshaped)
