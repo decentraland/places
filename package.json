@@ -55,7 +55,7 @@
   "license": "MIT",
   "scripts": {
     "build": "tsc -p .",
-    "start": "DOTENV_CONFIG_PATH=.env.development nodemon --watch src -e ts,json --exec 'ts-node -r dotenv/config' src/server",
+    "start": "nodemon --watch src -e ts,json --exec 'ts-node -r ./src/loadEnv' src/server",
     "format": "prettier --write '**/*.{ts,js,json,md,yml,yaml}'",
     "lint": "eslint --ext .ts,.js ./src",
     "lint:fix": "npm run lint -- --fix",
@@ -67,10 +67,10 @@
     "update:roads": "ts-node bin/roads.ts",
     "update:places": "ts-node bin/placeMigrations.ts",
     "send:snapshot-to-files": "ts-node bin/snapshotToFiles.ts",
-    "send:files-to-sqs": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/filesToSqs.ts",
+    "send:files-to-sqs": "ts-node -r ./src/loadEnv bin/filesToSqs.ts",
     "send:snapshot-to-sqs": "npm run send:snapshot-to-files && npm run send:files-to-sqs",
-    "test:sqs-message": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/testSqsMessage.ts",
-    "rebuild:worlds:dev": "DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
+    "test:sqs-message": "ts-node -r ./src/loadEnv bin/testSqsMessage.ts",
+    "rebuild:worlds:dev": "ts-node -r ./src/loadEnv bin/rebuildWorldPlaces.ts",
     "rebuild:worlds:prd": "DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts",
     "smoke-test": "ts-node --transpile-only bin/smokeTest.ts"
   },

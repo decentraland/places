@@ -1,17 +1,14 @@
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import ContentServer from "decentraland-gatsby/dist/utils/api/ContentServer"
+import env from "decentraland-gatsby/dist/utils/env"
 
 import { DeploymentToSqs } from "./consumer"
 import { InvalidWorldSqsMessageError } from "./errors"
 
-const DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS = [
-  "peer.decentraland.org",
-  "peer.decentraland.zone",
-  "worlds-content-server.decentraland.org",
-  "worlds-content-server.decentraland.zone",
-]
-
-export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
+export function getTrustedContentServerUrl(
+  job: DeploymentToSqs,
+  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+): string {
   const rawUrl = job.contentServerUrls?.[0]
   if (!rawUrl)
     throw new InvalidWorldSqsMessageError("contentServerUrls is required")
@@ -25,14 +22,16 @@ export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
     )
   }
   const allowedHosts = new Set(
-    (
-      process.env.ALLOWED_CONTENT_SERVER_HOSTS ||
-      DEFAULT_ALLOWED_CONTENT_SERVER_HOSTS.join(",")
-    )
+    allowedContentServerHosts
       .split(",")
       .map((host) => host.trim().toLowerCase())
       .filter(Boolean)
   )
+  if (allowedHosts.size === 0) {
+    throw new InvalidWorldSqsMessageError(
+      "ALLOWED_CONTENT_SERVER_HOSTS is not configured"
+    )
+  }
   if (
     url.protocol !== "https:" ||
     url.username ||
@@ -48,8 +47,14 @@ export function getTrustedContentServerUrl(job: DeploymentToSqs): string {
   return url.toString().replace(/\/+$/, "")
 }
 
-export async function processEntityId(job: DeploymentToSqs) {
-  const contentServerUrl = getTrustedContentServerUrl(job)
+export async function processEntityId(
+  job: DeploymentToSqs,
+  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+) {
+  const contentServerUrl = getTrustedContentServerUrl(
+    job,
+    allowedContentServerHosts
+  )
 
   const contentDeployment = await ContentServer.getInstanceFrom(
     contentServerUrl
