@@ -50,6 +50,10 @@ import { DisabledReason, PlaceAttributes } from "../src/entities/Place/types"
 import PlaceCategories from "../src/entities/PlaceCategories/model"
 import PlaceContentRatingModel from "../src/entities/PlaceContentRating/model"
 import WorldModel from "../src/entities/World/model"
+import {
+  REBUILD_PLACE_ATTRIBUTES,
+  createWorldPlaceOptions,
+} from "./rebuildWorldPlacesOptions"
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -88,30 +92,6 @@ interface SceneResult {
 
 const DELAY_BETWEEN_WORLDS_MS = 100
 const WORLDS_PAGE_SIZE = 100
-
-const placesAttributes: Array<keyof PlaceAttributes> = [
-  "title",
-  "description",
-  "image",
-  "owner",
-  "positions",
-  "base_position",
-  "contact_name",
-  "contact_email",
-  "content_rating",
-  "disabled",
-  "disabled_at",
-  "disabled_reason",
-  "created_at",
-  "updated_at",
-  "deployed_at",
-  "world",
-  "world_name",
-  "world_id",
-  "textsearch",
-  "creator_address",
-  "sdk",
-]
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────
 
@@ -279,6 +259,7 @@ const DIFF_FIELDS: Array<keyof PlaceAttributes> = [
   "updated_at",
   "world_name",
   "world_id",
+  "deployment_id",
 ]
 
 function getPlaceDiffs(
@@ -422,12 +403,13 @@ async function processWorldScene(
     contentEntityScene.pointers
   )
 
-  const options = {
-    url: worldsContentServerUrl,
-    creator: sceneJsonData.creator,
-    sdk: sceneJsonData.runtimeVersion,
-    worldId,
-  }
+  const options = createWorldPlaceOptions(
+    scene.entityId,
+    worldsContentServerUrl,
+    sceneJsonData.creator,
+    sceneJsonData.runtimeVersion,
+    worldId
+  )
 
   // Build placesToProcess using the same logic as taskRunnerSqs
   let placesToProcess: ProcessEntitySceneResult | null = null
@@ -540,7 +522,7 @@ async function processWorldScene(
       logger.log(
         `    Created place: "${place.title}" at ${place.base_position} (id: ${place.id})`
       )
-      await PlaceModel.insertPlace(place, placesAttributes)
+      await PlaceModel.insertPlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
         place.id,
         contentEntityScene.metadata.tags || [],
@@ -573,7 +555,7 @@ async function processWorldScene(
       logger.log(
         `    Updated place: "${place.title}" at ${place.base_position} (id: ${place.id})`
       )
-      await PlaceModel.updatePlace(place, placesAttributes)
+      await PlaceModel.updatePlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
         place.id,
         contentEntityScene.metadata.tags || [],
@@ -789,8 +771,9 @@ async function main() {
   }
 }
 
-// Run the script
-main().catch((error) => {
-  logger.error("Script failed:", error)
-  process.exit(1)
-})
+if (require.main === module) {
+  main().catch((error) => {
+    logger.error("Script failed:", error)
+    process.exit(1)
+  })
+}

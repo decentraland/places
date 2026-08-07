@@ -1,10 +1,12 @@
 import { randomUUID } from "crypto"
 
+import { SceneParcels } from "@dcl/schemas"
 import {
   ContentEntityScene,
   SceneContentRating,
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { InvalidSceneBaseError } from "./errors"
 import getContentRating, {
   isDowngradingRating,
   isUpgradingRating,
@@ -18,6 +20,22 @@ import {
 import { PlaceContentRatingAttributes } from "../../PlaceContentRating/types"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import { findNewDeployedPlace, findSamePlace } from "../utils"
+
+export function assertSceneBaseIsAuthorized(
+  contentEntityScene: ContentEntityScene
+): void {
+  const pointers = contentEntityScene.pointers
+  const scene = contentEntityScene.metadata?.scene
+
+  if (
+    !SceneParcels.validate(scene) ||
+    !SceneParcels.validate({ base: pointers?.[0], parcels: pointers }) ||
+    scene.parcels.length !== pointers.length ||
+    scene.parcels.some((parcel) => !pointers.includes(parcel))
+  ) {
+    throw new InvalidSceneBaseError(contentEntityScene.metadata?.scene?.base)
+  }
+}
 
 export type ProcessEntitySceneResult =
   | {
@@ -36,7 +54,12 @@ export type ProcessEntitySceneResult =
 export function processContentEntityScene(
   contentEntityScene: ContentEntityScene,
   places: PlaceAttributes[],
-  options: { url?: string; creator?: string | null; sdk?: string | null } = {}
+  options: {
+    url?: string
+    creator?: string | null
+    sdk?: string | null
+    deploymentId?: string | null
+  } = {}
 ): ProcessEntitySceneResult | null {
   const samePlace = findSamePlace(contentEntityScene, places)
   const newDeployedPlace = findNewDeployedPlace(contentEntityScene, places)
@@ -98,6 +121,7 @@ export function createPlaceFromContentEntityScene(
     creator?: string | null
     sdk?: string | null
     worldId?: string | null
+    deploymentId?: string | null
   } = {}
 ) {
   const now = new Date()
@@ -158,6 +182,7 @@ export function createPlaceFromContentEntityScene(
     world_name: worldName,
     world_id: options.worldId || null,
     ...data,
+    deployment_id: options.deploymentId || null,
     title: title ? title.slice(0, 50) : "Untitled",
     // Strip markup from the creator-authored description before storing so
     // TMP tags like `<link="decentraland://…">` / `smb://` / `file://`

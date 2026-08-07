@@ -1,4 +1,3 @@
-import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   conditional,
@@ -10,6 +9,7 @@ import {
   CategoryCountTargetOptions,
   CategoryWithPlaceCount,
 } from "./types"
+import { Model } from "../Database/model"
 import PlaceModel from "../Place/model"
 import PlaceCategories from "../PlaceCategories/model"
 

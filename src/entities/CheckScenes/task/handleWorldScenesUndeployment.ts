@@ -1,13 +1,20 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
+import WorldModel from "../../World/model"
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
- * Disables the place records corresponding to the undeployed scenes,
- * identified by world name and each scene's base parcel.
+ *
+ * A place id is a local catalog UUID that may be preserved across redeployments so favorites,
+ * moderation and other product state remain attached to the logical place. The worlds content
+ * server neither owns nor knows that UUID. Its entity id instead identifies the exact immutable
+ * deployment that produced the event. Matching the stored deployment id prevents a delayed
+ * undeployment for an older entity from disabling a place that already represents a newer one.
+ * Legacy rows without deployment ids use the guarded base-position fallback below.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -34,6 +41,7 @@ export async function handleWorldScenesUndeployment(
 
   try {
     const basePositions = scenes.map((scene) => scene.baseParcel)
+    const deploymentIds = scenes.map((scene) => scene.entityId)
 
     loggerExtended.log(
       `Processing scene undeployment for world: ${worldName}, parcels: ${basePositions.join(
@@ -41,25 +49,39 @@ export async function handleWorldScenesUndeployment(
       )}`
     )
 
-    await PlaceModel.disableByWorldIdAndPositions(
-      worldName,
-      basePositions,
-      event.timestamp
-    )
+    // Same lock the deployment path takes, so an in-flight deployment for this world cannot
+    // commit an enabled place this event would have disabled
+    const result = await withDatabaseTransaction(async () => {
+      await WorldModel.lockWorldForDeployment(worldName)
+
+      return PlaceModel.disableByWorldIdAndDeployments(
+        worldName,
+        deploymentIds,
+        basePositions,
+        event.timestamp
+      )
+    })
+
+    if (result.legacyBaseMatches > 0) {
+      loggerExtended.log(
+        `WARNING: disabled ${result.legacyBaseMatches} legacy place records without deployment ids; replay world deployments to reconcile them`
+      )
+    }
 
     loggerExtended.log(
       `Disabled place records for world: ${worldName} at positions: ${basePositions.join(
         ", "
       )}`
     )
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error)
     loggerExtended.error(
-      `Error handling WorldScenesUndeploymentEvent for ${worldName}: ${error.message}`
+      `Error handling WorldScenesUndeploymentEvent for ${worldName}: ${message}`
     )
     notifyError([
       `Error handling WorldScenesUndeploymentEvent`,
       `World: ${worldName}`,
-      error.message,
+      message,
     ])
     throw error
   }

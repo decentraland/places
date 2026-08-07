@@ -1,4 +1,3 @@
-import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   join,
@@ -7,6 +6,7 @@ import {
 } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { PlacePositionAttributes } from "./types"
+import { Model } from "../Database/model"
 import { PlaceAttributes } from "../Place/types"
 
 export default class PlacePositionModel extends Model<PlacePositionAttributes> {

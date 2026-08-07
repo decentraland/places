@@ -1,8 +1,10 @@
 import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
+import WorldModel from "../../World/model"
 
 /**
  * Handles WorldUndeploymentEvent from the worlds content server.
@@ -28,7 +30,13 @@ export async function handleWorldUndeployment(
   try {
     loggerExtended.log(`Processing world undeployment for world: ${worldName}`)
 
-    await PlaceModel.disableByWorldId(worldName, event.timestamp)
+    // Same lock the deployment path takes, so an in-flight deployment for this world cannot
+    // commit an enabled place this event would have disabled
+    await withDatabaseTransaction(async () => {
+      await WorldModel.lockWorldForDeployment(worldName)
+
+      await PlaceModel.disableByWorldId(worldName, event.timestamp)
+    })
 
     loggerExtended.log(`Disabled all place records for world: ${worldName}`)
   } catch (error: any) {

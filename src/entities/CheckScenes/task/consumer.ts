@@ -1,22 +1,19 @@
-import { AuthChain } from "@dcl/schemas/dist/misc/auth-chain"
+import { IPFSv1, IPFSv2 } from "@dcl/schemas/dist/misc"
+import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { Events } from "@dcl/schemas/dist/platform/events/base"
 import {
   WorldScenesUndeploymentEvent,
   WorldSettingsChangedEvent,
   WorldUndeploymentEvent,
 } from "@dcl/schemas/dist/platform/events/world"
+import { generateLazyValidator } from "@dcl/schemas/dist/validation"
 import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { notifyError } from "../../Slack/utils"
 
-export declare type DeploymentToSqs = {
-  entity: {
-    entityId: string
-    authChain: AuthChain
-  }
-  contentServerUrls?: string[]
-}
+export { DeploymentToSqs }
 
 /** Union type for all possible SQS message types */
 export type WorldSqsMessage =
@@ -25,51 +22,110 @@ export type WorldSqsMessage =
   | WorldScenesUndeploymentEvent
   | WorldUndeploymentEvent
 
+const validateWorldSettingsChanged = generateLazyValidator(
+  WorldSettingsChangedEvent.schema
+)
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
 /** Type guard to check if message is a deployment event */
 export function isDeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is DeploymentToSqs {
-  return "entity" in message && "entityId" in message.entity
+  if (!DeploymentToSqs.validate(message)) return false
+  const contentServerUrls = message.contentServerUrls
+  return (
+    (IPFSv1.validate(message.entity.entityId) ||
+      IPFSv2.validate(message.entity.entityId)) &&
+    Array.isArray(contentServerUrls) &&
+    contentServerUrls.length > 0 &&
+    contentServerUrls.length <= 10 &&
+    new Set(contentServerUrls).size === contentServerUrls.length &&
+    contentServerUrls.every((url) => {
+      if (typeof url !== "string" || url.length > 2048) return false
+      try {
+        const parsed = new URL(url)
+        return parsed.protocol === "https:"
+      } catch {
+        return false
+      }
+    })
+  )
 }
 
 /** Type guard to check if message is a settings changed event */
 export function isSettingsChangedEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldSettingsChangedEvent {
   return (
-    "type" in message &&
+    isRecord(message) &&
     message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_SETTINGS_CHANGED
+    message.subType === Events.SubType.Worlds.WORLD_SETTINGS_CHANGED &&
+    validateWorldSettingsChanged(message)
   )
 }
 
 /** Type guard to check if message is a scene undeployment event */
 export function isScenesUndeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldScenesUndeploymentEvent {
-  return (
-    "type" in message &&
-    message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT
-  )
+  return isRecord(message) && WorldScenesUndeploymentEvent.validate(message)
 }
 
 /** Type guard to check if message is a full world undeployment event */
 export function isWorldUndeploymentEvent(
-  message: WorldSqsMessage
+  message: unknown
 ): message is WorldUndeploymentEvent {
   return (
-    "type" in message &&
+    isRecord(message) &&
     message.type === Events.Type.WORLD &&
-    "subType" in message &&
-    message.subType === Events.SubType.Worlds.WORLD_UNDEPLOYMENT
+    message.subType === Events.SubType.Worlds.WORLD_UNDEPLOYMENT &&
+    WorldUndeploymentEvent.validate(message)
   )
+}
+
+export function parseWorldSqsMessage(value: unknown): WorldSqsMessage | null {
+  if (isDeploymentEvent(value)) return value
+  if (isSettingsChangedEvent(value)) return value
+  if (isScenesUndeploymentEvent(value)) return value
+  if (isWorldUndeploymentEvent(value)) return value
+  return null
 }
 
 export interface TaskQueueMessage {
   id: string
+}
+
+type TaskExecutionResult = {
+  result: unknown
+  message: TaskQueueMessage
+}
+
+type MessageProcessingOutcome =
+  | { kind: "processed"; taskResult: TaskExecutionResult }
+  | { kind: "discarded" }
+  | { kind: "retry"; taskResult: TaskExecutionResult }
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error)
+}
+
+function errorContext(body: WorldSqsMessage): string {
+  if (isDeploymentEvent(body)) {
+    return `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
+  }
+  if (isSettingsChangedEvent(body)) {
+    return `WorldSettingsChanged: ${body.key}`
+  }
+  if (isScenesUndeploymentEvent(body)) {
+    return `WorldScenesUndeployment: ${
+      body.key
+    } - scenes: ${body.metadata.scenes
+      .map((scene) => scene.entityId)
+      .join(", ")}`
+  }
+  return `WorldUndeployment: ${body.metadata.worldName}`
 }
 
 export class SQSConsumer {
@@ -117,70 +173,102 @@ export class SQSConsumer {
     return published.Successful!.map((it) => it.Id!)
   }
 
-  async consume(taskRunner: (job: WorldSqsMessage) => Promise<any>) {
+  private async processMessage(
+    sqsMessage: AWS.SQS.Message,
+    taskRunner: (job: WorldSqsMessage) => Promise<unknown>
+  ): Promise<MessageProcessingOutcome> {
+    const message: TaskQueueMessage = { id: sqsMessage.MessageId || "" }
+    const loggerExtended = logger.extend({
+      id: message.id,
+      QueueUrl: this.params.QueueUrl,
+      ReceiptHandle: sqsMessage.ReceiptHandle || "",
+    })
+
+    let body: WorldSqsMessage | null
+    try {
+      body = parseWorldSqsMessage(JSON.parse(sqsMessage.Body || ""))
+    } catch (error: unknown) {
+      loggerExtended.error(
+        `Discarding malformed SQS message JSON: ${errorMessage(error)}`
+      )
+      return { kind: "discarded" }
+    }
+
+    if (!body) {
+      loggerExtended.error(`Discarding invalid SQS message`)
+      return { kind: "discarded" }
+    }
+
+    try {
+      loggerExtended.log(`Processing job`)
+      const result = await taskRunner(body)
+      loggerExtended.log(`Processed job`)
+      return { kind: "processed", taskResult: { result, message } }
+    } catch (error: unknown) {
+      if (error instanceof InvalidWorldSqsMessageError) {
+        loggerExtended.error(
+          `Discarding deterministically invalid SQS message: ${error.message}`
+        )
+        return { kind: "discarded" }
+      }
+
+      notifyError([errorMessage(error), errorContext(body)])
+      loggerExtended.error(errorMessage(error))
+      return {
+        kind: "retry",
+        taskResult: { result: undefined, message },
+      }
+    }
+  }
+
+  private async acknowledgeMessage(sqsMessage: AWS.SQS.Message): Promise<void> {
+    const loggerExtended = logger.extend({
+      id: sqsMessage.MessageId || "",
+      QueueUrl: this.params.QueueUrl,
+      ReceiptHandle: sqsMessage.ReceiptHandle || "",
+    })
+
+    if (!sqsMessage.ReceiptHandle) {
+      loggerExtended.error(`Cannot delete SQS message without a receipt handle`)
+      return
+    }
+
+    loggerExtended.log(`Deleting message`)
+    try {
+      await this.sqs
+        .deleteMessage({
+          QueueUrl: this.params.QueueUrl,
+          ReceiptHandle: sqsMessage.ReceiptHandle,
+        })
+        .promise()
+    } catch (error: unknown) {
+      loggerExtended.error(`Error deleting SQS message: ${errorMessage(error)}`)
+    }
+  }
+
+  async consume(taskRunner: (job: WorldSqsMessage) => Promise<unknown>) {
     try {
       const response = await this.sqs.receiveMessage(this.params).promise()
-      const finalReturn = []
+      const finalReturn: TaskExecutionResult[] = []
       if (
         typeof response !== "string" &&
         response?.Messages &&
         response.Messages.length > 0
       ) {
-        for (const it of response.Messages) {
-          const message: TaskQueueMessage = { id: it.MessageId! }
-          const body = JSON.parse(it.Body!) as WorldSqsMessage
-          const loggerExtended = logger.extend({
-            id: message.id,
-            message: body,
-            QueueUrl: this.params.QueueUrl,
-            ReceiptHandle: it.ReceiptHandle!,
-          })
+        for (const sqsMessage of response.Messages) {
+          const outcome = await this.processMessage(sqsMessage, taskRunner)
 
-          try {
-            loggerExtended.log(`Processing job`)
-
-            const result = await taskRunner(body)
-
-            loggerExtended.log(`Processed job`)
-            finalReturn.push({ result, message })
-          } catch (err: any) {
-            // Build error message based on event type
-            let errorContext = ""
-            if (isDeploymentEvent(body)) {
-              errorContext = `<${body.contentServerUrls}/contents/${body.entity.entityId}|${body.entity.entityId}>`
-            } else if (isSettingsChangedEvent(body)) {
-              errorContext = `WorldSettingsChanged: ${body.key}`
-            } else if (isScenesUndeploymentEvent(body)) {
-              errorContext = `WorldScenesUndeployment: ${
-                body.key
-              } - scenes: ${body.metadata.scenes
-                .map((s) => s.entityId)
-                .join(", ")}`
-            } else if (isWorldUndeploymentEvent(body)) {
-              errorContext = `WorldUndeployment: ${body.metadata.worldName}`
-            }
-
-            notifyError([err.toString(), errorContext])
-            loggerExtended.error(err.toString())
-
-            finalReturn.push({ result: undefined, message })
-          } finally {
-            loggerExtended.log(`Deleting message`)
-            await this.sqs
-              .deleteMessage({
-                QueueUrl: this.params.QueueUrl,
-                ReceiptHandle: it.ReceiptHandle!,
-              })
-              .promise()
-              .catch(() => {
-                loggerExtended.error(`Error deleting message`)
-              })
+          if (outcome.kind !== "discarded") {
+            finalReturn.push(outcome.taskResult)
+          }
+          if (outcome.kind !== "retry") {
+            await this.acknowledgeMessage(sqsMessage)
           }
         }
       }
       return finalReturn
-    } catch (err: any) {
-      logger.error(err)
+    } catch (error: unknown) {
+      logger.error(errorMessage(error))
     }
   }
 }

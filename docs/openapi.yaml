@@ -16,7 +16,7 @@ info:
 
     Endpoints requiring authentication are marked with a 🔒 icon.
 
-    
+
     ### Response Format
 
     All responses follow a consistent structure:
@@ -250,7 +250,7 @@ paths:
           required: false
           schema:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
+            pattern: "^0x[a-fA-F0-9]{40}$"
           example: "0x1234567890123456789012345678901234567890"
         - name: sdk
           in: query
@@ -265,12 +265,12 @@ paths:
             type: string
           example: "7"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved places
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceListResponse'
+                $ref: "#/components/schemas/PlaceListResponse"
               example:
                 ok: true
                 total: 150
@@ -293,10 +293,10 @@ paths:
                     user_like: false
                     user_dislike: false
                     user_favorite: false
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
     post:
       tags:
@@ -371,14 +371,14 @@ paths:
               - "550e8400-e29b-41d4-a716-446655440000"
               - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved places
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/PlaceListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /places/{place_id}:
     get:
@@ -410,12 +410,12 @@ paths:
             type: boolean
             default: false
       responses:
-        '200':
+        "200":
           description: Place found and returned successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceResponse'
+                $ref: "#/components/schemas/PlaceResponse"
               example:
                 ok: true
                 data:
@@ -425,8 +425,8 @@ paths:
                   base_position: "0,0"
                   user_count: 42
                   categories: ["social", "event"]
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/{place_id}/categories:
     get:
@@ -448,7 +448,7 @@ paths:
             type: string
             format: uuid
       responses:
-        '200':
+        "200":
           description: Categories retrieved successfully
           content:
             application/json:
@@ -460,7 +460,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Category'
+                      $ref: "#/components/schemas/Category"
               example:
                 ok: true
                 data:
@@ -469,10 +469,10 @@ paths:
                     count: 45
                     i18n:
                       en: "Art Gallery"
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /places/{place_id}/rating:
     put:
@@ -506,12 +506,12 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRatingBody'
+              $ref: "#/components/schemas/UpdateRatingBody"
             example:
               content_rating: "T"
               comment: "Contains mild fantasy violence"
       responses:
-        '200':
+        "200":
           description: Rating updated successfully
           content:
             application/json:
@@ -520,16 +520,16 @@ paths:
                 properties:
                   ok:
                     type: boolean
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
           description: Forbidden - user not authorized to update ratings
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
-        '404':
-          $ref: '#/components/responses/NotFound'
+                $ref: "#/components/schemas/Error"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/{place_id}/ranking:
     put:
@@ -571,7 +571,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateRankingBody'
+              $ref: "#/components/schemas/UpdateRankingBody"
             examples:
               setRanking:
                 summary: Set ranking value
@@ -582,38 +582,38 @@ paths:
                 value:
                   ranking: null
       responses:
-        '200':
+        "200":
           description: Ranking updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceResponse'
-        '401':
+                $ref: "#/components/schemas/PlaceResponse"
+        "401":
           description: Unauthorized - missing or invalid token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 ok: false
                 error: "Authorization required"
-        '403':
+        "403":
           description: Forbidden - invalid authorization token
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 ok: false
                 error: "Invalid authorization token"
-        '404':
-          $ref: '#/components/responses/NotFound'
-        '500':
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "500":
           description: Internal server error - service authentication not configured
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 ok: false
                 error: "Service authentication not configured"
@@ -649,7 +649,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateHighlightBody'
+              $ref: "#/components/schemas/UpdateHighlightBody"
             examples:
               highlight:
                 summary: Add highlight
@@ -660,25 +660,25 @@ paths:
                 value:
                   highlighted: false
       responses:
-        '200':
+        "200":
           description: Highlight status updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceResponse'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
+                $ref: "#/components/schemas/PlaceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
           description: Forbidden - user is not an admin
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Error'
+                $ref: "#/components/schemas/Error"
               example:
                 ok: false
                 error: "Only admin allowed to update highlight"
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/{place_id}/favorites:
     patch:
@@ -707,7 +707,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateFavoriteBody'
+              $ref: "#/components/schemas/UpdateFavoriteBody"
             examples:
               addFavorite:
                 summary: Add to favorites
@@ -718,21 +718,21 @@ paths:
                 value:
                   favorites: false
       responses:
-        '200':
+        "200":
           description: Favorite status updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/FavoriteResponse'
+                $ref: "#/components/schemas/FavoriteResponse"
               example:
                 ok: true
                 data:
                   favorites: 13
                   user_favorite: true
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/{place_id}/likes:
     patch:
@@ -767,7 +767,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/UpdateLikeBody'
+              $ref: "#/components/schemas/UpdateLikeBody"
             examples:
               like:
                 summary: Like (upvote)
@@ -782,12 +782,12 @@ paths:
                 value:
                   like: null
       responses:
-        '200':
+        "200":
           description: Vote updated successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/LikeResponse'
+                $ref: "#/components/schemas/LikeResponse"
               example:
                 ok: true
                 data:
@@ -795,10 +795,10 @@ paths:
                   dislikes: 3
                   user_like: true
                   user_dislike: false
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/status:
     post:
@@ -830,7 +830,7 @@ paths:
               - "550e8400-e29b-41d4-a716-446655440000"
               - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       responses:
-        '200':
+        "200":
           description: Status retrieved successfully
           content:
             application/json:
@@ -842,7 +842,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/PlaceStatus'
+                      $ref: "#/components/schemas/PlaceStatus"
                   total:
                     type: integer
                     description: Number of places found
@@ -856,8 +856,8 @@ paths:
                     disabled: false
                     world: false
                     world_name: null
-        '400':
-          $ref: '#/components/responses/BadRequest'
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /worlds:
     get:
@@ -965,16 +965,16 @@ paths:
           required: false
           schema:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
+            pattern: "^0x[a-fA-F0-9]{40}$"
       responses:
-        '200':
+        "200":
           description: Worlds retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/WorldListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/WorldListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /destinations:
     get:
@@ -987,10 +987,10 @@ paths:
         - BearerAuth: []
       description: |
         Retrieve a paginated list of both places and worlds with comprehensive filtering options.
-        
+
         **Authentication:** Optional. When authenticated, enables `only_favorites` filtering and populates
         `user_like`, `user_dislike`, and `user_favorite` fields in responses.
-        
+
         **Key Features:**
         - Combines Genesis City places and Decentraland Worlds in a single response
         - **Highlighted destinations are always returned first**, followed by **ranking value** (descending), then by the specified order_by
@@ -999,7 +999,7 @@ paths:
         - Filter by SDK version with prefix matching (e.g., sdk=7 matches 7.x.x; null values treated as SDK6)
         - Include connected user wallet addresses (with_connected_users)
         - Include live event status (with_live_events)
-        
+
         **Common Use Cases:**
         - Get all destinations: `?limit=50`
         - Filter worlds by exact name: `?world_names=mycoolworld.dcl.eth`
@@ -1154,14 +1154,14 @@ paths:
           required: false
           schema:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
+            pattern: "^0x[a-fA-F0-9]{40}$"
         - name: creator_address
           in: query
           description: Filter by creator's Ethereum address
           required: false
           schema:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
+            pattern: "^0x[a-fA-F0-9]{40}$"
         - name: only_worlds
           in: query
           description: Show only worlds (excludes places)
@@ -1186,14 +1186,14 @@ paths:
           schema:
             type: string
       responses:
-        '200':
+        "200":
           description: Destinations retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/PlaceListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
     post:
       tags:
@@ -1327,14 +1327,14 @@ paths:
               - "550e8400-e29b-41d4-a716-446655440000"
               - "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
       responses:
-        '200':
+        "200":
           description: Successfully retrieved destinations
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PlaceListResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
+                $ref: "#/components/schemas/PlaceListResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
 
   /world_names:
     get:
@@ -1353,7 +1353,7 @@ paths:
         **Performance:** Lightweight endpoint, returns only names as strings.
       operationId: getWorldNames
       responses:
-        '200':
+        "200":
           description: World names retrieved successfully
           content:
             application/json:
@@ -1373,10 +1373,10 @@ paths:
                   - "art-gallery-world"
                   - "concert-venue"
                   - "gaming-arena"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /map:
     get:
@@ -1466,12 +1466,12 @@ paths:
           style: form
           explode: true
       responses:
-        '200':
+        "200":
           description: Map data retrieved successfully
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MapPlaceResponse'
+                $ref: "#/components/schemas/MapPlaceResponse"
               example:
                 ok: true
                 total: 2
@@ -1486,10 +1486,10 @@ paths:
                     title: "Genesis Plaza"
                     base_position: "0,0"
                     user_count: 42
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /map/places:
     get:
@@ -1587,7 +1587,7 @@ paths:
           style: form
           explode: true
       responses:
-        '200':
+        "200":
           description: Combined places and worlds retrieved
           content:
             application/json:
@@ -1599,15 +1599,15 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Place'
+                      $ref: "#/components/schemas/Place"
                     description: Array containing both places and worlds
                   total:
                     type: integer
                     description: Total count of places and worlds
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /categories:
     get:
@@ -1645,7 +1645,7 @@ paths:
             default: all
           example: places
       responses:
-        '200':
+        "200":
           description: Categories retrieved successfully
           content:
             application/json:
@@ -1657,7 +1657,7 @@ paths:
                   data:
                     type: array
                     items:
-                      $ref: '#/components/schemas/Category'
+                      $ref: "#/components/schemas/Category"
               example:
                 ok: true
                 data:
@@ -1676,10 +1676,10 @@ paths:
                     count: 89
                     i18n:
                       en: "Game"
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "500":
+          $ref: "#/components/responses/InternalServerError"
 
   /report:
     post:
@@ -1702,7 +1702,7 @@ paths:
         **Security:** The signed URL is temporary and scoped to the authenticated user.
       operationId: getReportSignedUrl
       responses:
-        '200':
+        "200":
           description: Signed URL generated successfully
           content:
             application/json:
@@ -1722,8 +1722,8 @@ paths:
                 ok: true
                 data:
                   signed_url: "https://s3.amazonaws.com/bucket/path?signature=..."
-        '401':
-          $ref: '#/components/responses/Unauthorized'
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
 components:
   securitySchemes:
@@ -1909,6 +1909,11 @@ components:
           format: date-time
           description: Last scene deployment timestamp
           example: "2023-06-20T14:45:00Z"
+        deployment_id:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Immutable content entity identifier for this indexed deployment. Null only for legacy rows awaiting reconciliation.
         user_like:
           type: boolean
           description: True if authenticated user liked this place
@@ -1941,7 +1946,7 @@ components:
           type: array
           description: Per-realm user distribution (only if with_realms_detail=true)
           items:
-            $ref: '#/components/schemas/Realm'
+            $ref: "#/components/schemas/Realm"
         sdk:
           type: string
           description: SDK/runtime version (e.g., "7" for SDK7)
@@ -1954,8 +1959,12 @@ components:
             Only included when `with_connected_users=true` query parameter is set.
           items:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
-          example: ["0x1234567890abcdef1234567890abcdef12345678", "0xabcdef1234567890abcdef1234567890abcdef12"]
+            pattern: "^0x[a-fA-F0-9]{40}$"
+          example:
+            [
+              "0x1234567890abcdef1234567890abcdef12345678",
+              "0xabcdef1234567890abcdef1234567890abcdef12",
+            ]
 
     World:
       type: object
@@ -2069,7 +2078,7 @@ components:
           type: string
           maxLength: 42
           description: The creator's wallet address
-          pattern: '^0x[a-fA-F0-9]{40}$'
+          pattern: "^0x[a-fA-F0-9]{40}$"
           nullable: true
         sdk:
           type: string
@@ -2083,7 +2092,7 @@ components:
             Only included when `with_connected_users=true` query parameter is set.
           items:
             type: string
-            pattern: '^0x[a-fA-F0-9]{40}$'
+            pattern: "^0x[a-fA-F0-9]{40}$"
 
     Realm:
       type: object
@@ -2248,7 +2257,7 @@ components:
           type: boolean
           example: true
         data:
-          $ref: '#/components/schemas/Place'
+          $ref: "#/components/schemas/Place"
 
     PlaceListResponse:
       type: object
@@ -2259,7 +2268,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/Place'
+            $ref: "#/components/schemas/Place"
         total:
           type: integer
           description: Total number of places matching the query (for pagination)
@@ -2274,7 +2283,7 @@ components:
         data:
           type: array
           items:
-            $ref: '#/components/schemas/World'
+            $ref: "#/components/schemas/World"
         total:
           type: integer
           description: Total number of worlds matching the query
@@ -2291,7 +2300,7 @@ components:
           type: object
           description: Object with coordinates as keys and place data as values
           additionalProperties:
-            $ref: '#/components/schemas/Place'
+            $ref: "#/components/schemas/Place"
           example:
             "-23,-96":
               id: "550e8400-e29b-41d4-a716-446655440000"
@@ -2370,7 +2379,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           examples:
             invalidParams:
               summary: Invalid query parameters
@@ -2388,7 +2397,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             ok: false
             error: "Authentication required"
@@ -2398,7 +2407,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             ok: false
             error: "Place not found"
@@ -2408,7 +2417,7 @@ components:
       content:
         application/json:
           schema:
-            $ref: '#/components/schemas/Error'
+            $ref: "#/components/schemas/Error"
           example:
             ok: false
             error: "Internal server error"

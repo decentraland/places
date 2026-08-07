@@ -1,4 +1,3 @@
-import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   SQLStatement,
@@ -31,6 +30,7 @@ import {
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
+import { Model } from "../Database/model"
 import {
   type AggregateCoordinatePlaceAttributes,
   DEFAULT_MAX_LIMIT as DEFAULT_MAP_MAX_LIMIT,
@@ -534,28 +534,52 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable place records matching a world and specific base positions
-   * that were deployed before the given event timestamp. This prevents
-   * stale undeployment events from disabling places that were re-deployed
-   * after the event was emitted.
+   * Disable world-scene places by immutable deployment id. Rows created before deployment ids
+   * were stored may fall back to base position only when that position identifies exactly one
+   * active row, preventing a forged or duplicated base from disabling another scene.
    */
-  static async disableByWorldIdAndPositions(
+  static async disableByWorldIdAndDeployments(
     worldId: string,
+    deploymentIds: string[],
     basePositions: string[],
     eventTimestamp: number
-  ): Promise<void> {
+  ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
     const now = new Date()
     const sql = SQL`
-      UPDATE ${table(this)}
+      UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
-      WHERE "world_id" = ${normalizedWorldId}
-        AND "base_position" = ANY(${basePositions})
-        AND "deployed_at" < ${eventDate}
-        AND "disabled" IS FALSE
+      WHERE target."world_id" = ${normalizedWorldId}
+        AND target."deployed_at" < ${eventDate}
+        AND target."disabled" IS FALSE
+        AND (
+          target."deployment_id" = ANY(${deploymentIds})
+          OR (
+            target."deployment_id" IS NULL
+            AND target."base_position" = ANY(${basePositions})
+            AND NOT EXISTS (
+              SELECT 1
+              FROM ${table(this)} conflicting
+              WHERE conflicting."world_id" = target."world_id"
+                AND conflicting."base_position" = target."base_position"
+                AND conflicting."disabled" IS FALSE
+                AND conflicting."id" <> target."id"
+            )
+          )
+        )
+      RETURNING target."deployment_id"
     `
-    await this.namedQuery("disable_by_world_id_and_positions", sql)
+    const disabled = await this.namedQuery<{ deployment_id: string | null }>(
+      "disable_by_world_id_and_deployments",
+      sql
+    )
+    return {
+      deploymentIdMatches: disabled.filter((row) => row.deployment_id !== null)
+        .length,
+      legacyBaseMatches: disabled.filter((row) => row.deployment_id === null)
+        .length,
+    }
   }
 
   static async updateFavorites(placeId: string) {
@@ -616,30 +640,53 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     return this.namedQuery("insert_place", sql)
   }
 
-  static updatePlace = (
+  private static buildUpdatePlaceQuery(
     place: Partial<PlaceAttributes>,
-    attributes: Array<keyof PlaceAttributes>
-  ) => {
+    attributes: Array<keyof PlaceAttributes>,
+    rejectOlderDeployment = false
+  ): SQLStatement {
     const keys = unique(diff(attributes, ["id", "created_at"])) as Array<
       keyof PlaceAttributes
     >
-    const sql = SQL`UPDATE ${table(this)} SET ${setColumns(
+    return SQL`UPDATE ${table(this)} SET ${setColumns(
       keys,
       place
     )} WHERE ${conditional(
       !place.world,
-      SQL`disabled is false AND world is false AND "base_position" IN (
-        SELECT DISTINCT("base_position")
-        FROM ${table(PlacePositionModel)} "pp"
-        WHERE "pp"."position" = ${place.base_position}
-      )`
+      SQL`disabled is false AND world is false AND "id" = ${place.id}`
     )}
     ${conditional(
       !!place.world,
       SQL`world is true AND "id" = ${place.id} AND ("disabled" IS FALSE OR "disabled_reason" = 'opt_out')`
+    )}
+    ${conditional(
+      rejectOlderDeployment,
+      SQL`AND ("deployed_at" IS NULL OR "deployed_at" <= ${place.deployed_at})`
     )}`
+  }
 
-    return this.namedQuery("update_place", sql)
+  static updatePlace = (
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ) => {
+    return this.namedQuery(
+      "update_place",
+      this.buildUpdatePlaceQuery(place, attributes)
+    )
+  }
+
+  /**
+   * Store a new deployment revision on an existing place, rejecting the write when the stored row
+   * already holds a newer revision. Returns the number of updated rows: 0 means the write was stale.
+   */
+  static async updatePlaceFromDeployment(
+    place: Partial<PlaceAttributes>,
+    attributes: Array<keyof PlaceAttributes>
+  ): Promise<number> {
+    return this.namedRowCount(
+      "update_place_from_deployment",
+      this.buildUpdatePlaceQuery(place, attributes, true)
+    )
   }
 
   static overrideCategories(placeId: string, newCategories: string[]) {

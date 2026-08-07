@@ -16,6 +16,7 @@ export const placeRoad: PlaceAttributes = {
   world: false,
   world_name: null,
   world_id: null,
+  deployment_id: null,
   title: "Road at -89,11 (open road OpenRoad_C)",
   description: null,
   owner: null,
