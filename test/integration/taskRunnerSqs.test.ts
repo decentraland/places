@@ -1,10 +1,17 @@
+import { randomUUID } from "crypto"
+
+import database from "decentraland-gatsby/dist/entities/Database/database"
 import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
+import { createPlaceFromContentEntityScene } from "../../src/entities/CheckScenes/task/processContentEntityScene"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
-import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import {
+  placesAttributes,
+  taskRunnerSqs,
+} from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason } from "../../src/entities/Place/types"
@@ -727,6 +734,392 @@ describe("taskRunnerSqs integration", () => {
 
       expect(enabledPlaces).toHaveLength(1)
       expect(enabledPlaces[0].title).toBe("Scene C")
+    })
+  })
+
+  describe("when a new world scene overlaps multiple existing scenes and shares one of their base parcels", () => {
+    let worldName: string
+    let sceneAPlaceId: string
+    let sceneBPlaceId: string
+
+    beforeEach(async () => {
+      worldName = "multi-overlap-samebase-world.dcl.eth"
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+
+      await deployWorldScene({
+        worldName,
+        title: "Scene B",
+        base: "0,2",
+        parcels: ["0,2", "0,3"],
+      })
+
+      sceneAPlaceId = (await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      ))!.id
+      sceneBPlaceId = (await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,2"
+      ))!.id
+
+      // Scene C overlaps both A (on 0,1) and B (on 0,2) but keeps Scene A's base (0,0)
+      await deployWorldScene({
+        worldName,
+        title: "Scene C",
+        base: "0,0",
+        parcels: ["0,0", "0,1", "0,2"],
+      })
+    })
+
+    it("should reuse the shared-base place id instead of creating a new one", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces).toHaveLength(1)
+      expect(enabledPlaces[0].id).toBe(sceneAPlaceId)
+      expect(enabledPlaces[0].title).toBe("Scene C")
+    })
+
+    it("should update the reused place with the redeployed positions", async () => {
+      const enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+
+      expect(enabledPlaces[0].base_position).toBe("0,0")
+      expect(enabledPlaces[0].positions.sort()).toEqual(["0,0", "0,1", "0,2"])
+    })
+
+    it("should disable only the other overlapping scene", async () => {
+      const sceneB = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,2"
+      )
+
+      expect(sceneB!.id).toBe(sceneBPlaceId)
+      expect(sceneB!.disabled).toBe(true)
+      expect(sceneB!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+  })
+
+  describe("the active world scene uniqueness guard", () => {
+    describe("and an enabled world scene already exists", () => {
+      const worldName = "uniqueness-guard-enabled.dcl.eth"
+
+      beforeEach(async () => {
+        await deployWorldScene({
+          worldName,
+          title: "Only Scene",
+          base: "0,0",
+          parcels: ["0,0"],
+        })
+      })
+
+      it("should reject a second enabled place for the same world scene", async () => {
+        const existing = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        const duplicate = {
+          ...existing!,
+          id: randomUUID(),
+          created_at: new Date(),
+          updated_at: new Date(),
+        }
+
+        await expect(
+          PlaceModel.insertPlace(duplicate, placesAttributes)
+        ).rejects.toThrow()
+      })
+
+      it("should allow a new place once the original is disabled as overwritten", async () => {
+        const existing = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        // overwritten/undeployment/moderation are not active identities, so the slot frees up
+        await PlaceModel.disablePlaces([existing!.id])
+
+        const replacement = {
+          ...existing!,
+          id: randomUUID(),
+          disabled: false,
+          disabled_at: null,
+          disabled_reason: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        }
+
+        await expect(
+          PlaceModel.insertPlace(replacement, placesAttributes)
+        ).resolves.not.toThrow()
+      })
+    })
+
+    describe("and an opted-out world scene already exists", () => {
+      const worldName = "uniqueness-guard-optout.dcl.eth"
+
+      beforeEach(async () => {
+        await deployWorldScene({
+          worldName,
+          title: "Opted Out",
+          base: "0,0",
+          parcels: ["0,0"],
+          optOut: true,
+        })
+      })
+
+      it("should reject a second opted-out place for the same world scene", async () => {
+        const existing = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        // opt_out rows are active identities too, so a duplicate must still be rejected
+        const duplicate = {
+          ...existing!,
+          id: randomUUID(),
+          created_at: new Date(),
+          updated_at: new Date(),
+        }
+
+        await expect(
+          PlaceModel.insertPlace(duplicate, placesAttributes)
+        ).rejects.toThrow()
+      })
+
+      it("should reject an enabled place while an opted-out identity exists", async () => {
+        const existing = await PlaceModel.findByWorldIdAndBasePosition(
+          worldName,
+          "0,0"
+        )
+        const enabledDuplicate = {
+          ...existing!,
+          id: randomUUID(),
+          disabled: false,
+          disabled_at: null,
+          disabled_reason: null,
+          created_at: new Date(),
+          updated_at: new Date(),
+        }
+
+        await expect(
+          PlaceModel.insertPlace(enabledDuplicate, placesAttributes)
+        ).rejects.toThrow()
+      })
+    })
+  })
+
+  describe("the active world place dedup step of the uniqueness migration", () => {
+    const UNIQUE_INDEX = "places_active_world_scene_uniq"
+
+    // Verbatim copy of the dedup step in
+    // src/migrations/1784295151000_guard-active-world-place-uniqueness.ts.
+    // That migration is immutable, so this snapshot cannot drift out from under it.
+    const DEDUP_SQL = `
+      WITH ranked AS (
+        SELECT id,
+               ROW_NUMBER() OVER (
+                 PARTITION BY world_id, base_position
+                 ORDER BY (disabled IS FALSE) DESC, like_score DESC NULLS LAST, deployed_at DESC, id DESC
+               ) AS rn
+        FROM places
+        WHERE world IS TRUE
+          AND world_id IS NOT NULL
+          AND base_position IS NOT NULL
+          AND (disabled IS FALSE OR disabled_reason = 'opt_out')
+      )
+      UPDATE places p
+      SET "disabled" = TRUE,
+          "disabled_at" = now(),
+          "updated_at" = now(),
+          "disabled_reason" = 'overwritten'
+      FROM ranked r
+      WHERE p.id = r.id
+        AND r.rn > 1
+    `
+
+    const RECREATE_INDEX_SQL = `
+      CREATE UNIQUE INDEX IF NOT EXISTS "${UNIQUE_INDEX}" ON places ("world_id", "base_position")
+      WHERE world IS TRUE AND world_id IS NOT NULL AND base_position IS NOT NULL
+        AND (disabled IS FALSE OR disabled_reason = 'opt_out')
+    `
+
+    // Reintroduce the pre-migration duplicate-identity state (which the index now forbids)
+    // by inserting rows directly, then feed them to the dedup step. Rows are inserted through
+    // the same path so their relative deployed_at order survives the naive timestamp column.
+    const seedIdentityRows = async (
+      worldName: string,
+      rows: Array<{
+        title: string
+        deployedAt: Date
+        likeScore?: number
+        optOut?: boolean
+      }>
+    ): Promise<string[]> => {
+      const scene = createWorldContentEntityScene({
+        worldName,
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      const worldId = await WorldModel.insertWorldIfNotExists({
+        world_name: worldName,
+      })
+
+      const ids: string[] = []
+      for (const row of rows) {
+        const place = {
+          ...createPlaceFromContentEntityScene(scene, {}, { worldId }),
+          id: randomUUID(),
+          title: row.title,
+          deployed_at: row.deployedAt,
+          disabled: row.optOut ?? false,
+          disabled_reason: row.optOut ? DisabledReason.OPT_OUT : null,
+          disabled_at: row.optOut ? new Date() : null,
+        }
+        await PlaceModel.insertPlace(place, placesAttributes)
+        // like_score is not part of placesAttributes, so set it explicitly when needed.
+        if (row.likeScore !== undefined) {
+          await database.query(
+            `UPDATE places SET like_score = ${row.likeScore} WHERE id = '${place.id}'`
+          )
+        }
+        ids.push(place.id)
+      }
+      return ids
+    }
+
+    beforeEach(async () => {
+      await database.query(`DROP INDEX IF EXISTS "${UNIQUE_INDEX}"`)
+    })
+
+    afterEach(async () => {
+      // Restore the index for the rest of the suite (dedup leaves a single identity
+      // row per scene, so the unique index can be recreated).
+      await database.query(RECREATE_INDEX_SQL)
+    })
+
+    describe("and several enabled duplicates exist", () => {
+      const worldName = "dedup-enabled.dcl.eth"
+      const baseMs = 1_700_000_000_000
+      let newestId: string
+      let olderIds: string[]
+
+      beforeEach(async () => {
+        const [olderId, middleId, newestPlaceId] = await seedIdentityRows(
+          worldName,
+          [
+            { title: "Older", deployedAt: new Date(baseMs) },
+            { title: "Middle", deployedAt: new Date(baseMs + 3_600_000) },
+            { title: "Newest", deployedAt: new Date(baseMs + 7_200_000) },
+          ]
+        )
+        newestId = newestPlaceId
+        olderIds = [olderId, middleId]
+
+        await database.query(DEDUP_SQL)
+      })
+
+      it("should keep exactly one identity, the most recently deployed", async () => {
+        const active = (await PlaceModel.findByWorldId(worldName)).filter(
+          (place) => !place.disabled
+        )
+
+        expect(active).toHaveLength(1)
+        expect(active[0].id).toBe(newestId)
+      })
+
+      it("should disable the older duplicates with the overwritten reason", async () => {
+        const disabled = (await PlaceModel.findByWorldId(worldName)).filter(
+          (place) => place.disabled
+        )
+
+        expect(disabled.map((place) => place.id).sort()).toEqual(
+          [...olderIds].sort()
+        )
+        expect(
+          disabled.every(
+            (place) => place.disabled_reason === DisabledReason.OVERWRITTEN
+          )
+        ).toBe(true)
+      })
+    })
+
+    describe("and an older duplicate has more engagement than a newer one", () => {
+      const worldName = "dedup-engagement.dcl.eth"
+      const baseMs = 1_700_000_000_000
+      let engagedId: string
+
+      beforeEach(async () => {
+        const [olderEngagedId] = await seedIdentityRows(worldName, [
+          {
+            title: "Older but liked",
+            deployedAt: new Date(baseMs),
+            likeScore: 0.9,
+          },
+          {
+            title: "Newer but ignored",
+            deployedAt: new Date(baseMs + 7_200_000),
+            likeScore: 0.1,
+          },
+        ])
+        engagedId = olderEngagedId
+
+        await database.query(DEDUP_SQL)
+      })
+
+      it("should keep the higher-engagement place, not merely the newest", async () => {
+        const active = (await PlaceModel.findByWorldId(worldName)).filter(
+          (place) => !place.disabled
+        )
+
+        expect(active).toHaveLength(1)
+        expect(active[0].id).toBe(engagedId)
+      })
+    })
+
+    describe("and an enabled duplicate coexists with an opted-out one", () => {
+      const worldName = "dedup-optout.dcl.eth"
+      const baseMs = 1_700_000_000_000
+      let enabledId: string
+      let optOutId: string
+
+      beforeEach(async () => {
+        const [optOutPlaceId, enabledPlaceId] = await seedIdentityRows(
+          worldName,
+          [
+            {
+              title: "Opted out",
+              deployedAt: new Date(baseMs + 7_200_000),
+              optOut: true,
+            },
+            { title: "Enabled", deployedAt: new Date(baseMs) },
+          ]
+        )
+        optOutId = optOutPlaceId
+        enabledId = enabledPlaceId
+
+        await database.query(DEDUP_SQL)
+      })
+
+      it("should keep the enabled place as the identity", async () => {
+        const active = (await PlaceModel.findByWorldId(worldName)).filter(
+          (place) => !place.disabled
+        )
+
+        expect(active).toHaveLength(1)
+        expect(active[0].id).toBe(enabledId)
+      })
+
+      it("should disable the opted-out duplicate as overwritten", async () => {
+        const optOut = (await PlaceModel.findByWorldId(worldName)).find(
+          (place) => place.id === optOutId
+        )
+
+        expect(optOut!.disabled).toBe(true)
+        expect(optOut!.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+      })
     })
   })
 
