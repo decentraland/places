@@ -50,6 +50,8 @@ export type PlaceAttributes = BaseEntityAttributes & {
   world: boolean
   /** Foreign key to the worlds table for world scenes */
   world_id: string | null
+  /** Immutable Catalyst or Worlds Content Server entity identifier for this deployment. */
+  deployment_id: string | null
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
   creator_address: string | null

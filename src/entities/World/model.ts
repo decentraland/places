@@ -1,11 +1,13 @@
-import { Model } from "decentraland-gatsby/dist/entities/Database/model"
 import {
   SQL,
   SQLStatement,
+  columns,
   conditional,
   join,
   limit,
+  objectValues,
   offset,
+  setColumns,
   table,
   values,
 } from "decentraland-gatsby/dist/entities/Database/utils"
@@ -19,6 +21,7 @@ import {
   WorldAttributes,
   WorldListOrderBy,
 } from "./types"
+import { Model } from "../Database/model"
 import {
   buildTextsearch,
   buildUpdateFavoritesQuery,
@@ -29,6 +32,9 @@ import {
 } from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
+
+/** Advisory-lock class id, keeps world deployment locks from colliding with other lock users. */
+const WORLD_DEPLOYMENT_LOCK_NAMESPACE = 8471
 
 export default class WorldModel extends Model<WorldAttributes> {
   static tableName = "worlds"
@@ -442,6 +448,15 @@ export default class WorldModel extends Model<WorldAttributes> {
   }
 
   /**
+   * Take the per-world deployment lock for the current transaction so concurrent workers cannot
+   * interleave overlap resolution for the same world. Released on COMMIT/ROLLBACK.
+   */
+  static async lockWorldForDeployment(worldName: string): Promise<void> {
+    const sql = SQL`SELECT pg_advisory_xact_lock(${WORLD_DEPLOYMENT_LOCK_NAMESPACE}::int, hashtext(${worldName.toLowerCase()}))`
+    await this.namedQuery("lock_world_for_deployment", sql)
+  }
+
+  /**
    * Insert a world only if it doesn't already exist.
    * Uses INSERT ... ON CONFLICT (id) DO NOTHING for atomicity.
    * Returns the world ID (lowercased world_name) regardless of whether
@@ -522,11 +537,19 @@ export default class WorldModel extends Model<WorldAttributes> {
       }
     }
 
-    // Upsert on id (lowercased world_name) as the conflict target
-    return this.upsert(worldData, {
-      target: ["id"],
-      changes,
-    })
+    const insertFields = Object.keys(worldData) as Array<keyof WorldAttributes>
+    const updateFields = Object.keys(changes) as Array<keyof WorldAttributes>
+    const sql = SQL`
+      INSERT INTO ${table(this)} ${columns(insertFields)}
+      VALUES ${objectValues(insertFields, [worldData])}
+      ON CONFLICT ("id") DO UPDATE SET ${setColumns(updateFields, changes)}
+      RETURNING *
+    `
+    const [updatedWorld] = await this.namedQuery<WorldAttributes>(
+      "upsert_world",
+      sql
+    )
+    return updatedWorld
   }
 
   static async updateFavorites(worldId: string): Promise<void> {

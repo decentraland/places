@@ -184,6 +184,20 @@ npm run migrate up
 npm start
 ```
 
+Migrations must complete before API or SQS workers from the new release start;
+the application writes `places.deployment_id` as soon as it processes an event.
+After deploying the migration, replay the active Worlds deployment feed (or run
+the corresponding world rebuild job) to reconcile legacy active rows. Verify
+completion with:
+
+```sql
+SELECT count(*) FROM places
+WHERE world IS TRUE AND disabled IS FALSE AND deployment_id IS NULL;
+```
+
+Keep the guarded base-parcel fallback enabled and monitor its warning until this
+count reaches zero, then remove the fallback in a later release.
+
 The `docker-compose` command starts:
 
 - **PostgreSQL** database on port 5432

@@ -16,6 +16,7 @@ export const placeGenesisPlaza: PlaceAttributes = {
   world: false,
   world_name: null,
   world_id: null,
+  deployment_id: null,
   title: "Genesis Plaza",
   description:
     "Decentraland's official spawn point and your #1 place to meet new people, hang out, and stay up to date with what's happening in our virtual world.",

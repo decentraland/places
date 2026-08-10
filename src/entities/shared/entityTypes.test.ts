@@ -42,6 +42,7 @@ const aggregateWorldAttributes: AggregateWorldAttributes = {
 }
 
 const aggregatePlaceAttributes: AggregatePlaceAttributes = {
+  deployment_id: null,
   id: "place-uuid",
   world_name: null,
   title: "Genesis Plaza",
