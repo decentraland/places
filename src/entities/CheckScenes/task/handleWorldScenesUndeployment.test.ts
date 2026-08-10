@@ -1,6 +1,7 @@
 import { Events } from "@dcl/schemas"
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
@@ -81,5 +82,39 @@ describe("when handling a world scenes undeployment event", () => {
     await handleWorldScenesUndeployment(event)
 
     expect(calls).toEqual(["lock", "watermark", "disable"])
+  })
+
+  describe("and the event repeats the same scene", () => {
+    beforeEach(() => {
+      event.metadata.scenes = [
+        { entityId: "deployment-a", baseParcel: "1,1" },
+        { entityId: "deployment-a", baseParcel: "1,1" },
+      ]
+    })
+
+    it("should record one watermark for the repeated scene", async () => {
+      await handleWorldScenesUndeployment(event)
+
+      expect(recordScenes).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        [{ entityId: "deployment-a", baseParcel: "1,1" }],
+        event.timestamp
+      )
+    })
+  })
+
+  describe("and one deployment is repeated with conflicting bases", () => {
+    beforeEach(() => {
+      event.metadata.scenes = [
+        { entityId: "deployment-a", baseParcel: "1,1" },
+        { entityId: "deployment-a", baseParcel: "2,2" },
+      ]
+    })
+
+    it("should reject the event as deterministically invalid", async () => {
+      await expect(handleWorldScenesUndeployment(event)).rejects.toBeInstanceOf(
+        InvalidWorldSqsMessageError
+      )
+    })
   })
 })

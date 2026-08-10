@@ -34,8 +34,11 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
 
     const normalizedWorldId = worldId.toLowerCase()
     const undeployedAt = new Date(eventTimestamp)
+    const uniqueScenes = [
+      ...new Map(scenes.map((scene) => [scene.entityId, scene])).values(),
+    ]
     const values = join(
-      scenes.map(
+      uniqueScenes.map(
         (scene) =>
           SQL`(${normalizedWorldId}, ${scene.entityId}, ${scene.baseParcel}, ${undeployedAt})`
       )

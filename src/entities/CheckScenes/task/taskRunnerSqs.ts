@@ -30,11 +30,7 @@ import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 import CheckScenesModel from "../model"
 import { CheckSceneLogsTypes } from "../types"
-import {
-  fetchNameOwner,
-  findNewDeployedPlace,
-  updateGenesisCityManifest,
-} from "../utils"
+import { fetchNameOwner, updateGenesisCityManifest } from "../utils"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -109,9 +105,11 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   const processedPlaces = await withDatabaseTransaction(async () => {
     let placesToProcess: ProcessEntitySceneResult | null = null
-    // Places a discarded deployment still replaced upstream. Kept apart from
-    // placesToProcess because the deployment contributes no place of its own.
-    let supersededPlaces: PlaceAttributes[] = []
+    // Candidates this deployment replaced upstream. PostgreSQL applies the timestamp cutoff and
+    // returns the rows actually disabled so logs and durable removal records match database state.
+    let replacementCandidates: PlaceAttributes[] = []
+    let replacementIncludesTies = false
+    let updatedPlaceReplacement: PlaceAttributes | null = null
 
     if (worldConfiguration && worldName) {
       // Serialize deployments for this world so overlap resolution can't interleave
@@ -148,10 +146,12 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         deploymentId: job.entity.entityId,
       }
 
-      // Stale deployment protection: skip if a newer deployment already exists
-      const newerPlace = findNewDeployedPlace(
-        contentEntityScene,
-        overlappingPlaces
+      // Stale deployment protection: PostgreSQL must compare these timestamp-without-time-zone
+      // values so the result does not depend on the Node process timezone.
+      const hasNewerPlace = await PlaceModel.hasNewerActiveWorldDeployment(
+        worldId,
+        contentEntityScene.pointers,
+        new Date(contentEntityScene.timestamp)
       )
 
       // Undeployment watermarks outlive the disabled rows, so a deployment delivered after the
@@ -168,7 +168,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       ])
 
       const isSuperseded = !!(
-        newerPlace ||
+        hasNewerPlace ||
         worldUndeployment ||
         sceneUndeployment
       )
@@ -185,9 +185,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         // Only strictly older overlaps: anything deployed at or after this deployment
         // survived it upstream, or replaced it in turn.
         placesToProcess = null
-        supersededPlaces = overlappingPlaces.filter(
-          (place) => new Date(place.deployed_at) < deployedAt
-        )
+        replacementCandidates = overlappingPlaces
+        replacementIncludesTies = false
       } else {
         // Resolve the on-chain name owner. This is the authoritative owner for
         // the world record, while the place uses metadata.owner as primary and
@@ -243,6 +242,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
           }
 
           placesToProcess = { update: place, rating, disabled: [] }
+          updatedPlaceReplacement = existingPlace
         } else {
           // 0 or 2+ overlapping → create a new place, disable all overlapping
           const place = createPlaceFromContentEntityScene(
@@ -264,6 +264,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             },
             disabled: overlappingPlaces,
           }
+          replacementCandidates = overlappingPlaces
+          replacementIncludesTies = true
         }
       }
 
@@ -321,6 +323,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       // No row matched: the stored place already holds a newer revision, discard this one
       if (updatedPlaces === 0) {
         placesToProcess = null
+        updatedPlaceReplacement = null
       } else {
         await Promise.all([
           !contentEntityScene.metadata.worldConfiguration &&
@@ -338,6 +341,14 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             deploy_at: new Date(contentEntityScene.timestamp),
           }),
         ])
+
+        if (updatedPlaceReplacement && worldName) {
+          await recordReplacementRemovals(
+            worldName,
+            [updatedPlaceReplacement],
+            contentEntityScene.timestamp
+          )
+        }
       }
     }
 
@@ -352,18 +363,30 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       })
     }
 
-    // The overlaps this deployment replaced: its own when it was applied, the
-    // strictly older ones when it was discarded as superseded.
-    const placesToDisable = placesToProcess?.disabled ?? supersededPlaces
+    // The overlaps this deployment replaced: ties included when it was applied, strictly older
+    // rows when it was discarded. Keep the SQL predicate, durable tombstones and notifications
+    // within the same transaction and drive all downstream work from the returned rows.
+    const placesToDisable = await PlaceModel.disableReplacedWorldPlaces(
+      replacementCandidates.map((place) => place.id),
+      new Date(contentEntityScene.timestamp),
+      replacementIncludesTies
+    )
+    if (placesToProcess) {
+      placesToProcess.disabled = placesToDisable
+    }
+    if (placesToDisable.length > 0 && worldName) {
+      await recordReplacementRemovals(
+        worldName,
+        placesToDisable,
+        contentEntityScene.timestamp
+      )
+    }
 
     await Promise.all([
       placesToProcess?.rating &&
         PlaceContentRatingModel.createOne(placesToProcess.rating),
       placesToDisable.length &&
         (async () => {
-          const placesIdToDisable = placesToDisable.map((place) => place.id)
-          await PlaceModel.disablePlaces(placesIdToDisable)
-
           const positions = new Set(
             placesToDisable.flatMap((place) => place.positions)
           )
@@ -398,6 +421,23 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToDisable.length) notifyDisablePlaces(placesToDisable)
 
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
+}
+
+async function recordReplacementRemovals(
+  worldId: string,
+  replacedPlaces: PlaceAttributes[],
+  replacedAt: number
+): Promise<void> {
+  await WorldSceneUndeploymentModel.recordScenes(
+    worldId,
+    replacedPlaces.map((place) => ({
+      // Legacy rows predate deployment ids. Their stable local id gives the watermark a unique
+      // key while base-position matching still protects older deployments for that scene.
+      entityId: place.deployment_id || `legacy-place:${place.id}`,
+      baseParcel: place.base_position,
+    })),
+    replacedAt
+  )
 }
 
 async function getValidCategories(creatorTags: string[]) {

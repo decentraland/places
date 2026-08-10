@@ -53,7 +53,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   )
 }
 
-export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropTable(WorldSceneUndeploymentModel.tableName)
-  pgm.dropTable(WorldUndeploymentModel.tableName)
+class IrreversibleUndeploymentWatermarksMigrationError extends Error {
+  constructor() {
+    super(
+      "The undeployment watermark migration is irreversible because dropping its tables would allow retired deployments to be replayed."
+    )
+    this.name = "IrreversibleUndeploymentWatermarksMigrationError"
+  }
+}
+
+export async function down(): Promise<void> {
+  throw new IrreversibleUndeploymentWatermarksMigrationError()
 }

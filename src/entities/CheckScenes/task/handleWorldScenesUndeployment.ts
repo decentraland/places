@@ -1,11 +1,27 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
 import WorldModel from "../../World/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
+import { UndeployedScene } from "../../WorldSceneUndeployment/types"
+
+function deduplicateScenes(scenes: UndeployedScene[]): UndeployedScene[] {
+  const uniqueScenes = new Map<string, UndeployedScene>()
+  for (const scene of scenes) {
+    const existing = uniqueScenes.get(scene.entityId)
+    if (existing && existing.baseParcel !== scene.baseParcel) {
+      throw new InvalidWorldSqsMessageError(
+        `Scene undeployment repeats deployment '${scene.entityId}' with conflicting base parcels.`
+      )
+    }
+    uniqueScenes.set(scene.entityId, scene)
+  }
+  return [...uniqueScenes.values()]
+}
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
@@ -34,15 +50,16 @@ export async function handleWorldScenesUndeployment(
     return
   }
 
+  const uniqueScenes = deduplicateScenes(scenes)
   const loggerExtended = logger.extend({
     worldName,
-    sceneCount: scenes.length,
+    sceneCount: uniqueScenes.length,
     eventType: "WorldScenesUndeploymentEvent",
   })
 
   try {
-    const basePositions = scenes.map((scene) => scene.baseParcel)
-    const deploymentIds = scenes.map((scene) => scene.entityId)
+    const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
+    const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
 
     loggerExtended.log(
       `Processing scene undeployment for world: ${worldName}, parcels: ${basePositions.join(
@@ -59,7 +76,7 @@ export async function handleWorldScenesUndeployment(
       // record it whether or not a place row matched
       await WorldSceneUndeploymentModel.recordScenes(
         worldName,
-        scenes,
+        uniqueScenes,
         event.timestamp
       )
 

@@ -307,6 +307,38 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
+   * Check for an active world scene overlapping the supplied positions that was deployed after
+   * the incoming deployment. PostgreSQL performs the comparison so timestamp-without-time-zone
+   * values never cross the JavaScript date boundary before ordering is decided.
+   */
+  static async hasNewerActiveWorldDeployment(
+    worldId: string,
+    positions: string[],
+    deployedAt: Date
+  ): Promise<boolean> {
+    if (positions.length === 0) {
+      return false
+    }
+
+    const sql = SQL`
+      SELECT EXISTS (
+        SELECT 1
+        FROM ${table(this)}
+        WHERE ("disabled" is false OR "disabled_reason" = 'opt_out')
+          AND "world" is true
+          AND "world_id" = ${worldId}
+          AND "positions" && ${positions}
+          AND "deployed_at" > ${deployedAt}
+      ) AS "exists"
+    `
+    const results = await this.namedQuery<{ exists: boolean }>(
+      "has_newer_active_world_deployment",
+      sql
+    )
+    return results[0]?.exists ?? false
+  }
+
+  /**
    * Find a place by world_id and base_position (unique identifier for a scene in a world)
    */
   static async findByWorldIdAndBasePosition(
@@ -491,6 +523,41 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE "id" = ANY(${placesIds})
     `
     await this.namedQuery("disable_places", sql)
+  }
+
+  /**
+   * Disable candidate world places replaced by a deployment and return the rows actually changed.
+   * Accepted deployments replace ties; discarded deployments only carry removals for strictly
+   * older rows.
+   */
+  static async disableReplacedWorldPlaces(
+    placesIds: string[],
+    replacingDeployedAt: Date,
+    includeEqualTimestamp: boolean
+  ): Promise<PlaceAttributes[]> {
+    if (placesIds.length === 0) {
+      return []
+    }
+
+    const now = new Date()
+    const agePredicate = includeEqualTimestamp
+      ? SQL`"deployed_at" <= ${replacingDeployedAt}`
+      : SQL`"deployed_at" < ${replacingDeployedAt}`
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET "disabled" = TRUE,
+        "disabled_at" = ${now},
+        "updated_at" = ${now},
+        "disabled_reason" = 'overwritten'
+      WHERE "id" = ANY(${placesIds})
+        AND ("disabled" is false OR "disabled_reason" = 'opt_out')
+        AND ${agePredicate}
+      RETURNING *
+    `
+    return this.namedQuery<PlaceAttributes>(
+      "disable_replaced_world_places",
+      sql
+    )
   }
 
   static async updateDisabled(

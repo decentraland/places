@@ -662,6 +662,71 @@ describe(`disablePlaces`, () => {
   })
 })
 
+describe("when checking for a newer active world deployment", () => {
+  let deployedAt: Date
+
+  beforeEach(() => {
+    deployedAt = new Date("2026-08-05T12:00:00.000Z")
+    namedQuery.mockResolvedValue([{ exists: true }])
+  })
+
+  it("should compare deployment timestamps in PostgreSQL", async () => {
+    await PlaceModel.hasNewerActiveWorldDeployment(
+      "example.dcl.eth",
+      ["0,0"],
+      deployedAt
+    )
+    const [, sql] = namedQuery.mock.calls[0]
+
+    expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" > $`)
+  })
+})
+
+describe("when disabling world places replaced by a deployment", () => {
+  let deployedAt: Date
+
+  beforeEach(() => {
+    deployedAt = new Date("2026-08-05T12:00:00.000Z")
+    namedQuery.mockResolvedValue([worldPlaceParalax])
+  })
+
+  describe("and the replacing deployment was accepted", () => {
+    it("should disable rows deployed at the same timestamp", async () => {
+      await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        true
+      )
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" <= $`)
+    })
+  })
+
+  describe("and the replacing deployment was discarded", () => {
+    it("should disable only strictly older rows", async () => {
+      await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        false
+      )
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" < $`)
+    })
+
+    it("should return the rows PostgreSQL actually disabled", async () => {
+      const disabled = await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        false
+      )
+
+      expect(disabled).toEqual([worldPlaceParalax])
+    })
+  })
+})
+
 describe(`updateFavorites`, () => {
   test(`should update favorites of a place`, async () => {
     namedQuery.mockResolvedValue([])

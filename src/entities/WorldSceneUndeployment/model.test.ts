@@ -62,6 +62,27 @@ describe("when recording scene undeployments", () => {
       expect(sql.values).toContain("example.dcl.eth")
     })
   })
+
+  describe("and the event repeats a deployment", () => {
+    beforeEach(async () => {
+      await WorldSceneUndeploymentModel.recordScenes(
+        "example.dcl.eth",
+        [
+          { entityId: "deployment-a", baseParcel: "1,1" },
+          { entityId: "deployment-a", baseParcel: "1,1" },
+        ],
+        eventTimestamp
+      )
+    })
+
+    it("should include the deployment only once in the bulk upsert", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(
+        sql.values.filter((value) => value === "deployment-a")
+      ).toHaveLength(1)
+    })
+  })
 })
 
 describe("when looking for a scene undeployment that supersedes a deployment", () => {

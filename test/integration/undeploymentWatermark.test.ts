@@ -215,6 +215,50 @@ describe("when a deployment is delivered after an undeployment for the same worl
     })
   })
 
+  describe("and an undeployed scene changed base position in a newer revision", () => {
+    const worldName = "watermark-reshaped-revision.dcl.eth"
+    let updatedAt: number
+
+    beforeEach(async () => {
+      updatedAt = deployedAt + 30_000
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-before-reshape",
+        timestamp: deployedAt,
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-after-reshape",
+        timestamp: updatedAt,
+        base: "1,0",
+        parcels: ["1,0", "2,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-after-reshape", baseParcel: "1,0" }],
+          { timestamp: undeployedAt }
+        )
+      )
+
+      // The older revision has a different deployment id and base from the explicit
+      // undeployment. Its replacement tombstone must still prevent a delayed replay.
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-before-reshape",
+        timestamp: deployedAt,
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+    })
+
+    it("should not recreate the older revision at its previous base", async () => {
+      expect(await PlaceModel.findEnabledWorldName(worldName)).toHaveLength(0)
+    })
+  })
+
   describe("and the deployment was produced after the undeployment", () => {
     const worldName = "watermark-redeploy.dcl.eth"
 

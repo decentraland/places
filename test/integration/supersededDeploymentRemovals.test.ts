@@ -163,6 +163,17 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
         parcels: ["0,0", "1,0"],
       })
 
+      // SQS is at-least-once: replay the deployment that was retired upstream after its active
+      // row has been disabled. Its replacement watermark must keep it from being resurrected.
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-replaced",
+        timestamp: firstDeployedAt,
+        title: "Replaced Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
       const enabled = await PlaceModel.findEnabledWorldName(worldName)
       enabledTitles = enabled.map((place) => place.title as string)
     })
