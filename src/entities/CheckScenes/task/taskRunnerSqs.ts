@@ -363,23 +363,31 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       })
     }
 
-    // The overlaps this deployment replaced: ties included when it was applied, strictly older
-    // rows when it was discarded. Keep the SQL predicate, durable tombstones and notifications
-    // within the same transaction and drive all downstream work from the returned rows.
-    const placesToDisable = await PlaceModel.disableReplacedWorldPlaces(
-      replacementCandidates.map((place) => place.id),
-      new Date(contentEntityScene.timestamp),
-      replacementIncludesTies
-    )
-    if (placesToProcess) {
-      placesToProcess.disabled = placesToDisable
-    }
-    if (placesToDisable.length > 0 && worldName) {
-      await recordReplacementRemovals(
-        worldName,
-        placesToDisable,
-        contentEntityScene.timestamp
+    let placesToDisable: PlaceAttributes[]
+    if (worldConfiguration) {
+      // World replacements use PostgreSQL timestamp ordering and persist durable tombstones.
+      placesToDisable = await PlaceModel.disableReplacedWorldPlaces(
+        replacementCandidates.map((place) => place.id),
+        new Date(contentEntityScene.timestamp),
+        replacementIncludesTies
       )
+      if (placesToProcess) {
+        placesToProcess.disabled = placesToDisable
+      }
+      if (placesToDisable.length > 0 && worldName) {
+        await recordReplacementRemovals(
+          worldName,
+          placesToDisable,
+          contentEntityScene.timestamp
+        )
+      }
+    } else {
+      // Genesis City keeps its established overlap resolution. These rows have no world
+      // replacement watermark and were already filtered by processContentEntityScene().
+      placesToDisable = placesToProcess?.disabled ?? []
+      if (placesToDisable.length > 0) {
+        await PlaceModel.disablePlaces(placesToDisable.map((place) => place.id))
+      }
     }
 
     await Promise.all([

@@ -1443,4 +1443,65 @@ describe("taskRunnerSqs integration", () => {
       expect(logs.map((log) => log.action)).toEqual([CheckSceneLogsTypes.AVOID])
     })
   })
+
+  describe("when a Genesis City deployment replaces an overlapping place", () => {
+    let originalPlace: PlaceAttributes
+    let replacementPlace: PlaceAttributes
+    let enabledOverlaps: PlaceAttributes[]
+
+    beforeEach(async () => {
+      const originalScene = createGenesisContentEntityScene({
+        title: "Original Genesis Scene",
+        base: "20,20",
+        parcels: ["20,20"],
+      })
+      mockProcessEntityId.mockResolvedValueOnce(originalScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID))
+
+      const replacementScene = createGenesisContentEntityScene({
+        title: "Replacement Genesis Scene",
+        base: "20,21",
+        parcels: ["20,20", "20,21"],
+      })
+      replacementScene.timestamp = originalScene.timestamp + 1_000
+      mockProcessEntityId.mockResolvedValueOnce(replacementScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(NEWER_ENTITY_ID))
+
+      const originalPlaces = await PlaceModel.find<PlaceAttributes>({
+        base_position: "20,20",
+      })
+      const replacementPlaces = await PlaceModel.find<PlaceAttributes>({
+        base_position: "20,21",
+      })
+      originalPlace = originalPlaces[0]
+      replacementPlace = replacementPlaces[0]
+      enabledOverlaps = await PlaceModel.findEnabledByPositions(["20,20"])
+    })
+
+    it("should disable the place retired by the replacement", () => {
+      expect(originalPlace.disabled).toBe(true)
+    })
+
+    it("should mark the retired place as overwritten", () => {
+      expect(originalPlace.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+
+    it("should keep the replacement place enabled", () => {
+      expect(replacementPlace.disabled).toBe(false)
+    })
+
+    it("should leave only the replacement active at the overlapping parcel", () => {
+      expect(enabledOverlaps.map((place) => place.title)).toEqual([
+        "Replacement Genesis Scene",
+      ])
+    })
+  })
 })
