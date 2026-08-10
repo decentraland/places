@@ -109,6 +109,9 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
   const processedPlaces = await withDatabaseTransaction(async () => {
     let placesToProcess: ProcessEntitySceneResult | null = null
+    // Places a discarded deployment still replaced upstream. Kept apart from
+    // placesToProcess because the deployment contributes no place of its own.
+    let supersededPlaces: PlaceAttributes[] = []
 
     if (worldConfiguration && worldName) {
       // Serialize deployments for this world so overlap resolution can't interleave
@@ -189,7 +192,20 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       ])
 
       if (newerPlace || worldUndeployment || sceneUndeployment) {
+        // This deployment is superseded, so it contributes no place. Its removals are
+        // not superseded though: a deployment that committed upstream marked every
+        // scene overlapping its footprint as UNDEPLOYED, and the worlds content server
+        // publishes scene undeployment events only for explicit deletes, never for
+        // replacement by deployment. Nothing else will ever report those removals, so
+        // disable the overlaps this deployment replaced instead of leaving them as
+        // places pointing at scenes that no longer exist.
+        //
+        // Only strictly older overlaps: anything deployed at or after this deployment
+        // survived it upstream, or replaced it in turn.
         placesToProcess = null
+        supersededPlaces = overlappingPlaces.filter(
+          (place) => new Date(place.deployed_at) < deployedAt
+        )
       } else if (overlappingPlaces.length === 1) {
         // Single overlap → update that place (same scene, possibly reshaped)
         const existingPlace = overlappingPlaces[0]
@@ -321,18 +337,20 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       })
     }
 
+    // The overlaps this deployment replaced: its own when it was applied, the
+    // strictly older ones when it was discarded as superseded.
+    const placesToDisable = placesToProcess?.disabled ?? supersededPlaces
+
     await Promise.all([
       placesToProcess?.rating &&
         PlaceContentRatingModel.createOne(placesToProcess.rating),
-      placesToProcess?.disabled.length &&
+      placesToDisable.length &&
         (async () => {
-          const placesIdToDisable = placesToProcess!.disabled.map(
-            (place) => place.id
-          )
+          const placesIdToDisable = placesToDisable.map((place) => place.id)
           await PlaceModel.disablePlaces(placesIdToDisable)
 
           const positions = new Set(
-            placesToProcess!.disabled.flatMap((place) => place.positions)
+            placesToDisable.flatMap((place) => place.positions)
           )
           placesToProcess?.new?.positions.forEach((position) =>
             positions.delete(position)
@@ -344,7 +362,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             !contentEntityScene.metadata.worldConfiguration &&
               PlacePositionModel.removePositions([...positions]),
             CheckScenesModel.createMany(
-              placesToProcess!.disabled.map((place) => ({
+              placesToDisable.map((place) => ({
                 entity_id: job.entity.entityId,
                 content_server_url: contentServerUrl,
                 base_position: place.base_position,
@@ -355,14 +373,14 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
           ])
         })(),
     ])
-    return placesToProcess
+    return { placesToProcess, placesToDisable }
   })
 
-  if (processedPlaces?.new) notifyNewPlace(processedPlaces.new, job)
-  if (processedPlaces?.update) notifyUpdatePlace(processedPlaces.update, job)
-  if (processedPlaces?.disabled.length) {
-    notifyDisablePlaces(processedPlaces.disabled)
-  }
+  const { placesToProcess, placesToDisable } = processedPlaces
+
+  if (placesToProcess?.new) notifyNewPlace(placesToProcess.new, job)
+  if (placesToProcess?.update) notifyUpdatePlace(placesToProcess.update, job)
+  if (placesToDisable.length) notifyDisablePlaces(placesToDisable)
 
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
 }

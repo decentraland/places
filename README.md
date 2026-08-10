@@ -204,6 +204,14 @@ this release are unaffected: only undeployments recorded from this release
 onwards can supersede a later-delivered deployment. No backfill is required, and
 no reconciliation job needs to run.
 
+A superseded world deployment is still allowed to retire the scenes it replaced
+upstream, because the worlds content server publishes scene undeployment events
+only for explicit deletes — a deployment that replaces an overlapping scene
+reports nothing, so that removal reaches places only through the deployment that
+caused it. Such a deployment creates no place of its own and is logged as
+`avoid`, while the strictly older places it overlapped are logged as `disabled`.
+Seeing both actions for one entity id is expected, not double processing.
+
 The `docker-compose` command starts:
 
 - **PostgreSQL** database on port 5432
