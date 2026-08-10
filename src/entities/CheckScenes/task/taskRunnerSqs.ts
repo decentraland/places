@@ -121,36 +121,12 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       const isOptOut =
         !!contentEntityScene?.metadata?.worldConfiguration?.placesConfig?.optOut
 
-      // Resolve the on-chain name owner. This is the authoritative owner for
-      // the world record, while the place uses metadata.owner as primary and
-      // falls back to the name owner.
-      // Insert the world if it doesn't exist yet. The world owner is always
-      // the on-chain name owner, not the deployment metadata owner.
-      const worldId = await WorldModel.insertWorldIfNotExists({
-        world_name: worldName,
-        title:
-          contentEntityScene?.metadata?.display?.title?.slice(0, 50) ||
-          undefined,
-        description:
-          sanitizePlaceDescription(
-            contentEntityScene?.metadata?.display?.description
-          ) || undefined,
-        content_rating:
-          (contentEntityScene?.metadata?.policy
-            ?.contentRating as SceneContentRating) || undefined,
-        categories: contentEntityScene?.metadata?.tags || undefined,
-        owner: nameOwner || undefined,
-        show_in_places: !isOptOut,
-      })
-
-      // Update the world owner on every deployment to keep it in sync with
-      // the current on-chain name ownership.
-      if (nameOwner) {
-        await WorldModel.upsertWorld({
-          world_name: worldName,
-          owner: nameOwner,
-        })
-      }
+      // A worlds row id is the normalized world name, so every lookup below resolves
+      // before the row exists. Nothing may write to `worlds` until this deployment is
+      // known to be applicable: that row is served by GET /api/worlds/:world_id without
+      // requiring an enabled place, so inserting it first would publish a world built
+      // from a deployment that is about to be rejected.
+      const worldId = worldName.toLowerCase()
 
       // World-specific overlap logic: in worlds, positions can change freely
       // between deployments, so identity is based on overlap count rather than
@@ -191,14 +167,20 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         ),
       ])
 
-      if (newerPlace || worldUndeployment || sceneUndeployment) {
-        // This deployment is superseded, so it contributes no place. Its removals are
-        // not superseded though: a deployment that committed upstream marked every
-        // scene overlapping its footprint as UNDEPLOYED, and the worlds content server
-        // publishes scene undeployment events only for explicit deletes, never for
-        // replacement by deployment. Nothing else will ever report those removals, so
-        // disable the overlaps this deployment replaced instead of leaving them as
-        // places pointing at scenes that no longer exist.
+      const isSuperseded = !!(
+        newerPlace ||
+        worldUndeployment ||
+        sceneUndeployment
+      )
+
+      if (isSuperseded) {
+        // This deployment is superseded, so it contributes no place and must not touch
+        // the worlds row. Its removals are not superseded though: a deployment that
+        // committed upstream marked every scene overlapping its footprint as UNDEPLOYED,
+        // and the worlds content server publishes scene undeployment events only for
+        // explicit deletes, never for replacement by deployment. Nothing else will ever
+        // report those removals, so disable the overlaps this deployment replaced
+        // instead of leaving them as places pointing at scenes that no longer exist.
         //
         // Only strictly older overlaps: anything deployed at or after this deployment
         // survived it upstream, or replaced it in turn.
@@ -206,49 +188,82 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
         supersededPlaces = overlappingPlaces.filter(
           (place) => new Date(place.deployed_at) < deployedAt
         )
-      } else if (overlappingPlaces.length === 1) {
-        // Single overlap → update that place (same scene, possibly reshaped)
-        const existingPlace = overlappingPlaces[0]
-        const place = createPlaceFromContentEntityScene(
-          contentEntityScene,
-          existingPlace,
-          options
-        )
+      } else {
+        // Resolve the on-chain name owner. This is the authoritative owner for
+        // the world record, while the place uses metadata.owner as primary and
+        // falls back to the name owner.
+        // Insert the world if it doesn't exist yet. The world owner is always
+        // the on-chain name owner, not the deployment metadata owner.
+        await WorldModel.insertWorldIfNotExists({
+          world_name: worldName,
+          title:
+            contentEntityScene?.metadata?.display?.title?.slice(0, 50) ||
+            undefined,
+          description:
+            sanitizePlaceDescription(
+              contentEntityScene?.metadata?.display?.description
+            ) || undefined,
+          content_rating:
+            (contentEntityScene?.metadata?.policy
+              ?.contentRating as SceneContentRating) || undefined,
+          categories: contentEntityScene?.metadata?.tags || undefined,
+          owner: nameOwner || undefined,
+          show_in_places: !isOptOut,
+        })
 
-        let rating = null
-        if (place.content_rating !== existingPlace.content_rating) {
-          rating = {
-            id: randomUUID(),
-            entity_id: existingPlace.id,
-            original_rating: existingPlace.content_rating,
-            update_rating: place.content_rating,
-            moderator: null,
-            comment: null,
-            created_at: new Date(),
-          }
+        // Update the world owner on every deployment to keep it in sync with
+        // the current on-chain name ownership.
+        if (nameOwner) {
+          await WorldModel.upsertWorld({
+            world_name: worldName,
+            owner: nameOwner,
+          })
         }
 
-        placesToProcess = { update: place, rating, disabled: [] }
-      } else {
-        // 0 or 2+ overlapping → create a new place, disable all overlapping
-        const place = createPlaceFromContentEntityScene(
-          contentEntityScene,
-          {},
-          options
-        )
+        if (overlappingPlaces.length === 1) {
+          // Single overlap → update that place (same scene, possibly reshaped)
+          const existingPlace = overlappingPlaces[0]
+          const place = createPlaceFromContentEntityScene(
+            contentEntityScene,
+            existingPlace,
+            options
+          )
 
-        placesToProcess = {
-          new: place,
-          rating: {
-            id: randomUUID(),
-            entity_id: place.id,
-            original_rating: null,
-            update_rating: place.content_rating,
-            moderator: null,
-            comment: null,
-            created_at: new Date(),
-          },
-          disabled: overlappingPlaces,
+          let rating = null
+          if (place.content_rating !== existingPlace.content_rating) {
+            rating = {
+              id: randomUUID(),
+              entity_id: existingPlace.id,
+              original_rating: existingPlace.content_rating,
+              update_rating: place.content_rating,
+              moderator: null,
+              comment: null,
+              created_at: new Date(),
+            }
+          }
+
+          placesToProcess = { update: place, rating, disabled: [] }
+        } else {
+          // 0 or 2+ overlapping → create a new place, disable all overlapping
+          const place = createPlaceFromContentEntityScene(
+            contentEntityScene,
+            {},
+            options
+          )
+
+          placesToProcess = {
+            new: place,
+            rating: {
+              id: randomUUID(),
+              entity_id: place.id,
+              original_rating: null,
+              update_rating: place.content_rating,
+              moderator: null,
+              comment: null,
+              created_at: new Date(),
+            },
+            disabled: overlappingPlaces,
+          }
         }
       }
 

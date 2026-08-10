@@ -16,6 +16,12 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
 
   /**
    * Record the undeployed scenes for a world, keeping the newest event timestamp per deployment.
+   *
+   * A deployment id is a content hash over the scene metadata the base parcel is derived from,
+   * so repeat events for one scene carry the same base. The base is still only taken from an
+   * event at least as new as the stored one, so a delayed event can never pair its own base with
+   * a newer timestamp: replay rejection matches on base position too, and a mismatched pair
+   * would weaken that match for older revisions at the real undeployed base.
    */
   static async recordScenes(
     worldId: string,
@@ -41,7 +47,11 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
       )} ("world_id", "deployment_id", "base_position", "undeployed_at")
       VALUES ${values}
       ON CONFLICT ("world_id", "deployment_id") DO UPDATE
-      SET "base_position" = EXCLUDED."base_position",
+      SET "base_position" = CASE
+            WHEN EXCLUDED."undeployed_at" >= ${table(this)}."undeployed_at"
+            THEN EXCLUDED."base_position"
+            ELSE ${table(this)}."base_position"
+          END,
           "undeployed_at" = GREATEST(${table(
             this
           )}."undeployed_at", EXCLUDED."undeployed_at")

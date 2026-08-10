@@ -511,10 +511,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable all place records associated with a world that were deployed
-   * before the given event timestamp. This prevents stale undeployment
-   * events from disabling places that were re-deployed after the event
-   * was emitted.
+   * Disable all place records associated with a world that were deployed at or
+   * before the given event timestamp. This prevents stale undeployment events
+   * from disabling places that were re-deployed after the event was emitted.
+   *
+   * Ties go to the undeployment, matching the watermark predicates in
+   * WorldUndeploymentModel and WorldSceneUndeploymentModel, so an equally
+   * timestamped deployment reaches the same state whichever order it arrives in.
    */
   static async disableByWorldId(
     worldId: string,
@@ -527,7 +530,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)}
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE "world_id" = ${normalizedWorldId}
-        AND "deployed_at" < ${eventDate}
+        AND "deployed_at" <= ${eventDate}
         AND "disabled" IS FALSE
     `
     await this.namedQuery("disable_by_world_id", sql)
@@ -537,6 +540,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * Disable world-scene places by immutable deployment id. Rows created before deployment ids
    * were stored may fall back to base position only when that position identifies exactly one
    * active row, preventing a forged or duplicated base from disabling another scene.
+   *
+   * Ties go to the undeployment, matching the watermark predicates, so an equally timestamped
+   * deployment reaches the same state whichever order it arrives in.
    */
   static async disableByWorldIdAndDeployments(
     worldId: string,
@@ -551,7 +557,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE target."world_id" = ${normalizedWorldId}
-        AND target."deployed_at" < ${eventDate}
+        AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND (
           target."deployment_id" = ANY(${deploymentIds})
