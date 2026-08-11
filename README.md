@@ -198,11 +198,28 @@ WHERE world IS TRUE AND disabled IS FALSE AND deployment_id IS NULL;
 Keep the guarded base-parcel fallback enabled and monitor its warning until this
 count reaches zero, then remove the fallback in a later release.
 
-Undeployment watermarks live in `world_undeployments` and
-`world_scene_undeployments`. Both start empty, so deployments processed before
-this release are unaffected: only undeployments recorded from this release
-onwards can supersede a later-delivered deployment. No backfill is required, and
-no reconciliation job needs to run.
+Durable world-deployment ordering state lives in three tables:
+
+- `world_undeployments` records full-world undeployments.
+- `world_scene_undeployments` records scene undeployments by deployment and base parcel.
+- `world_deployment_position_watermarks` records the latest replacement or
+  undeployment boundary for each world parcel.
+
+All three start empty, so deployments processed before this release are
+unaffected: only ordering state recorded from this release onwards can supersede
+a later-delivered deployment. No backfill is required, and no reconciliation job
+needs to run. These migrations are intentionally forward-only because removing
+the recorded state would allow retired deployments to be replayed.
+
+After deploying the migrations, verify that all three results are non-null:
+
+```sql
+SELECT
+  to_regclass('public.world_undeployments') AS world_undeployments,
+  to_regclass('public.world_scene_undeployments') AS world_scene_undeployments,
+  to_regclass('public.world_deployment_position_watermarks')
+    AS world_deployment_position_watermarks;
+```
 
 A superseded world deployment is still allowed to retire the scenes it replaced
 upstream, because the worlds content server publishes scene undeployment events
