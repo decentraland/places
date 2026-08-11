@@ -7,6 +7,7 @@ const TABLES_TO_CLEAN = [
   "place_categories",
   "place_positions",
   "check_scenes_logs",
+  "world_deployment_position_watermarks",
   "world_scene_undeployments",
   "world_undeployments",
   "places",

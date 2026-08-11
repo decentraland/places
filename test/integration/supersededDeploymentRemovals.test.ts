@@ -241,6 +241,63 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
     })
   })
 
+  describe("and the scene it replaced had not been delivered yet", () => {
+    let worldName: string
+    let enabledTitles: string[]
+
+    beforeEach(async () => {
+      worldName = "superseded-before-replaced.dcl.eth"
+
+      // This deployment happened after the spanning replacement and makes that replacement stale
+      // when its message eventually arrives. It does not overlap the older scene at 0,0.
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-newer",
+        timestamp: newerDeployedAt,
+        title: "Newer Scene",
+        base: "1,0",
+        parcels: ["1,0"],
+      })
+
+      // Upstream this deployment replaced the still-undelivered scene at 0,0, then was itself
+      // replaced at 1,0. Places avoids it, but must retain its removal boundary at 0,0.
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-superseding",
+        timestamp: supersededDeployedAt,
+        title: "Superseding Scene",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+
+      // The older deployment is delivered only now, so no active row existed when the spanning
+      // deployment was processed. Its overlapping position watermark must still reject it.
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-replaced",
+        timestamp: firstDeployedAt,
+        title: "Replaced Scene",
+        base: "-1,0",
+        parcels: ["-1,0", "0,0"],
+      })
+
+      const enabled = await PlaceModel.findEnabledWorldName(worldName)
+      enabledTitles = enabled.map((place) => place.title as string)
+    })
+
+    it("should not create the older scene that was absent during replacement", () => {
+      expect(enabledTitles).not.toContain("Replaced Scene")
+    })
+
+    it("should not create a place for the superseded deployment", () => {
+      expect(enabledTitles).not.toContain("Superseding Scene")
+    })
+
+    it("should leave only the scene that remains deployed upstream", () => {
+      expect(enabledTitles).toEqual(["Newer Scene"])
+    })
+  })
+
   describe("and every overlapping scene was deployed after it", () => {
     const worldName = "superseded-no-older.dcl.eth"
     let enabledTitles: string[]

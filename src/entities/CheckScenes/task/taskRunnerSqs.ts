@@ -26,6 +26,7 @@ import {
   notifyUpdatePlace,
 } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 import CheckScenesModel from "../model"
@@ -157,20 +158,30 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       // Undeployment watermarks outlive the disabled rows, so a deployment delivered after the
       // undeployment that supersedes it cannot recreate the scene
       const deployedAt = new Date(contentEntityScene.timestamp)
-      const [worldUndeployment, sceneUndeployment] = await Promise.all([
-        WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
-        WorldSceneUndeploymentModel.findSupersedingUndeployment(
-          worldId,
-          job.entity.entityId,
-          contentEntityScene.metadata.scene!.base,
-          deployedAt
-        ),
-      ])
+      const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
+        await Promise.all([
+          WorldUndeploymentModel.findSupersedingUndeployment(
+            worldId,
+            deployedAt
+          ),
+          WorldSceneUndeploymentModel.findSupersedingUndeployment(
+            worldId,
+            job.entity.entityId,
+            contentEntityScene.metadata.scene!.base,
+            deployedAt
+          ),
+          WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+            worldId,
+            contentEntityScene.pointers,
+            deployedAt
+          ),
+        ])
 
       const isSuperseded = !!(
         hasNewerPlace ||
         worldUndeployment ||
-        sceneUndeployment
+        sceneUndeployment ||
+        hasNewerPositionWatermark
       )
 
       if (isSuperseded) {
@@ -388,6 +399,18 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
       if (placesToDisable.length > 0) {
         await PlaceModel.disablePlaces(placesToDisable.map((place) => place.id))
       }
+    }
+
+    // A valid deployment event proves this footprint committed upstream even when Places must
+    // avoid the deployment because newer state arrived first. Persist its replacement boundary
+    // so an older overlapping deployment that has never had a place row cannot arrive later and
+    // resurrect content retired by this deployment.
+    if (worldName) {
+      await WorldDeploymentPositionWatermarkModel.recordPositions(
+        worldName,
+        contentEntityScene.pointers,
+        new Date(contentEntityScene.timestamp)
+      )
     }
 
     await Promise.all([
