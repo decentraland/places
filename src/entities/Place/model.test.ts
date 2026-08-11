@@ -662,6 +662,71 @@ describe(`disablePlaces`, () => {
   })
 })
 
+describe("when checking for a newer active world deployment", () => {
+  let deployedAt: Date
+
+  beforeEach(() => {
+    deployedAt = new Date("2026-08-05T12:00:00.000Z")
+    namedQuery.mockResolvedValue([{ exists: true }])
+  })
+
+  it("should compare deployment timestamps in PostgreSQL", async () => {
+    await PlaceModel.hasNewerActiveWorldDeployment(
+      "example.dcl.eth",
+      ["0,0"],
+      deployedAt
+    )
+    const [, sql] = namedQuery.mock.calls[0]
+
+    expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" > $`)
+  })
+})
+
+describe("when disabling world places replaced by a deployment", () => {
+  let deployedAt: Date
+
+  beforeEach(() => {
+    deployedAt = new Date("2026-08-05T12:00:00.000Z")
+    namedQuery.mockResolvedValue([worldPlaceParalax])
+  })
+
+  describe("and the replacing deployment was accepted", () => {
+    it("should disable rows deployed at the same timestamp", async () => {
+      await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        true
+      )
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" <= $`)
+    })
+  })
+
+  describe("and the replacing deployment was discarded", () => {
+    it("should disable only strictly older rows", async () => {
+      await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        false
+      )
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toContain(`AND "deployed_at" < $`)
+    })
+
+    it("should return the rows PostgreSQL actually disabled", async () => {
+      const disabled = await PlaceModel.disableReplacedWorldPlaces(
+        [worldPlaceParalax.id],
+        deployedAt,
+        false
+      )
+
+      expect(disabled).toEqual([worldPlaceParalax])
+    })
+  })
+})
+
 describe(`updateFavorites`, () => {
   test(`should update favorites of a place`, async () => {
     namedQuery.mockResolvedValue([])
@@ -937,11 +1002,12 @@ describe("when disabling world scenes by deployment identity", () => {
     namedQuery.mockResolvedValue([])
   })
 
-  it("should use the immutable deployment ids and an unambiguous legacy fallback", async () => {
+  it("should match current revisions by deployment id or base and guard legacy base matches", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "Example.DCL.ETH",
       ["deployment-a"],
       ["1,1"],
+      ["1,1", "2,1"],
       eventTimestamp
     )
 
@@ -949,7 +1015,9 @@ describe("when disabling world scenes by deployment identity", () => {
     const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
     expect({ name, normalizedSql }).toEqual({
       name: "disable_by_world_id_and_deployments",
-      normalizedSql: expect.stringContaining('target."deployment_id" = ANY($'),
+      normalizedSql: expect.stringMatching(
+        /target\."deployment_id" = ANY\(\$.*target\."positions" && \$.*::varchar\[\].*target\."base_position" = ANY\(\$.*target\."deployment_id" IS NOT NULL OR NOT EXISTS/
+      ),
     })
   })
 
@@ -963,6 +1031,7 @@ describe("when disabling world scenes by deployment identity", () => {
       "example.dcl.eth",
       ["deployment-a"],
       ["1,1"],
+      ["1,1", "2,1"],
       eventTimestamp
     )
 

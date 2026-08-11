@@ -1,5 +1,6 @@
 import supertest from "supertest"
 
+import CategoryModel from "../../src/entities/Category/model"
 import CheckScenesModel from "../../src/entities/CheckScenes/model"
 import { InvalidWorldSqsMessageError } from "../../src/entities/CheckScenes/task/errors"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -13,10 +14,15 @@ import {
 import { fetchNameOwner } from "../../src/entities/CheckScenes/utils"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason, PlaceAttributes } from "../../src/entities/Place/types"
+import PlaceCategories from "../../src/entities/PlaceCategories/model"
 import PlaceContentRatingModel from "../../src/entities/PlaceContentRating/model"
 import { PlaceContentRatingAttributes } from "../../src/entities/PlaceContentRating/types"
+import PlacePositionModel from "../../src/entities/PlacePosition/model"
+import { PlacePositionAttributes } from "../../src/entities/PlacePosition/types"
 import { notifyUpdatePlace } from "../../src/entities/Slack/utils"
 import WorldModel from "../../src/entities/World/model"
+import WorldDeploymentPositionWatermarkModel from "../../src/entities/WorldDeploymentPositionWatermark/model"
+import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployment/model"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
@@ -1331,6 +1337,235 @@ describe("taskRunnerSqs integration", () => {
     })
   })
 
+  describe("when a Genesis City place is successfully updated with a reshaped footprint", () => {
+    let enabledPlaces: PlaceAttributes[]
+    let enabledPlace: PlaceAttributes
+    let logs: CheckSceneLogs[]
+    let originalScene: ContentEntityScene
+    let positionRows: PlacePositionAttributes[]
+    let updatedScene: ContentEntityScene
+    let updateLogActions: CheckSceneLogsTypes[]
+
+    beforeEach(async () => {
+      originalScene = createGenesisContentEntityScene({
+        title: "Original Genesis Shape",
+        base: "30,30",
+        parcels: ["30,30", "30,31"],
+      })
+      mockProcessEntityId.mockResolvedValueOnce(originalScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID))
+
+      updatedScene = createGenesisContentEntityScene({
+        title: "Updated Genesis Shape",
+        base: "30,30",
+        parcels: ["30,30", "30,32"],
+      })
+      updatedScene.timestamp = originalScene.timestamp + 1_000
+      mockProcessEntityId.mockResolvedValueOnce(updatedScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(NEWER_ENTITY_ID))
+
+      enabledPlaces = await PlaceModel.findEnabledByPositions(["30,30"])
+      enabledPlace = enabledPlaces[0]
+      positionRows = await PlacePositionModel.find<PlacePositionAttributes>({
+        base_position: "30,30",
+      })
+      logs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: NEWER_ENTITY_ID,
+      })
+      updateLogActions = logs.map((log) => log.action)
+    })
+
+    it("should update the existing place metadata", () => {
+      expect(enabledPlace.title).toBe("Updated Genesis Shape")
+    })
+
+    it("should replace the removed position with the new position mapping", () => {
+      expect(positionRows.map((row) => row.position).sort()).toEqual([
+        "30,30",
+        "30,32",
+      ])
+    })
+
+    it("should record the successful update action", () => {
+      expect(updateLogActions).toEqual([CheckSceneLogsTypes.UPDATE])
+    })
+  })
+
+  describe("when a tagged Genesis City deployment is accepted", () => {
+    let categoryRows: Array<{ category_id: string }>
+    let logs: CheckSceneLogs[]
+    let now: Date
+    let placeCategories: string[]
+    let placeCategoryRows: string[]
+    let places: PlaceAttributes[]
+    let scene: ContentEntityScene
+    let newLogActions: CheckSceneLogsTypes[]
+
+    beforeEach(async () => {
+      now = new Date()
+      await CategoryModel.createOne({
+        name: "art",
+        active: true,
+        created_at: now,
+        updated_at: now,
+      })
+
+      scene = createGenesisContentEntityScene({
+        title: "Tagged Genesis Scene",
+        base: "40,40",
+        parcels: ["40,40"],
+      })
+      scene.metadata.tags = ["art"]
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(NEWER_ENTITY_ID))
+
+      places = await PlaceModel.find<PlaceAttributes>({
+        base_position: "40,40",
+      })
+      placeCategories = places[0].categories
+      categoryRows = await PlaceCategories.findCategoriesByPlaceId(places[0].id)
+      placeCategoryRows = categoryRows.map((row) => row.category_id)
+      logs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: NEWER_ENTITY_ID,
+      })
+      newLogActions = logs.map((log) => log.action)
+    })
+
+    it("should persist the category on the place", () => {
+      expect(placeCategories).toEqual(["art"])
+    })
+
+    it("should persist the place-category relationship", () => {
+      expect(placeCategoryRows).toEqual(["art"])
+    })
+
+    it("should record the new deployment action", () => {
+      expect(newLogActions).toEqual([CheckSceneLogsTypes.NEW])
+    })
+  })
+
+  describe("when a world replacement fails after writing its position watermark", () => {
+    let enabledPlaces: PlaceAttributes[]
+    let enabledTitles: string[]
+    let olderTimestamp: number
+    let positionWatermarkPersisted: boolean
+    let recordPositions: typeof WorldDeploymentPositionWatermarkModel.recordPositions
+    let recordPositionsSpy: jest.SpyInstance
+    let replacementLogs: CheckSceneLogs[]
+    let replacementPlaces: PlaceAttributes[]
+    let replacementTombstone: Awaited<
+      ReturnType<typeof WorldSceneUndeploymentModel.findSupersedingUndeployment>
+    >
+    let taskError: unknown
+    let worldName: string
+
+    beforeEach(async () => {
+      worldName = "late-rollback-world.dcl.eth"
+      olderTimestamp = Date.now() - 60_000
+      await deployWorldScene({
+        worldName,
+        title: "Rollback Scene A",
+        base: "50,50",
+        parcels: ["50,50"],
+        entityId: "entity-rollback-a",
+        timestamp: olderTimestamp,
+      })
+      await deployWorldScene({
+        worldName,
+        title: "Rollback Scene B",
+        base: "50,51",
+        parcels: ["50,51"],
+        entityId: "entity-rollback-b",
+        timestamp: olderTimestamp,
+      })
+
+      recordPositions =
+        WorldDeploymentPositionWatermarkModel.recordPositions.bind(
+          WorldDeploymentPositionWatermarkModel
+        )
+      recordPositionsSpy = jest
+        .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
+        .mockImplementationOnce(async (worldId, positions, deployedAt) => {
+          await recordPositions(worldId, positions, deployedAt)
+          throw new Error("failure after position watermark")
+        })
+
+      taskError = await deployWorldScene({
+        worldName,
+        title: "Rolled Back Replacement",
+        base: "50,50",
+        parcels: ["50,50", "50,51"],
+        entityId: "entity-rollback-replacement",
+        timestamp: olderTimestamp + 1_000,
+      }).then(
+        () => null,
+        (error: unknown) => error
+      )
+
+      enabledPlaces = await PlaceModel.findEnabledWorldName(worldName)
+      enabledTitles = enabledPlaces.map((place) => place.title as string).sort()
+      replacementPlaces = await PlaceModel.find<PlaceAttributes>({
+        deployment_id: "entity-rollback-replacement",
+      })
+      replacementLogs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: "entity-rollback-replacement",
+      })
+      positionWatermarkPersisted =
+        await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+          worldName,
+          ["50,50", "50,51"],
+          new Date(olderTimestamp)
+        )
+      replacementTombstone =
+        await WorldSceneUndeploymentModel.findSupersedingUndeployment(
+          worldName,
+          "entity-rollback-a",
+          "50,50",
+          new Date(olderTimestamp)
+        )
+    })
+
+    afterEach(() => {
+      recordPositionsSpy.mockRestore()
+    })
+
+    it("should surface the late persistence failure", () => {
+      expect(taskError).toEqual(new Error("failure after position watermark"))
+    })
+
+    it("should restore both places disabled by the failed replacement", () => {
+      expect(enabledTitles).toEqual(["Rollback Scene A", "Rollback Scene B"])
+    })
+
+    it("should roll back the replacement place", () => {
+      expect(replacementPlaces).toHaveLength(0)
+    })
+
+    it("should roll back replacement logs", () => {
+      expect(replacementLogs).toHaveLength(0)
+    })
+
+    it("should roll back the newer position watermark", () => {
+      expect(positionWatermarkPersisted).toBe(false)
+    })
+
+    it("should roll back replacement tombstones", () => {
+      expect(replacementTombstone).toBeNull()
+    })
+  })
+
   describe("when an older genesis city deployment is applied after a newer revision was already stored", () => {
     let findEnabledByPositions: jest.SpyInstance
 
@@ -1441,6 +1676,80 @@ describe("taskRunnerSqs integration", () => {
       })
 
       expect(logs.map((log) => log.action)).toEqual([CheckSceneLogsTypes.AVOID])
+    })
+  })
+
+  describe("when a Genesis City deployment replaces an overlapping place", () => {
+    let originalPlace: PlaceAttributes
+    let replacementPlace: PlaceAttributes
+    let enabledOverlaps: PlaceAttributes[]
+    let logs: CheckSceneLogs[]
+    let replacementLogActions: CheckSceneLogsTypes[]
+
+    beforeEach(async () => {
+      const originalScene = createGenesisContentEntityScene({
+        title: "Original Genesis Scene",
+        base: "20,20",
+        parcels: ["20,20"],
+      })
+      mockProcessEntityId.mockResolvedValueOnce(originalScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(OLDER_ENTITY_ID))
+
+      const replacementScene = createGenesisContentEntityScene({
+        title: "Replacement Genesis Scene",
+        base: "20,21",
+        parcels: ["20,20", "20,21"],
+      })
+      replacementScene.timestamp = originalScene.timestamp + 1_000
+      mockProcessEntityId.mockResolvedValueOnce(replacementScene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(deploymentMessageWithEntityId(NEWER_ENTITY_ID))
+
+      const originalPlaces = await PlaceModel.find<PlaceAttributes>({
+        base_position: "20,20",
+      })
+      const replacementPlaces = await PlaceModel.find<PlaceAttributes>({
+        base_position: "20,21",
+      })
+      originalPlace = originalPlaces[0]
+      replacementPlace = replacementPlaces[0]
+      enabledOverlaps = await PlaceModel.findEnabledByPositions(["20,20"])
+      logs = await CheckScenesModel.find<CheckSceneLogs>({
+        entity_id: NEWER_ENTITY_ID,
+      })
+      replacementLogActions = logs.map((log) => log.action).sort()
+    })
+
+    it("should disable the place retired by the replacement", () => {
+      expect(originalPlace.disabled).toBe(true)
+    })
+
+    it("should mark the retired place as overwritten", () => {
+      expect(originalPlace.disabled_reason).toBe(DisabledReason.OVERWRITTEN)
+    })
+
+    it("should keep the replacement place enabled", () => {
+      expect(replacementPlace.disabled).toBe(false)
+    })
+
+    it("should leave only the replacement active at the overlapping parcel", () => {
+      expect(enabledOverlaps.map((place) => place.title)).toEqual([
+        "Replacement Genesis Scene",
+      ])
+    })
+
+    it("should record the new and disabled actions", () => {
+      expect(replacementLogActions).toEqual([
+        CheckSceneLogsTypes.DISABLED,
+        CheckSceneLogsTypes.NEW,
+      ])
     })
   })
 })

@@ -12,8 +12,40 @@ import { drainResponse } from "../../../utils/fetch"
 
 import type { DeploymentToSqs } from "./consumer"
 
+type ContentServerSource = {
+  contentServerUrls?: string[]
+}
+
+const CONTENT_SERVER_FETCH_TIMEOUT_MS = 15_000
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function isContentEntityScene(value: unknown): value is ContentEntityScene {
+  if (!isRecord(value)) {
+    return false
+  }
+  return (
+    value.type === EntityType.SCENE &&
+    typeof value.version === "string" &&
+    typeof value.timestamp === "number" &&
+    Number.isFinite(value.timestamp) &&
+    Array.isArray(value.pointers) &&
+    value.pointers.every((pointer) => typeof pointer === "string") &&
+    Array.isArray(value.content) &&
+    value.content.every(
+      (entry) =>
+        isRecord(entry) &&
+        typeof entry.file === "string" &&
+        typeof entry.hash === "string"
+    ) &&
+    isRecord(value.metadata)
+  )
+}
+
 export function getTrustedContentServerUrl(
-  job: DeploymentToSqs,
+  job: ContentServerSource,
   allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
 ): string {
   const contentServerUrls = job.contentServerUrls
@@ -67,8 +99,19 @@ export async function processEntityId(
   )
 
   const entityId = job.entity.entityId
+  return fetchContentEntity(entityId, contentServerUrl)
+}
+
+/**
+ * Fetch and hash-verify an immutable scene entity from a trusted content server.
+ */
+export async function fetchContentEntity(
+  entityId: string,
+  contentServerUrl: string
+): Promise<ContentEntityScene | null> {
   const response = await fetch(
-    `${contentServerUrl}/contents/${encodeURIComponent(entityId)}`
+    `${contentServerUrl}/contents/${encodeURIComponent(entityId)}`,
+    { signal: AbortSignal.timeout(CONTENT_SERVER_FETCH_TIMEOUT_MS) }
   )
   if (!response.ok) {
     await drainResponse(response)
@@ -97,21 +140,21 @@ export async function processEntityId(
     )
   }
 
-  if (
-    typeof parsedDeployment !== "object" ||
-    parsedDeployment === null ||
-    Array.isArray(parsedDeployment)
-  ) {
+  if (!isRecord(parsedDeployment)) {
     throw new InvalidWorldSqsMessageError(
       `Content deployment ${entityId} is not a JSON object`
     )
   }
 
-  const contentDeployment = parsedDeployment as ContentEntityScene
-
-  if (contentDeployment.type !== EntityType.SCENE) {
+  if (parsedDeployment.type !== EntityType.SCENE) {
     return null
   }
 
-  return contentDeployment
+  if (!isContentEntityScene(parsedDeployment)) {
+    throw new InvalidWorldSqsMessageError(
+      `Content deployment ${entityId} is not a valid scene entity`
+    )
+  }
+
+  return parsedDeployment
 }

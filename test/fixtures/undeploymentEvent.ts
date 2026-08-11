@@ -27,8 +27,12 @@ export function createWorldUndeploymentEvent(
  */
 export function createWorldScenesUndeploymentEvent(
   worldName: string,
-  scenes: Array<{ entityId: string; baseParcel: string }>,
-  options: { timestamp?: number } = {}
+  scenes: Array<{
+    entityId: string
+    baseParcel: string
+    parcels?: string[] | null
+  }>,
+  options: { timestamp?: number; includeParcels?: boolean } = {}
 ): WorldScenesUndeploymentEvent {
   return {
     type: Events.Type.WORLD,
@@ -37,7 +41,11 @@ export function createWorldScenesUndeploymentEvent(
     timestamp: options.timestamp ?? Date.now(),
     metadata: {
       worldName,
-      scenes,
+      scenes: scenes.map((scene) =>
+        options.includeParcels === false || scene.parcels !== undefined
+          ? scene
+          : { ...scene, parcels: [scene.baseParcel] }
+      ),
     },
   }
 }

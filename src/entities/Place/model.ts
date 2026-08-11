@@ -307,6 +307,38 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
+   * Check for an active world scene overlapping the supplied positions that was deployed after
+   * the incoming deployment. PostgreSQL performs the comparison so timestamp-without-time-zone
+   * values never cross the JavaScript date boundary before ordering is decided.
+   */
+  static async hasNewerActiveWorldDeployment(
+    worldId: string,
+    positions: string[],
+    deployedAt: Date
+  ): Promise<boolean> {
+    if (positions.length === 0) {
+      return false
+    }
+
+    const sql = SQL`
+      SELECT EXISTS (
+        SELECT 1
+        FROM ${table(this)}
+        WHERE ("disabled" is false OR "disabled_reason" = 'opt_out')
+          AND "world" is true
+          AND "world_id" = ${worldId}
+          AND "positions" && ${positions}
+          AND "deployed_at" > ${deployedAt}
+      ) AS "exists"
+    `
+    const results = await this.namedQuery<{ exists: boolean }>(
+      "has_newer_active_world_deployment",
+      sql
+    )
+    return results[0]?.exists ?? false
+  }
+
+  /**
    * Find a place by world_id and base_position (unique identifier for a scene in a world)
    */
   static async findByWorldIdAndBasePosition(
@@ -493,6 +525,41 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     await this.namedQuery("disable_places", sql)
   }
 
+  /**
+   * Disable candidate world places replaced by a deployment and return the rows actually changed.
+   * Accepted deployments replace ties; discarded deployments only carry removals for strictly
+   * older rows.
+   */
+  static async disableReplacedWorldPlaces(
+    placesIds: string[],
+    replacingDeployedAt: Date,
+    includeEqualTimestamp: boolean
+  ): Promise<PlaceAttributes[]> {
+    if (placesIds.length === 0) {
+      return []
+    }
+
+    const now = new Date()
+    const agePredicate = includeEqualTimestamp
+      ? SQL`"deployed_at" <= ${replacingDeployedAt}`
+      : SQL`"deployed_at" < ${replacingDeployedAt}`
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET "disabled" = TRUE,
+        "disabled_at" = ${now},
+        "updated_at" = ${now},
+        "disabled_reason" = 'overwritten'
+      WHERE "id" = ANY(${placesIds})
+        AND ("disabled" is false OR "disabled_reason" = 'opt_out')
+        AND ${agePredicate}
+      RETURNING *
+    `
+    return this.namedQuery<PlaceAttributes>(
+      "disable_replaced_world_places",
+      sql
+    )
+  }
+
   static async updateDisabled(
     placeId: string,
     disabled: boolean,
@@ -511,10 +578,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable all place records associated with a world that were deployed
-   * before the given event timestamp. This prevents stale undeployment
-   * events from disabling places that were re-deployed after the event
-   * was emitted.
+   * Disable all place records associated with a world that were deployed at or
+   * before the given event timestamp. This prevents stale undeployment events
+   * from disabling places that were re-deployed after the event was emitted.
+   *
+   * Ties go to the undeployment, matching the watermark predicates in
+   * WorldUndeploymentModel and WorldSceneUndeploymentModel, so an equally
+   * timestamped deployment reaches the same state whichever order it arrives in.
    */
   static async disableByWorldId(
     worldId: string,
@@ -527,21 +597,26 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)}
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE "world_id" = ${normalizedWorldId}
-        AND "deployed_at" < ${eventDate}
+        AND "deployed_at" <= ${eventDate}
         AND "disabled" IS FALSE
     `
     await this.namedQuery("disable_by_world_id", sql)
   }
 
   /**
-   * Disable world-scene places by immutable deployment id. Rows created before deployment ids
-   * were stored may fall back to base position only when that position identifies exactly one
-   * active row, preventing a forged or duplicated base from disabling another scene.
+   * Disable world-scene places by immutable deployment id or overlap with the authoritative
+   * undeployed footprint. The base-position fallback supports legacy events and rows; rows created
+   * before deployment ids were stored use that fallback only when the base identifies exactly one
+   * active row.
+   *
+   * Ties go to the undeployment, matching the watermark predicates, so an equally timestamped
+   * deployment reaches the same state whichever order it arrives in.
    */
   static async disableByWorldIdAndDeployments(
     worldId: string,
     deploymentIds: string[],
     basePositions: string[],
+    positions: string[],
     eventTimestamp: number
   ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
@@ -551,20 +626,23 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE target."world_id" = ${normalizedWorldId}
-        AND target."deployed_at" < ${eventDate}
+        AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND (
           target."deployment_id" = ANY(${deploymentIds})
+          OR target."positions" && ${positions}::varchar[]
           OR (
-            target."deployment_id" IS NULL
-            AND target."base_position" = ANY(${basePositions})
-            AND NOT EXISTS (
-              SELECT 1
-              FROM ${table(this)} conflicting
-              WHERE conflicting."world_id" = target."world_id"
-                AND conflicting."base_position" = target."base_position"
-                AND conflicting."disabled" IS FALSE
-                AND conflicting."id" <> target."id"
+            target."base_position" = ANY(${basePositions})
+            AND (
+              target."deployment_id" IS NOT NULL
+              OR NOT EXISTS (
+                SELECT 1
+                FROM ${table(this)} conflicting
+                WHERE conflicting."world_id" = target."world_id"
+                  AND conflicting."base_position" = target."base_position"
+                  AND conflicting."disabled" IS FALSE
+                  AND conflicting."id" <> target."id"
+              )
             )
           )
         )

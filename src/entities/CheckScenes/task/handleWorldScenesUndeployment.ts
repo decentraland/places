@@ -1,10 +1,48 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
+import { InvalidWorldSqsMessageError } from "./errors"
+import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
+import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
+import { UndeployedScene } from "../../WorldSceneUndeployment/types"
+
+const LOGGED_BASE_POSITIONS_LIMIT = 20
+
+function deduplicateScenes(scenes: UndeployedScene[]): UndeployedScene[] {
+  const uniqueScenes = new Map<string, UndeployedScene>()
+  for (const scene of scenes) {
+    const existing = uniqueScenes.get(scene.entityId)
+    if (existing && existing.baseParcel !== scene.baseParcel) {
+      throw new InvalidWorldSqsMessageError(
+        `Scene undeployment repeats deployment '${scene.entityId}' with conflicting base parcels.`
+      )
+    }
+    if (existing?.parcels?.length && scene.parcels?.length) {
+      const existingParcels = [...existing.parcels].sort()
+      const incomingParcels = [...scene.parcels].sort()
+      if (JSON.stringify(existingParcels) !== JSON.stringify(incomingParcels)) {
+        throw new InvalidWorldSqsMessageError(
+          `Scene undeployment repeats deployment '${scene.entityId}' with conflicting footprints.`
+        )
+      }
+    }
+    if (!existing?.parcels?.length || scene.parcels?.length) {
+      uniqueScenes.set(scene.entityId, scene)
+    }
+  }
+  return [...uniqueScenes.values()]
+}
+
+function summarizeBasePositions(basePositions: string[]): string {
+  const shown = basePositions.slice(0, LOGGED_BASE_POSITIONS_LIMIT).join(", ")
+  const remaining = basePositions.length - LOGGED_BASE_POSITIONS_LIMIT
+  return remaining > 0 ? `${shown} (+${remaining} more)` : shown
+}
 
 /**
  * Handles WorldScenesUndeploymentEvent from the worlds content server.
@@ -33,20 +71,26 @@ export async function handleWorldScenesUndeployment(
     return
   }
 
+  const uniqueScenes = deduplicateScenes(scenes)
   const loggerExtended = logger.extend({
     worldName,
-    sceneCount: scenes.length,
+    sceneCount: uniqueScenes.length,
     eventType: "WorldScenesUndeploymentEvent",
   })
 
   try {
-    const basePositions = scenes.map((scene) => scene.baseParcel)
-    const deploymentIds = scenes.map((scene) => scene.entityId)
+    const resolvedScenes = await resolveWorldSceneUndeploymentFootprints(
+      uniqueScenes
+    )
+    const basePositions = resolvedScenes.map((scene) => scene.baseParcel)
+    const deploymentIds = resolvedScenes.map((scene) => scene.entityId)
+    const positions = [
+      ...new Set(resolvedScenes.flatMap((scene) => scene.parcels)),
+    ]
+    const basePositionsSummary = summarizeBasePositions(basePositions)
 
     loggerExtended.log(
-      `Processing scene undeployment for world: ${worldName}, parcels: ${basePositions.join(
-        ", "
-      )}`
+      `Processing scene undeployment for world: ${worldName}, parcels: ${basePositionsSummary}`
     )
 
     // Same lock the deployment path takes, so an in-flight deployment for this world cannot
@@ -54,10 +98,25 @@ export async function handleWorldScenesUndeployment(
     const result = await withDatabaseTransaction(async () => {
       await WorldModel.lockWorldForDeployment(worldName)
 
+      // Durable watermark: the undeployment can arrive before the deployment it refers to, so
+      // record it whether or not a place row matched
+      await WorldSceneUndeploymentModel.recordScenes(
+        worldName,
+        resolvedScenes,
+        event.timestamp
+      )
+      await WorldDeploymentPositionWatermarkModel.recordPositions(
+        worldName,
+        positions,
+        new Date(event.timestamp),
+        true
+      )
+
       return PlaceModel.disableByWorldIdAndDeployments(
         worldName,
         deploymentIds,
         basePositions,
+        positions,
         event.timestamp
       )
     })
@@ -69,9 +128,7 @@ export async function handleWorldScenesUndeployment(
     }
 
     loggerExtended.log(
-      `Disabled place records for world: ${worldName} at positions: ${basePositions.join(
-        ", "
-      )}`
+      `Disabled place records for world: ${worldName} at positions: ${basePositionsSummary}`
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)

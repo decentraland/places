@@ -198,6 +198,37 @@ WHERE world IS TRUE AND disabled IS FALSE AND deployment_id IS NULL;
 Keep the guarded base-parcel fallback enabled and monitor its warning until this
 count reaches zero, then remove the fallback in a later release.
 
+Durable world-deployment ordering state lives in three tables:
+
+- `world_undeployments` records full-world undeployments.
+- `world_scene_undeployments` records scene undeployments by deployment and base parcel.
+- `world_deployment_position_watermarks` records the latest replacement or
+  undeployment boundary for each world parcel.
+
+All three start empty, so deployments processed before this release are
+unaffected: only ordering state recorded from this release onwards can supersede
+a later-delivered deployment. No backfill is required, and no reconciliation job
+needs to run. These migrations are intentionally forward-only because removing
+the recorded state would allow retired deployments to be replayed.
+
+After deploying the migrations, verify that all three results are non-null:
+
+```sql
+SELECT
+  to_regclass('public.world_undeployments') AS world_undeployments,
+  to_regclass('public.world_scene_undeployments') AS world_scene_undeployments,
+  to_regclass('public.world_deployment_position_watermarks')
+    AS world_deployment_position_watermarks;
+```
+
+A superseded world deployment is still allowed to retire the scenes it replaced
+upstream, because the worlds content server publishes scene undeployment events
+only for explicit deletes — a deployment that replaces an overlapping scene
+reports nothing, so that removal reaches places only through the deployment that
+caused it. Such a deployment creates no place of its own and is logged as
+`avoid`, while the strictly older places it overlapped are logged as `disabled`.
+Seeing both actions for one entity id is expected, not double processing.
+
 The `docker-compose` command starts:
 
 - **PostgreSQL** database on port 5432
