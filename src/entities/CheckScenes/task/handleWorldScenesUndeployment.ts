@@ -9,6 +9,8 @@ import WorldModel from "../../World/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import { UndeployedScene } from "../../WorldSceneUndeployment/types"
 
+const LOGGED_BASE_POSITIONS_LIMIT = 20
+
 function deduplicateScenes(scenes: UndeployedScene[]): UndeployedScene[] {
   const uniqueScenes = new Map<string, UndeployedScene>()
   for (const scene of scenes) {
@@ -21,6 +23,12 @@ function deduplicateScenes(scenes: UndeployedScene[]): UndeployedScene[] {
     uniqueScenes.set(scene.entityId, scene)
   }
   return [...uniqueScenes.values()]
+}
+
+function summarizeBasePositions(basePositions: string[]): string {
+  const shown = basePositions.slice(0, LOGGED_BASE_POSITIONS_LIMIT).join(", ")
+  const remaining = basePositions.length - LOGGED_BASE_POSITIONS_LIMIT
+  return remaining > 0 ? `${shown} (+${remaining} more)` : shown
 }
 
 /**
@@ -60,11 +68,10 @@ export async function handleWorldScenesUndeployment(
   try {
     const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
     const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
+    const basePositionsSummary = summarizeBasePositions(basePositions)
 
     loggerExtended.log(
-      `Processing scene undeployment for world: ${worldName}, parcels: ${basePositions.join(
-        ", "
-      )}`
+      `Processing scene undeployment for world: ${worldName}, parcels: ${basePositionsSummary}`
     )
 
     // Same lock the deployment path takes, so an in-flight deployment for this world cannot
@@ -95,9 +102,7 @@ export async function handleWorldScenesUndeployment(
     }
 
     loggerExtended.log(
-      `Disabled place records for world: ${worldName} at positions: ${basePositions.join(
-        ", "
-      )}`
+      `Disabled place records for world: ${worldName} at positions: ${basePositionsSummary}`
     )
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : String(error)

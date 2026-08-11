@@ -52,7 +52,10 @@ describe("when recording scene undeployments", () => {
       const [, sql] = namedQuery.mock.calls[0]
 
       expect(sql.values).toEqual(
-        expect.arrayContaining(["deployment-a", "deployment-b", "1,1", "2,2"])
+        expect.arrayContaining([
+          ["deployment-a", "deployment-b"],
+          ["1,1", "2,2"],
+        ])
       )
     })
 
@@ -64,6 +67,8 @@ describe("when recording scene undeployments", () => {
   })
 
   describe("and the event repeats a deployment", () => {
+    let deploymentIds: string[]
+
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordScenes(
         "example.dcl.eth",
@@ -73,14 +78,46 @@ describe("when recording scene undeployments", () => {
         ],
         eventTimestamp
       )
+      const [, sql] = namedQuery.mock.calls[0]
+      deploymentIds =
+        sql.values.find((value): value is string[] => Array.isArray(value)) ??
+        []
     })
 
     it("should include the deployment only once in the bulk upsert", () => {
-      const [, sql] = namedQuery.mock.calls[0]
+      expect(deploymentIds).toEqual(["deployment-a"])
+    })
+  })
 
-      expect(
-        sql.values.filter((value) => value === "deployment-a")
-      ).toHaveLength(1)
+  describe("and the event carries thousands of scenes", () => {
+    let bindValues: unknown[]
+    let scenes: Array<{ entityId: string; baseParcel: string }>
+
+    beforeEach(async () => {
+      scenes = Array.from({ length: 5_000 }, (_, index) => ({
+        entityId: `deployment-${index}`,
+        baseParcel: `${index},0`,
+      }))
+
+      await WorldSceneUndeploymentModel.recordScenes(
+        "example.dcl.eth",
+        scenes,
+        eventTimestamp
+      )
+      const [, sql] = namedQuery.mock.calls[0]
+      bindValues = sql.values
+    })
+
+    it("should keep the bind parameter count constant", () => {
+      expect(bindValues).toHaveLength(4)
+    })
+
+    it("should pass every deployment id in one array parameter", () => {
+      expect(bindValues).toContainEqual(scenes.map((scene) => scene.entityId))
+    })
+
+    it("should pass every base position in one array parameter", () => {
+      expect(bindValues).toContainEqual(scenes.map((scene) => scene.baseParcel))
     })
   })
 })

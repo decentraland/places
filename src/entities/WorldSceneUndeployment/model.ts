@@ -1,8 +1,4 @@
-import {
-  SQL,
-  join,
-  table,
-} from "decentraland-gatsby/dist/entities/Database/utils"
+import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { UndeployedScene, WorldSceneUndeploymentAttributes } from "./types"
 import { Model } from "../Database/model"
@@ -37,18 +33,18 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
     const uniqueScenes = [
       ...new Map(scenes.map((scene) => [scene.entityId, scene])).values(),
     ]
-    const values = join(
-      uniqueScenes.map(
-        (scene) =>
-          SQL`(${normalizedWorldId}, ${scene.entityId}, ${scene.baseParcel}, ${undeployedAt})`
-      )
-    )
+    const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
+    const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
 
     const sql = SQL`
       INSERT INTO ${table(
         this
       )} ("world_id", "deployment_id", "base_position", "undeployed_at")
-      VALUES ${values}
+      SELECT ${normalizedWorldId}, incoming."deployment_id", incoming."base_position", ${undeployedAt}
+      FROM unnest(
+        ${deploymentIds}::text[],
+        ${basePositions}::text[]
+      ) AS incoming("deployment_id", "base_position")
       ON CONFLICT ("world_id", "deployment_id") DO UPDATE
       SET "base_position" = CASE
             WHEN EXCLUDED."undeployed_at" >= ${table(this)}."undeployed_at"
