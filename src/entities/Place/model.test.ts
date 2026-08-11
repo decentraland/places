@@ -1002,11 +1002,12 @@ describe("when disabling world scenes by deployment identity", () => {
     namedQuery.mockResolvedValue([])
   })
 
-  it("should use the immutable deployment ids and an unambiguous legacy fallback", async () => {
+  it("should match current revisions by deployment id or base and guard legacy base matches", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "Example.DCL.ETH",
       ["deployment-a"],
       ["1,1"],
+      ["1,1", "2,1"],
       eventTimestamp
     )
 
@@ -1014,7 +1015,9 @@ describe("when disabling world scenes by deployment identity", () => {
     const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
     expect({ name, normalizedSql }).toEqual({
       name: "disable_by_world_id_and_deployments",
-      normalizedSql: expect.stringContaining('target."deployment_id" = ANY($'),
+      normalizedSql: expect.stringMatching(
+        /target\."deployment_id" = ANY\(\$.*target\."positions" && \$.*::varchar\[\].*target\."base_position" = ANY\(\$.*target\."deployment_id" IS NOT NULL OR NOT EXISTS/
+      ),
     })
   })
 
@@ -1028,6 +1031,7 @@ describe("when disabling world scenes by deployment identity", () => {
       "example.dcl.eth",
       ["deployment-a"],
       ["1,1"],
+      ["1,1", "2,1"],
       eventTimestamp
     )
 

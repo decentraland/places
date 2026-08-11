@@ -63,6 +63,86 @@ describe("when validating a world scenes undeployment event", () => {
     })
   })
 
+  describe("and the event includes a canonical scene footprint", () => {
+    it("should accept the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              {
+                entityId: "deployment-a",
+                baseParcel: "1,1",
+                parcels: ["1,1", "1,2"],
+              },
+            ],
+          },
+        })
+      ).toBe(true)
+    })
+  })
+
+  describe("and an included footprint is empty", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              {
+                entityId: "deployment-a",
+                baseParcel: "1,1",
+                parcels: [],
+              },
+            ],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+
+  describe("and an included footprint repeats a parcel", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              {
+                entityId: "deployment-a",
+                baseParcel: "1,1",
+                parcels: ["1,1", "1,1"],
+              },
+            ],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+
+  describe("and an included footprint contains a non-canonical parcel", () => {
+    it("should reject the event", () => {
+      expect(
+        isScenesUndeploymentEvent({
+          ...event,
+          metadata: {
+            ...event.metadata,
+            scenes: [
+              {
+                entityId: "deployment-a",
+                baseParcel: "1,1",
+                parcels: ["01,1"],
+              },
+            ],
+          },
+        })
+      ).toBe(false)
+    })
+  })
+
   describe("and an entity id is duplicated", () => {
     it("should reject the event", () => {
       expect(

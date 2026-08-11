@@ -5,10 +5,14 @@ import { InvalidWorldSqsMessageError } from "../../src/entities/CheckScenes/task
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
-import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
+import {
+  fetchContentEntity,
+  processEntityId,
+} from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason, PlaceAttributes } from "../../src/entities/Place/types"
+import WorldDeploymentPositionWatermarkModel from "../../src/entities/WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployment/model"
 import { WorldSceneUndeploymentAttributes } from "../../src/entities/WorldSceneUndeployment/types"
 import WorldUndeploymentModel from "../../src/entities/WorldUndeployment/model"
@@ -55,6 +59,9 @@ jest.mock("../../src/modules/worldsLiveData", () => ({
 
 const mockProcessEntityId = processEntityId as jest.MockedFunction<
   typeof processEntityId
+>
+const mockFetchContentEntity = fetchContentEntity as jest.MockedFunction<
+  typeof fetchContentEntity
 >
 const mockExtractSceneJsonData = extractSceneJsonData as jest.MockedFunction<
   typeof extractSceneJsonData
@@ -198,6 +205,267 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
     })
   })
 
+  describe("and an undeployed replacement was never stored locally", () => {
+    let state: {
+      olderRevisionDisabledReason: DisabledReason | null
+      enabledTitles: Array<string | null>
+    }
+
+    beforeEach(async () => {
+      const worldName = "missing-replacement.dcl.eth"
+      const olderDeploymentTimestamp = Date.parse("2026-08-10T12:30:00.000Z")
+      const undeploymentTimestamp = olderDeploymentTimestamp + 2
+
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-older-revision",
+        timestamp: olderDeploymentTimestamp,
+        title: "Older Replaced Scene",
+        base: "0,0",
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-unrelated-sibling",
+        timestamp: olderDeploymentTimestamp,
+        title: "Unrelated Sibling Scene",
+        base: "5,5",
+      })
+
+      // The replacement deployment never reached Places, but its later undeployment still proves
+      // that every older revision at its base was retired upstream.
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-missing-replacement", baseParcel: "0,0" }],
+          { timestamp: undeploymentTimestamp }
+        )
+      )
+
+      const olderRevision = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      state = {
+        olderRevisionDisabledReason: olderRevision?.disabled_reason ?? null,
+        enabledTitles: (await PlaceModel.findEnabledWorldName(worldName)).map(
+          (place) => place.title
+        ),
+      }
+    })
+
+    it("should disable the older base revision while preserving unrelated scenes", () => {
+      expect(state).toEqual({
+        olderRevisionDisabledReason: DisabledReason.UNDEPLOYMENT,
+        enabledTitles: ["Unrelated Sibling Scene"],
+      })
+    })
+  })
+
+  describe("and the missing replacement changed base while still overlapping the stored scene", () => {
+    let state: {
+      olderRevisionDisabledReason: DisabledReason | null
+      enabledTitles: Array<string | null>
+    }
+
+    beforeEach(async () => {
+      const worldName = "missing-reshaped-replacement.dcl.eth"
+      const olderDeploymentTimestamp = Date.parse("2026-08-10T12:40:00.000Z")
+      const undeploymentTimestamp = olderDeploymentTimestamp + 2
+
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-older-shaped-revision",
+        timestamp: olderDeploymentTimestamp,
+        title: "Older Shaped Scene",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-shaped-sibling",
+        timestamp: olderDeploymentTimestamp,
+        title: "Unrelated Shaped Sibling",
+        base: "5,5",
+      })
+
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-missing-reshaped-replacement",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: undeploymentTimestamp }
+        )
+      )
+
+      const olderRevision = await PlaceModel.findByWorldIdAndBasePosition(
+        worldName,
+        "0,0"
+      )
+      state = {
+        olderRevisionDisabledReason: olderRevision?.disabled_reason ?? null,
+        enabledTitles: (await PlaceModel.findEnabledWorldName(worldName)).map(
+          (place) => place.title
+        ),
+      }
+    })
+
+    it("should disable the older overlapping revision while preserving unrelated scenes", () => {
+      expect(state).toEqual({
+        olderRevisionDisabledReason: DisabledReason.UNDEPLOYMENT,
+        enabledTitles: ["Unrelated Shaped Sibling"],
+      })
+    })
+  })
+
+  describe("and the older changed-base deployment arrives only after the replacement undeployment", () => {
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      const worldName = "late-reshaped-replacement.dcl.eth"
+      const olderDeploymentTimestamp = Date.parse("2026-08-10T12:50:00.000Z")
+
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-late-reshaped-replacement",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: olderDeploymentTimestamp + 2 }
+        )
+      )
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-late-older-shape",
+        timestamp: olderDeploymentTimestamp,
+        title: "Late Older Shape",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-late-unrelated-shape",
+        timestamp: olderDeploymentTimestamp,
+        title: "Late Unrelated Shape",
+        base: "5,5",
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should reject only the delayed deployment overlapping the retired footprint", () => {
+      expect(enabledTitles).toEqual(["Late Unrelated Shape"])
+    })
+  })
+
+  describe("and an oversized replacement footprint must be fetched", () => {
+    let state: { enabledTitles: Array<string | null>; fetchCount: number }
+
+    beforeEach(async () => {
+      const worldName = "fetched-reshaped-replacement.dcl.eth"
+      const olderDeploymentTimestamp = Date.parse("2026-08-10T12:55:00.000Z")
+      mockFetchContentEntity.mockResolvedValueOnce(
+        createWorldContentEntityScene({
+          worldName,
+          base: "1,0",
+          parcels: ["1,0", "2,0"],
+        })
+      )
+
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-oversized-replacement",
+              baseParcel: "1,0",
+            },
+          ],
+          {
+            timestamp: olderDeploymentTimestamp + 2,
+            includeParcels: false,
+          }
+        )
+      )
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-before-oversized-replacement",
+        timestamp: olderDeploymentTimestamp,
+        title: "Older Scene Before Oversized Replacement",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+
+      state = {
+        enabledTitles: (await PlaceModel.findEnabledWorldName(worldName)).map(
+          (place) => place.title
+        ),
+        fetchCount: mockFetchContentEntity.mock.calls.length,
+      }
+    })
+
+    it("should fetch the footprint and reject the delayed overlapping deployment", () => {
+      expect(state).toEqual({ enabledTitles: [], fetchCount: 1 })
+    })
+  })
+
+  describe("and a changed-base deployment ties the replacement undeployment timestamp", () => {
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      const worldName = "tied-reshaped-undeployment.dcl.eth"
+      const boundaryTimestamp = Date.parse("2026-08-10T12:57:00.000Z")
+
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-tied-reshaped-replacement",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: boundaryTimestamp }
+        )
+      )
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-tied-older-shape",
+        timestamp: boundaryTimestamp,
+        title: "Tied Older Shape",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-after-shaped-undeployment",
+        timestamp: boundaryTimestamp + 1,
+        title: "After Shaped Undeployment",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should reject the tied deployment while accepting the strictly newer one", () => {
+      expect(enabledTitles).toEqual(["After Shaped Undeployment"])
+    })
+  })
+
   describe("and a stale scene undeployment is followed by older and newer deliveries", () => {
     let enabledTitles: Array<string | null>
 
@@ -295,6 +563,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
     let state: {
       enabledTitles: Array<string | null>
       errorMessage: string | null
+      positionWatermarkExists: boolean
       watermark: WorldSceneUndeploymentAttributes | null
     }
 
@@ -334,11 +603,18 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
           "0,0",
           new Date(deployedAt)
         )
+      const positionWatermarkExists =
+        await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+          worldName,
+          ["0,0"],
+          new Date(deployedAt)
+        )
       state = {
         enabledTitles: (await PlaceModel.findEnabledWorldName(worldName)).map(
           (place) => place.title
         ),
         errorMessage: error instanceof Error ? error.message : null,
+        positionWatermarkExists,
         watermark,
       }
     })
@@ -347,6 +623,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       expect(state).toEqual({
         enabledTitles: ["Rollback Scene"],
         errorMessage: "scene disable failed",
+        positionWatermarkExists: false,
         watermark: null,
       })
     })
@@ -714,7 +991,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
     })
   })
 
-  describe("and an undeployment base matches multiple active legacy places", () => {
+  describe("and an undeployment footprint overlaps multiple active legacy places", () => {
     let enabledCount: number
 
     beforeEach(async () => {
@@ -755,8 +1032,8 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       enabledCount = (await PlaceModel.findEnabledWorldName(worldName)).length
     })
 
-    it("should preserve every row rather than guessing which legacy place was targeted", () => {
-      expect(enabledCount).toBe(2)
+    it("should disable every stale row occupying the authoritative footprint", () => {
+      expect(enabledCount).toBe(0)
     })
   })
 })

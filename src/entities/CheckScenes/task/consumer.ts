@@ -2,7 +2,6 @@ import { IPFSv1, IPFSv2 } from "@dcl/schemas/dist/misc"
 import { DeploymentToSqs } from "@dcl/schemas/dist/misc/deployments-to-sqs"
 import { Events } from "@dcl/schemas/dist/platform/events/base"
 import {
-  WorldScenesUndeploymentEvent,
   WorldSettingsChangedEvent,
   WorldUndeploymentEvent,
 } from "@dcl/schemas/dist/platform/events/world"
@@ -11,6 +10,10 @@ import { SQS } from "aws-sdk"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  WorldScenesUndeploymentEventWithParcels,
+  isWorldScenesUndeploymentEventWithParcels,
+} from "./worldScenesUndeploymentEvent"
 import { notifyError } from "../../Slack/utils"
 
 export { DeploymentToSqs }
@@ -19,7 +22,7 @@ export { DeploymentToSqs }
 export type WorldSqsMessage =
   | DeploymentToSqs
   | WorldSettingsChangedEvent
-  | WorldScenesUndeploymentEvent
+  | WorldScenesUndeploymentEventWithParcels
   | WorldUndeploymentEvent
 
 const validateWorldSettingsChanged = generateLazyValidator(
@@ -69,8 +72,8 @@ export function isSettingsChangedEvent(
 /** Type guard to check if message is a scene undeployment event */
 export function isScenesUndeploymentEvent(
   message: unknown
-): message is WorldScenesUndeploymentEvent {
-  return isRecord(message) && WorldScenesUndeploymentEvent.validate(message)
+): message is WorldScenesUndeploymentEventWithParcels {
+  return isWorldScenesUndeploymentEventWithParcels(message)
 }
 
 /** Type guard to check if message is a full world undeployment event */

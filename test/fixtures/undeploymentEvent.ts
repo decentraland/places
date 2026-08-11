@@ -1,8 +1,7 @@
 import { Events } from "@dcl/schemas/dist/platform/events/base"
-import {
-  WorldScenesUndeploymentEvent,
-  WorldUndeploymentEvent,
-} from "@dcl/schemas/dist/platform/events/world"
+import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
+
+import { WorldScenesUndeploymentEventWithParcels } from "../../src/entities/CheckScenes/task/worldScenesUndeploymentEvent"
 
 /**
  * Creates a WorldUndeploymentEvent for a full world undeployment.
@@ -27,9 +26,13 @@ export function createWorldUndeploymentEvent(
  */
 export function createWorldScenesUndeploymentEvent(
   worldName: string,
-  scenes: Array<{ entityId: string; baseParcel: string }>,
-  options: { timestamp?: number } = {}
-): WorldScenesUndeploymentEvent {
+  scenes: Array<{
+    entityId: string
+    baseParcel: string
+    parcels?: string[] | null
+  }>,
+  options: { timestamp?: number; includeParcels?: boolean } = {}
+): WorldScenesUndeploymentEventWithParcels {
   return {
     type: Events.Type.WORLD,
     subType: Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT,
@@ -37,7 +40,11 @@ export function createWorldScenesUndeploymentEvent(
     timestamp: options.timestamp ?? Date.now(),
     metadata: {
       worldName,
-      scenes,
+      scenes: scenes.map((scene) =>
+        options.includeParcels === false || scene.parcels !== undefined
+          ? scene
+          : { ...scene, parcels: [scene.baseParcel] }
+      ),
     },
   }
 }

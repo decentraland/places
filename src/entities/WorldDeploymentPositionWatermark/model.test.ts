@@ -45,7 +45,21 @@ describe("when recording world deployment position watermarks", () => {
       const [, sql] = namedQuery.mock.calls[0]
 
       expect(sql.text.replace(/\s+/g, " ")).toContain(
-        `ON CONFLICT ("world_id", "position") DO UPDATE SET "superseded_at" = GREATEST(`
+        `"superseded_at" = GREATEST(`
+      )
+    })
+
+    it("should record deployment boundaries as strict by default", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.values).toContain(false)
+    })
+
+    it("should preserve an inclusive boundary when timestamps tie", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toContain(
+        `THEN "world_deployment_position_watermarks"."inclusive" OR EXCLUDED."inclusive"`
       )
     })
 
@@ -59,7 +73,7 @@ describe("when recording world deployment position watermarks", () => {
       const [, sql] = namedQuery.mock.calls[0]
 
       expect(sql.text.replace(/\s+/g, " ")).toContain(
-        `SELECT DISTINCT unnest($3::text[]) AS "position"`
+        `SELECT DISTINCT unnest($4::text[]) AS "position"`
       )
     })
 
@@ -120,6 +134,14 @@ describe("when looking for a deployment that supersedes incoming positions", () 
 
       expect(sql.text.replace(/\s+/g, " ")).toContain(
         `watermark."superseded_at" > $`
+      )
+    })
+
+    it("should match equal timestamps only for inclusive boundaries", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.text.replace(/\s+/g, " ")).toMatch(
+        /watermark\."superseded_at" = \$\d+ AND watermark\."inclusive" IS TRUE/
       )
     })
   })

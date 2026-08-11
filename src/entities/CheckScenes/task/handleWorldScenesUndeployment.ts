@@ -1,11 +1,13 @@
-import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import { InvalidWorldSqsMessageError } from "./errors"
+import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
+import { WorldScenesUndeploymentEventWithParcels } from "./worldScenesUndeploymentEvent"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import { UndeployedScene } from "../../WorldSceneUndeployment/types"
 
@@ -20,7 +22,18 @@ function deduplicateScenes(scenes: UndeployedScene[]): UndeployedScene[] {
         `Scene undeployment repeats deployment '${scene.entityId}' with conflicting base parcels.`
       )
     }
-    uniqueScenes.set(scene.entityId, scene)
+    if (existing?.parcels?.length && scene.parcels?.length) {
+      const existingParcels = [...existing.parcels].sort()
+      const incomingParcels = [...scene.parcels].sort()
+      if (JSON.stringify(existingParcels) !== JSON.stringify(incomingParcels)) {
+        throw new InvalidWorldSqsMessageError(
+          `Scene undeployment repeats deployment '${scene.entityId}' with conflicting footprints.`
+        )
+      }
+    }
+    if (!existing?.parcels?.length || scene.parcels?.length) {
+      uniqueScenes.set(scene.entityId, scene)
+    }
   }
   return [...uniqueScenes.values()]
 }
@@ -42,7 +55,7 @@ function summarizeBasePositions(basePositions: string[]): string {
  * Legacy rows without deployment ids use the guarded base-position fallback below.
  */
 export async function handleWorldScenesUndeployment(
-  event: WorldScenesUndeploymentEvent
+  event: WorldScenesUndeploymentEventWithParcels
 ): Promise<void> {
   const worldName = event.metadata.worldName
 
@@ -66,8 +79,14 @@ export async function handleWorldScenesUndeployment(
   })
 
   try {
-    const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
-    const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
+    const resolvedScenes = await resolveWorldSceneUndeploymentFootprints(
+      uniqueScenes
+    )
+    const basePositions = resolvedScenes.map((scene) => scene.baseParcel)
+    const deploymentIds = resolvedScenes.map((scene) => scene.entityId)
+    const positions = [
+      ...new Set(resolvedScenes.flatMap((scene) => scene.parcels)),
+    ]
     const basePositionsSummary = summarizeBasePositions(basePositions)
 
     loggerExtended.log(
@@ -83,14 +102,21 @@ export async function handleWorldScenesUndeployment(
       // record it whether or not a place row matched
       await WorldSceneUndeploymentModel.recordScenes(
         worldName,
-        uniqueScenes,
+        resolvedScenes,
         event.timestamp
+      )
+      await WorldDeploymentPositionWatermarkModel.recordPositions(
+        worldName,
+        positions,
+        new Date(event.timestamp),
+        true
       )
 
       return PlaceModel.disableByWorldIdAndDeployments(
         worldName,
         deploymentIds,
         basePositions,
+        positions,
         event.timestamp
       )
     })

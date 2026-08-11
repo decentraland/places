@@ -604,9 +604,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable world-scene places by immutable deployment id. Rows created before deployment ids
-   * were stored may fall back to base position only when that position identifies exactly one
-   * active row, preventing a forged or duplicated base from disabling another scene.
+   * Disable world-scene places by immutable deployment id or overlap with the authoritative
+   * undeployed footprint. The base-position fallback supports legacy events and rows; rows created
+   * before deployment ids were stored use that fallback only when the base identifies exactly one
+   * active row.
    *
    * Ties go to the undeployment, matching the watermark predicates, so an equally timestamped
    * deployment reaches the same state whichever order it arrives in.
@@ -615,6 +616,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     worldId: string,
     deploymentIds: string[],
     basePositions: string[],
+    positions: string[],
     eventTimestamp: number
   ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
@@ -628,16 +630,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND target."disabled" IS FALSE
         AND (
           target."deployment_id" = ANY(${deploymentIds})
+          OR target."positions" && ${positions}::varchar[]
           OR (
-            target."deployment_id" IS NULL
-            AND target."base_position" = ANY(${basePositions})
-            AND NOT EXISTS (
-              SELECT 1
-              FROM ${table(this)} conflicting
-              WHERE conflicting."world_id" = target."world_id"
-                AND conflicting."base_position" = target."base_position"
-                AND conflicting."disabled" IS FALSE
-                AND conflicting."id" <> target."id"
+            target."base_position" = ANY(${basePositions})
+            AND (
+              target."deployment_id" IS NOT NULL
+              OR NOT EXISTS (
+                SELECT 1
+                FROM ${table(this)} conflicting
+                WHERE conflicting."world_id" = target."world_id"
+                  AND conflicting."base_position" = target."base_position"
+                  AND conflicting."disabled" IS FALSE
+                  AND conflicting."id" <> target."id"
+              )
             )
           )
         )

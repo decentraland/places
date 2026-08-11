@@ -48,7 +48,8 @@ describe("when processing an entity id", () => {
       await processEntityId(job, allowedContentServerHosts)
 
       expect(fetchMock).toHaveBeenCalledWith(
-        `https://peer.decentraland.org/content/contents/${job.entity.entityId}`
+        `https://peer.decentraland.org/content/contents/${job.entity.entityId}`,
+        { signal: expect.any(AbortSignal) }
       )
     })
 
@@ -91,7 +92,8 @@ describe("when processing an entity id", () => {
       await processEntityId(job, allowedContentServerHosts)
 
       expect(fetchMock).toHaveBeenCalledWith(
-        `https://peer.decentraland.org/content/contents/${job.entity.entityId}`
+        `https://peer.decentraland.org/content/contents/${job.entity.entityId}`,
+        { signal: expect.any(AbortSignal) }
       )
     })
   })

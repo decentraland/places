@@ -8,4 +8,5 @@ export type WorldSceneUndeploymentAttributes = {
 export type UndeployedScene = {
   entityId: string
   baseParcel: string
+  parcels?: string[] | null
 }

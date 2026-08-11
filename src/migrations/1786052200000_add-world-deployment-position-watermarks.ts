@@ -20,6 +20,11 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       type: Type.TimeStampTZ,
       notNull: true,
     },
+    inclusive: {
+      type: Type.Boolean,
+      notNull: true,
+      default: false,
+    },
   })
 
   pgm.addConstraint(

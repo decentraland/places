@@ -22,22 +22,32 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
   static async recordPositions(
     worldId: string,
     positions: string[],
-    deployedAt: Date
+    deployedAt: Date,
+    inclusive = false
   ): Promise<void> {
     if (positions.length === 0) {
       return
     }
 
     const sql = SQL`
-      INSERT INTO ${table(this)} ("world_id", "position", "superseded_at")
-      SELECT ${worldId.toLowerCase()}, incoming."position", ${deployedAt}
+      INSERT INTO ${table(
+        this
+      )} ("world_id", "position", "superseded_at", "inclusive")
+      SELECT ${worldId.toLowerCase()}, incoming."position", ${deployedAt}, ${inclusive}
       FROM (
         SELECT DISTINCT unnest(${positions}::text[]) AS "position"
       ) AS incoming
       ON CONFLICT ("world_id", "position") DO UPDATE
-      SET "superseded_at" = GREATEST(${table(
-        this
-      )}."superseded_at", EXCLUDED."superseded_at")
+      SET "inclusive" = CASE
+            WHEN EXCLUDED."superseded_at" > ${table(this)}."superseded_at"
+            THEN EXCLUDED."inclusive"
+            WHEN EXCLUDED."superseded_at" = ${table(this)}."superseded_at"
+            THEN ${table(this)}."inclusive" OR EXCLUDED."inclusive"
+            ELSE ${table(this)}."inclusive"
+          END,
+          "superseded_at" = GREATEST(${table(
+            this
+          )}."superseded_at", EXCLUDED."superseded_at")
     `
 
     await this.namedQuery("record_world_deployment_position_watermarks", sql)
@@ -66,7 +76,13 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
         ) AS incoming
           ON incoming."position" = watermark."position"
         WHERE watermark."world_id" = ${worldId.toLowerCase()}
-          AND watermark."superseded_at" > ${deployedAt}
+          AND (
+            watermark."superseded_at" > ${deployedAt}
+            OR (
+              watermark."superseded_at" = ${deployedAt}
+              AND watermark."inclusive" IS TRUE
+            )
+          )
       ) AS "exists"
     `
 
