@@ -1,9 +1,8 @@
-import { Events } from "@dcl/schemas"
+import { Events, WorldScenesUndeploymentEvent } from "@dcl/schemas"
 
 import { InvalidWorldSqsMessageError } from "./errors"
 import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
 import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
-import { WorldScenesUndeploymentEventWithParcels } from "./worldScenesUndeploymentEvent"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
 import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
@@ -21,7 +20,7 @@ describe("when handling a world scenes undeployment event", () => {
   let recordPositions: jest.SpyInstance
   let recordScenes: jest.SpyInstance
   let calls: string[]
-  let event: WorldScenesUndeploymentEventWithParcels
+  let event: WorldScenesUndeploymentEvent
 
   beforeEach(() => {
     calls = []

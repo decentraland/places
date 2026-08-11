@@ -1,3 +1,4 @@
+import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { InvalidWorldSqsMessageError } from "./errors"
@@ -5,7 +6,6 @@ import {
   fetchContentEntity,
   getTrustedContentServerUrl,
 } from "./processEntityId"
-import { WorldScenesUndeploymentEventWithParcels } from "./worldScenesUndeploymentEvent"
 import { UndeployedScene } from "../../WorldSceneUndeployment/types"
 
 const FOOTPRINT_FETCH_CONCURRENCY = 10
@@ -34,7 +34,7 @@ function validateFootprint(
 }
 
 async function resolveScene(
-  scene: WorldScenesUndeploymentEventWithParcels["metadata"]["scenes"][number],
+  scene: WorldScenesUndeploymentEvent["metadata"]["scenes"][number],
   contentServerUrl: string
 ): Promise<ResolvedUndeployedScene> {
   if (scene.parcels?.length) {
@@ -72,7 +72,7 @@ async function resolveScene(
  * Worlds Content Server. Fetches are bounded so large legacy batches do not create an HTTP spike.
  */
 export async function resolveWorldSceneUndeploymentFootprints(
-  scenes: WorldScenesUndeploymentEventWithParcels["metadata"]["scenes"],
+  scenes: WorldScenesUndeploymentEvent["metadata"]["scenes"],
   worldsContentServerUrl = env(
     "WORLDS_CONTENT_SERVER_URL",
     "https://worlds-content-server.decentraland.org"

@@ -1,7 +1,8 @@
 import { Events } from "@dcl/schemas/dist/platform/events/base"
-import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
-
-import { WorldScenesUndeploymentEventWithParcels } from "../../src/entities/CheckScenes/task/worldScenesUndeploymentEvent"
+import {
+  WorldScenesUndeploymentEvent,
+  WorldUndeploymentEvent,
+} from "@dcl/schemas/dist/platform/events/world"
 
 /**
  * Creates a WorldUndeploymentEvent for a full world undeployment.
@@ -32,7 +33,7 @@ export function createWorldScenesUndeploymentEvent(
     parcels?: string[] | null
   }>,
   options: { timestamp?: number; includeParcels?: boolean } = {}
-): WorldScenesUndeploymentEventWithParcels {
+): WorldScenesUndeploymentEvent {
   return {
     type: Events.Type.WORLD,
     subType: Events.SubType.Worlds.WORLD_SCENES_UNDEPLOYMENT,

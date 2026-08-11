@@ -1,8 +1,8 @@
+import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import { InvalidWorldSqsMessageError } from "./errors"
 import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
-import { WorldScenesUndeploymentEventWithParcels } from "./worldScenesUndeploymentEvent"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
@@ -55,7 +55,7 @@ function summarizeBasePositions(basePositions: string[]): string {
  * Legacy rows without deployment ids use the guarded base-position fallback below.
  */
 export async function handleWorldScenesUndeployment(
-  event: WorldScenesUndeploymentEventWithParcels
+  event: WorldScenesUndeploymentEvent
 ): Promise<void> {
   const worldName = event.metadata.worldName
 
