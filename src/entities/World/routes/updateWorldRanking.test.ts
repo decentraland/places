@@ -47,6 +47,7 @@ const baseAggregateWorld: AggregateWorldAttributes = {
   highlighted: false,
   highlighted_image: null,
   ranking: null,
+  settings_updated_at: null,
   user_like: false,
   user_dislike: false,
   user_favorite: false,

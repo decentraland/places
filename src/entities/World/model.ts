@@ -437,6 +437,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       highlighted: world.highlighted ?? false,
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
+      settings_updated_at: world.settings_updated_at ?? null,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -550,6 +551,63 @@ export default class WorldModel extends Model<WorldAttributes> {
       sql
     )
     return updatedWorld
+  }
+
+  /**
+   * Upsert world settings mirrored from worlds-content-server. The update only applies when the
+   * incoming `settings_updated_at` is not older than the one already stored, so reordered or
+   * redelivered settings events can never overwrite newer data with an older snapshot.
+   * Returns null when the incoming version is older and the write was skipped.
+   */
+  static async upsertWorldSettings(
+    world: Partial<WorldAttributes> & {
+      world_name: string
+      settings_updated_at: Date
+    }
+  ): Promise<WorldAttributes | null> {
+    const worldData = this.buildWorldData(world)
+
+    const updatableFields: (keyof WorldAttributes)[] = [
+      "title",
+      "description",
+      "image",
+      "content_rating",
+      "categories",
+      "show_in_places",
+      "single_player",
+      "skybox_time",
+      "is_private",
+      "settings_updated_at",
+    ]
+
+    // Only explicitly provided fields update on conflict, so omitted settings never
+    // overwrite existing values with defaults
+    const changes: Partial<WorldAttributes> = {
+      updated_at: worldData.updated_at,
+    }
+    for (const field of updatableFields) {
+      if (world[field] !== undefined) {
+        ;(changes as Record<string, unknown>)[field] = world[field]
+      }
+    }
+
+    const insertFields = Object.keys(worldData) as Array<keyof WorldAttributes>
+    const updateFields = Object.keys(changes) as Array<keyof WorldAttributes>
+    const sql = SQL`
+      INSERT INTO ${table(this)} ${columns(insertFields)}
+      VALUES ${objectValues(insertFields, [worldData])}
+      ON CONFLICT ("id") DO UPDATE SET ${setColumns(updateFields, changes)}
+      WHERE ${table(this)}."settings_updated_at" IS NULL
+        OR ${table(
+          this
+        )}."settings_updated_at" <= EXCLUDED."settings_updated_at"
+      RETURNING *
+    `
+    const [updatedWorld] = await this.namedQuery<WorldAttributes>(
+      "upsert_world_settings",
+      sql
+    )
+    return updatedWorld ?? null
   }
 
   static async updateFavorites(worldId: string): Promise<void> {

@@ -1,7 +1,14 @@
 import { WorldSettingsChangedEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import env from "decentraland-gatsby/dist/utils/env"
 
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
+import { getTrustedContentServerUrl } from "./processEntityId"
+import { drainResponse } from "../../../utils/fetch"
 import {
   isDowngradingRating,
   isUpgradingRating,
@@ -14,17 +21,118 @@ import {
 } from "../../Slack/utils"
 import WorldModel from "../../World/model"
 
+const SETTINGS_FETCH_TIMEOUT_MS = 15_000
+// worlds.title is VARCHAR(50); worlds-content-server does not bound titles
+const WORLD_TITLE_MAX_LENGTH = 50
+
+/** Snake-case body of GET /world/:world_name/settings on worlds-content-server. */
+type WorldSettingsResponse = {
+  title?: string
+  description?: string
+  content_rating?: string
+  spawn_coordinates?: string
+  skybox_time?: number | null
+  categories?: string[] | null
+  single_player?: boolean
+  show_in_places?: boolean
+  thumbnail_hash?: string
+  updated_at?: string
+}
+
+/**
+ * The settings source URL comes from WORLDS_CONTENT_SERVER_URL, not from the message, so an
+ * untrusted or malformed URL is a deployment misconfiguration: surface it as such so the consumer
+ * retries the message instead of discarding it as deterministically invalid.
+ */
+function getTrustedSettingsSourceUrl(
+  worldsContentServerUrl: string,
+  allowedContentServerHosts: string
+): string {
+  try {
+    return getTrustedContentServerUrl(
+      { contentServerUrls: [worldsContentServerUrl] },
+      allowedContentServerHosts
+    )
+  } catch (error) {
+    if (error instanceof InvalidWorldSqsMessageError) {
+      throw new ContentServerConfigurationError(
+        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
+      )
+    }
+    throw error
+  }
+}
+
+/** Fetch the authoritative world settings; null when the world is unknown to the source. */
+async function fetchWorldSettings(
+  contentServerUrl: string,
+  worldName: string
+): Promise<WorldSettingsResponse | null> {
+  const response = await fetch(
+    `${contentServerUrl}/world/${encodeURIComponent(worldName)}/settings`,
+    { signal: AbortSignal.timeout(SETTINGS_FETCH_TIMEOUT_MS) }
+  )
+  if (response.status === 404) {
+    await drainResponse(response)
+    return null
+  }
+  if (!response.ok) {
+    await drainResponse(response)
+    throw new Error(
+      `Unable to fetch world settings for ${worldName}: ${response.status} ${response.statusText}`
+    )
+  }
+  return (await response.json()) as WorldSettingsResponse
+}
+
+/** Map worlds-content-server ratings to the places scale; undefined when absent or unknown. */
+function normalizeContentRating(
+  rating: string | undefined
+): SceneContentRating | undefined {
+  if (!rating) {
+    return undefined
+  }
+  if (rating === "E") {
+    return SceneContentRating.TEEN
+  }
+  if (rating === "M") {
+    return SceneContentRating.ADULT
+  }
+  const knownRatings = Object.values(SceneContentRating) as string[]
+  if (knownRatings.includes(rating)) {
+    return rating as SceneContentRating
+  }
+  return undefined
+}
+
+function parseSettingsUpdatedAt(value: string | undefined): Date | null {
+  if (!value) {
+    return null
+  }
+  const parsed = new Date(value)
+  return Number.isNaN(parsed.getTime()) ? null : parsed
+}
+
 /**
  * Handles WorldSettingsChangedEvent from the worlds content server.
- * Updates the world record with the new settings.
- * If the world doesn't exist yet, creates it.
+ *
+ * The event is only a trigger: the payload snapshot is ignored (except accessType, which the
+ * settings endpoint does not expose) and the authoritative settings are read back from
+ * GET /world/:world_name/settings. Reading current state makes reordered, duplicated or
+ * redelivered events converge instead of applying stale snapshots, and the returned updated_at
+ * guards the write so a slow handler cannot overwrite data a concurrent one already applied.
  *
  * Note: Content creators cannot downgrade ratings - only moderators can.
  * If a downgrade is attempted, the original rating is preserved and
  * moderators are notified.
  */
 export async function handleWorldSettingsChanged(
-  event: WorldSettingsChangedEvent
+  event: WorldSettingsChangedEvent,
+  worldsContentServerUrl = env(
+    "WORLDS_CONTENT_SERVER_URL",
+    "https://worlds-content-server.decentraland.org"
+  ),
+  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
 ): Promise<void> {
   const { worldName } = event.metadata
 
@@ -41,62 +149,88 @@ export async function handleWorldSettingsChanged(
   try {
     loggerExtended.log(`Processing settings change for world: ${worldName}`)
 
-    const newContentRating =
-      (event.metadata.contentRating as SceneContentRating) ||
-      SceneContentRating.RATING_PENDING
+    const contentServerUrl = getTrustedSettingsSourceUrl(
+      worldsContentServerUrl,
+      allowedContentServerHosts
+    )
+    const settings = await fetchWorldSettings(contentServerUrl, worldName)
+    if (!settings) {
+      loggerExtended.log(
+        `World not found on worlds content server, skipping settings update: ${worldName}`
+      )
+      return
+    }
+
+    const fetchedRating = normalizeContentRating(settings.content_rating)
 
     // Check if this is a rating change attempt on an existing world
     const existingWorld = await WorldModel.findByWorldName(worldName)
-    let contentRatingToUse: SceneContentRating | undefined = newContentRating
+    let contentRatingToUse: SceneContentRating | undefined = fetchedRating
 
-    if (existingWorld && existingWorld.content_rating) {
-      if (isDowngradingRating(newContentRating, existingWorld.content_rating)) {
+    if (fetchedRating && existingWorld && existingWorld.content_rating) {
+      if (isDowngradingRating(fetchedRating, existingWorld.content_rating)) {
         // Content creators cannot downgrade ratings - notify moderators
         loggerExtended.log(
           `Blocked rating downgrade attempt for world ${worldName}: ` +
-            `${existingWorld.content_rating} -> ${newContentRating}`
+            `${existingWorld.content_rating} -> ${fetchedRating}`
         )
-        notifyDowngradeRating(existingWorld, newContentRating)
+        notifyDowngradeRating(existingWorld, fetchedRating)
         // Keep the original rating
         contentRatingToUse = undefined
       } else if (
-        isUpgradingRating(newContentRating, existingWorld.content_rating)
+        isUpgradingRating(fetchedRating, existingWorld.content_rating)
       ) {
         // Notify about rating upgrade
-        notifyUpgradingRating(
-          existingWorld,
-          "Content Creator",
-          newContentRating
-        )
+        notifyUpgradingRating(existingWorld, "Content Creator", fetchedRating)
       }
     }
 
-    await WorldModel.upsertWorld({
+    // Preserve upsertWorld's "omitted means do not update" contract on every field: an absent
+    // field means the worlds row has no value for it, not an instruction to clear ours.
+    const worldUpdate = {
       world_name: worldName,
-      title: event.metadata.title,
-      // Preserve upsertWorld's "omitted means do not update" contract: only
-      // sanitize when a description was actually provided (worlds render in
-      // the same TMP client UI, so the same markup rules apply).
+      title:
+        settings.title === undefined
+          ? undefined
+          : settings.title.slice(0, WORLD_TITLE_MAX_LENGTH),
       description:
-        event.metadata.description === undefined
+        settings.description === undefined
           ? undefined
-          : sanitizePlaceDescription(event.metadata.description),
+          : sanitizePlaceDescription(settings.description),
       content_rating: contentRatingToUse,
-      categories: event.metadata.categories,
-      // Preserve upsertWorld's "omitted means do not update" contract: only
-      // convert to null when a thumbnail was actually provided but is unsafe, so
-      // a settings event without a thumbnailUrl never clears an existing image.
+      categories: settings.categories ?? undefined,
       image:
-        event.metadata.thumbnailUrl === undefined
+        settings.thumbnail_hash === undefined
           ? undefined
-          : sanitizeImageUrl(event.metadata.thumbnailUrl),
-      show_in_places: event.metadata.showInPlaces,
-      single_player: event.metadata.singlePlayer,
-      skybox_time: event.metadata.skyboxTime,
-      is_private: event.metadata.accessType
-        ? event.metadata.accessType !== "unrestricted"
-        : false,
-    })
+          : sanitizeImageUrl(
+              `${contentServerUrl}/contents/${settings.thumbnail_hash}`
+            ),
+      show_in_places: settings.show_in_places,
+      single_player: settings.single_player,
+      skybox_time: settings.skybox_time ?? undefined,
+      // The settings endpoint does not expose access; only access-change events carry it
+      is_private:
+        event.metadata.accessType === undefined
+          ? undefined
+          : event.metadata.accessType !== "unrestricted",
+    }
+
+    const settingsUpdatedAt = parseSettingsUpdatedAt(settings.updated_at)
+    if (settingsUpdatedAt) {
+      const applied = await WorldModel.upsertWorldSettings({
+        ...worldUpdate,
+        settings_updated_at: settingsUpdatedAt,
+      })
+      if (!applied) {
+        loggerExtended.log(
+          `Skipped settings older than the ones already applied for: ${worldName}`
+        )
+        return
+      }
+    } else {
+      // Source not yet exposing updated_at: apply last-write-wins as before
+      await WorldModel.upsertWorld(worldUpdate)
+    }
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)
   } catch (error: any) {
