@@ -1,4 +1,7 @@
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
 import * as processEntityIdModule from "./processEntityId"
 import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
@@ -126,6 +129,25 @@ describe("when resolving world scene undeployment footprints", () => {
     it("should reject the event as deterministically invalid", async () => {
       await expect(resolve()).rejects.toBeInstanceOf(
         InvalidWorldSqsMessageError
+      )
+    })
+  })
+
+  describe("and the configured Worlds Content Server host is not allowlisted", () => {
+    let resolve: () => Promise<unknown>
+
+    beforeEach(() => {
+      resolve = () =>
+        resolveWorldSceneUndeploymentFootprints(
+          [{ entityId: "entity-a", baseParcel: "0,0" }],
+          "https://worlds-content-server.decentraland.org",
+          "peer.decentraland.org"
+        )
+    })
+
+    it("should surface a retryable configuration error instead of discarding the event", async () => {
+      await expect(resolve()).rejects.toBeInstanceOf(
+        ContentServerConfigurationError
       )
     })
   })

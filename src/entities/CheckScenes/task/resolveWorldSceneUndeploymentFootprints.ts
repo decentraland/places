@@ -1,7 +1,10 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
 import {
   fetchContentEntity,
   getTrustedContentServerUrl,
@@ -10,6 +13,30 @@ import { UndeployedScene } from "../../WorldSceneUndeployment/types"
 
 const FOOTPRINT_FETCH_CONCURRENCY = 10
 const PARCEL_PATTERN = /^(?:0|-?[1-9][0-9]*),(?:0|-?[1-9][0-9]*)$/
+
+/**
+ * The footprint source URL comes from WORLDS_CONTENT_SERVER_URL, not from the message, so an
+ * untrusted or malformed URL is a deployment misconfiguration: surface it as such so the consumer
+ * retries the message instead of discarding it as deterministically invalid.
+ */
+function getTrustedFootprintSourceUrl(
+  worldsContentServerUrl: string,
+  allowedContentServerHosts: string
+): string {
+  try {
+    return getTrustedContentServerUrl(
+      { contentServerUrls: [worldsContentServerUrl] },
+      allowedContentServerHosts
+    )
+  } catch (error) {
+    if (error instanceof InvalidWorldSqsMessageError) {
+      throw new ContentServerConfigurationError(
+        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
+      )
+    }
+    throw error
+  }
+}
 
 export type ResolvedUndeployedScene = UndeployedScene & {
   parcels: string[]
@@ -81,8 +108,8 @@ export async function resolveWorldSceneUndeploymentFootprints(
 ): Promise<ResolvedUndeployedScene[]> {
   const needsFetch = scenes.some((scene) => !scene.parcels?.length)
   const contentServerUrl = needsFetch
-    ? getTrustedContentServerUrl(
-        { contentServerUrls: [worldsContentServerUrl] },
+    ? getTrustedFootprintSourceUrl(
+        worldsContentServerUrl,
         allowedContentServerHosts
       )
     : ""
