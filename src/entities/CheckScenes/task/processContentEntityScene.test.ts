@@ -65,6 +65,22 @@ describe("when asserting that the scene base is authorized", () => {
     })
   })
 
+  describe("and the whole scene consistently uses a non-canonical coordinate", () => {
+    beforeEach(() => {
+      contentEntityScene.pointers = ["00,0"]
+      contentEntityScene.metadata.scene = { base: "00,0", parcels: ["00,0"] }
+    })
+
+    // Undeployment events only validate canonical coordinates, so a deployment
+    // admitted with a non-canonical spelling could never be undeployed. The
+    // SceneParcels schema enforces the canonical form; this pins that guarantee.
+    it("should reject the scene with a typed error", () => {
+      expect(() => assertSceneBaseIsAuthorized(contentEntityScene)).toThrow(
+        InvalidSceneBaseError
+      )
+    })
+  })
+
   describe("and the schema-valid scene has more than 1000 parcels", () => {
     beforeEach(() => {
       const parcels = Array.from({ length: 1001 }, (_, index) => `${index},0`)
