@@ -24,16 +24,16 @@
 
 import { randomUUID } from "crypto"
 
-import { drainResponse } from "../src/utils/fetch"
-
 import database from "decentraland-gatsby/dist/entities/Database/database"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import {
-  ContentEntityScene,
-  SceneContentRating,
-} from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import {
+  REBUILD_PLACE_ATTRIBUTES,
+  createWorldInsertData,
+  createWorldPlaceOptions,
+} from "./rebuildWorldPlacesOptions"
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"
 import { extractSceneJsonData } from "../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -50,10 +50,7 @@ import { DisabledReason, PlaceAttributes } from "../src/entities/Place/types"
 import PlaceCategories from "../src/entities/PlaceCategories/model"
 import PlaceContentRatingModel from "../src/entities/PlaceContentRating/model"
 import WorldModel from "../src/entities/World/model"
-import {
-  REBUILD_PLACE_ATTRIBUTES,
-  createWorldPlaceOptions,
-} from "./rebuildWorldPlacesOptions"
+import { drainResponse } from "../src/utils/fetch"
 
 // ── Types ──────────────────────────────────────────────────────────────
 
@@ -193,7 +190,7 @@ async function fetchAllWorlds(
   const allWorlds: Array<{ name: string }> = []
   let offset = 0
 
-  while (true) {
+  for (;;) {
     const url = `${baseUrl}/worlds?has_deployed_scenes=true&limit=${WORLDS_PAGE_SIZE}&offset=${offset}`
     const response = await fetch(url)
     if (!response.ok) {
@@ -374,19 +371,9 @@ async function processWorldScene(
       }
     }
     // Insert the world if it doesn't exist yet
-    await WorldModel.insertWorldIfNotExists({
-      world_name: worldName,
-      title:
-        contentEntityScene?.metadata?.display?.title?.slice(0, 50) || undefined,
-      description:
-        contentEntityScene?.metadata?.display?.description || undefined,
-      content_rating:
-        (contentEntityScene?.metadata?.policy
-          ?.contentRating as SceneContentRating) || undefined,
-      categories: contentEntityScene?.metadata?.tags || undefined,
-      owner: nameOwner || undefined,
-      show_in_places: !isOptOut,
-    })
+    await WorldModel.insertWorldIfNotExists(
+      createWorldInsertData(worldName, contentEntityScene, nameOwner, isOptOut)
+    )
 
     // Update the world owner and fix show_in_places for worlds that were
     // stuck with show_in_places=false after the opt-out was removed
