@@ -118,15 +118,22 @@ function isValidSettingsVersion(value: unknown): value is number {
   return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
 
+/** Maps an access type to world visibility; undefined when no access type was provided. */
+function toIsPrivate(accessType: string | undefined): boolean | undefined {
+  return accessType === undefined ? undefined : accessType !== "unrestricted"
+}
+
 /**
  * Handles WorldSettingsChangedEvent from the worlds content server.
  *
- * The event is only a trigger: nothing from the payload is persisted, and the authoritative
- * settings — including the access type that drives world visibility — are read back from
- * GET /world/:world_name/settings. Reading current state makes reordered, duplicated or
- * redelivered events converge instead of applying stale snapshots, and the returned
- * settings_version guards the write so a slow handler cannot overwrite data a concurrent one
- * already applied.
+ * The event is only a trigger: the authoritative settings — including the access type that drives
+ * world visibility — are read back from GET /world/:world_name/settings. Reading current state makes
+ * reordered, duplicated or redelivered events converge instead of applying stale snapshots, and the
+ * returned settings_version guards the write so a slow handler cannot overwrite data a concurrent
+ * one already applied.
+ *
+ * The payload's accessType is used only against a source that predates the versioned contract, where
+ * it is the sole visibility signal available; a versioned response always wins over it.
  *
  * Note: Content creators cannot downgrade ratings - only moderators can.
  * If a downgrade is attempted, the original rating is preserved and
@@ -215,18 +222,15 @@ export async function handleWorldSettingsChanged(
       show_in_places: settings.show_in_places,
       single_player: settings.single_player,
       skybox_time: settings.skybox_time ?? undefined,
-      // Derived from the fetched access type, never from the event payload: the payload has no
-      // ordering relationship with settings_version, so a redelivered older access event would
-      // otherwise pass the version guard and re-apply stale visibility.
-      is_private:
-        settings.access_type === undefined
-          ? undefined
-          : settings.access_type !== "unrestricted",
     }
 
     if (isValidSettingsVersion(settings.settings_version)) {
       const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
+        // Under the versioned contract visibility comes from the fetch, never from the payload: the
+        // payload has no ordering relationship with settings_version, so a redelivered older access
+        // event would otherwise pass the guard and re-apply stale visibility.
+        is_private: toIsPrivate(settings.access_type),
         settings_version: settings.settings_version,
       })
       if (!applied) {
@@ -236,8 +240,15 @@ export async function handleWorldSettingsChanged(
         return
       }
     } else if (settings.settings_version === undefined) {
-      // Source not yet exposing settings_version: apply last-write-wins as before
-      await WorldModel.upsertWorld(worldUpdate)
+      // Source predates the versioned contract: apply last-write-wins as before. A response with no
+      // access_type carries no authoritative visibility either, so the event payload is the only
+      // signal available during a rollout where this service ships first.
+      await WorldModel.upsertWorld({
+        ...worldUpdate,
+        is_private: toIsPrivate(
+          settings.access_type ?? event.metadata.accessType
+        ),
+      })
     } else {
       // Present but unusable as a version. Falling back to the unguarded upsert here would silently
       // drop the ordering guarantee, so surface it and let the consumer retry instead.

@@ -182,6 +182,70 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
+  describe("when the source predates the versioned contract and the event carries an access type", () => {
+    beforeEach(() => {
+      event = {
+        ...event,
+        metadata: {
+          worldName: "example.dcl.eth",
+          accessType: "shared-secret",
+        },
+      }
+      // Legacy response shape: neither settings_version nor access_type
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ title: "A New Title" }), { status: 200 })
+      )
+    })
+
+    it("should still mirror the visibility from the event payload", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorld).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: true })
+      )
+    })
+  })
+
+  describe("when the source predates the versioned contract and the event has no access type", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ title: "A New Title" }), { status: 200 })
+      )
+    })
+
+    it("should leave the stored visibility untouched", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorld).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: undefined })
+      )
+    })
+  })
+
+  describe("when the source is versioned but the event payload disagrees about access", () => {
+    beforeEach(() => {
+      event = {
+        ...event,
+        metadata: {
+          worldName: "example.dcl.eth",
+          accessType: "shared-secret",
+        },
+      }
+      // Versioned response without access_type: the payload must not be used as a substitute
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
+      )
+    })
+
+    it("should ignore the payload rather than apply visibility under an unrelated version", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: undefined })
+      )
+    })
+  })
+
   describe("when the fetched settings have no settings version", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
