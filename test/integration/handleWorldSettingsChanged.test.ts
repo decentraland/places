@@ -2,12 +2,7 @@ import supertest from "supertest"
 
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
 import * as SlackUtils from "../../src/entities/Slack/utils"
-import {
-  createWorldSettingsChangedEvent,
-  createWorldSettingsDowngradeRatingEvent,
-  createWorldSettingsEventMissingKey,
-  createWorldSettingsUpgradeRatingEvent,
-} from "../fixtures/worldSettingsEvent"
+import { createWorldSettingsChangedEvent } from "../fixtures/worldSettingsEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -37,7 +32,20 @@ jest.mock("../../src/modules/worldsLiveData", () => ({
 
 const app = createTestApp()
 
+// The handler treats the event as a trigger and fetches the authoritative settings from
+// worlds-content-server, so each scenario stubs the GET /world/:name/settings response.
+const WORLDS_URL = "https://worlds-content-server.decentraland.org"
+const ALLOWED_HOSTS = "worlds-content-server.decentraland.org"
+
 describe("handleWorldSettingsChanged integration", () => {
+  let fetchMock: jest.SpyInstance
+
+  const mockSettingsResponse = (settings: Record<string, unknown>) => {
+    fetchMock.mockResolvedValueOnce(
+      new Response(JSON.stringify(settings), { status: 200 })
+    )
+  }
+
   beforeAll(async () => {
     await initTestDb()
   })
@@ -46,30 +54,35 @@ describe("handleWorldSettingsChanged integration", () => {
     await closeTestDb()
   })
 
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, "fetch")
+  })
+
   afterEach(async () => {
     await cleanTables()
+    fetchMock.mockRestore()
+    jest.clearAllMocks()
   })
 
   describe("when a WorldSettingsChangedEvent is received for a new world", () => {
     beforeEach(async () => {
+      mockSettingsResponse({
+        title: "New World",
+        description: "A brand new world",
+        content_rating: "T",
+        categories: ["art"],
+        show_in_places: true,
+        single_player: false,
+        settings_version: 2,
+      })
       const event = createWorldSettingsChangedEvent({
         key: "newworld.dcl.eth",
-        metadata: {
-          worldName: "newworld.dcl.eth",
-          title: "New World",
-          description: "A brand new world",
-          contentRating: "T",
-          categories: ["art"],
-          showInPlaces: true,
-          singlePlayer: false,
-          skyboxTime: null,
-          thumbnailUrl: "https://example.com/thumb.png",
-        },
+        metadata: { worldName: "newworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
-    it("should create the world queryable via API with the provided settings", async () => {
+    it("should create the world queryable via API with the fetched settings", async () => {
       const response = await supertest(app)
         .get("/api/worlds/newworld.dcl.eth")
         .expect(200)
@@ -84,35 +97,52 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when a WorldSettingsChangedEvent is received for an existing world", () => {
+  describe("when the world is unknown to the worlds content server", () => {
     beforeEach(async () => {
-      const initialEvent = createWorldSettingsChangedEvent({
-        key: "existingworld.dcl.eth",
-        metadata: {
-          worldName: "existingworld.dcl.eth",
-          title: "Original Title",
-          description: "Original Description",
-          contentRating: "T",
-          categories: ["game"],
-          showInPlaces: true,
-        },
+      fetchMock.mockResolvedValueOnce(new Response(null, { status: 404 }))
+      const event = createWorldSettingsChangedEvent({
+        key: "ghostworld.dcl.eth",
+        metadata: { worldName: "ghostworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(initialEvent)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
-    describe("and the settings are updated", () => {
+    it("should not create any world record", async () => {
+      await supertest(app).get("/api/worlds/ghostworld.dcl.eth").expect(404)
+    })
+  })
+
+  describe("when a WorldSettingsChangedEvent is received for an existing world", () => {
+    beforeEach(async () => {
+      mockSettingsResponse({
+        title: "Original Title",
+        description: "Original Description",
+        content_rating: "T",
+        categories: ["game"],
+        show_in_places: true,
+        settings_version: 2,
+      })
+      const initialEvent = createWorldSettingsChangedEvent({
+        key: "existingworld.dcl.eth",
+        metadata: { worldName: "existingworld.dcl.eth" },
+      })
+      await handleWorldSettingsChanged(initialEvent, WORLDS_URL, ALLOWED_HOSTS)
+    })
+
+    describe("and the fetched settings carry a newer version", () => {
       beforeEach(async () => {
+        mockSettingsResponse({
+          title: "Updated Title",
+          description: "Updated Description",
+          content_rating: "T",
+          categories: ["game", "art"],
+          settings_version: 3,
+        })
         const updateEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
-          metadata: {
-            worldName: "existingworld.dcl.eth",
-            title: "Updated Title",
-            description: "Updated Description",
-            contentRating: "T",
-            categories: ["game", "art"],
-          },
+          metadata: { worldName: "existingworld.dcl.eth" },
         })
-        await handleWorldSettingsChanged(updateEvent)
+        await handleWorldSettingsChanged(updateEvent, WORLDS_URL, ALLOWED_HOSTS)
       })
 
       it("should update the world settings", async () => {
@@ -126,20 +156,70 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
-    describe("and the description contains client-rendered markup", () => {
+    describe("and a later response comes from an instance without the versioned contract", () => {
       beforeEach(async () => {
+        // Mixed fleet mid-rollout: no settings_version, so the write must not land on a row that
+        // has already stored one
+        mockSettingsResponse({
+          title: "Older Instance Title",
+          description: "Older Instance Description",
+        })
+        await handleWorldSettingsChanged(
+          createWorldSettingsChangedEvent({
+            key: "existingworld.dcl.eth",
+            metadata: { worldName: "existingworld.dcl.eth" },
+          }),
+          WORLDS_URL,
+          ALLOWED_HOSTS
+        )
+      })
+
+      it("should keep the settings applied under the versioned contract", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Original Title")
+        expect(response.body.data.description).toBe("Original Description")
+      })
+    })
+
+    describe("and the fetched settings carry an older version than the one already applied", () => {
+      beforeEach(async () => {
+        mockSettingsResponse({
+          title: "Stale Title",
+          description: "Stale Description",
+          settings_version: 1,
+        })
+        const staleEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(staleEvent, WORLDS_URL, ALLOWED_HOSTS)
+      })
+
+      it("should keep the settings that were already applied", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Original Title")
+        expect(response.body.data.description).toBe("Original Description")
+      })
+    })
+
+    describe("and the fetched description contains client-rendered markup", () => {
+      beforeEach(async () => {
+        mockSettingsResponse({
+          description:
+            'Join <link="decentraland://?position=0,0">here</link> and <link="https://decentraland.org">site</link>',
+          settings_version: 3,
+        })
         const markupEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
-          metadata: {
-            worldName: "existingworld.dcl.eth",
-            title: "Updated Title",
-            description:
-              'Join <link="decentraland://?position=0,0">here</link> and <link="https://decentraland.org">site</link>',
-            contentRating: "T",
-            categories: ["game"],
-          },
+          metadata: { worldName: "existingworld.dcl.eth" },
         })
-        await handleWorldSettingsChanged(markupEvent)
+        await handleWorldSettingsChanged(markupEvent, WORLDS_URL, ALLOWED_HOSTS)
       })
 
       it("should strip the unsafe link and keep the safe one", async () => {
@@ -153,12 +233,21 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
-    describe("and the rating is upgraded", () => {
+    describe("and the fetched rating upgrades the stored one", () => {
       beforeEach(async () => {
-        const upgradeEvent = createWorldSettingsUpgradeRatingEvent(
-          "existingworld.dcl.eth"
+        mockSettingsResponse({
+          content_rating: "A",
+          settings_version: 3,
+        })
+        const upgradeEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          upgradeEvent,
+          WORLDS_URL,
+          ALLOWED_HOSTS
         )
-        await handleWorldSettingsChanged(upgradeEvent)
       })
 
       it("should update the content_rating", async () => {
@@ -170,12 +259,21 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
-    describe("and the rating is downgraded", () => {
+    describe("and the fetched rating downgrades the stored one", () => {
       beforeEach(async () => {
-        const downgradeEvent = createWorldSettingsDowngradeRatingEvent(
-          "existingworld.dcl.eth"
+        mockSettingsResponse({
+          content_rating: "RP",
+          settings_version: 3,
+        })
+        const downgradeEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          downgradeEvent,
+          WORLDS_URL,
+          ALLOWED_HOSTS
         )
-        await handleWorldSettingsChanged(downgradeEvent)
       })
 
       it("should preserve the original rating", async () => {
@@ -196,28 +294,60 @@ describe("handleWorldSettingsChanged integration", () => {
         )
       })
     })
+
+    describe("and the fetched rating is absent", () => {
+      beforeEach(async () => {
+        mockSettingsResponse({
+          title: "Ratingless Update",
+          settings_version: 3,
+        })
+        const noRatingEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          noRatingEvent,
+          WORLDS_URL,
+          ALLOWED_HOSTS
+        )
+      })
+
+      it("should keep the stored rating untouched", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.content_rating).toBe("T")
+      })
+
+      it("should not report a downgrade attempt", () => {
+        expect(SlackUtils.notifyDowngradeRating).not.toHaveBeenCalled()
+      })
+    })
   })
 
-  describe("when a settings event omits thumbnailUrl for an existing world that has an image", () => {
+  describe("when the fetched settings omit the thumbnail for an existing world that has an image", () => {
     beforeEach(async () => {
+      mockSettingsResponse({
+        title: "Image World",
+        thumbnail_hash: "bafkreithumb",
+        settings_version: 2,
+      })
       const createEvent = createWorldSettingsChangedEvent({
         key: "imageworld.dcl.eth",
-        metadata: {
-          worldName: "imageworld.dcl.eth",
-          title: "Image World",
-          thumbnailUrl: "https://example.com/thumb.png",
-        },
+        metadata: { worldName: "imageworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(createEvent)
+      await handleWorldSettingsChanged(createEvent, WORLDS_URL, ALLOWED_HOSTS)
 
+      mockSettingsResponse({
+        title: "Image World Updated",
+        settings_version: 3,
+      })
       const updateEvent = createWorldSettingsChangedEvent({
         key: "imageworld.dcl.eth",
-        metadata: {
-          worldName: "imageworld.dcl.eth",
-          title: "Image World Updated",
-        },
+        metadata: { worldName: "imageworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(updateEvent)
+      await handleWorldSettingsChanged(updateEvent, WORLDS_URL, ALLOWED_HOSTS)
     })
 
     it("should preserve the existing image instead of clearing it", async () => {
@@ -225,57 +355,62 @@ describe("handleWorldSettingsChanged integration", () => {
         .get("/api/worlds/imageworld.dcl.eth")
         .expect(200)
 
-      expect(response.body.data.image).toBe("https://example.com/thumb.png")
+      expect(response.body.data.image).toBe(
+        `${WORLDS_URL}/contents/bafkreithumb`
+      )
     })
   })
 
-  describe("when a settings event provides a thumbnailUrl with HTML-breakout characters", () => {
+  describe("when the fetched thumbnail hash contains HTML-breakout characters", () => {
     beforeEach(async () => {
+      mockSettingsResponse({
+        title: "XSS World",
+        thumbnail_hash: `a"><script>alert(1)</script><meta name="x`,
+        settings_version: 2,
+      })
       const event = createWorldSettingsChangedEvent({
         key: "xssworld.dcl.eth",
-        metadata: {
-          worldName: "xssworld.dcl.eth",
-          title: "XSS World",
-          thumbnailUrl: `https://a"><script>alert(1)</script><meta name="x`,
-        },
+        metadata: { worldName: "xssworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
-    it("should not store the crafted value as the world image", async () => {
+    it("should never store raw markup-breakout characters in the world image", async () => {
       const response = await supertest(app)
         .get("/api/worlds/xssworld.dcl.eth")
         .expect(200)
 
-      expect(response.body.data.image).toBeNull()
+      expect(response.body.data.image).not.toMatch(/["<>]/)
     })
   })
 
-  describe("when the event is missing the world name (key)", () => {
+  describe("when the event is missing the world name", () => {
+    let event: ReturnType<typeof createWorldSettingsChangedEvent>
+
     beforeEach(async () => {
-      const event = createWorldSettingsEventMissingKey()
-      await handleWorldSettingsChanged(event)
+      event = createWorldSettingsChangedEvent()
+      delete (event.metadata as Partial<typeof event.metadata>).worldName
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
-    it("should not create any world record", async () => {
-      const response = await supertest(app).get("/api/worlds").expect(200)
-
-      expect(response.body.data).toHaveLength(0)
+    it("should not fetch any settings", () => {
+      expect(fetchMock).not.toHaveBeenCalled()
     })
   })
 
-  describe("when accessType is not 'unrestricted' (restricted world)", () => {
+  describe("when the fetched access type is restricted", () => {
     beforeEach(async () => {
+      mockSettingsResponse({
+        title: "Private World",
+        description: "A restricted world",
+        access_type: "shared-secret",
+        settings_version: 2,
+      })
       const event = createWorldSettingsChangedEvent({
         key: "privateworld.dcl.eth",
-        metadata: {
-          worldName: "privateworld.dcl.eth",
-          title: "Private World",
-          description: "A restricted world",
-          accessType: "restricted",
-        },
+        metadata: { worldName: "privateworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
     it("should create the world with is_private set to true", async () => {
@@ -288,18 +423,18 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when accessType is 'unrestricted' (public world)", () => {
+  describe("when the fetched access type is unrestricted", () => {
     beforeEach(async () => {
+      mockSettingsResponse({
+        title: "Public World",
+        access_type: "unrestricted",
+        settings_version: 2,
+      })
       const event = createWorldSettingsChangedEvent({
         key: "publicworld.dcl.eth",
-        metadata: {
-          worldName: "publicworld.dcl.eth",
-          title: "Public World",
-          description: "An unrestricted world",
-          accessType: "unrestricted",
-        },
+        metadata: { worldName: "publicworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
 
     it("should create the world with is_private set to false", async () => {
@@ -312,97 +447,117 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when an existing public world changes to restricted", () => {
+  describe("when a settings change follows an access change", () => {
     beforeEach(async () => {
-      const createEvent = createWorldSettingsChangedEvent({
-        key: "existingworld2.dcl.eth",
-        metadata: {
-          worldName: "existingworld2.dcl.eth",
-          title: "Existing World",
-          description: "A public world",
-          accessType: "unrestricted",
-        },
+      mockSettingsResponse({
+        title: "Private World",
+        access_type: "shared-secret",
+        settings_version: 2,
       })
-      await handleWorldSettingsChanged(createEvent)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "stayprivate.dcl.eth",
+          metadata: { worldName: "stayprivate.dcl.eth" },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
 
-      const restrictEvent = createWorldSettingsChangedEvent({
-        key: "existingworld2.dcl.eth",
-        metadata: {
-          worldName: "existingworld2.dcl.eth",
-          accessType: "restricted",
-        },
+      // A later settings-only change: the source still reports the same access type
+      mockSettingsResponse({
+        title: "Private World Renamed",
+        access_type: "shared-secret",
+        settings_version: 3,
       })
-      await handleWorldSettingsChanged(restrictEvent)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "stayprivate.dcl.eth",
+          metadata: { worldName: "stayprivate.dcl.eth" },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
     })
 
-    it("should update is_private to true", async () => {
+    it("should keep the world private", async () => {
       const response = await supertest(app)
-        .get("/api/worlds/existingworld2.dcl.eth")
+        .get("/api/worlds/stayprivate.dcl.eth")
         .expect(200)
 
       expect(response.body.data.is_private).toBe(true)
     })
 
-    it("should preserve existing world settings", async () => {
+    it("should apply the newer settings", async () => {
       const response = await supertest(app)
-        .get("/api/worlds/existingworld2.dcl.eth")
+        .get("/api/worlds/stayprivate.dcl.eth")
         .expect(200)
 
-      expect(response.body.data.title).toBe("Existing World")
-      expect(response.body.data.description).toBe("A public world")
+      expect(response.body.data.title).toBe("Private World Renamed")
     })
   })
 
-  describe("when an existing restricted world changes to unrestricted", () => {
+  describe("when a restricted world is made unrestricted and the older access event is redelivered", () => {
     beforeEach(async () => {
-      const createEvent = createWorldSettingsChangedEvent({
-        key: "toggleworld.dcl.eth",
-        metadata: {
-          worldName: "toggleworld.dcl.eth",
-          title: "Toggle World",
-          accessType: "restricted",
-        },
+      // Restricted
+      mockSettingsResponse({
+        title: "Toggle World",
+        access_type: "shared-secret",
+        settings_version: 2,
       })
-      await handleWorldSettingsChanged(createEvent)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "restricted",
+          },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
 
-      const makePublicEvent = createWorldSettingsChangedEvent({
-        key: "toggleworld.dcl.eth",
-        metadata: {
-          worldName: "toggleworld.dcl.eth",
-          accessType: "unrestricted",
-        },
+      // Made unrestricted: the access change moves the version forward on the source
+      mockSettingsResponse({
+        title: "Toggle World",
+        access_type: "unrestricted",
+        settings_version: 3,
       })
-      await handleWorldSettingsChanged(makePublicEvent)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "unrestricted",
+          },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
+
+      // SQS redelivers the older restricted event; the fetch returns the current state
+      mockSettingsResponse({
+        title: "Toggle World",
+        access_type: "unrestricted",
+        settings_version: 3,
+      })
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "restricted",
+          },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
     })
 
-    it("should update is_private to false", async () => {
+    it("should leave the world unrestricted", async () => {
       const response = await supertest(app)
         .get("/api/worlds/toggleworld.dcl.eth")
         .expect(200)
 
-      expect(response.body.data.is_private).toBe(false)
-    })
-  })
-
-  describe("when accessType is not present in metadata", () => {
-    beforeEach(async () => {
-      const event = createWorldSettingsChangedEvent({
-        key: "defaultworld.dcl.eth",
-        metadata: {
-          worldName: "defaultworld.dcl.eth",
-          title: "Default World",
-          description: "World created without access type",
-        },
-      })
-      await handleWorldSettingsChanged(event)
-    })
-
-    it("should default is_private to false", async () => {
-      const response = await supertest(app)
-        .get("/api/worlds/defaultworld.dcl.eth")
-        .expect(200)
-
-      expect(response.body.ok).toBe(true)
       expect(response.body.data.is_private).toBe(false)
     })
   })

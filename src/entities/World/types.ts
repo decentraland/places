@@ -16,6 +16,8 @@ export type WorldAttributes = BaseEntityAttributes & {
   highlighted: boolean
   highlighted_image: string | null
   ranking: number | null
+  /** worlds-content-server settings version last applied; orders mirrored writes. */
+  settings_version: number | null
 }
 
 export type UpdateWorldHighlightBody = {

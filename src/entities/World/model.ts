@@ -21,6 +21,7 @@ import {
   WorldAttributes,
   WorldListOrderBy,
 } from "./types"
+import { ratingScale } from "../../utils/rating/contentRating"
 import { Model } from "../Database/model"
 import {
   buildTextsearch,
@@ -437,6 +438,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       highlighted: world.highlighted ?? false,
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
+      settings_version: world.settings_version ?? null,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -550,6 +552,99 @@ export default class WorldModel extends Model<WorldAttributes> {
       sql
     )
     return updatedWorld
+  }
+
+  /**
+   * Upsert world settings mirrored from worlds-content-server.
+   *
+   * With a `settings_version`, the update applies only when the incoming version is not older than
+   * the stored one, so reordered or redelivered settings events cannot overwrite newer data.
+   * Without one — a source that predates the versioned contract — it applies only while the row has
+   * never stored a version, so a mid-rollout unversioned write cannot clobber a row that another
+   * worker has already moved into the versioned contract.
+   *
+   * Both conditions live in the statement rather than in a prior read, so no concurrent write can
+   * slip between the check and the update.
+   *
+   * @returns The stored row, or null when the condition rejected the write
+   */
+  static async upsertWorldSettings(
+    world: Partial<WorldAttributes> & {
+      world_name: string
+      settings_version?: number
+    }
+  ): Promise<WorldAttributes | null> {
+    const worldData = this.buildWorldData(world)
+
+    // content_rating is set by the statement below instead, so the downgrade rule is enforced
+    // against the row as it exists at write time rather than a value read beforehand
+    const updatableFields: (keyof WorldAttributes)[] = [
+      "title",
+      "description",
+      "image",
+      "categories",
+      "show_in_places",
+      "single_player",
+      "skybox_time",
+      "is_private",
+      "settings_version",
+    ]
+
+    // Only explicitly provided fields update on conflict, so omitted settings never
+    // overwrite existing values with defaults
+    const changes: Partial<WorldAttributes> = {
+      updated_at: worldData.updated_at,
+    }
+    for (const field of updatableFields) {
+      if (world[field] !== undefined) {
+        ;(changes as Record<string, unknown>)[field] = world[field]
+      }
+    }
+
+    const insertFields = Object.keys(worldData) as Array<keyof WorldAttributes>
+    const updateFields = Object.keys(changes) as Array<keyof WorldAttributes>
+    // Creators may raise a rating but only moderators may lower it, and a moderator write does not
+    // move settings_version, so comparing against a rating read before this statement can persist a
+    // downgrade that landed in between. The comparison therefore happens here, against the row being
+    // updated. An unrecognized stored rating yields NULL from array_position and keeps the stored
+    // value, which is the safe direction.
+    const ratingClause =
+      world.content_rating === undefined
+        ? SQL``
+        : SQL`, "content_rating" = CASE
+            WHEN array_position(${ratingScale}::text[], ${
+            world.content_rating
+          }) >=
+                 array_position(${ratingScale}::text[], ${table(
+            this
+          )}."content_rating")
+            THEN ${world.content_rating}
+            ELSE ${table(this)}."content_rating"
+          END`
+    // Spelled out per case rather than leaning on the versioned condition to reject unversioned
+    // writes by NULL propagation (`stored <= NULL` yields NULL, so the row does not match). That
+    // happens to work, but it is subtle enough that a later change to how the column is built for
+    // an unversioned write would silently turn the guard off.
+    const conflictCondition =
+      world.settings_version === undefined
+        ? SQL`WHERE ${table(this)}."settings_version" IS NULL`
+        : SQL`WHERE ${table(this)}."settings_version" IS NULL
+        OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"`
+    const sql = SQL`
+      INSERT INTO ${table(this)} ${columns(insertFields)}
+      VALUES ${objectValues(insertFields, [worldData])}
+      ON CONFLICT ("id") DO UPDATE SET ${setColumns(
+        updateFields,
+        changes
+      )}${ratingClause}
+      ${conflictCondition}
+      RETURNING *
+    `
+    const [updatedWorld] = await this.namedQuery<WorldAttributes>(
+      "upsert_world_settings",
+      sql
+    )
+    return updatedWorld ?? null
   }
 
   static async updateFavorites(worldId: string): Promise<void> {
