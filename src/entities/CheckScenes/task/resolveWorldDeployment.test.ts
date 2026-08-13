@@ -109,7 +109,7 @@ describe("when resolving a world deployment", () => {
       highlighted: false,
       highlighted_image: null,
       ranking: 0,
-      settings_updated_at: null,
+      settings_version: null,
       likes: 0,
       dislikes: 0,
       favorites: 0,

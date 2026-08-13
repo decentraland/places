@@ -73,7 +73,7 @@ describe("handleWorldSettingsChanged integration", () => {
         categories: ["art"],
         show_in_places: true,
         single_player: false,
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "newworld.dcl.eth",
@@ -120,7 +120,7 @@ describe("handleWorldSettingsChanged integration", () => {
         content_rating: "T",
         categories: ["game"],
         show_in_places: true,
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const initialEvent = createWorldSettingsChangedEvent({
         key: "existingworld.dcl.eth",
@@ -129,14 +129,14 @@ describe("handleWorldSettingsChanged integration", () => {
       await handleWorldSettingsChanged(initialEvent, WORLDS_URL, ALLOWED_HOSTS)
     })
 
-    describe("and the fetched settings are newer", () => {
+    describe("and the fetched settings carry a newer version", () => {
       beforeEach(async () => {
         mockSettingsResponse({
           title: "Updated Title",
           description: "Updated Description",
           content_rating: "T",
           categories: ["game", "art"],
-          updated_at: "2026-08-12T11:00:00.000Z",
+          settings_version: 3,
         })
         const updateEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -156,12 +156,12 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
-    describe("and the fetched settings are older than the ones already applied", () => {
+    describe("and the fetched settings carry an older version than the one already applied", () => {
       beforeEach(async () => {
         mockSettingsResponse({
           title: "Stale Title",
           description: "Stale Description",
-          updated_at: "2026-08-12T09:00:00.000Z",
+          settings_version: 1,
         })
         const staleEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -185,7 +185,7 @@ describe("handleWorldSettingsChanged integration", () => {
         mockSettingsResponse({
           description:
             'Join <link="decentraland://?position=0,0">here</link> and <link="https://decentraland.org">site</link>',
-          updated_at: "2026-08-12T11:00:00.000Z",
+          settings_version: 3,
         })
         const markupEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -209,7 +209,7 @@ describe("handleWorldSettingsChanged integration", () => {
       beforeEach(async () => {
         mockSettingsResponse({
           content_rating: "A",
-          updated_at: "2026-08-12T11:00:00.000Z",
+          settings_version: 3,
         })
         const upgradeEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -235,7 +235,7 @@ describe("handleWorldSettingsChanged integration", () => {
       beforeEach(async () => {
         mockSettingsResponse({
           content_rating: "RP",
-          updated_at: "2026-08-12T11:00:00.000Z",
+          settings_version: 3,
         })
         const downgradeEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -271,7 +271,7 @@ describe("handleWorldSettingsChanged integration", () => {
       beforeEach(async () => {
         mockSettingsResponse({
           title: "Ratingless Update",
-          updated_at: "2026-08-12T11:00:00.000Z",
+          settings_version: 3,
         })
         const noRatingEvent = createWorldSettingsChangedEvent({
           key: "existingworld.dcl.eth",
@@ -303,7 +303,7 @@ describe("handleWorldSettingsChanged integration", () => {
       mockSettingsResponse({
         title: "Image World",
         thumbnail_hash: "bafkreithumb",
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const createEvent = createWorldSettingsChangedEvent({
         key: "imageworld.dcl.eth",
@@ -313,7 +313,7 @@ describe("handleWorldSettingsChanged integration", () => {
 
       mockSettingsResponse({
         title: "Image World Updated",
-        updated_at: "2026-08-12T11:00:00.000Z",
+        settings_version: 3,
       })
       const updateEvent = createWorldSettingsChangedEvent({
         key: "imageworld.dcl.eth",
@@ -338,7 +338,7 @@ describe("handleWorldSettingsChanged integration", () => {
       mockSettingsResponse({
         title: "XSS World",
         thumbnail_hash: `a"><script>alert(1)</script><meta name="x`,
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "xssworld.dcl.eth",
@@ -375,7 +375,7 @@ describe("handleWorldSettingsChanged integration", () => {
       mockSettingsResponse({
         title: "Private World",
         description: "A restricted world",
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "privateworld.dcl.eth",
@@ -401,7 +401,7 @@ describe("handleWorldSettingsChanged integration", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Public World",
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "publicworld.dcl.eth",
@@ -427,7 +427,7 @@ describe("handleWorldSettingsChanged integration", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Private World",
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const createEvent = createWorldSettingsChangedEvent({
         key: "stayprivate.dcl.eth",
@@ -440,7 +440,7 @@ describe("handleWorldSettingsChanged integration", () => {
 
       mockSettingsResponse({
         title: "Private World Renamed",
-        updated_at: "2026-08-12T11:00:00.000Z",
+        settings_version: 3,
       })
       const settingsOnlyEvent = createWorldSettingsChangedEvent({
         key: "stayprivate.dcl.eth",
@@ -474,7 +474,7 @@ describe("handleWorldSettingsChanged integration", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Toggle World",
-        updated_at: "2026-08-12T10:00:00.000Z",
+        settings_version: 2,
       })
       const createEvent = createWorldSettingsChangedEvent({
         key: "toggleworld.dcl.eth",
@@ -487,7 +487,7 @@ describe("handleWorldSettingsChanged integration", () => {
 
       mockSettingsResponse({
         title: "Toggle World",
-        updated_at: "2026-08-12T11:00:00.000Z",
+        settings_version: 3,
       })
       const makePublicEvent = createWorldSettingsChangedEvent({
         key: "toggleworld.dcl.eth",

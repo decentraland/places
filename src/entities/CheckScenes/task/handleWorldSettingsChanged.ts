@@ -36,7 +36,7 @@ type WorldSettingsResponse = {
   single_player?: boolean
   show_in_places?: boolean
   thumbnail_hash?: string
-  updated_at?: string
+  settings_version?: number
 }
 
 /**
@@ -105,12 +105,8 @@ function normalizeContentRating(
   return undefined
 }
 
-function parseSettingsUpdatedAt(value: string | undefined): Date | null {
-  if (!value) {
-    return null
-  }
-  const parsed = new Date(value)
-  return Number.isNaN(parsed.getTime()) ? null : parsed
+function parseSettingsVersion(value: unknown): number | null {
+  return typeof value === "number" && Number.isFinite(value) ? value : null
 }
 
 /**
@@ -119,8 +115,9 @@ function parseSettingsUpdatedAt(value: string | undefined): Date | null {
  * The event is only a trigger: the payload snapshot is ignored (except accessType, which the
  * settings endpoint does not expose) and the authoritative settings are read back from
  * GET /world/:world_name/settings. Reading current state makes reordered, duplicated or
- * redelivered events converge instead of applying stale snapshots, and the returned updated_at
- * guards the write so a slow handler cannot overwrite data a concurrent one already applied.
+ * redelivered events converge instead of applying stale snapshots, and the returned
+ * settings_version guards the write so a slow handler cannot overwrite data a concurrent one
+ * already applied.
  *
  * Note: Content creators cannot downgrade ratings - only moderators can.
  * If a downgrade is attempted, the original rating is preserved and
@@ -215,11 +212,11 @@ export async function handleWorldSettingsChanged(
           : event.metadata.accessType !== "unrestricted",
     }
 
-    const settingsUpdatedAt = parseSettingsUpdatedAt(settings.updated_at)
-    if (settingsUpdatedAt) {
+    const settingsVersion = parseSettingsVersion(settings.settings_version)
+    if (settingsVersion !== null) {
       const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
-        settings_updated_at: settingsUpdatedAt,
+        settings_version: settingsVersion,
       })
       if (!applied) {
         loggerExtended.log(
@@ -228,7 +225,7 @@ export async function handleWorldSettingsChanged(
         return
       }
     } else {
-      // Source not yet exposing updated_at: apply last-write-wins as before
+      // Source not yet exposing settings_version: apply last-write-wins as before
       await WorldModel.upsertWorld(worldUpdate)
     }
 

@@ -437,7 +437,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       highlighted: world.highlighted ?? false,
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
-      settings_updated_at: world.settings_updated_at ?? null,
+      settings_version: world.settings_version ?? null,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -555,14 +555,14 @@ export default class WorldModel extends Model<WorldAttributes> {
 
   /**
    * Upsert world settings mirrored from worlds-content-server. The update only applies when the
-   * incoming `settings_updated_at` is not older than the one already stored, so reordered or
+   * incoming `settings_version` is not older than the one already stored, so reordered or
    * redelivered settings events can never overwrite newer data with an older snapshot.
    * Returns null when the incoming version is older and the write was skipped.
    */
   static async upsertWorldSettings(
     world: Partial<WorldAttributes> & {
       world_name: string
-      settings_updated_at: Date
+      settings_version: number
     }
   ): Promise<WorldAttributes | null> {
     const worldData = this.buildWorldData(world)
@@ -577,7 +577,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       "single_player",
       "skybox_time",
       "is_private",
-      "settings_updated_at",
+      "settings_version",
     ]
 
     // Only explicitly provided fields update on conflict, so omitted settings never
@@ -597,10 +597,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       INSERT INTO ${table(this)} ${columns(insertFields)}
       VALUES ${objectValues(insertFields, [worldData])}
       ON CONFLICT ("id") DO UPDATE SET ${setColumns(updateFields, changes)}
-      WHERE ${table(this)}."settings_updated_at" IS NULL
-        OR ${table(
-          this
-        )}."settings_updated_at" <= EXCLUDED."settings_updated_at"
+      WHERE ${table(this)}."settings_version" IS NULL
+        OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"
       RETURNING *
     `
     const [updatedWorld] = await this.namedQuery<WorldAttributes>(

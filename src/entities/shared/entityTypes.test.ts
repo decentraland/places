@@ -27,7 +27,7 @@ const baseWorldAttributes: WorldAttributes = {
   highlighted: false,
   highlighted_image: null,
   ranking: null,
-  settings_updated_at: null,
+  settings_version: null,
 }
 
 const aggregateWorldAttributes: AggregateWorldAttributes = {

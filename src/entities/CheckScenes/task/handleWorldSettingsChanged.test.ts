@@ -99,7 +99,7 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
-  describe("when the fetched settings carry an updated_at version", () => {
+  describe("when the fetched settings carry a settings version", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
         new Response(
@@ -112,7 +112,7 @@ describe("when handling a world settings changed event", () => {
             show_in_places: true,
             skybox_time: 12,
             thumbnail_hash: "bafkreithumb",
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
@@ -133,7 +133,7 @@ describe("when handling a world settings changed event", () => {
         single_player: true,
         skybox_time: 12,
         is_private: undefined,
-        settings_updated_at: new Date("2026-08-12T15:30:00.000Z"),
+        settings_version: 7,
       })
     })
 
@@ -157,7 +157,7 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
-  describe("when the fetched settings have no updated_at version", () => {
+  describe("when the fetched settings have no settings version", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
         new Response(JSON.stringify({ title: "A New Title" }), { status: 200 })
@@ -179,10 +179,7 @@ describe("when handling a world settings changed event", () => {
   describe("when the fetched settings omit optional fields", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ updated_at: "2026-08-12T15:30:00.000Z" }),
-          { status: 200 }
-        )
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
       )
     })
 
@@ -200,7 +197,7 @@ describe("when handling a world settings changed event", () => {
         single_player: undefined,
         skybox_time: undefined,
         is_private: undefined,
-        settings_updated_at: new Date("2026-08-12T15:30:00.000Z"),
+        settings_version: 7,
       })
     })
   })
@@ -211,7 +208,7 @@ describe("when handling a world settings changed event", () => {
         new Response(
           JSON.stringify({
             title: "x".repeat(80),
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
@@ -237,10 +234,7 @@ describe("when handling a world settings changed event", () => {
         },
       }
       fetchMock.mockResolvedValueOnce(
-        new Response(
-          JSON.stringify({ updated_at: "2026-08-12T15:30:00.000Z" }),
-          { status: 200 }
-        )
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
       )
     })
 
@@ -265,7 +259,7 @@ describe("when handling a world settings changed event", () => {
         new Response(
           JSON.stringify({
             content_rating: SceneContentRating.TEEN,
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
@@ -298,7 +292,7 @@ describe("when handling a world settings changed event", () => {
         new Response(
           JSON.stringify({
             content_rating: SceneContentRating.ADULT,
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
@@ -330,7 +324,7 @@ describe("when handling a world settings changed event", () => {
         new Response(
           JSON.stringify({
             content_rating: "M",
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
@@ -352,7 +346,7 @@ describe("when handling a world settings changed event", () => {
         new Response(
           JSON.stringify({
             content_rating: "garbage",
-            updated_at: "2026-08-12T15:30:00.000Z",
+            settings_version: 7,
           }),
           { status: 200 }
         )
