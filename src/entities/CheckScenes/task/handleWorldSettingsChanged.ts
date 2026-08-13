@@ -212,7 +212,9 @@ export async function handleWorldSettingsChanged(
           ? undefined
           : sanitizePlaceDescription(settings.description),
       content_rating: fetchedRating,
-      categories: settings.categories ?? undefined,
+      // An explicit null means the source cleared them; this column cannot store null, so an empty
+      // array is the equivalent. Absent still means "do not touch".
+      categories: settings.categories === null ? [] : settings.categories,
       image:
         settings.thumbnail_hash === undefined
           ? undefined
@@ -221,7 +223,9 @@ export async function handleWorldSettingsChanged(
             ),
       show_in_places: settings.show_in_places,
       single_player: settings.single_player,
-      skybox_time: settings.skybox_time ?? undefined,
+      // Passed through as null so a cleared fixed skybox clears ours too, rather than preserving a
+      // value the source no longer has
+      skybox_time: settings.skybox_time,
     }
 
     // Inserting a row materializes this table's NOT NULL defaults for every settings column, so a

@@ -368,6 +368,39 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
+  describe("when the fetched settings explicitly clear optional fields", () => {
+    beforeEach(() => {
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce(storedWorld)
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            skybox_time: null,
+            categories: null,
+            settings_version: 7,
+          }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should clear the fixed skybox rather than preserve a value the source dropped", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ skybox_time: null })
+      )
+    })
+
+    it("should clear the categories as an empty array, since the column cannot store null", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ categories: [] })
+      )
+    })
+  })
+
   describe("when the fetched settings omit optional fields", () => {
     beforeEach(() => {
       // The "omitted means do not update" contract only matters against an existing row
