@@ -219,8 +219,8 @@ export async function handleWorldSettingsChanged(
       }
     }
 
-    // Preserve upsertWorld's "omitted means do not update" contract on every field: an absent
-    // field means the worlds row has no value for it, not an instruction to clear ours.
+    // Preserve the model's "omitted means do not update" contract on every field: an absent field
+    // means the worlds row has no value for it, not an instruction to clear ours.
     const worldUpdate = {
       world_name: worldName,
       title:
@@ -278,19 +278,6 @@ export async function handleWorldSettingsChanged(
         return
       }
     } else if (settings.settings_version === undefined) {
-      // A row that already applied a versioned response cannot be ordered against an unversioned
-      // one, which is what a mixed fleet serves mid-rollout. Overwriting it would bypass the guard,
-      // so leave it for a response that can be ordered; the next event refreshes it in full.
-      if (
-        existingWorld?.settings_version !== null &&
-        existingWorld?.settings_version !== undefined
-      ) {
-        loggerExtended.log(
-          `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`
-        )
-        return
-      }
-
       // Against a legacy source the payload's accessType is the only visibility signal there is, so
       // unlike the versioned branch it counts as something worth creating a row for.
       if (
@@ -301,15 +288,22 @@ export async function handleWorldSettingsChanged(
         return
       }
 
-      // Source predates the versioned contract: apply last-write-wins as before. A response with no
-      // access_type carries no authoritative visibility either, so the event payload is the only
-      // signal available during a rollout where this service ships first.
-      await WorldModel.upsertWorld({
+      // Source predates the versioned contract: last-write-wins, but only while the row has never
+      // stored a version. A mixed fleet mid-rollout serves both shapes, so another worker may have
+      // moved this row into the versioned contract already; the write itself enforces that, since a
+      // prior read could go stale before it lands.
+      const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
         is_private: toIsPrivate(
           settings.access_type ?? event.metadata.accessType
         ),
       })
+      if (!applied) {
+        loggerExtended.log(
+          `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`
+        )
+        return
+      }
     } else {
       // Present but unusable as a version. Falling back to the unguarded upsert here would silently
       // drop the ordering guarantee, so surface it and let the consumer retry instead.

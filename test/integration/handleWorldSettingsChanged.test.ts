@@ -156,6 +156,34 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
+    describe("and a later response comes from an instance without the versioned contract", () => {
+      beforeEach(async () => {
+        // Mixed fleet mid-rollout: no settings_version, so the write must not land on a row that
+        // has already stored one
+        mockSettingsResponse({
+          title: "Older Instance Title",
+          description: "Older Instance Description",
+        })
+        await handleWorldSettingsChanged(
+          createWorldSettingsChangedEvent({
+            key: "existingworld.dcl.eth",
+            metadata: { worldName: "existingworld.dcl.eth" },
+          }),
+          WORLDS_URL,
+          ALLOWED_HOSTS
+        )
+      })
+
+      it("should keep the settings applied under the versioned contract", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Original Title")
+        expect(response.body.data.description).toBe("Original Description")
+      })
+    })
+
     describe("and the fetched settings carry an older version than the one already applied", () => {
       beforeEach(async () => {
         mockSettingsResponse({

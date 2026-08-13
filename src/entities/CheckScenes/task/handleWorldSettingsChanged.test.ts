@@ -173,12 +173,12 @@ describe("when handling a world settings changed event", () => {
       ).rejects.toThrow("invalid settings_version")
     })
 
-    it("should not fall back to the unguarded upsert", async () => {
+    it("should not write at all", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS).catch(
         () => undefined
       )
 
-      expect(upsertWorld).not.toHaveBeenCalled()
+      expect(upsertWorldSettings).not.toHaveBeenCalled()
     })
   })
 
@@ -203,10 +203,22 @@ describe("when handling a world settings changed event", () => {
       expect(upsertWorld).not.toHaveBeenCalled()
     })
 
-    it("should not write through the guarded upsert either", async () => {
+    it("should write through the version-guarded statement, which rejects it in the database", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorldSettings).not.toHaveBeenCalled()
+      // No version means the statement guards on settings_version IS NULL
+      expect(upsertWorldSettings.mock.calls[0][0]).not.toHaveProperty(
+        "settings_version"
+      )
+    })
+
+    it("should resolve without throwing when the database rejects the write", async () => {
+      upsertWorldSettings.mockReset()
+      upsertWorldSettings.mockResolvedValueOnce(null)
+
+      await expect(
+        handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      ).resolves.toBeUndefined()
     })
   })
 
@@ -288,7 +300,7 @@ describe("when handling a world settings changed event", () => {
     it("should still mirror the visibility from the event payload", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorld).toHaveBeenCalledWith(
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
         expect.objectContaining({ is_private: true })
       )
     })
@@ -304,7 +316,7 @@ describe("when handling a world settings changed event", () => {
     it("should leave the stored visibility untouched", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorld).toHaveBeenCalledWith(
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
         expect.objectContaining({ is_private: undefined })
       )
     })
@@ -344,10 +356,10 @@ describe("when handling a world settings changed event", () => {
       )
     })
 
-    it("should fall back to the unguarded last-write-wins upsert", async () => {
+    it("should apply last-write-wins while the row has never stored a version", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorld).toHaveBeenCalledWith(
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
         expect.objectContaining({
           world_name: "example.dcl.eth",
           title: "A New Title",

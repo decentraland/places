@@ -554,15 +554,23 @@ export default class WorldModel extends Model<WorldAttributes> {
   }
 
   /**
-   * Upsert world settings mirrored from worlds-content-server. The update only applies when the
-   * incoming `settings_version` is not older than the one already stored, so reordered or
-   * redelivered settings events can never overwrite newer data with an older snapshot.
-   * Returns null when the incoming version is older and the write was skipped.
+   * Upsert world settings mirrored from worlds-content-server.
+   *
+   * With a `settings_version`, the update applies only when the incoming version is not older than
+   * the stored one, so reordered or redelivered settings events cannot overwrite newer data.
+   * Without one — a source that predates the versioned contract — it applies only while the row has
+   * never stored a version, so a mid-rollout unversioned write cannot clobber a row that another
+   * worker has already moved into the versioned contract.
+   *
+   * Both conditions live in the statement rather than in a prior read, so no concurrent write can
+   * slip between the check and the update.
+   *
+   * @returns The stored row, or null when the condition rejected the write
    */
   static async upsertWorldSettings(
     world: Partial<WorldAttributes> & {
       world_name: string
-      settings_version: number
+      settings_version?: number
     }
   ): Promise<WorldAttributes | null> {
     const worldData = this.buildWorldData(world)
@@ -593,12 +601,20 @@ export default class WorldModel extends Model<WorldAttributes> {
 
     const insertFields = Object.keys(worldData) as Array<keyof WorldAttributes>
     const updateFields = Object.keys(changes) as Array<keyof WorldAttributes>
+    // Spelled out per case rather than leaning on the versioned condition to reject unversioned
+    // writes by NULL propagation (`stored <= NULL` yields NULL, so the row does not match). That
+    // happens to work, but it is subtle enough that a later change to how the column is built for
+    // an unversioned write would silently turn the guard off.
+    const conflictCondition =
+      world.settings_version === undefined
+        ? SQL`WHERE ${table(this)}."settings_version" IS NULL`
+        : SQL`WHERE ${table(this)}."settings_version" IS NULL
+        OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"`
     const sql = SQL`
       INSERT INTO ${table(this)} ${columns(insertFields)}
       VALUES ${objectValues(insertFields, [worldData])}
       ON CONFLICT ("id") DO UPDATE SET ${setColumns(updateFields, changes)}
-      WHERE ${table(this)}."settings_version" IS NULL
-        OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"
+      ${conflictCondition}
       RETURNING *
     `
     const [updatedWorld] = await this.namedQuery<WorldAttributes>(
