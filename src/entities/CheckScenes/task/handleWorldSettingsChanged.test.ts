@@ -564,6 +564,9 @@ describe("when handling a world settings changed event", () => {
       }
       findByWorldName.mockReset()
       findByWorldName.mockResolvedValueOnce(storedWorld)
+      // The statement preserves the stored rating, so the row it returns still carries it
+      upsertWorldSettings.mockReset()
+      upsertWorldSettings.mockResolvedValueOnce(storedWorld)
       fetchMock.mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -575,11 +578,11 @@ describe("when handling a world settings changed event", () => {
       )
     })
 
-    it("should keep the stored rating out of the update", async () => {
+    it("should hand the fetched rating to the statement that enforces the rule", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ content_rating: undefined })
+        expect.objectContaining({ content_rating: SceneContentRating.TEEN })
       )
     })
 
@@ -597,6 +600,12 @@ describe("when handling a world settings changed event", () => {
     beforeEach(() => {
       findByWorldName.mockReset()
       findByWorldName.mockResolvedValueOnce(storedWorld)
+      // The statement applies the higher rating, so the row it returns carries it
+      upsertWorldSettings.mockReset()
+      upsertWorldSettings.mockResolvedValueOnce({
+        ...storedWorld,
+        content_rating: SceneContentRating.ADULT,
+      })
       fetchMock.mockResolvedValueOnce(
         new Response(
           JSON.stringify({
@@ -616,11 +625,11 @@ describe("when handling a world settings changed event", () => {
       )
     })
 
-    it("should notify about the rating upgrade", async () => {
+    it("should notify about the rating upgrade with the row as stored", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(notifyUpgradingRating).toHaveBeenCalledWith(
-        storedWorld,
+        expect.objectContaining({ content_rating: SceneContentRating.ADULT }),
         "Content Creator",
         SceneContentRating.ADULT
       )

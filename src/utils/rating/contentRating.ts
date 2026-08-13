@@ -45,7 +45,11 @@ export default function getContentRating(
   return contentEntitySceneRating
 }
 
-const ratingScale = [
+/**
+ * Content ratings from least to most restrictive. Exported so a database statement can enforce the
+ * same ordering the helpers below apply in memory.
+ */
+export const ratingScale = [
   SceneContentRating.RATING_PENDING,
   SceneContentRating.TEEN,
   SceneContentRating.ADULT,

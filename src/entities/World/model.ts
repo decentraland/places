@@ -21,6 +21,7 @@ import {
   WorldAttributes,
   WorldListOrderBy,
 } from "./types"
+import { ratingScale } from "../../utils/rating/contentRating"
 import { Model } from "../Database/model"
 import {
   buildTextsearch,
@@ -575,11 +576,12 @@ export default class WorldModel extends Model<WorldAttributes> {
   ): Promise<WorldAttributes | null> {
     const worldData = this.buildWorldData(world)
 
+    // content_rating is set by the statement below instead, so the downgrade rule is enforced
+    // against the row as it exists at write time rather than a value read beforehand
     const updatableFields: (keyof WorldAttributes)[] = [
       "title",
       "description",
       "image",
-      "content_rating",
       "categories",
       "show_in_places",
       "single_player",
@@ -601,6 +603,24 @@ export default class WorldModel extends Model<WorldAttributes> {
 
     const insertFields = Object.keys(worldData) as Array<keyof WorldAttributes>
     const updateFields = Object.keys(changes) as Array<keyof WorldAttributes>
+    // Creators may raise a rating but only moderators may lower it, and a moderator write does not
+    // move settings_version, so comparing against a rating read before this statement can persist a
+    // downgrade that landed in between. The comparison therefore happens here, against the row being
+    // updated. An unrecognized stored rating yields NULL from array_position and keeps the stored
+    // value, which is the safe direction.
+    const ratingClause =
+      world.content_rating === undefined
+        ? SQL``
+        : SQL`, "content_rating" = CASE
+            WHEN array_position(${ratingScale}::text[], ${
+            world.content_rating
+          }) >=
+                 array_position(${ratingScale}::text[], ${table(
+            this
+          )}."content_rating")
+            THEN ${world.content_rating}
+            ELSE ${table(this)}."content_rating"
+          END`
     // Spelled out per case rather than leaning on the versioned condition to reject unversioned
     // writes by NULL propagation (`stored <= NULL` yields NULL, so the row does not match). That
     // happens to work, but it is subtle enough that a later change to how the column is built for
@@ -613,7 +633,10 @@ export default class WorldModel extends Model<WorldAttributes> {
     const sql = SQL`
       INSERT INTO ${table(this)} ${columns(insertFields)}
       VALUES ${objectValues(insertFields, [worldData])}
-      ON CONFLICT ("id") DO UPDATE SET ${setColumns(updateFields, changes)}
+      ON CONFLICT ("id") DO UPDATE SET ${setColumns(
+        updateFields,
+        changes
+      )}${ratingClause}
       ${conflictCondition}
       RETURNING *
     `

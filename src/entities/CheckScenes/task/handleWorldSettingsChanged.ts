@@ -9,10 +9,7 @@ import {
 } from "./errors"
 import { getTrustedContentServerUrl } from "./processEntityId"
 import { drainResponse } from "../../../utils/fetch"
-import {
-  isDowngradingRating,
-  isUpgradingRating,
-} from "../../../utils/rating/contentRating"
+import { isUpgradingRating } from "../../../utils/rating/contentRating"
 import { sanitizeImageUrl, sanitizePlaceDescription } from "../../Place/utils"
 import {
   notifyDowngradeRating,
@@ -20,6 +17,7 @@ import {
   notifyUpgradingRating,
 } from "../../Slack/utils"
 import WorldModel from "../../World/model"
+import { WorldAttributes } from "../../World/types"
 
 const SETTINGS_FETCH_TIMEOUT_MS = 15_000
 // worlds.title is VARCHAR(50); worlds-content-server does not bound titles
@@ -196,28 +194,10 @@ export async function handleWorldSettingsChanged(
 
     const fetchedRating = normalizeContentRating(settings.content_rating)
 
-    // Check if this is a rating change attempt on an existing world
+    // Read for the creation check and to describe the rating change afterwards. The downgrade rule
+    // itself is enforced by the write, since a moderator can change the rating in between and does
+    // not move settings_version.
     const existingWorld = await WorldModel.findByWorldName(worldName)
-    let contentRatingToUse: SceneContentRating | undefined = fetchedRating
-    let blockedDowngrade = false
-    let appliedUpgrade = false
-
-    if (fetchedRating && existingWorld && existingWorld.content_rating) {
-      if (isDowngradingRating(fetchedRating, existingWorld.content_rating)) {
-        // Content creators cannot downgrade ratings - moderators are notified below
-        loggerExtended.log(
-          `Blocked rating downgrade attempt for world ${worldName}: ` +
-            `${existingWorld.content_rating} -> ${fetchedRating}`
-        )
-        blockedDowngrade = true
-        // Keep the original rating
-        contentRatingToUse = undefined
-      } else if (
-        isUpgradingRating(fetchedRating, existingWorld.content_rating)
-      ) {
-        appliedUpgrade = true
-      }
-    }
 
     // Preserve the model's "omitted means do not update" contract on every field: an absent field
     // means the worlds row has no value for it, not an instruction to clear ours.
@@ -231,7 +211,7 @@ export async function handleWorldSettingsChanged(
         settings.description === undefined
           ? undefined
           : sanitizePlaceDescription(settings.description),
-      content_rating: contentRatingToUse,
+      content_rating: fetchedRating,
       categories: settings.categories ?? undefined,
       image:
         settings.thumbnail_hash === undefined
@@ -255,6 +235,8 @@ export async function handleWorldSettingsChanged(
     const wouldCreateFromEmptyResponse =
       !existingWorld && !carriesFetchedValues(settings)
 
+    let appliedWorld: WorldAttributes | null = null
+
     if (isValidSettingsVersion(settings.settings_version)) {
       // Only the fetched values can seed a row here: this branch ignores the payload's accessType,
       // so counting it would let an empty response create a row it cannot populate.
@@ -263,7 +245,7 @@ export async function handleWorldSettingsChanged(
         return
       }
 
-      const applied = await WorldModel.upsertWorldSettings({
+      appliedWorld = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
         // Under the versioned contract visibility comes from the fetch, never from the payload: the
         // payload has no ordering relationship with settings_version, so a redelivered older access
@@ -271,7 +253,7 @@ export async function handleWorldSettingsChanged(
         is_private: toIsPrivate(settings.access_type),
         settings_version: settings.settings_version,
       })
-      if (!applied) {
+      if (!appliedWorld) {
         loggerExtended.log(
           `Skipped settings older than the ones already applied for: ${worldName}`
         )
@@ -292,13 +274,13 @@ export async function handleWorldSettingsChanged(
       // stored a version. A mixed fleet mid-rollout serves both shapes, so another worker may have
       // moved this row into the versioned contract already; the write itself enforces that, since a
       // prior read could go stale before it lands.
-      const applied = await WorldModel.upsertWorldSettings({
+      appliedWorld = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
         is_private: toIsPrivate(
           settings.access_type ?? event.metadata.accessType
         ),
       })
-      if (!applied) {
+      if (!appliedWorld) {
         loggerExtended.log(
           `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`
         )
@@ -314,12 +296,22 @@ export async function handleWorldSettingsChanged(
       )
     }
 
-    // Notified only once the write actually landed, so a skipped stale update cannot ping moderators
-    if (existingWorld && blockedDowngrade && fetchedRating) {
-      notifyDowngradeRating(existingWorld, fetchedRating)
-    }
-    if (existingWorld && appliedUpgrade && fetchedRating) {
-      notifyUpgradingRating(existingWorld, "Content Creator", fetchedRating)
+    // Described from the row the statement returned, so the notification reflects what was stored
+    // rather than what a pre-write read predicted
+    if (fetchedRating && appliedWorld) {
+      const storedRating = appliedWorld.content_rating as SceneContentRating
+      if (storedRating !== fetchedRating) {
+        loggerExtended.log(
+          `Blocked rating downgrade attempt for world ${worldName}: ` +
+            `${storedRating} -> ${fetchedRating}`
+        )
+        notifyDowngradeRating(appliedWorld, fetchedRating)
+      } else if (
+        existingWorld?.content_rating &&
+        isUpgradingRating(fetchedRating, existingWorld.content_rating)
+      ) {
+        notifyUpgradingRating(appliedWorld, "Content Creator", fetchedRating)
+      }
     }
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)
