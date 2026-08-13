@@ -36,6 +36,7 @@ type WorldSettingsResponse = {
   single_player?: boolean
   show_in_places?: boolean
   thumbnail_hash?: string
+  access_type?: string
   settings_version?: number
 }
 
@@ -70,7 +71,11 @@ async function fetchWorldSettings(
 ): Promise<WorldSettingsResponse | null> {
   const response = await fetch(
     `${contentServerUrl}/world/${encodeURIComponent(worldName)}/settings`,
-    { signal: AbortSignal.timeout(SETTINGS_FETCH_TIMEOUT_MS) }
+    {
+      signal: AbortSignal.timeout(SETTINGS_FETCH_TIMEOUT_MS),
+      // The host was allowlisted before the request; a redirect would move the response off it
+      redirect: "error",
+    }
   )
   if (response.status === 404) {
     await drainResponse(response)
@@ -112,8 +117,8 @@ function parseSettingsVersion(value: unknown): number | null {
 /**
  * Handles WorldSettingsChangedEvent from the worlds content server.
  *
- * The event is only a trigger: the payload snapshot is ignored (except accessType, which the
- * settings endpoint does not expose) and the authoritative settings are read back from
+ * The event is only a trigger: nothing from the payload is persisted, and the authoritative
+ * settings — including the access type that drives world visibility — are read back from
  * GET /world/:world_name/settings. Reading current state makes reordered, duplicated or
  * redelivered events converge instead of applying stale snapshots, and the returned
  * settings_version guards the write so a slow handler cannot overwrite data a concurrent one
@@ -163,22 +168,23 @@ export async function handleWorldSettingsChanged(
     // Check if this is a rating change attempt on an existing world
     const existingWorld = await WorldModel.findByWorldName(worldName)
     let contentRatingToUse: SceneContentRating | undefined = fetchedRating
+    let blockedDowngrade = false
+    let appliedUpgrade = false
 
     if (fetchedRating && existingWorld && existingWorld.content_rating) {
       if (isDowngradingRating(fetchedRating, existingWorld.content_rating)) {
-        // Content creators cannot downgrade ratings - notify moderators
+        // Content creators cannot downgrade ratings - moderators are notified below
         loggerExtended.log(
           `Blocked rating downgrade attempt for world ${worldName}: ` +
             `${existingWorld.content_rating} -> ${fetchedRating}`
         )
-        notifyDowngradeRating(existingWorld, fetchedRating)
+        blockedDowngrade = true
         // Keep the original rating
         contentRatingToUse = undefined
       } else if (
         isUpgradingRating(fetchedRating, existingWorld.content_rating)
       ) {
-        // Notify about rating upgrade
-        notifyUpgradingRating(existingWorld, "Content Creator", fetchedRating)
+        appliedUpgrade = true
       }
     }
 
@@ -205,11 +211,13 @@ export async function handleWorldSettingsChanged(
       show_in_places: settings.show_in_places,
       single_player: settings.single_player,
       skybox_time: settings.skybox_time ?? undefined,
-      // The settings endpoint does not expose access; only access-change events carry it
+      // Derived from the fetched access type, never from the event payload: the payload has no
+      // ordering relationship with settings_version, so a redelivered older access event would
+      // otherwise pass the version guard and re-apply stale visibility.
       is_private:
-        event.metadata.accessType === undefined
+        settings.access_type === undefined
           ? undefined
-          : event.metadata.accessType !== "unrestricted",
+          : settings.access_type !== "unrestricted",
     }
 
     const settingsVersion = parseSettingsVersion(settings.settings_version)
@@ -227,6 +235,14 @@ export async function handleWorldSettingsChanged(
     } else {
       // Source not yet exposing settings_version: apply last-write-wins as before
       await WorldModel.upsertWorld(worldUpdate)
+    }
+
+    // Notified only once the write actually landed, so a skipped stale update cannot ping moderators
+    if (existingWorld && blockedDowngrade && fetchedRating) {
+      notifyDowngradeRating(existingWorld, fetchedRating)
+    }
+    if (existingWorld && appliedUpgrade && fetchedRating) {
+      notifyUpgradingRating(existingWorld, "Content Creator", fetchedRating)
     }
 
     loggerExtended.log(`Upserted world settings for: ${worldName}`)

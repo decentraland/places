@@ -370,19 +370,17 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when the event says the access type is not 'unrestricted' (restricted world)", () => {
+  describe("when the fetched access type is restricted", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Private World",
         description: "A restricted world",
+        access_type: "shared-secret",
         settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "privateworld.dcl.eth",
-        metadata: {
-          worldName: "privateworld.dcl.eth",
-          accessType: "restricted",
-        },
+        metadata: { worldName: "privateworld.dcl.eth" },
       })
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
@@ -397,18 +395,16 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when the event says the access type is 'unrestricted' (public world)", () => {
+  describe("when the fetched access type is unrestricted", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Public World",
+        access_type: "unrestricted",
         settings_version: 2,
       })
       const event = createWorldSettingsChangedEvent({
         key: "publicworld.dcl.eth",
-        metadata: {
-          worldName: "publicworld.dcl.eth",
-          accessType: "unrestricted",
-        },
+        metadata: { worldName: "publicworld.dcl.eth" },
       })
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
     })
@@ -423,37 +419,39 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when an existing restricted world receives a settings event without access type", () => {
+  describe("when a settings change follows an access change", () => {
     beforeEach(async () => {
       mockSettingsResponse({
         title: "Private World",
+        access_type: "shared-secret",
         settings_version: 2,
       })
-      const createEvent = createWorldSettingsChangedEvent({
-        key: "stayprivate.dcl.eth",
-        metadata: {
-          worldName: "stayprivate.dcl.eth",
-          accessType: "restricted",
-        },
-      })
-      await handleWorldSettingsChanged(createEvent, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "stayprivate.dcl.eth",
+          metadata: { worldName: "stayprivate.dcl.eth" },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
 
+      // A later settings-only change: the source still reports the same access type
       mockSettingsResponse({
         title: "Private World Renamed",
+        access_type: "shared-secret",
         settings_version: 3,
       })
-      const settingsOnlyEvent = createWorldSettingsChangedEvent({
-        key: "stayprivate.dcl.eth",
-        metadata: { worldName: "stayprivate.dcl.eth" },
-      })
       await handleWorldSettingsChanged(
-        settingsOnlyEvent,
+        createWorldSettingsChangedEvent({
+          key: "stayprivate.dcl.eth",
+          metadata: { worldName: "stayprivate.dcl.eth" },
+        }),
         WORLDS_URL,
         ALLOWED_HOSTS
       )
     })
 
-    it("should keep the world private instead of resetting is_private", async () => {
+    it("should keep the world private", async () => {
       const response = await supertest(app)
         .get("/api/worlds/stayprivate.dcl.eth")
         .expect(200)
@@ -461,7 +459,7 @@ describe("handleWorldSettingsChanged integration", () => {
       expect(response.body.data.is_private).toBe(true)
     })
 
-    it("should still apply the fetched settings", async () => {
+    it("should apply the newer settings", async () => {
       const response = await supertest(app)
         .get("/api/worlds/stayprivate.dcl.eth")
         .expect(200)
@@ -470,40 +468,64 @@ describe("handleWorldSettingsChanged integration", () => {
     })
   })
 
-  describe("when an existing restricted world changes to unrestricted", () => {
+  describe("when a restricted world is made unrestricted and the older access event is redelivered", () => {
     beforeEach(async () => {
+      // Restricted
       mockSettingsResponse({
         title: "Toggle World",
+        access_type: "shared-secret",
         settings_version: 2,
       })
-      const createEvent = createWorldSettingsChangedEvent({
-        key: "toggleworld.dcl.eth",
-        metadata: {
-          worldName: "toggleworld.dcl.eth",
-          accessType: "restricted",
-        },
-      })
-      await handleWorldSettingsChanged(createEvent, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "restricted",
+          },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
 
+      // Made unrestricted: the access change moves the version forward on the source
       mockSettingsResponse({
         title: "Toggle World",
+        access_type: "unrestricted",
         settings_version: 3,
       })
-      const makePublicEvent = createWorldSettingsChangedEvent({
-        key: "toggleworld.dcl.eth",
-        metadata: {
-          worldName: "toggleworld.dcl.eth",
-          accessType: "unrestricted",
-        },
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "unrestricted",
+          },
+        }),
+        WORLDS_URL,
+        ALLOWED_HOSTS
+      )
+
+      // SQS redelivers the older restricted event; the fetch returns the current state
+      mockSettingsResponse({
+        title: "Toggle World",
+        access_type: "unrestricted",
+        settings_version: 3,
       })
       await handleWorldSettingsChanged(
-        makePublicEvent,
+        createWorldSettingsChangedEvent({
+          key: "toggleworld.dcl.eth",
+          metadata: {
+            worldName: "toggleworld.dcl.eth",
+            accessType: "restricted",
+          },
+        }),
         WORLDS_URL,
         ALLOWED_HOSTS
       )
     })
 
-    it("should update is_private to false", async () => {
+    it("should leave the world unrestricted", async () => {
       const response = await supertest(app)
         .get("/api/worlds/toggleworld.dcl.eth")
         .expect(200)

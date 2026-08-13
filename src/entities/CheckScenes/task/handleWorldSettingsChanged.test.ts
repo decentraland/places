@@ -224,7 +224,45 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
-  describe("when the event carries an access type", () => {
+  describe("when the fetched access type is restricted", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ access_type: "shared-secret", settings_version: 7 }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should mark the world as private", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: true })
+      )
+    })
+  })
+
+  describe("when the fetched access type is unrestricted", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ access_type: "unrestricted", settings_version: 7 }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should mark the world as public", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: false })
+      )
+    })
+  })
+
+  describe("when the event payload carries an access type that disagrees with the fetched one", () => {
     beforeEach(() => {
       event = {
         ...event,
@@ -234,15 +272,89 @@ describe("when handling a world settings changed event", () => {
         },
       }
       fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ access_type: "unrestricted", settings_version: 7 }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should trust the fetched access type instead of the payload", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ is_private: false })
+      )
+    })
+  })
+
+  describe("when the fetched settings omit the access type", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
         new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
       )
     })
 
-    it("should mark the world as private when the access type is restricted", async () => {
+    it("should leave the stored visibility untouched", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: true })
+        expect.objectContaining({ is_private: undefined })
+      )
+    })
+  })
+
+  describe("when the guarded write is skipped because the stored version is newer", () => {
+    beforeEach(() => {
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce({
+        ...storedWorld,
+        content_rating: SceneContentRating.ADULT,
+      })
+      upsertWorldSettings.mockReset()
+      upsertWorldSettings.mockResolvedValueOnce(null)
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({
+            content_rating: SceneContentRating.TEEN,
+            settings_version: 7,
+          }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should not notify moderators about a downgrade that was never applied", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(notifyDowngradeRating).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("when the settings source answers with a redirect", () => {
+    beforeEach(() => {
+      fetchMock.mockRejectedValueOnce(new TypeError("unexpected redirect"))
+    })
+
+    it("should rethrow so the message is retried instead of following it", async () => {
+      await expect(
+        handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      ).rejects.toThrow("unexpected redirect")
+    })
+  })
+
+  describe("when the settings request is issued", () => {
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
+      )
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+    })
+
+    it("should refuse to follow redirects off the allowlisted host", () => {
+      expect(fetchMock).toHaveBeenCalledWith(
+        `${WORLDS_URL}/world/example.dcl.eth/settings`,
+        expect.objectContaining({ redirect: "error" })
       )
     })
   })
