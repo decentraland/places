@@ -224,6 +224,33 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
+  describe("when a versioned response carries no settings but the event payload has an access type", () => {
+    beforeEach(() => {
+      event = {
+        ...event,
+        metadata: {
+          worldName: "example.dcl.eth",
+          accessType: "restricted",
+        },
+      }
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
+      )
+    })
+
+    it("should not create a world row, since this path ignores the payload access type", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).not.toHaveBeenCalled()
+    })
+
+    it("should not fall through to the unguarded upsert", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorld).not.toHaveBeenCalled()
+    })
+  })
+
   describe("when the response carries a version and settings for a world unknown here", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
@@ -292,6 +319,9 @@ describe("when handling a world settings changed event", () => {
           accessType: "shared-secret",
         },
       }
+      // An existing row, so the write runs instead of being short-circuited by the creation guard
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce(storedWorld)
       // Versioned response without access_type: the payload must not be used as a substitute
       fetchMock.mockResolvedValueOnce(
         new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })

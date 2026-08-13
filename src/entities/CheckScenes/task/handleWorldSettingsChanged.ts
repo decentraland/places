@@ -123,11 +123,13 @@ function toIsPrivate(accessType: string | undefined): boolean | undefined {
   return accessType === undefined ? undefined : accessType !== "unrestricted"
 }
 
-/** True when there is at least one setting worth mirroring, version and world name aside. */
-function carriesMirrorableValues(
-  settings: WorldSettingsResponse,
-  event: WorldSettingsChangedEvent
-): boolean {
+/**
+ * True when the fetched response carries at least one setting worth mirroring, version aside.
+ *
+ * Deliberately ignores the event payload: whether the payload's accessType counts depends on which
+ * write path runs, so each branch decides that for itself.
+ */
+function carriesFetchedValues(settings: WorldSettingsResponse): boolean {
   return (
     settings.title !== undefined ||
     settings.description !== undefined ||
@@ -137,9 +139,7 @@ function carriesMirrorableValues(
     settings.show_in_places !== undefined ||
     settings.single_player !== undefined ||
     settings.skybox_time !== undefined ||
-    settings.access_type !== undefined ||
-    // Only meaningful against a source predating access_type, where it is the sole signal
-    event.metadata.accessType !== undefined
+    settings.access_type !== undefined
   )
 }
 
@@ -248,14 +248,21 @@ export async function handleWorldSettingsChanged(
     // response that carries no values would create a world whose settings are indistinguishable
     // from real ones. Nothing lists a world without an enabled place, so waiting for a response
     // that actually says something loses nothing.
-    if (!existingWorld && !carriesMirrorableValues(settings, event)) {
+    const logSkippedEmptyCreation = () =>
       loggerExtended.log(
         `Skipped creating a world from a settings response with no values: ${worldName}`
       )
-      return
-    }
+    const wouldCreateFromEmptyResponse =
+      !existingWorld && !carriesFetchedValues(settings)
 
     if (isValidSettingsVersion(settings.settings_version)) {
+      // Only the fetched values can seed a row here: this branch ignores the payload's accessType,
+      // so counting it would let an empty response create a row it cannot populate.
+      if (wouldCreateFromEmptyResponse) {
+        logSkippedEmptyCreation()
+        return
+      }
+
       const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
         // Under the versioned contract visibility comes from the fetch, never from the payload: the
@@ -281,6 +288,16 @@ export async function handleWorldSettingsChanged(
         loggerExtended.log(
           `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`
         )
+        return
+      }
+
+      // Against a legacy source the payload's accessType is the only visibility signal there is, so
+      // unlike the versioned branch it counts as something worth creating a row for.
+      if (
+        wouldCreateFromEmptyResponse &&
+        event.metadata.accessType === undefined
+      ) {
+        logSkippedEmptyCreation()
         return
       }
 
