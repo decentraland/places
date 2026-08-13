@@ -110,8 +110,12 @@ function normalizeContentRating(
   return undefined
 }
 
-function parseSettingsVersion(value: unknown): number | null {
-  return typeof value === "number" && Number.isFinite(value) ? value : null
+/**
+ * Narrows the mirrored settings version. Only a non-negative safe integer can order writes, so
+ * anything else is rejected rather than accepted as a version.
+ */
+function isValidSettingsVersion(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0
 }
 
 /**
@@ -220,11 +224,10 @@ export async function handleWorldSettingsChanged(
           : settings.access_type !== "unrestricted",
     }
 
-    const settingsVersion = parseSettingsVersion(settings.settings_version)
-    if (settingsVersion !== null) {
+    if (isValidSettingsVersion(settings.settings_version)) {
       const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
-        settings_version: settingsVersion,
+        settings_version: settings.settings_version,
       })
       if (!applied) {
         loggerExtended.log(
@@ -232,9 +235,17 @@ export async function handleWorldSettingsChanged(
         )
         return
       }
-    } else {
+    } else if (settings.settings_version === undefined) {
       // Source not yet exposing settings_version: apply last-write-wins as before
       await WorldModel.upsertWorld(worldUpdate)
+    } else {
+      // Present but unusable as a version. Falling back to the unguarded upsert here would silently
+      // drop the ordering guarantee, so surface it and let the consumer retry instead.
+      throw new Error(
+        `World settings for ${worldName} carry an invalid settings_version: ${JSON.stringify(
+          settings.settings_version
+        )}`
+      )
     }
 
     // Notified only once the write actually landed, so a skipped stale update cannot ping moderators

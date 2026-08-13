@@ -157,6 +157,31 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
+  describe("when the fetched settings carry an unusable settings version", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ title: "A New Title", settings_version: -1.5 }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should reject the update instead of silently dropping the ordering guarantee", async () => {
+      await expect(
+        handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      ).rejects.toThrow("invalid settings_version")
+    })
+
+    it("should not fall back to the unguarded upsert", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS).catch(
+        () => undefined
+      )
+
+      expect(upsertWorld).not.toHaveBeenCalled()
+    })
+  })
+
   describe("when the fetched settings have no settings version", () => {
     beforeEach(() => {
       fetchMock.mockResolvedValueOnce(
