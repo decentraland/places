@@ -182,6 +182,67 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
+  describe("when an unversioned response arrives for a world already under the versioned contract", () => {
+    beforeEach(() => {
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce({
+        ...storedWorld,
+        settings_version: 7,
+      })
+      // Mixed fleet mid-rollout: this reply came from an instance without the versioned contract
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ title: "Older Instance Title" }), {
+          status: 200,
+        })
+      )
+    })
+
+    it("should not overwrite the row through the unguarded upsert", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorld).not.toHaveBeenCalled()
+    })
+
+    it("should not write through the guarded upsert either", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("when the response carries a version but no settings and the world is unknown here", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
+      )
+    })
+
+    it("should not create a world row out of column defaults", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("when the response carries a version and settings for a world unknown here", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        new Response(
+          JSON.stringify({ title: "A New Title", settings_version: 7 }),
+          { status: 200 }
+        )
+      )
+    })
+
+    it("should create the world from the fetched settings", async () => {
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        expect.objectContaining({ title: "A New Title" })
+      )
+    })
+  })
+
   describe("when the source predates the versioned contract and the event carries an access type", () => {
     beforeEach(() => {
       event = {
@@ -267,6 +328,9 @@ describe("when handling a world settings changed event", () => {
 
   describe("when the fetched settings omit optional fields", () => {
     beforeEach(() => {
+      // The "omitted means do not update" contract only matters against an existing row
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce(storedWorld)
       fetchMock.mockResolvedValueOnce(
         new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
       )
@@ -379,6 +443,8 @@ describe("when handling a world settings changed event", () => {
 
   describe("when the fetched settings omit the access type", () => {
     beforeEach(() => {
+      findByWorldName.mockReset()
+      findByWorldName.mockResolvedValueOnce(storedWorld)
       fetchMock.mockResolvedValueOnce(
         new Response(JSON.stringify({ settings_version: 7 }), { status: 200 })
       )

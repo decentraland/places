@@ -123,6 +123,26 @@ function toIsPrivate(accessType: string | undefined): boolean | undefined {
   return accessType === undefined ? undefined : accessType !== "unrestricted"
 }
 
+/** True when there is at least one setting worth mirroring, version and world name aside. */
+function carriesMirrorableValues(
+  settings: WorldSettingsResponse,
+  event: WorldSettingsChangedEvent
+): boolean {
+  return (
+    settings.title !== undefined ||
+    settings.description !== undefined ||
+    settings.content_rating !== undefined ||
+    settings.categories !== undefined ||
+    settings.thumbnail_hash !== undefined ||
+    settings.show_in_places !== undefined ||
+    settings.single_player !== undefined ||
+    settings.skybox_time !== undefined ||
+    settings.access_type !== undefined ||
+    // Only meaningful against a source predating access_type, where it is the sole signal
+    event.metadata.accessType !== undefined
+  )
+}
+
 /**
  * Handles WorldSettingsChangedEvent from the worlds content server.
  *
@@ -224,6 +244,17 @@ export async function handleWorldSettingsChanged(
       skybox_time: settings.skybox_time ?? undefined,
     }
 
+    // Inserting a row materializes this table's NOT NULL defaults for every settings column, so a
+    // response that carries no values would create a world whose settings are indistinguishable
+    // from real ones. Nothing lists a world without an enabled place, so waiting for a response
+    // that actually says something loses nothing.
+    if (!existingWorld && !carriesMirrorableValues(settings, event)) {
+      loggerExtended.log(
+        `Skipped creating a world from a settings response with no values: ${worldName}`
+      )
+      return
+    }
+
     if (isValidSettingsVersion(settings.settings_version)) {
       const applied = await WorldModel.upsertWorldSettings({
         ...worldUpdate,
@@ -240,6 +271,19 @@ export async function handleWorldSettingsChanged(
         return
       }
     } else if (settings.settings_version === undefined) {
+      // A row that already applied a versioned response cannot be ordered against an unversioned
+      // one, which is what a mixed fleet serves mid-rollout. Overwriting it would bypass the guard,
+      // so leave it for a response that can be ordered; the next event refreshes it in full.
+      if (
+        existingWorld?.settings_version !== null &&
+        existingWorld?.settings_version !== undefined
+      ) {
+        loggerExtended.log(
+          `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`
+        )
+        return
+      }
+
       // Source predates the versioned contract: apply last-write-wins as before. A response with no
       // access_type carries no authoritative visibility either, so the event payload is the only
       // signal available during a rollout where this service ships first.
