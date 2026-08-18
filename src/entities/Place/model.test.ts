@@ -998,11 +998,15 @@ describe("when disabling world scenes by deployment identity", () => {
   let eventTimestamp: number
   let liveDeploymentIds: string[]
   let livePositions: string[]
+  let snapshot: Array<{ id: string; deployment_id: string | null }>
 
   beforeEach(() => {
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
     liveDeploymentIds = ["deployment-live"]
     livePositions = ["9,9"]
+    snapshot = [
+      { id: "11111111-1111-1111-1111-111111111111", deployment_id: null },
+    ]
     namedQuery.mockResolvedValue([])
   })
 
@@ -1014,7 +1018,8 @@ describe("when disabling world scenes by deployment identity", () => {
       ["1,1", "2,1"],
       eventTimestamp,
       liveDeploymentIds,
-      livePositions
+      livePositions,
+      snapshot
     )
 
     const [name, sql] = namedQuery.mock.calls[0]
@@ -1035,7 +1040,8 @@ describe("when disabling world scenes by deployment identity", () => {
       ["1,1", "2,1"],
       eventTimestamp,
       liveDeploymentIds,
-      livePositions
+      livePositions,
+      snapshot
     )
 
     const [, sql] = namedQuery.mock.calls[0]
@@ -1055,7 +1061,8 @@ describe("when disabling world scenes by deployment identity", () => {
       ["1,1", "2,1"],
       eventTimestamp,
       liveDeploymentIds,
-      livePositions
+      livePositions,
+      snapshot
     )
 
     const [, sql] = namedQuery.mock.calls[0]
@@ -1063,6 +1070,30 @@ describe("when disabling world scenes by deployment identity", () => {
       .replace(/\s+/g, " ")
       .match(/ELSE NOT \(target\."positions" && \$(\d+)::varchar\[\]\)/)
     expect(sql.values[Number(footprint![1]) - 1]).toEqual(livePositions)
+  })
+
+  it("should only reach rows the survivor snapshot could speak about", async () => {
+    await PlaceModel.disableByWorldIdAndDeployments(
+      "example.dcl.eth",
+      ["deployment-a"],
+      ["1,1"],
+      ["1,1", "2,1"],
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions,
+      snapshot
+    )
+
+    const [, sql] = namedQuery.mock.calls[0]
+    const normalized = sql.text.replace(/\s+/g, " ")
+    // the guard must sit on the inferred branches only, never on the named deployment ids
+    expect(normalized).toMatch(
+      /target\."deployment_id" = ANY\(\$\d+\) OR \( EXISTS \(/
+    )
+    const guard = normalized.match(
+      /FROM unnest\( \$(\d+)::text\[\], \$\d+::text\[\] \) AS snapshot/
+    )
+    expect(sql.values[Number(guard![1]) - 1]).toEqual([snapshot[0].id])
   })
 
   it("should report legacy fallback matches separately", async () => {
@@ -1078,7 +1109,8 @@ describe("when disabling world scenes by deployment identity", () => {
       ["1,1", "2,1"],
       eventTimestamp,
       liveDeploymentIds,
-      livePositions
+      livePositions,
+      snapshot
     )
 
     expect(result).toEqual({ deploymentIdMatches: 1, legacyBaseMatches: 1 })
@@ -1089,11 +1121,15 @@ describe("when disabling the places of an undeployed world", () => {
   let eventTimestamp: number
   let liveDeploymentIds: string[]
   let livePositions: string[]
+  let snapshot: Array<{ id: string; deployment_id: string | null }>
 
   beforeEach(() => {
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
     liveDeploymentIds = ["deployment-live"]
     livePositions = ["9,9"]
+    snapshot = [
+      { id: "11111111-1111-1111-1111-111111111111", deployment_id: null },
+    ]
     namedQuery.mockResolvedValue([])
   })
 

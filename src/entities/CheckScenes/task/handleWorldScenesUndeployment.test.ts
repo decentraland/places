@@ -21,6 +21,8 @@ const fetchWorldActiveScenesMock = jest.mocked(
 
 describe("when handling a world scenes undeployment event", () => {
   let disableByWorldIdAndDeployments: jest.SpyInstance
+  let findEnabledWorldPlaceRevisions: jest.SpyInstance
+  let snapshot: Array<{ id: string; deployment_id: string | null }>
   let lockWorldForDeployment: jest.SpyInstance
   let recordPositions: jest.SpyInstance
   let recordScenes: jest.SpyInstance
@@ -41,6 +43,10 @@ describe("when handling a world scenes undeployment event", () => {
       deploymentIds: [],
       positions: [],
     })
+    snapshot = [{ id: "place-a", deployment_id: "deployment-a" }]
+    findEnabledWorldPlaceRevisions = jest
+      .spyOn(PlaceModel, "findEnabledWorldPlaceRevisions")
+      .mockResolvedValue(snapshot)
     lockWorldForDeployment = jest
       .spyOn(WorldModel, "lockWorldForDeployment")
       .mockImplementation(async () => {
@@ -92,7 +98,8 @@ describe("when handling a world scenes undeployment event", () => {
       ["1,1", "2,2"],
       event.timestamp,
       [],
-      []
+      [],
+      snapshot
     )
   })
 
@@ -161,7 +168,8 @@ describe("when handling a world scenes undeployment event", () => {
         ["1,1"],
         event.timestamp,
         ["deployment-b"],
-        ["2,2"]
+        ["2,2"],
+        snapshot
       )
     })
 
@@ -261,7 +269,8 @@ describe("when handling a world scenes undeployment event", () => {
         ["1,1", "2,2"],
         event.timestamp,
         ["deployment-replacement"],
-        ["1,1"]
+        ["1,1"],
+        snapshot
       )
     })
   })

@@ -311,7 +311,7 @@ async function repairWorld(
             "updated_at" = ${now}
           WHERE "id" = ANY(${reenabledByIdentity.map(
             (place) => place.id
-          )}::uuid[])
+          )}::text[])
             AND "disabled" IS TRUE
             AND "disabled_reason" = ${DisabledReason.UNDEPLOYMENT}
         `
@@ -329,7 +329,7 @@ async function repairWorld(
             "deployment_id" = matched."deployment_id",
             "updated_at" = ${now}
           FROM unnest(
-            ${reenabledByFootprint.map(({ place }) => place.id)}::uuid[],
+            ${reenabledByFootprint.map(({ place }) => place.id)}::text[],
             ${reenabledByFootprint.map(({ scene }) => scene.entityId)}::text[]
           ) AS matched("id", "deployment_id")
           WHERE target."id" = matched."id"

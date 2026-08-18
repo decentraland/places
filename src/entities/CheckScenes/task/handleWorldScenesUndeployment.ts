@@ -99,6 +99,9 @@ export async function handleWorldScenesUndeployment(
     const clearedPositions = [
       ...new Set(resolvedScenes.flatMap((scene) => scene.parcels)),
     ]
+    // Read before the lookup so the snapshot covers everything the survivor set cannot: a place
+    // committed for this world while the lookup ran or while the per-world lock was contended.
+    const snapshot = await PlaceModel.findEnabledWorldPlaceRevisions(worldName)
     const activeScenes = await fetchWorldActiveScenesAtPositions(
       worldName,
       clearedPositions
@@ -176,7 +179,8 @@ export async function handleWorldScenesUndeployment(
         positions,
         event.timestamp,
         activeScenes.deploymentIds,
-        activeScenes.positions
+        activeScenes.positions,
+        snapshot
       )
     })
 

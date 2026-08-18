@@ -23,6 +23,32 @@ function sanitizeSearch(search: string): string {
 }
 
 /**
+ * Restrict the inferred matches of an undeployment to the rows its survivor snapshot could describe.
+ *
+ * The survivor set is read from the content server before the per-world lock is held, so a
+ * deployment for the same world can commit in between -- most plausibly the very one holding the
+ * lock being waited on. Deciding by footprint or base parcel then infers from a survivor set that
+ * predates the row, so those rows are left for an event whose survivor set includes them. An event
+ * that names a deployment id needs no survivor set to justify itself and is deliberately not
+ * restricted, which is what keeps an undeployment authoritative over a deployment it raced.
+ * Matching the deployment id as well as the row id catches a revision replaced in situ.
+ */
+function withinSnapshot(
+  snapshot: Array<{ id: string; deployment_id: string | null }>
+): SQLStatement {
+  // places.id is character(36), not uuid, so the ids bind as text
+  return SQL`EXISTS (
+    SELECT 1
+    FROM unnest(
+      ${snapshot.map((place) => place.id)}::text[],
+      ${snapshot.map((place) => place.deployment_id)}::text[]
+    ) AS snapshot("id", "deployment_id")
+    WHERE snapshot."id" = target."id"
+      AND snapshot."deployment_id" IS NOT DISTINCT FROM target."deployment_id"
+  )`
+}
+
+/**
  * Match only the places the content server no longer serves, so an undeployment cannot disable a
  * scene that survived it.
  *
@@ -325,6 +351,29 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     `
 
     return this.namedQuery("find_active_by_world_id_and_positions", sql)
+  }
+
+  /**
+   * Identify the enabled world places as they stand right now.
+   *
+   * A survivor set read from the content server can only speak about rows that existed when it was
+   * read. Pairing each row with its deployment id captures both ways the set can go stale while the
+   * per-world lock is being waited on: a place created, and a place whose revision was replaced in
+   * situ. Unrelated writes such as likes or favourites leave both values untouched.
+   */
+  static async findEnabledWorldPlaceRevisions(
+    worldId: string
+  ): Promise<Array<{ id: string; deployment_id: string | null }>> {
+    return this.namedQuery<{ id: string; deployment_id: string | null }>(
+      "find_enabled_world_place_revisions",
+      SQL`
+        SELECT "id", "deployment_id"
+        FROM ${table(this)}
+        WHERE "world" IS TRUE
+          AND "world_id" = ${worldId.toLowerCase()}
+          AND "disabled" IS FALSE
+      `
+    )
   }
 
   /**
@@ -676,7 +725,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     positions: string[],
     eventTimestamp: number,
     liveDeploymentIds: string[],
-    livePositions: string[]
+    livePositions: string[],
+    snapshot: Array<{ id: string; deployment_id: string | null }>
   ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
@@ -690,18 +740,23 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND ${removedUpstream(liveDeploymentIds, livePositions)}
         AND (
           target."deployment_id" = ANY(${deploymentIds})
-          OR target."positions" && ${positions}::varchar[]
           OR (
-            target."base_position" = ANY(${basePositions})
+            ${withinSnapshot(snapshot)}
             AND (
-              target."deployment_id" IS NOT NULL
-              OR NOT EXISTS (
-                SELECT 1
-                FROM ${table(this)} conflicting
-                WHERE conflicting."world_id" = target."world_id"
-                  AND conflicting."base_position" = target."base_position"
-                  AND conflicting."disabled" IS FALSE
-                  AND conflicting."id" <> target."id"
+              target."positions" && ${positions}::varchar[]
+              OR (
+                target."base_position" = ANY(${basePositions})
+                AND (
+                  target."deployment_id" IS NOT NULL
+                  OR NOT EXISTS (
+                    SELECT 1
+                    FROM ${table(this)} conflicting
+                    WHERE conflicting."world_id" = target."world_id"
+                      AND conflicting."base_position" = target."base_position"
+                      AND conflicting."disabled" IS FALSE
+                      AND conflicting."id" <> target."id"
+                  )
+                )
               )
             )
           )
