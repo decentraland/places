@@ -8,19 +8,15 @@ beforeEach(() => {
 })
 
 describe("when recording scene undeployments", () => {
-  let eventTimestamp: number
+  let undeployedAt: Date
 
   beforeEach(() => {
-    eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
+    undeployedAt = new Date(Date.parse("2026-08-03T12:00:00.000Z"))
   })
 
   describe("and the event carries no scenes", () => {
     beforeEach(async () => {
-      await WorldSceneUndeploymentModel.recordScenes(
-        "example.dcl.eth",
-        [],
-        eventTimestamp
-      )
+      await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", [])
     })
 
     it("should not run a query", () => {
@@ -30,14 +26,10 @@ describe("when recording scene undeployments", () => {
 
   describe("and the event carries scenes", () => {
     beforeEach(async () => {
-      await WorldSceneUndeploymentModel.recordScenes(
-        "Example.DCL.ETH",
-        [
-          { entityId: "deployment-a", baseParcel: "1,1" },
-          { entityId: "deployment-b", baseParcel: "2,2" },
-        ],
-        eventTimestamp
-      )
+      await WorldSceneUndeploymentModel.recordScenes("Example.DCL.ETH", [
+        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
+        { entityId: "deployment-b", baseParcel: "2,2", undeployedAt },
+      ])
     })
 
     it("should keep the newest undeployment timestamp per deployment", () => {
@@ -70,14 +62,10 @@ describe("when recording scene undeployments", () => {
     let deploymentIds: string[]
 
     beforeEach(async () => {
-      await WorldSceneUndeploymentModel.recordScenes(
-        "example.dcl.eth",
-        [
-          { entityId: "deployment-a", baseParcel: "1,1" },
-          { entityId: "deployment-a", baseParcel: "1,1" },
-        ],
-        eventTimestamp
-      )
+      await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", [
+        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
+        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
+      ])
       const [, sql] = namedQuery.mock.calls[0]
       deploymentIds =
         sql.values.find((value): value is string[] => Array.isArray(value)) ??
@@ -87,23 +75,33 @@ describe("when recording scene undeployments", () => {
     it("should include the deployment only once in the bulk upsert", () => {
       expect(deploymentIds).toEqual(["deployment-a"])
     })
+
+    it("should dedupe the timestamp array in lockstep, so unnest cannot pad with NULL", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+      const arrays = sql.values.filter((value): value is unknown[] =>
+        Array.isArray(value)
+      )
+
+      expect(arrays.map((array) => array.length)).toEqual([1, 1, 1])
+    })
   })
 
   describe("and the event carries thousands of scenes", () => {
     let bindValues: unknown[]
-    let scenes: Array<{ entityId: string; baseParcel: string }>
+    let scenes: Array<{
+      entityId: string
+      baseParcel: string
+      undeployedAt: Date
+    }>
 
     beforeEach(async () => {
       scenes = Array.from({ length: 5_000 }, (_, index) => ({
         entityId: `deployment-${index}`,
         baseParcel: `${index},0`,
+        undeployedAt,
       }))
 
-      await WorldSceneUndeploymentModel.recordScenes(
-        "example.dcl.eth",
-        scenes,
-        eventTimestamp
-      )
+      await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", scenes)
       const [, sql] = namedQuery.mock.calls[0]
       bindValues = sql.values
     })
@@ -118,6 +116,35 @@ describe("when recording scene undeployments", () => {
 
     it("should pass every base position in one array parameter", () => {
       expect(bindValues).toContainEqual(scenes.map((scene) => scene.baseParcel))
+    })
+
+    it("should pass one timestamp per scene", () => {
+      expect(bindValues).toContainEqual(
+        scenes.map((scene) => scene.undeployedAt)
+      )
+    })
+  })
+
+  describe("and the scenes were deployed at different times", () => {
+    let olderUndeployedAt: Date
+
+    beforeEach(async () => {
+      olderUndeployedAt = new Date(Date.parse("2026-07-30T10:00:00.000Z"))
+
+      await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", [
+        {
+          entityId: "deployment-a",
+          baseParcel: "1,1",
+          undeployedAt: olderUndeployedAt,
+        },
+        { entityId: "deployment-b", baseParcel: "2,2", undeployedAt },
+      ])
+    })
+
+    it("should stamp each deployment with its own timestamp", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+
+      expect(sql.values).toContainEqual([olderUndeployedAt, undeployedAt])
     })
   })
 })

@@ -22,6 +22,27 @@ function sanitizeSearch(search: string): string {
   return search.replace(/'/g, " ")
 }
 
+/**
+ * Match only the places the content server no longer serves, so an undeployment cannot disable a
+ * scene that survived it.
+ *
+ * A deployment id identifies a surviving scene exactly, so a row that carries one is judged only by
+ * that. Legacy rows predate deployment ids and can only be recognised by their footprint, so they
+ * are spared where a surviving scene covers their parcels. Both arrays are empty for a world that
+ * serves nothing, which matches every row.
+ */
+function removedUpstream(
+  liveDeploymentIds: string[],
+  livePositions: string[]
+): SQLStatement {
+  return SQL`(
+    CASE WHEN target."deployment_id" IS NOT NULL
+      THEN NOT (target."deployment_id" = ANY(${liveDeploymentIds}))
+      ELSE NOT (target."positions" && ${livePositions}::varchar[])
+    END
+  )`
+}
+
 import {
   AggregatePlaceAttributes,
   DisabledReason,
@@ -307,6 +328,58 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
+   * Every parcel Places has ever recorded for a world, enabled or not.
+   *
+   * A full-world undeployment names no scenes, so the parcels its place rows cover are the only
+   * record of what the world held. Disabled rows count: they are exactly the ones a disabling
+   * statement skips and therefore cannot watermark by identity.
+   */
+  static async findWorldPositions(worldId: string): Promise<string[]> {
+    const rows = await this.namedQuery<{ position: string }>(
+      "find_world_positions",
+      SQL`
+        SELECT DISTINCT unnest("positions") AS "position"
+        FROM ${table(this)}
+        WHERE "world" IS TRUE
+          AND "world_id" = ${worldId.toLowerCase()}
+      `
+    )
+    return rows.map((row) => row.position)
+  }
+
+  /**
+   * Read the deployment timestamp Places recorded for each of the supplied deployment ids.
+   *
+   * Undeployment watermarks have to be stamped with the removed content's own deployment timestamp,
+   * not with the moment the removal was emitted, or they also reject the deployment that replaced it.
+   * A place row is the cheapest source for that timestamp: the immutable entity would have to be
+   * fetched, and events that carry their footprint inline exist precisely to avoid that fetch.
+   */
+  static async findDeployedAtByDeploymentIds(
+    worldId: string,
+    deploymentIds: string[]
+  ): Promise<Map<string, Date>> {
+    if (deploymentIds.length === 0) {
+      return new Map()
+    }
+
+    const sql = SQL`
+      SELECT "deployment_id", MAX("deployed_at") AS "deployed_at"
+      FROM ${table(this)}
+      WHERE "world_id" = ${worldId.toLowerCase()}
+        AND "deployment_id" = ANY(${deploymentIds})
+      GROUP BY "deployment_id"
+    `
+
+    const rows = await this.namedQuery<{
+      deployment_id: string
+      deployed_at: Date
+    }>("find_deployed_at_by_deployment_ids", sql)
+
+    return new Map(rows.map((row) => [row.deployment_id, row.deployed_at]))
+  }
+
+  /**
    * Check for an active world scene overlapping the supplied positions that was deployed after
    * the incoming deployment. PostgreSQL performs the comparison so timestamp-without-time-zone
    * values never cross the JavaScript date boundary before ordering is decided.
@@ -578,29 +651,39 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Disable all place records associated with a world that were deployed at or
-   * before the given event timestamp. This prevents stale undeployment events
-   * from disabling places that were re-deployed after the event was emitted.
+   * Disable the place records of an undeployed world, except the ones the content server still
+   * serves. A world undeployment names no scenes, and its timestamp is the moment the removal was
+   * emitted, so it is always later than the entity timestamp of a deployment that replaced the
+   * world's previous scene set: without the upstream scene set, a replacement would look older than
+   * the undeployment and be disabled along with what it replaced.
    *
-   * Ties go to the undeployment, matching the watermark predicates in
-   * WorldUndeploymentModel and WorldSceneUndeploymentModel, so an equally
-   * timestamped deployment reaches the same state whichever order it arrives in.
+   * Deployment ids identify surviving scenes exactly. Legacy rows carry none, so they fall back to
+   * overlapping the footprint of a surviving scene, which keeps a stale row enabled where a live
+   * scene covers its parcels; reconciling those is what bin/rebuildWorldPlaces.ts is for.
+   *
+   * Ties go to the undeployment, matching the watermark predicates in WorldUndeploymentModel and
+   * WorldSceneUndeploymentModel, so an equally timestamped deployment reaches the same state
+   * whichever order it arrives in.
    */
   static async disableByWorldId(
     worldId: string,
-    eventTimestamp: number
-  ): Promise<void> {
+    eventTimestamp: number,
+    liveDeploymentIds: string[],
+    livePositions: string[]
+  ): Promise<PlaceAttributes[]> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
     const now = new Date()
     const sql = SQL`
-      UPDATE ${table(this)}
+      UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
-      WHERE "world_id" = ${normalizedWorldId}
-        AND "deployed_at" <= ${eventDate}
-        AND "disabled" IS FALSE
+      WHERE target."world_id" = ${normalizedWorldId}
+        AND target."deployed_at" <= ${eventDate}
+        AND target."disabled" IS FALSE
+        AND ${removedUpstream(liveDeploymentIds, livePositions)}
+      RETURNING target.*
     `
-    await this.namedQuery("disable_by_world_id", sql)
+    return this.namedQuery<PlaceAttributes>("disable_by_world_id", sql)
   }
 
   /**
@@ -608,6 +691,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * undeployed footprint. The base-position fallback supports legacy events and rows; rows created
    * before deployment ids were stored use that fallback only when the base identifies exactly one
    * active row.
+   *
+   * None of those predicates can tell a replaced scene from its replacement: the event's timestamp
+   * is when the removal was emitted, so it is later than the replacement's entity timestamp, and the
+   * replacement occupies the base and parcels the replaced scene used to. The scenes the content
+   * server still serves are therefore excluded first, by deployment id where the row has one and by
+   * footprint overlap for legacy rows that do not.
    *
    * Ties go to the undeployment, matching the watermark predicates, so an equally timestamped
    * deployment reaches the same state whichever order it arrives in.
@@ -617,7 +706,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     deploymentIds: string[],
     basePositions: string[],
     positions: string[],
-    eventTimestamp: number
+    eventTimestamp: number,
+    liveDeploymentIds: string[],
+    livePositions: string[]
   ): Promise<{ deploymentIdMatches: number; legacyBaseMatches: number }> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
@@ -628,6 +719,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       WHERE target."world_id" = ${normalizedWorldId}
         AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
+        AND ${removedUpstream(liveDeploymentIds, livePositions)}
         AND (
           target."deployment_id" = ANY(${deploymentIds})
           OR target."positions" && ${positions}::varchar[]

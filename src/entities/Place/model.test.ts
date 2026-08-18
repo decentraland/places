@@ -996,9 +996,13 @@ describe("when updating a place outside a deployment", () => {
 
 describe("when disabling world scenes by deployment identity", () => {
   let eventTimestamp: number
+  let liveDeploymentIds: string[]
+  let livePositions: string[]
 
   beforeEach(() => {
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
+    liveDeploymentIds = ["deployment-live"]
+    livePositions = ["9,9"]
     namedQuery.mockResolvedValue([])
   })
 
@@ -1008,7 +1012,9 @@ describe("when disabling world scenes by deployment identity", () => {
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
-      eventTimestamp
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
     )
 
     const [name, sql] = namedQuery.mock.calls[0]
@@ -1019,6 +1025,44 @@ describe("when disabling world scenes by deployment identity", () => {
         /target\."deployment_id" = ANY\(\$.*target\."positions" && \$.*::varchar\[\].*target\."base_position" = ANY\(\$.*target\."deployment_id" IS NOT NULL OR NOT EXISTS/
       ),
     })
+  })
+
+  it("should judge a row that has a deployment id against the served deployments", async () => {
+    await PlaceModel.disableByWorldIdAndDeployments(
+      "example.dcl.eth",
+      ["deployment-a"],
+      ["1,1"],
+      ["1,1", "2,1"],
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
+    )
+
+    const [, sql] = namedQuery.mock.calls[0]
+    const identity = sql.text
+      .replace(/\s+/g, " ")
+      .match(
+        /CASE WHEN target\."deployment_id" IS NOT NULL THEN NOT \(target\."deployment_id" = ANY\(\$(\d+)\)\)/
+      )
+    expect(sql.values[Number(identity![1]) - 1]).toEqual(liveDeploymentIds)
+  })
+
+  it("should judge a legacy row against the parcels the served scenes cover", async () => {
+    await PlaceModel.disableByWorldIdAndDeployments(
+      "example.dcl.eth",
+      ["deployment-a"],
+      ["1,1"],
+      ["1,1", "2,1"],
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
+    )
+
+    const [, sql] = namedQuery.mock.calls[0]
+    const footprint = sql.text
+      .replace(/\s+/g, " ")
+      .match(/ELSE NOT \(target\."positions" && \$(\d+)::varchar\[\]\)/)
+    expect(sql.values[Number(footprint![1]) - 1]).toEqual(livePositions)
   })
 
   it("should report legacy fallback matches separately", async () => {
@@ -1032,10 +1076,85 @@ describe("when disabling world scenes by deployment identity", () => {
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
-      eventTimestamp
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
     )
 
     expect(result).toEqual({ deploymentIdMatches: 1, legacyBaseMatches: 1 })
+  })
+})
+
+describe("when disabling the places of an undeployed world", () => {
+  let eventTimestamp: number
+  let liveDeploymentIds: string[]
+  let livePositions: string[]
+
+  beforeEach(() => {
+    eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
+    liveDeploymentIds = ["deployment-live"]
+    livePositions = ["9,9"]
+    namedQuery.mockResolvedValue([])
+  })
+
+  it("should spare the scenes the content server still serves", async () => {
+    await PlaceModel.disableByWorldId(
+      "Example.DCL.ETH",
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
+    )
+
+    const [name, sql] = namedQuery.mock.calls[0]
+    const normalizedSql = sql.text.trim().replace(/\s{2,}/gi, " ")
+    expect({ name, normalizedSql }).toEqual({
+      name: "disable_by_world_id",
+      normalizedSql: expect.stringMatching(
+        /CASE WHEN target\."deployment_id" IS NOT NULL THEN NOT \(target\."deployment_id" = ANY\(\$.*ELSE NOT \(target\."positions" && \$/
+      ),
+    })
+  })
+
+  it("should bind the served deployments to the identity branch, not the footprint branch", async () => {
+    await PlaceModel.disableByWorldId(
+      "example.dcl.eth",
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
+    )
+
+    const [, sql] = namedQuery.mock.calls[0]
+    const identity = sql.text
+      .replace(/\s+/g, " ")
+      .match(
+        /CASE WHEN target\."deployment_id" IS NOT NULL THEN NOT \(target\."deployment_id" = ANY\(\$(\d+)\)\)/
+      )
+    expect(sql.values[Number(identity![1]) - 1]).toEqual(liveDeploymentIds)
+  })
+
+  it("should normalize the world id", async () => {
+    await PlaceModel.disableByWorldId(
+      "Example.DCL.ETH",
+      eventTimestamp,
+      liveDeploymentIds,
+      livePositions
+    )
+
+    const [, sql] = namedQuery.mock.calls[0]
+    expect(sql.values).toContain("example.dcl.eth")
+  })
+
+  it("should return the rows it disabled so their removal can be recorded", async () => {
+    namedQuery.mockResolvedValue([{ id: "place-a" }])
+
+    expect(
+      await PlaceModel.disableByWorldId(
+        "example.dcl.eth",
+        eventTimestamp,
+        liveDeploymentIds,
+        livePositions
+      )
+    ).toEqual([{ id: "place-a" }])
   })
 })
 

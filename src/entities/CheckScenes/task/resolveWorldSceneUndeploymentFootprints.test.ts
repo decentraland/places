@@ -44,12 +44,17 @@ describe("when resolving world scene undeployment footprints", () => {
           entityId: "entity-a",
           baseParcel: "0,0",
           parcels: ["0,0", "1,0"],
+          deployedAt: null,
         },
       ])
     })
 
     it("should not fetch the immutable entity", () => {
       expect(fetchContentEntity).not.toHaveBeenCalled()
+    })
+
+    it("should leave the removed content's deployment timestamp unknown", () => {
+      expect(resolved[0].deployedAt).toBeNull()
     })
   })
 
@@ -76,8 +81,15 @@ describe("when resolving world scene undeployment footprints", () => {
           entityId: "entity-a",
           baseParcel: "1,0",
           parcels: ["0,0", "1,0"],
+          deployedAt: contentEntitySceneGenesisPlaza.timestamp,
         },
       ])
+    })
+
+    it("should carry the removed content's own deployment timestamp", () => {
+      expect(resolved[0].deployedAt).toBe(
+        contentEntitySceneGenesisPlaza.timestamp
+      )
     })
 
     it("should fetch from the configured trusted Worlds Content Server", () => {

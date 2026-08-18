@@ -11,7 +11,12 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
   static tableName = "world_scene_undeployments"
 
   /**
-   * Record the undeployed scenes for a world, keeping the newest event timestamp per deployment.
+   * Record the undeployed scenes for a world, keeping the newest timestamp per deployment.
+   *
+   * Each scene carries the deployment timestamp of the content that was removed, not the moment the
+   * removal was emitted. Rejection compares this against an incoming deployment's entity timestamp,
+   * and a removal is always emitted after the deployment that caused it, so stamping the emission
+   * time would reject the very deployment that replaced the scene.
    *
    * A deployment id is a content hash over the scene metadata the base parcel is derived from,
    * so repeat events for one scene carry the same base. The base is still only taken from an
@@ -21,30 +26,30 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    */
   static async recordScenes(
     worldId: string,
-    scenes: UndeployedScene[],
-    eventTimestamp: number
+    scenes: Array<UndeployedScene & { undeployedAt: Date }>
   ): Promise<void> {
     if (scenes.length === 0) {
       return
     }
 
     const normalizedWorldId = worldId.toLowerCase()
-    const undeployedAt = new Date(eventTimestamp)
     const uniqueScenes = [
       ...new Map(scenes.map((scene) => [scene.entityId, scene])).values(),
     ]
     const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
     const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
+    const undeployedAt = uniqueScenes.map((scene) => scene.undeployedAt)
 
     const sql = SQL`
       INSERT INTO ${table(
         this
       )} ("world_id", "deployment_id", "base_position", "undeployed_at")
-      SELECT ${normalizedWorldId}, incoming."deployment_id", incoming."base_position", ${undeployedAt}
+      SELECT ${normalizedWorldId}, incoming."deployment_id", incoming."base_position", incoming."undeployed_at"
       FROM unnest(
         ${deploymentIds}::text[],
-        ${basePositions}::text[]
-      ) AS incoming("deployment_id", "base_position")
+        ${basePositions}::text[],
+        ${undeployedAt}::timestamp[]
+      ) AS incoming("deployment_id", "base_position", "undeployed_at")
       ON CONFLICT ("world_id", "deployment_id") DO UPDATE
       SET "base_position" = CASE
             WHEN EXCLUDED."undeployed_at" >= ${table(this)}."undeployed_at"
