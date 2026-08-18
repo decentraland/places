@@ -89,6 +89,10 @@ interface SceneResult {
 
 const DELAY_BETWEEN_WORLDS_MS = 100
 const WORLDS_PAGE_SIZE = 100
+/** Worlds Content Server caps and defaults its scene pages at 100 rows. */
+const SCENES_PAGE_SIZE = 100
+/** Backstop against a total that never agrees with the rows served. */
+const SCENES_MAX_PAGES = 200
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────
 
@@ -219,21 +223,53 @@ async function fetchAllWorlds(
   return allWorlds
 }
 
+/**
+ * Read every scene a world serves.
+ *
+ * The listing is paginated and caps a page at SCENES_PAGE_SIZE rows. Reading only the first page
+ * would hide the rest of a large world, and orphan detection below disables the active places that
+ * no scene in this list accounts for, so a short read would disable live places.
+ */
 async function fetchWorldScenes(
   baseUrl: string,
   worldName: string
 ): Promise<WorldScenesResponse["scenes"]> {
-  const url = `${baseUrl}/world/${encodeURIComponent(worldName)}/scenes`
-  const response = await fetch(url)
-  if (!response.ok) {
-    await drainResponse(response)
+  const scenes: WorldScenesResponse["scenes"] = []
+  let total: number | null = null
+
+  for (let page = 0; page < SCENES_MAX_PAGES; page++) {
+    const url = `${baseUrl}/world/${encodeURIComponent(
+      worldName
+    )}/scenes?limit=${SCENES_PAGE_SIZE}&offset=${scenes.length}`
+    const response = await fetch(url)
+    if (!response.ok) {
+      await drainResponse(response)
+      throw new Error(
+        `Failed to fetch scenes for ${worldName}: ${response.status} ${response.statusText}`
+      )
+    }
+
+    const data = (await response.json()) as WorldScenesResponse
+    if (!Array.isArray(data.scenes)) {
+      throw new Error(`Unexpected scenes response for ${worldName}`)
+    }
+    if (typeof data.total === "number") {
+      total = data.total
+    }
+
+    scenes.push(...data.scenes)
+
+    if (data.scenes.length < SCENES_PAGE_SIZE) break
+    if (total !== null && scenes.length >= total) break
+  }
+
+  if (total !== null && scenes.length !== total) {
     throw new Error(
-      `Failed to fetch scenes for ${worldName}: ${response.status} ${response.statusText}`
+      `Content server served ${scenes.length} of ${total} scenes for ${worldName}`
     )
   }
 
-  const data = (await response.json()) as WorldScenesResponse
-  return data.scenes
+  return scenes
 }
 
 // ── Dry-Run Diff Helper ────────────────────────────────────────────────
