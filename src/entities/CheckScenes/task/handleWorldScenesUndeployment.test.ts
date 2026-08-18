@@ -116,14 +116,12 @@ describe("when handling a world scenes undeployment event", () => {
       {
         entityId: "deployment-a",
         baseParcel: "1,1",
-        parcels: ["1,1"],
         undeployedAt: new Date(event.timestamp),
         basePositionRejects: true,
       },
       {
         entityId: "deployment-b",
         baseParcel: "2,2",
-        parcels: ["2,2"],
         undeployedAt: new Date(event.timestamp),
         basePositionRejects: true,
       },
@@ -182,7 +180,6 @@ describe("when handling a world scenes undeployment event", () => {
         {
           entityId: "deployment-a",
           baseParcel: "1,1",
-          parcels: ["1,1"],
           undeployedAt: new Date(event.timestamp),
           basePositionRejects: true,
         },
@@ -365,7 +362,6 @@ describe("when handling a world scenes undeployment event", () => {
         {
           entityId: "deployment-a",
           baseParcel: "1,1",
-          parcels: ["1,1"],
           undeployedAt: new Date(event.timestamp),
           basePositionRejects: true,
         },

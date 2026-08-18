@@ -346,26 +346,33 @@ describe("when reading the scenes a world currently serves", () => {
   })
 
   describe("and a served scene carries an unusable footprint", () => {
-    beforeEach(() => {
+    let active: Awaited<ReturnType<typeof fetchWorldActiveScenes>>
+
+    beforeEach(async () => {
       fetchMock.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          scenes: [{ entityId: "deployment-a", parcels: ["not-a-parcel"] }],
-          total: 1,
+          scenes: [
+            { entityId: "deployment-a", parcels: ["not-a-parcel"] },
+            { entityId: "deployment-b", parcels: ["5,5"] },
+          ],
+          total: 2,
         }),
       } as Response)
+
+      active = await fetchWorldActiveScenes(
+        "example.dcl.eth",
+        CONTENT_SERVER_URL,
+        ALLOWED_HOSTS
+      )
     })
 
-    it("should throw because legacy rows could not be excluded by footprint", async () => {
-      await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
-      ).rejects.toThrow(
-        "Active scenes response for example.dcl.eth contains scene 'deployment-a' without a usable footprint"
-      )
+    it("should still report it as served, since identity alone protects it", () => {
+      expect(active.deploymentIds).toEqual(["deployment-a", "deployment-b"])
+    })
+
+    it("should contribute no parcels for it rather than fail the whole read", () => {
+      expect(active.positions).toEqual(["5,5"])
     })
   })
 

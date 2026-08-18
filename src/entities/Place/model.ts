@@ -36,11 +36,13 @@ function sanitizeSearch(search: string): string {
 function withinSnapshot(
   snapshot: Array<{ id: string; deployment_id: string | null }>
 ): SQLStatement {
-  // places.id is character(36), not uuid, so the ids bind as text
+  // places.id is character(36). Binding the ids as bpchar keeps both sides under the same padding
+  // rules; as text, the column side is rtrimmed while the read value keeps its padding, so an id
+  // shorter than 36 characters would silently match nothing.
   return SQL`EXISTS (
     SELECT 1
     FROM unnest(
-      ${snapshot.map((place) => place.id)}::text[],
+      ${snapshot.map((place) => place.id)}::bpchar[],
       ${snapshot.map((place) => place.deployment_id)}::text[]
     ) AS snapshot("id", "deployment_id")
     WHERE snapshot."id" = target."id"
@@ -366,11 +368,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<Array<{ id: string; deployment_id: string | null }>> {
     return this.namedQuery<{ id: string; deployment_id: string | null }>(
       "find_enabled_world_place_revisions",
+      // Matches what the disabling statements consider eligible, which is world_id alone: a reader
+      // narrower than the statement it guards would spare whatever it failed to see.
       SQL`
         SELECT "id", "deployment_id"
         FROM ${table(this)}
-        WHERE "world" IS TRUE
-          AND "world_id" = ${worldId.toLowerCase()}
+        WHERE "world_id" = ${worldId.toLowerCase()}
           AND "disabled" IS FALSE
       `
     )
@@ -399,8 +402,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       SQL`
         SELECT "id", "deployment_id", "disabled", "positions"
         FROM ${table(this)}
-        WHERE "world" IS TRUE
-          AND "world_id" = ${worldId.toLowerCase()}
+        WHERE "world_id" = ${worldId.toLowerCase()}
       `
     )
 
@@ -694,10 +696,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * overlapping the footprint of a surviving scene, which keeps a stale row enabled where a live
    * scene covers its parcels; reconciling those is what bin/rebuildWorldPlaces.ts is for.
    *
-   * A snapshot restricts this to rows that existed, unchanged, when the survivor set was read, for
-   * the same reason the scene path needs it: every match here is inferred, so a row the survivor set
-   * predates cannot be judged by it. Pass null when the world serves nothing, where there is no
-   * survivor to spare and the per-world lock's ordering is the whole contract.
+   * Every match here is inferred, because the event names no scenes, so a survivor set the caller
+   * read before taking the lock cannot be allowed to decide anything on its own. Restricting the
+   * statement is not the answer either: a row this event should retire would be spared with no
+   * record of the removal, and no later event names the world again. The caller therefore proves the
+   * reading is still current under the lock and starts over when it is not.
    *
    * Ties go to the undeployment, matching the watermark predicates in WorldUndeploymentModel and
    * WorldSceneUndeploymentModel, so an equally timestamped deployment reaches the same state
@@ -707,8 +710,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     worldId: string,
     eventTimestamp: number,
     liveDeploymentIds: string[],
-    livePositions: string[],
-    snapshot: Array<{ id: string; deployment_id: string | null }> | null
+    livePositions: string[]
   ): Promise<PlaceAttributes[]> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
@@ -720,10 +722,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND ${removedUpstream(liveDeploymentIds, livePositions)}
-        ${conditional(
-          snapshot !== null,
-          SQL`AND ${withinSnapshot(snapshot ?? [])}`
-        )}
       RETURNING target.*
     `
     return this.namedQuery<PlaceAttributes>("disable_by_world_id", sql)

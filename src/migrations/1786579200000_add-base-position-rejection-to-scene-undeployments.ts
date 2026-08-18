@@ -19,6 +19,15 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
   })
 }
 
-export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropColumn(WorldSceneUndeploymentModel.tableName, "base_position_rejects")
+class IrreversibleBasePositionRejectionMigrationError extends Error {
+  constructor() {
+    super(
+      "The base position rejection migration is irreversible because dropping the column would re-arm every identity-only tombstone against the scene now serving its base parcel."
+    )
+    this.name = "IrreversibleBasePositionRejectionMigrationError"
+  }
+}
+
+export async function down(): Promise<void> {
+  throw new IrreversibleBasePositionRejectionMigrationError()
 }

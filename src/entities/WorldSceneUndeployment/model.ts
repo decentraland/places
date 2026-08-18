@@ -32,7 +32,15 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
   static async recordScenes(
     worldId: string,
     scenes: Array<
-      UndeployedScene & { undeployedAt: Date; basePositionRejects: boolean }
+      UndeployedScene & {
+        /**
+         * A Date, or the ISO string the pg timestamp parser returns for a value read from the
+         * database. Reconstructing a Date from that string would re-serialize it in the process
+         * timezone and shift what gets stored, so callers pass the read value through.
+         */
+        undeployedAt: Date | string
+        basePositionRejects: boolean
+      }
     >
   ): Promise<void> {
     if (scenes.length === 0) {

@@ -6,8 +6,12 @@ import { drainResponse } from "../../../utils/fetch"
 const WORLD_SCENES_FETCH_TIMEOUT_MS = 15_000
 /** Worlds Content Server caps and defaults its scene pages at 100 rows. */
 const WORLD_SCENES_PAGE_SIZE = 100
-/** Backstop against a total that never agrees with the rows served. */
-const WORLD_SCENES_MAX_PAGES = 200
+/**
+ * Backstop against a total that never agrees with the rows served. Upstream bounds coordinates to
+ * a range that allows far more scenes than any world holds, so this is set well above any real
+ * world rather than at a size a world could legitimately reach.
+ */
+const WORLD_SCENES_MAX_PAGES = 1000
 /** Worlds Content Server rejects coordinate queries longer than this. */
 const MAX_COORDINATES_PER_REQUEST = 500
 const PARCEL_PATTERN = /^(?:0|-?[1-9][0-9]*),(?:0|-?[1-9][0-9]*)$/
@@ -99,15 +103,19 @@ export async function fetchWorldActiveScenesAtPositions(
 }
 
 /**
- * Page through a scene listing and prove the read was complete before returning it.
+ * Page through a scene listing and check the read against what the server said it held.
  *
  * A partial answer is indistinguishable from a smaller world, and acting on one is the mistake this
- * lookup exists to prevent, so every way a read can come up short throws instead. The listing is
- * ordered by creation with no tiebreaker and paged by offset, so a scene removed while the pages are
- * being read shifts the window and slides rows past the offset unseen -- which is exactly what a
- * world being torn down or reshaped is doing. Three things are therefore checked: the total never
- * changes between pages, the rows served add up to it, and no scene was served twice in place of one
- * that was missed.
+ * lookup exists to prevent. The listing is ordered by creation with no tiebreaker and paged by
+ * offset, so a scene removed while the pages are being read shifts the window and slides rows past
+ * the offset unseen -- which is exactly what a world being torn down or reshaped is doing. Three
+ * things are therefore checked: the total never changes between pages, the rows served add up to it,
+ * and no scene was served twice in place of one that was missed.
+ *
+ * Those cover a shrinking listing, a growing one, and an unstable tie. They do not cover a removal
+ * and a deployment landing together mid-read, which leaves the total unchanged, repeats nothing, and
+ * can still skip the row at a page boundary. Closing that needs a listing paged by a unique key,
+ * which the server does not offer.
  */
 async function collectScenes(
   contentServerUrl: string,
@@ -198,7 +206,9 @@ async function fetchWorldScenesPage(
   )}/scenes?limit=${WORLD_SCENES_PAGE_SIZE}&offset=${offset}`
   const response = await fetch(url, {
     signal: AbortSignal.timeout(WORLD_SCENES_FETCH_TIMEOUT_MS),
-    ...(coordinates
+    // The trusted host is what makes this answer authoritative; a redirect would move it elsewhere.
+    redirect: "error",
+    ...(coordinates?.length
       ? {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -241,21 +251,18 @@ async function fetchWorldScenesPage(
       )
     }
 
-    // Parcels are what protects legacy place rows, which carry no deployment id to match on, so an
-    // unusable footprint is a failure rather than a scene to skip.
-    if (
-      !Array.isArray(scene.parcels) ||
-      scene.parcels.length === 0 ||
-      !scene.parcels.every(
+    // Parcels only protect legacy place rows, which carry no deployment id to match on. A scene whose
+    // footprint is unusable still protects itself by identity, so it contributes no parcels rather
+    // than failing a read that would then retry for as long as the stored footprint stays malformed.
+    const parcels =
+      Array.isArray(scene.parcels) &&
+      scene.parcels.every(
         (parcel) => typeof parcel === "string" && PARCEL_PATTERN.test(parcel)
       )
-    ) {
-      throw new Error(
-        `Active scenes response for ${worldName} contains scene '${scene.entityId}' without a usable footprint`
-      )
-    }
+        ? (scene.parcels as string[])
+        : []
 
-    return { entityId: scene.entityId, parcels: scene.parcels as string[] }
+    return { entityId: scene.entityId, parcels }
   })
 
   return { rows, total: body.total }

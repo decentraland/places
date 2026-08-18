@@ -300,7 +300,7 @@ describe("when an undeployment follows the deployment that caused it", () => {
         parcels: ["0,0"],
       })
 
-      mockFetchWorldActiveScenes.mockResolvedValueOnce({
+      mockFetchWorldActiveScenes.mockResolvedValue({
         deploymentIds: ["entity-surviving"],
         positions: ["0,0"],
       })

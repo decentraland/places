@@ -1086,12 +1086,14 @@ describe("when disabling world scenes by deployment identity", () => {
 
     const [, sql] = namedQuery.mock.calls[0]
     const normalized = sql.text.replace(/\s+/g, " ")
-    // the guard must sit on the inferred branches only, never on the named deployment ids
+    // The identity term must be the first thing in the disjunction with nothing conjoined ahead of
+    // it: guarding it would stop an undeployment being authoritative over a deployment it raced,
+    // which no assertion on the fragment alone can detect.
     expect(normalized).toMatch(
-      /target\."deployment_id" = ANY\(\$\d+\) OR \( EXISTS \(/
+      /END \) AND \( target\."deployment_id" = ANY\(\$\d+\) OR \( EXISTS \(/
     )
     const guard = normalized.match(
-      /FROM unnest\( \$(\d+)::text\[\], \$\d+::text\[\] \) AS snapshot/
+      /FROM unnest\( \$(\d+)::bpchar\[\], \$\d+::text\[\] \) AS snapshot/
     )
     expect(sql.values[Number(guard![1]) - 1]).toEqual([snapshot[0].id])
   })
@@ -1138,8 +1140,7 @@ describe("when disabling the places of an undeployed world", () => {
       "Example.DCL.ETH",
       eventTimestamp,
       liveDeploymentIds,
-      livePositions,
-      snapshot
+      livePositions
     )
 
     const [name, sql] = namedQuery.mock.calls[0]
@@ -1157,8 +1158,7 @@ describe("when disabling the places of an undeployed world", () => {
       "example.dcl.eth",
       eventTimestamp,
       liveDeploymentIds,
-      livePositions,
-      snapshot
+      livePositions
     )
 
     const [, sql] = namedQuery.mock.calls[0]
@@ -1175,38 +1175,11 @@ describe("when disabling the places of an undeployed world", () => {
       "Example.DCL.ETH",
       eventTimestamp,
       liveDeploymentIds,
-      livePositions,
-      snapshot
+      livePositions
     )
 
     const [, sql] = namedQuery.mock.calls[0]
     expect(sql.values).toContain("example.dcl.eth")
-  })
-
-  it("should leave every row eligible when the world serves nothing", async () => {
-    await PlaceModel.disableByWorldId(
-      "example.dcl.eth",
-      eventTimestamp,
-      [],
-      [],
-      null
-    )
-
-    const [, sql] = namedQuery.mock.calls[0]
-    expect(sql.text).not.toContain("AS snapshot")
-  })
-
-  it("should restrict a reshaped world to the rows its survivor set described", async () => {
-    await PlaceModel.disableByWorldId(
-      "example.dcl.eth",
-      eventTimestamp,
-      liveDeploymentIds,
-      livePositions,
-      snapshot
-    )
-
-    const [, sql] = namedQuery.mock.calls[0]
-    expect(sql.text.replace(/\s+/g, " ")).toContain("AS snapshot")
   })
 
   it("should return the rows it disabled so their removal can be recorded", async () => {
@@ -1217,8 +1190,7 @@ describe("when disabling the places of an undeployed world", () => {
         "example.dcl.eth",
         eventTimestamp,
         liveDeploymentIds,
-        livePositions,
-        snapshot
+        livePositions
       )
     ).toEqual([{ id: "place-a" }])
   })

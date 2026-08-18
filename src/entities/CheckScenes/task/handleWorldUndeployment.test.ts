@@ -17,6 +17,7 @@ const fetchWorldActiveScenesMock = jest.mocked(fetchWorldActiveScenes)
 describe("when handling a world undeployment event", () => {
   let disableByWorldId: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
+  let findEnabledWorldPlaceRevisions: jest.SpyInstance
   let findWorldPlaceSnapshot: jest.SpyInstance
   let snapshot: {
     revisions: Array<{ id: string; deployment_id: string | null }>
@@ -53,6 +54,9 @@ describe("when handling a world undeployment event", () => {
     findWorldPlaceSnapshot = jest
       .spyOn(PlaceModel, "findWorldPlaceSnapshot")
       .mockResolvedValue(snapshot)
+    findEnabledWorldPlaceRevisions = jest
+      .spyOn(PlaceModel, "findEnabledWorldPlaceRevisions")
+      .mockImplementation(async () => snapshot.revisions)
     recordPositions = jest
       .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
       .mockImplementation(async () => {
@@ -87,8 +91,7 @@ describe("when handling a world undeployment event", () => {
       "example.dcl.eth",
       event.timestamp,
       [],
-      [],
-      null
+      []
     )
   })
 
@@ -150,8 +153,7 @@ describe("when handling a world undeployment event", () => {
         "example.dcl.eth",
         event.timestamp,
         ["deployment-surviving"],
-        ["0,0"],
-        snapshot.revisions
+        ["0,0"]
       )
     })
 
@@ -177,6 +179,31 @@ describe("when handling a world undeployment event", () => {
       )
     })
 
+    it("should let a base nothing serves keep rejecting", async () => {
+      await handleWorldUndeployment(event)
+
+      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+        expect.objectContaining({ basePositionRejects: true }),
+      ])
+    })
+
+    describe("and a survivor occupies the removed place's base", () => {
+      beforeEach(() => {
+        removedPlace.base_position = "0,0"
+      })
+
+      it("should record an identity tombstone that cannot reject that base", async () => {
+        await handleWorldUndeployment(event)
+
+        expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+          expect.objectContaining({
+            entityId: "deployment-removed",
+            basePositionRejects: false,
+          }),
+        ])
+      })
+    })
+
     it("should record a scene watermark for every removed place", async () => {
       await handleWorldUndeployment(event)
 
@@ -184,7 +211,7 @@ describe("when handling a world undeployment event", () => {
         {
           entityId: "deployment-removed",
           baseParcel: "1,1",
-          undeployedAt: survivingDeployedAt,
+          undeployedAt: survivingDeployedAt.toISOString(),
           basePositionRejects: true,
         },
       ])
@@ -202,11 +229,56 @@ describe("when handling a world undeployment event", () => {
           {
             entityId: "legacy-place:place-removed",
             baseParcel: "1,1",
-            undeployedAt: survivingDeployedAt,
+            undeployedAt: survivingDeployedAt.toISOString(),
             basePositionRejects: true,
           },
         ])
       })
+    })
+  })
+
+  describe("and a deployment commits while the served scenes are being read", () => {
+    beforeEach(() => {
+      let reading = 0
+      // the first reading under the lock disagrees with the snapshot, the second agrees
+      findEnabledWorldPlaceRevisions.mockImplementation(async () => {
+        reading += 1
+        return reading === 1
+          ? [{ id: "place-raced", deployment_id: "deployment-raced" }]
+          : snapshot.revisions
+      })
+    })
+
+    it("should start over rather than act on the stale reading", async () => {
+      await handleWorldUndeployment(event)
+
+      expect(findWorldPlaceSnapshot).toHaveBeenCalledTimes(2)
+    })
+
+    it("should disable exactly once, on the reading it proved current", async () => {
+      await handleWorldUndeployment(event)
+
+      expect(disableByWorldId).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe("and the world keeps changing while the served scenes are read", () => {
+    beforeEach(() => {
+      findEnabledWorldPlaceRevisions.mockImplementation(async () => [
+        { id: "place-raced", deployment_id: "deployment-raced" },
+      ])
+    })
+
+    it("should give up rather than retry forever", async () => {
+      await expect(handleWorldUndeployment(event)).rejects.toThrow(
+        "kept changing while its served scenes were read"
+      )
+    })
+
+    it("should never disable a row on a reading it could not prove", async () => {
+      await expect(handleWorldUndeployment(event)).rejects.toThrow()
+
+      expect(disableByWorldId).not.toHaveBeenCalled()
     })
   })
 

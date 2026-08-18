@@ -159,7 +159,6 @@ export async function handleWorldScenesUndeployment(
         undeployedScenes.map((scene) => ({
           entityId: scene.entityId,
           baseParcel: scene.baseParcel,
-          parcels: scene.parcels,
           undeployedAt: undeployedAt(scene, event.timestamp),
           basePositionRejects: !livePositions.has(scene.baseParcel),
         }))
@@ -226,7 +225,7 @@ function undeployedAt(
 /**
  * Watermark the parcels the undeployment cleared, as of the moment it was emitted.
  *
- * Parcels a surviving scene occupies are left out, and the upstream lookup covers exactly these
+ * Parcels a surviving scene occupies are left out, and the upstream lookup covers at least these
  * parcels, so every parcel that remains has nothing serving it. The emission time is therefore both
  * safe and the strongest bound available: no surviving deployment can be rejected by it, and it
  * retires every revision the cleared parcels ever held rather than only those older than the last

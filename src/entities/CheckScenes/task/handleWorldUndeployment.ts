@@ -10,6 +10,25 @@ import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPosition
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
+/** How many times to re-read before giving up on a world that keeps changing underneath. */
+const SNAPSHOT_ATTEMPTS = 3
+
+/**
+ * Whether two readings of a world's enabled places describe the same rows at the same revisions.
+ * The deployment id is compared as well as the row id, because a replacement reuses the row it
+ * replaces.
+ */
+function sameRevisions(
+  left: Array<{ id: string; deployment_id: string | null }>,
+  right: Array<{ id: string; deployment_id: string | null }>
+): boolean {
+  if (left.length !== right.length) return false
+  const seen = new Set(
+    left.map((place) => `${place.id}|${place.deployment_id}`)
+  )
+  return right.every((place) => seen.has(`${place.id}|${place.deployment_id}`))
+}
+
 /**
  * Handles WorldUndeploymentEvent from the worlds content server.
  * Disables the place records of the undeployed world. The world entity itself is not
@@ -46,75 +65,110 @@ export async function handleWorldUndeployment(
   try {
     loggerExtended.log(`Processing world undeployment for world: ${worldName}`)
 
-    // Read before the survivor set so both predate it: a deployment committing in between is
-    // something the survivor set cannot describe, and the lock may be contended for that long.
-    const snapshot = await PlaceModel.findWorldPlaceSnapshot(worldName)
-    const activeScenes = await fetchWorldActiveScenes(worldName)
-    const isTornDown = activeScenes.deploymentIds.length === 0
-    const livePositions = new Set(activeScenes.positions)
+    for (let attempt = 1; ; attempt++) {
+      // Read before the survivor set so both describe the same moment.
+      const snapshot = await PlaceModel.findWorldPlaceSnapshot(worldName)
+      const activeScenes = await fetchWorldActiveScenes(worldName)
+      const isTornDown = activeScenes.deploymentIds.length === 0
+      const livePositions = new Set(activeScenes.positions)
 
-    // Same lock the deployment path takes, so an in-flight deployment for this world cannot
-    // commit an enabled place this event would have disabled
-    const disabled = await withDatabaseTransaction(async () => {
-      await WorldModel.lockWorldForDeployment(worldName)
+      // Same lock the deployment path takes, so an in-flight deployment for this world cannot
+      // commit an enabled place this event would have disabled
+      const applied = await withDatabaseTransaction(async () => {
+        await WorldModel.lockWorldForDeployment(worldName)
 
-      // Durable watermark: a deployment delivered later but produced before this event must not
-      // recreate the world, and disabling rows alone leaves no record once the lock is released
-      if (isTornDown) {
-        await WorldUndeploymentModel.recordWatermark(worldName, event.timestamp)
+        // The survivor set was read before the lock, so a deployment for this world may have
+        // committed while the lock was being waited on. Neither way of acting on a stale reading is
+        // acceptable: judging by it can disable a scene the world serves, and skipping what it does
+        // not describe leaves content the world dropped enabled with no record of the removal, since
+        // this event names nothing a later event could match. Start over instead -- the reading is
+        // two cheap statements and a listing, and the window is the lock wait.
+        if (
+          !sameRevisions(
+            await PlaceModel.findEnabledWorldPlaceRevisions(worldName),
+            snapshot.revisions
+          )
+        ) {
+          return null
+        }
+
+        // Durable watermark: a deployment delivered later but produced before this event must not
+        // recreate the world, and disabling rows alone leaves no record once the lock is released
+        if (isTornDown) {
+          await WorldUndeploymentModel.recordWatermark(
+            worldName,
+            event.timestamp
+          )
+        }
+
+        const disabled = await PlaceModel.disableByWorldId(
+          worldName,
+          event.timestamp,
+          activeScenes.deploymentIds,
+          activeScenes.positions
+        )
+
+        // A reshaped world gets the same durable record per removed scene, so a later delivery of one
+        // of those deployments cannot recreate the place without blocking the surviving ones
+        if (!isTornDown) {
+          await WorldSceneUndeploymentModel.recordScenes(
+            worldName,
+            disabled.map((place) => ({
+              // Legacy rows predate deployment ids. Their stable local id gives the watermark a
+              // unique key while base-position matching still protects older deployments for that
+              // scene.
+              entityId: place.deployment_id || `legacy-place:${place.id}`,
+              baseParcel: place.base_position,
+              // Passed through rather than reconstructed: the pg parser reads a timestamp column as
+              // an ISO string, and turning it back into a Date would re-serialize it in the process
+              // timezone and shift the value.
+              undeployedAt: place.deployed_at,
+              // A base a survivor still occupies must not reject, or this row rejects the deployment
+              // serving it; the row remains an identity tombstone for what was removed.
+              basePositionRejects: !livePositions.has(place.base_position),
+            }))
+          )
+
+          // Identity only covers the rows this statement disabled, which leaves out every row that
+          // was already disabled and every scene whose deployment has not arrived. Watermark the
+          // parcels instead: anything the snapshot recorded for this world that nothing now serves
+          // was cleared by this event, and a parcel with nothing serving it cannot veto a survivor.
+          await WorldDeploymentPositionWatermarkModel.recordPositions(
+            worldName,
+            snapshot.positions.filter(
+              (position) => !livePositions.has(position)
+            ),
+            new Date(event.timestamp),
+            true
+          )
+        }
+
+        return {
+          disabled,
+          isTornDown,
+          served: activeScenes.deploymentIds.length,
+        }
+      })
+
+      if (applied) {
+        loggerExtended.log(
+          applied.isTornDown
+            ? `Disabled all ${applied.disabled.length} place records for world: ${worldName}`
+            : `Disabled ${applied.disabled.length} place records for reshaped world: ${worldName}, which still serves ${applied.served} scenes`
+        )
+        return
       }
 
-      const disabled = await PlaceModel.disableByWorldId(
-        worldName,
-        event.timestamp,
-        activeScenes.deploymentIds,
-        activeScenes.positions,
-        // A world serving nothing has no survivor to spare, so the lock's ordering is the whole
-        // contract there and an undeployment stays authoritative over a deployment it raced.
-        isTornDown ? null : snapshot.revisions
+      if (attempt >= SNAPSHOT_ATTEMPTS) {
+        throw new Error(
+          `Places for ${worldName} kept changing while its served scenes were read; giving up after ${SNAPSHOT_ATTEMPTS} attempts`
+        )
+      }
+
+      loggerExtended.log(
+        `WARNING: places for ${worldName} changed while its served scenes were read; retrying (attempt ${attempt} of ${SNAPSHOT_ATTEMPTS})`
       )
-
-      // A reshaped world gets the same durable record per removed scene, so a later delivery of one
-      // of those deployments cannot recreate the place without blocking the surviving ones
-      if (!isTornDown) {
-        await WorldSceneUndeploymentModel.recordScenes(
-          worldName,
-          disabled.map((place) => ({
-            // Legacy rows predate deployment ids. Their stable local id gives the watermark a
-            // unique key while base-position matching still protects older deployments for that
-            // scene.
-            entityId: place.deployment_id || `legacy-place:${place.id}`,
-            baseParcel: place.base_position,
-            // The row's own deployment timestamp bounds it, so anything its base rejects is
-            // strictly older than the content that was removed from there.
-            basePositionRejects: true,
-            // decentraland-gatsby installs a global pg parser that returns timestamp columns as ISO
-            // strings, so this is typed as a Date but is not one at runtime.
-            undeployedAt: new Date(place.deployed_at),
-          }))
-        )
-
-        // Identity only covers the rows this statement disabled, which leaves out every row that was
-        // already disabled and every scene whose deployment has not arrived. Watermark the parcels
-        // instead: anything the snapshot recorded for this world that nothing now serves was cleared
-        // by this event, and a parcel with nothing serving it cannot veto a survivor. Parcels that
-        // appeared after the snapshot are left alone for the same reason the disable is restricted.
-        await WorldDeploymentPositionWatermarkModel.recordPositions(
-          worldName,
-          snapshot.positions.filter((position) => !livePositions.has(position)),
-          new Date(event.timestamp),
-          true
-        )
-      }
-
-      return disabled
-    })
-
-    loggerExtended.log(
-      isTornDown
-        ? `Disabled all ${disabled.length} place records for world: ${worldName}`
-        : `Disabled ${disabled.length} place records for reshaped world: ${worldName}, which still serves ${activeScenes.deploymentIds.length} scenes`
-    )
+    }
   } catch (error: any) {
     loggerExtended.error(
       `Error handling WorldUndeploymentEvent for ${worldName}: ${error.message}`
