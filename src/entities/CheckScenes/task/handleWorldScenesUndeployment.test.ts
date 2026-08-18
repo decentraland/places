@@ -179,6 +179,57 @@ describe("when handling a world scenes undeployment event", () => {
     })
   })
 
+  describe("and the immutable entity supplied the removed content's timestamp", () => {
+    let removedDeployedAt: number
+
+    beforeEach(() => {
+      removedDeployedAt = Date.parse("2026-07-30T10:00:00.000Z")
+      resolveFootprintsMock.mockImplementation(async (scenes) =>
+        scenes.map((scene) => ({
+          entityId: scene.entityId,
+          baseParcel: scene.baseParcel,
+          parcels: scene.parcels ?? [scene.baseParcel],
+          deployedAt: removedDeployedAt,
+        }))
+      )
+    })
+
+    it("should bound the watermark by it instead of the emission time", async () => {
+      await handleWorldScenesUndeployment(event)
+
+      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+        expect.objectContaining({
+          undeployedAt: new Date(removedDeployedAt),
+        }),
+        expect.objectContaining({
+          undeployedAt: new Date(removedDeployedAt),
+        }),
+      ])
+    })
+
+    describe("and that timestamp is somehow later than the removal", () => {
+      beforeEach(() => {
+        resolveFootprintsMock.mockImplementation(async (scenes) =>
+          scenes.map((scene) => ({
+            entityId: scene.entityId,
+            baseParcel: scene.baseParcel,
+            parcels: scene.parcels ?? [scene.baseParcel],
+            deployedAt: event.timestamp + 60_000,
+          }))
+        )
+      })
+
+      it("should clamp it to the removal, since content cannot be removed first", async () => {
+        await handleWorldScenesUndeployment(event)
+
+        expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+          expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
+          expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
+        ])
+      })
+    })
+  })
+
   describe("and the world still serves the base parcel of an undeployed scene", () => {
     beforeEach(() => {
       fetchWorldActiveScenesMock.mockResolvedValue({

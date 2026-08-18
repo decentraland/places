@@ -159,7 +159,7 @@ export async function handleWorldScenesUndeployment(
             entityId: scene.entityId,
             baseParcel: scene.baseParcel,
             parcels: scene.parcels,
-            undeployedAt: new Date(event.timestamp),
+            undeployedAt: undeployedAt(scene, event.timestamp),
           }))
       )
       await recordClearedPositions(
@@ -201,6 +201,23 @@ export async function handleWorldScenesUndeployment(
     ])
     throw error
   }
+}
+
+/**
+ * When the removed content's own deployment timestamp is known, bound the watermark by it rather
+ * than by the removal: the emission time retires every revision the base ever held, which is more
+ * than the removal proves. The immutable entity supplies it whenever the footprint had to be
+ * fetched. Content cannot be removed before it was deployed, so a timestamp past the event is not
+ * the removed content's and is clamped away.
+ */
+function undeployedAt(
+  scene: ResolvedUndeployedScene,
+  eventTimestamp: number
+): Date {
+  if (scene.deployedAt === null || scene.deployedAt > eventTimestamp) {
+    return new Date(eventTimestamp)
+  }
+  return new Date(scene.deployedAt)
 }
 
 /**

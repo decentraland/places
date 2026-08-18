@@ -13,10 +13,12 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
   /**
    * Record the undeployed scenes for a world, keeping the newest timestamp per deployment.
    *
-   * Each scene carries the deployment timestamp of the content that was removed, not the moment the
-   * removal was emitted. Rejection compares this against an incoming deployment's entity timestamp,
-   * and a removal is always emitted after the deployment that caused it, so stamping the emission
-   * time would reject the very deployment that replaced the scene.
+   * Each scene carries the tightest bound its caller could establish: the deployment timestamp of
+   * the content that was removed when that is known, and the moment the removal was emitted
+   * otherwise. Rejection compares this against an incoming deployment's entity timestamp, and a
+   * removal is always emitted after the deployment that caused it, so the emission time retires more
+   * than the removal proves. Callers that cannot establish the tighter bound must therefore not
+   * record a base parcel something still serves, or the row will reject the deployment serving it.
    *
    * A deployment id is a content hash over the scene metadata the base parcel is derived from,
    * so repeat events for one scene carry the same base. The base is still only taken from an
