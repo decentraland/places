@@ -1,13 +1,8 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import env from "decentraland-gatsby/dist/utils/env"
 
 import { InvalidWorldSqsMessageError } from "./errors"
 import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
-import {
-  fetchContentEntity,
-  getTrustedWorldsContentServerUrl,
-} from "./processEntityId"
 import {
   ResolvedUndeployedScene,
   resolveWorldSceneUndeploymentFootprints,
@@ -67,8 +62,8 @@ function summarizeBasePositions(basePositions: string[]): string {
  * emitted, which is always after the entity timestamp of the deployment that caused it, so a
  * replacement looks older than the removal of what it replaced and sits at the same base and
  * parcels. The scenes the world still serves are therefore read from the content server and left
- * alone, both in the place rows and in the watermarks that decide whether a later delivery of one
- * of those deployments is accepted.
+ * alone -- in the place rows, in the base parcels the scene watermark claims, and in the parcels the
+ * position watermark clears.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -146,25 +141,26 @@ export async function handleWorldScenesUndeployment(
 
     // Same lock the deployment path takes, so an in-flight deployment for this world cannot
     // commit an enabled place this event would have disabled
-    const undeployedAt = await resolveUndeployedAt(
-      worldName,
-      undeployedScenes,
-      event.timestamp
-    )
-
     const result = await withDatabaseTransaction(async () => {
       await WorldModel.lockWorldForDeployment(worldName)
 
       // Durable watermark: the undeployment can arrive before the deployment it refers to, so
-      // record it whether or not a place row matched
+      // record it whether or not a place row matched.
+      //
+      // Rejection matches a scene's base parcel as well as its identity, so a row for a base that
+      // something still serves would tombstone that base as of this removal and reject the very
+      // deployment serving it. Those are left out: the live place row already rejects older
+      // revisions at that base, and its own removal will record the base when it happens.
       await WorldSceneUndeploymentModel.recordScenes(
         worldName,
-        undeployedScenes.map((scene) => ({
-          entityId: scene.entityId,
-          baseParcel: scene.baseParcel,
-          parcels: scene.parcels,
-          undeployedAt: undeployedAt.get(scene.entityId)!,
-        }))
+        undeployedScenes
+          .filter((scene) => !livePositions.has(scene.baseParcel))
+          .map((scene) => ({
+            entityId: scene.entityId,
+            baseParcel: scene.baseParcel,
+            parcels: scene.parcels,
+            undeployedAt: new Date(event.timestamp),
+          }))
       )
       await recordClearedPositions(
         worldName,
@@ -205,71 +201,6 @@ export async function handleWorldScenesUndeployment(
     ])
     throw error
   }
-}
-
-/**
- * Pair each undeployed scene with the deployment timestamp of the content that was removed, so the
- * watermarks reject what that content superseded instead of everything older than the removal.
- *
- * The emission time is never used as a substitute. Rejection matches a scene's base parcel as well
- * as its identity, so a watermark stamped later than the removed content tombstones that base past
- * the deployment now serving it: the next delivery for that base is judged superseded, and the
- * superseded path then disables the live place as replaced. Places usually knows the timestamp
- * already, but a replacement overwrites the deployment id on the row it reuses, so the removed
- * content's own entity is the fallback rather than the clock.
- */
-async function resolveUndeployedAt(
-  worldName: string,
-  undeployedScenes: ResolvedUndeployedScene[],
-  eventTimestamp: number
-): Promise<Map<string, Date>> {
-  const unknown = undeployedScenes
-    .filter((scene) => scene.deployedAt === null)
-    .map((scene) => scene.entityId)
-  const storedDeployedAt = await PlaceModel.findDeployedAtByDeploymentIds(
-    worldName,
-    unknown
-  )
-
-  let contentServerUrl: string | null = null
-  const resolved = new Map<string, Date>()
-
-  for (const scene of undeployedScenes) {
-    let deployedAt =
-      scene.deployedAt !== null
-        ? new Date(scene.deployedAt)
-        : storedDeployedAt.get(scene.entityId) ?? null
-
-    if (!deployedAt) {
-      contentServerUrl =
-        contentServerUrl ??
-        getTrustedWorldsContentServerUrl(
-          env(
-            "WORLDS_CONTENT_SERVER_URL",
-            "https://worlds-content-server.decentraland.org"
-          ),
-          env("ALLOWED_CONTENT_SERVER_HOSTS", "")
-        )
-      const entity = await fetchContentEntity(scene.entityId, contentServerUrl)
-      if (!entity) {
-        throw new InvalidWorldSqsMessageError(
-          `Undeployed content '${scene.entityId}' is not a scene entity.`
-        )
-      }
-      deployedAt = new Date(entity.timestamp)
-    }
-
-    // Content cannot be removed before it was deployed, so a timestamp past the event is not the
-    // removed content's; clamp rather than carry it into a watermark.
-    resolved.set(
-      scene.entityId,
-      deployedAt.getTime() > eventTimestamp
-        ? new Date(eventTimestamp)
-        : deployedAt
-    )
-  }
-
-  return resolved
 }
 
 /**

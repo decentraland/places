@@ -348,38 +348,6 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Read the deployment timestamp Places recorded for each of the supplied deployment ids.
-   *
-   * Undeployment watermarks have to be stamped with the removed content's own deployment timestamp,
-   * not with the moment the removal was emitted, or they also reject the deployment that replaced it.
-   * A place row is the cheapest source for that timestamp: the immutable entity would have to be
-   * fetched, and events that carry their footprint inline exist precisely to avoid that fetch.
-   */
-  static async findDeployedAtByDeploymentIds(
-    worldId: string,
-    deploymentIds: string[]
-  ): Promise<Map<string, Date>> {
-    if (deploymentIds.length === 0) {
-      return new Map()
-    }
-
-    const sql = SQL`
-      SELECT "deployment_id", MAX("deployed_at") AS "deployed_at"
-      FROM ${table(this)}
-      WHERE "world_id" = ${worldId.toLowerCase()}
-        AND "deployment_id" = ANY(${deploymentIds})
-      GROUP BY "deployment_id"
-    `
-
-    const rows = await this.namedQuery<{
-      deployment_id: string
-      deployed_at: Date
-    }>("find_deployed_at_by_deployment_ids", sql)
-
-    return new Map(rows.map((row) => [row.deployment_id, row.deployed_at]))
-  }
-
-  /**
    * Check for an active world scene overlapping the supplied positions that was deployed after
    * the incoming deployment. PostgreSQL performs the comparison so timestamp-without-time-zone
    * values never cross the JavaScript date boundary before ordering is decided.

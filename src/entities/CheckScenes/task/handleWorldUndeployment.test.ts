@@ -123,8 +123,10 @@ describe("when handling a world undeployment event", () => {
         id: "place-removed",
         deployment_id: "deployment-removed",
         base_position: "1,1",
-        deployed_at: survivingDeployedAt,
-      } as PlaceAttributes
+        // decentraland-gatsby's pg parser hands timestamp columns back as ISO strings, so the
+        // fixture uses one even though PlaceAttributes types it as a Date
+        deployed_at: survivingDeployedAt.toISOString(),
+      } as unknown as PlaceAttributes
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-surviving"],
         positions: ["0,0"],

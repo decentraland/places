@@ -79,7 +79,9 @@ export async function handleWorldUndeployment(
             // scene.
             entityId: place.deployment_id || `legacy-place:${place.id}`,
             baseParcel: place.base_position,
-            undeployedAt: place.deployed_at,
+            // decentraland-gatsby installs a global pg parser that returns timestamp columns as ISO
+            // strings, so this is typed as a Date but is not one at runtime.
+            undeployedAt: new Date(place.deployed_at),
           }))
         )
 

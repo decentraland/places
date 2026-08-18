@@ -3,10 +3,6 @@ import { Events, WorldScenesUndeploymentEvent } from "@dcl/schemas"
 import { InvalidWorldSqsMessageError } from "./errors"
 import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
-import {
-  fetchContentEntity,
-  getTrustedWorldsContentServerUrl,
-} from "./processEntityId"
 import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
@@ -15,7 +11,6 @@ import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 
 jest.mock("./resolveWorldSceneUndeploymentFootprints")
 jest.mock("./fetchWorldActiveScenes")
-jest.mock("./processEntityId")
 
 const resolveFootprintsMock = jest.mocked(
   resolveWorldSceneUndeploymentFootprints
@@ -23,18 +18,14 @@ const resolveFootprintsMock = jest.mocked(
 const fetchWorldActiveScenesMock = jest.mocked(
   fetchWorldActiveScenesAtPositions
 )
-const fetchContentEntityMock = jest.mocked(fetchContentEntity)
-const getTrustedUrlMock = jest.mocked(getTrustedWorldsContentServerUrl)
 
 describe("when handling a world scenes undeployment event", () => {
   let disableByWorldIdAndDeployments: jest.SpyInstance
-  let findDeployedAtByDeploymentIds: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
   let recordPositions: jest.SpyInstance
   let recordScenes: jest.SpyInstance
   let calls: string[]
   let event: WorldScenesUndeploymentEvent
-  let removedEntityDeployedAt: number
 
   beforeEach(() => {
     calls = []
@@ -50,19 +41,11 @@ describe("when handling a world scenes undeployment event", () => {
       deploymentIds: [],
       positions: [],
     })
-    getTrustedUrlMock.mockReturnValue("https://worlds.example")
-    removedEntityDeployedAt = Date.parse("2026-07-28T08:00:00.000Z")
-    fetchContentEntityMock.mockResolvedValue({
-      timestamp: removedEntityDeployedAt,
-    } as never)
     lockWorldForDeployment = jest
       .spyOn(WorldModel, "lockWorldForDeployment")
       .mockImplementation(async () => {
         calls.push("lock")
       })
-    findDeployedAtByDeploymentIds = jest
-      .spyOn(PlaceModel, "findDeployedAtByDeploymentIds")
-      .mockResolvedValue(new Map())
     recordScenes = jest
       .spyOn(WorldSceneUndeploymentModel, "recordScenes")
       .mockImplementation(async () => {
@@ -119,7 +102,7 @@ describe("when handling a world scenes undeployment event", () => {
     expect(lockWorldForDeployment).toHaveBeenCalledWith("example.dcl.eth")
   })
 
-  it("should record every undeployed scene with the removed content's own timestamp", async () => {
+  it("should record every undeployed scene with the event timestamp", async () => {
     await handleWorldScenesUndeployment(event)
 
     expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
@@ -127,36 +110,14 @@ describe("when handling a world scenes undeployment event", () => {
         entityId: "deployment-a",
         baseParcel: "1,1",
         parcels: ["1,1"],
-        undeployedAt: new Date(removedEntityDeployedAt),
+        undeployedAt: new Date(event.timestamp),
       },
       {
         entityId: "deployment-b",
         baseParcel: "2,2",
         parcels: ["2,2"],
-        undeployedAt: new Date(removedEntityDeployedAt),
+        undeployedAt: new Date(event.timestamp),
       },
-    ])
-  })
-
-  it("should read the removed content's timestamp from its immutable entity when no place row has it", async () => {
-    await handleWorldScenesUndeployment(event)
-
-    expect(fetchContentEntityMock).toHaveBeenCalledWith(
-      "deployment-a",
-      "https://worlds.example"
-    )
-  })
-
-  it("should never stamp a watermark later than the removal itself", async () => {
-    fetchContentEntityMock.mockResolvedValue({
-      timestamp: event.timestamp + 60_000,
-    } as never)
-
-    await handleWorldScenesUndeployment(event)
-
-    expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-      expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
-      expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
     ])
   })
 
@@ -180,89 +141,6 @@ describe("when handling a world scenes undeployment event", () => {
       "position-watermark",
       "disable",
     ])
-  })
-
-  describe("and a place row records when the undeployed content was deployed", () => {
-    let removedDeployedAt: Date
-
-    beforeEach(() => {
-      removedDeployedAt = new Date(Date.parse("2026-07-30T10:00:00.000Z"))
-      findDeployedAtByDeploymentIds.mockResolvedValue(
-        new Map([["deployment-a", removedDeployedAt]])
-      )
-    })
-
-    it("should watermark that scene with the timestamp the place row records", async () => {
-      await handleWorldScenesUndeployment(event)
-
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-a",
-          baseParcel: "1,1",
-          parcels: ["1,1"],
-          undeployedAt: removedDeployedAt,
-        },
-        {
-          entityId: "deployment-b",
-          baseParcel: "2,2",
-          parcels: ["2,2"],
-          undeployedAt: new Date(removedEntityDeployedAt),
-        },
-      ])
-    })
-
-    it("should not fetch the entity for a scene a place row already accounts for", async () => {
-      await handleWorldScenesUndeployment(event)
-
-      expect(fetchContentEntityMock).not.toHaveBeenCalledWith(
-        "deployment-a",
-        expect.anything()
-      )
-    })
-  })
-
-  describe("and the immutable entity supplied its deployment timestamp", () => {
-    let removedDeployedAt: number
-
-    beforeEach(() => {
-      removedDeployedAt = Date.parse("2026-07-29T09:00:00.000Z")
-      resolveFootprintsMock.mockImplementation(async (scenes) =>
-        scenes.map((scene) => ({
-          entityId: scene.entityId,
-          baseParcel: scene.baseParcel,
-          parcels: [scene.baseParcel],
-          deployedAt: removedDeployedAt,
-        }))
-      )
-    })
-
-    it("should watermark the scenes with that timestamp instead of the event's", async () => {
-      await handleWorldScenesUndeployment(event)
-
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-a",
-          baseParcel: "1,1",
-          parcels: ["1,1"],
-          undeployedAt: new Date(removedDeployedAt),
-        },
-        {
-          entityId: "deployment-b",
-          baseParcel: "2,2",
-          parcels: ["2,2"],
-          undeployedAt: new Date(removedDeployedAt),
-        },
-      ])
-    })
-
-    it("should not look up a timestamp the resolver already supplied", async () => {
-      await handleWorldScenesUndeployment(event)
-
-      expect(findDeployedAtByDeploymentIds).toHaveBeenCalledWith(
-        "example.dcl.eth",
-        []
-      )
-    })
   })
 
   describe("and the world still serves one of the undeployed scenes", () => {
@@ -295,9 +173,45 @@ describe("when handling a world scenes undeployment event", () => {
           entityId: "deployment-a",
           baseParcel: "1,1",
           parcels: ["1,1"],
-          undeployedAt: new Date(removedEntityDeployedAt),
+          undeployedAt: new Date(event.timestamp),
         },
       ])
+    })
+  })
+
+  describe("and the world still serves the base parcel of an undeployed scene", () => {
+    beforeEach(() => {
+      fetchWorldActiveScenesMock.mockResolvedValue({
+        deploymentIds: ["deployment-replacement"],
+        positions: ["1,1"],
+      })
+    })
+
+    it("should not claim that base, which would reject the deployment serving it", async () => {
+      await handleWorldScenesUndeployment(event)
+
+      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+        {
+          entityId: "deployment-b",
+          baseParcel: "2,2",
+          parcels: ["2,2"],
+          undeployedAt: new Date(event.timestamp),
+        },
+      ])
+    })
+
+    it("should still disable the place for that scene", async () => {
+      await handleWorldScenesUndeployment(event)
+
+      expect(disableByWorldIdAndDeployments).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        ["deployment-a", "deployment-b"],
+        ["1,1", "2,2"],
+        ["1,1", "2,2"],
+        event.timestamp,
+        ["deployment-replacement"],
+        ["1,1"]
+      )
     })
   })
 
@@ -378,7 +292,7 @@ describe("when handling a world scenes undeployment event", () => {
           entityId: "deployment-a",
           baseParcel: "1,1",
           parcels: ["1,1"],
-          undeployedAt: new Date(removedEntityDeployedAt),
+          undeployedAt: new Date(event.timestamp),
         },
       ])
     })
