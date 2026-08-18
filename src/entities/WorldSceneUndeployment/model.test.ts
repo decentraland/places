@@ -27,8 +27,18 @@ describe("when recording scene undeployments", () => {
   describe("and the event carries scenes", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordScenes("Example.DCL.ETH", [
-        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
-        { entityId: "deployment-b", baseParcel: "2,2", undeployedAt },
+        {
+          entityId: "deployment-a",
+          baseParcel: "1,1",
+          undeployedAt,
+          basePositionRejects: true,
+        },
+        {
+          entityId: "deployment-b",
+          baseParcel: "2,2",
+          undeployedAt,
+          basePositionRejects: true,
+        },
       ])
     })
 
@@ -63,8 +73,18 @@ describe("when recording scene undeployments", () => {
 
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", [
-        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
-        { entityId: "deployment-a", baseParcel: "1,1", undeployedAt },
+        {
+          entityId: "deployment-a",
+          baseParcel: "1,1",
+          undeployedAt,
+          basePositionRejects: true,
+        },
+        {
+          entityId: "deployment-a",
+          baseParcel: "1,1",
+          undeployedAt,
+          basePositionRejects: true,
+        },
       ])
       const [, sql] = namedQuery.mock.calls[0]
       deploymentIds =
@@ -76,13 +96,13 @@ describe("when recording scene undeployments", () => {
       expect(deploymentIds).toEqual(["deployment-a"])
     })
 
-    it("should dedupe the timestamp array in lockstep, so unnest cannot pad with NULL", () => {
+    it("should dedupe every array in lockstep, so unnest cannot pad with NULL", () => {
       const [, sql] = namedQuery.mock.calls[0]
       const arrays = sql.values.filter((value): value is unknown[] =>
         Array.isArray(value)
       )
 
-      expect(arrays.map((array) => array.length)).toEqual([1, 1, 1])
+      expect(arrays.map((array) => array.length)).toEqual([1, 1, 1, 1])
     })
   })
 
@@ -92,6 +112,7 @@ describe("when recording scene undeployments", () => {
       entityId: string
       baseParcel: string
       undeployedAt: Date
+      basePositionRejects: boolean
     }>
 
     beforeEach(async () => {
@@ -99,6 +120,7 @@ describe("when recording scene undeployments", () => {
         entityId: `deployment-${index}`,
         baseParcel: `${index},0`,
         undeployedAt,
+        basePositionRejects: true,
       }))
 
       await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", scenes)
@@ -107,7 +129,7 @@ describe("when recording scene undeployments", () => {
     })
 
     it("should keep the bind parameter count constant", () => {
-      expect(bindValues).toHaveLength(4)
+      expect(bindValues).toHaveLength(5)
     })
 
     it("should pass every deployment id in one array parameter", () => {
@@ -136,8 +158,14 @@ describe("when recording scene undeployments", () => {
           entityId: "deployment-a",
           baseParcel: "1,1",
           undeployedAt: olderUndeployedAt,
+          basePositionRejects: true,
         },
-        { entityId: "deployment-b", baseParcel: "2,2", undeployedAt },
+        {
+          entityId: "deployment-b",
+          baseParcel: "2,2",
+          undeployedAt,
+          basePositionRejects: true,
+        },
       ])
     })
 
@@ -146,6 +174,31 @@ describe("when recording scene undeployments", () => {
 
       expect(sql.values).toContainEqual([olderUndeployedAt, undeployedAt])
     })
+  })
+})
+
+describe("when a removed scene's base is still served", () => {
+  beforeEach(async () => {
+    await WorldSceneUndeploymentModel.recordScenes("example.dcl.eth", [
+      {
+        entityId: "deployment-removed",
+        baseParcel: "0,0",
+        undeployedAt: new Date(Date.parse("2026-08-03T12:00:00.000Z")),
+        basePositionRejects: false,
+      },
+    ])
+  })
+
+  it("should still record the identity tombstone", () => {
+    const [, sql] = namedQuery.mock.calls[0]
+
+    expect(sql.values).toContainEqual(["deployment-removed"])
+  })
+
+  it("should mark the base as unable to reject", () => {
+    const [, sql] = namedQuery.mock.calls[0]
+
+    expect(sql.values).toContainEqual([false])
   })
 })
 
@@ -163,7 +216,15 @@ describe("when looking for a scene undeployment that supersedes a deployment", (
     const [, sql] = namedQuery.mock.calls[0]
 
     expect(sql.text.replace(/\s+/g, " ")).toContain(
-      `("deployment_id" = $2 OR "base_position" = $3)`
+      `( "deployment_id" = $2 OR ("base_position" = $3 AND "base_position_rejects" IS TRUE) )`
+    )
+  })
+
+  it("should never let an identity-only tombstone reject by base position", () => {
+    const [, sql] = namedQuery.mock.calls[0]
+
+    expect(sql.text.replace(/\s+/g, " ")).toContain(
+      `"base_position_rejects" IS TRUE`
     )
   })
 

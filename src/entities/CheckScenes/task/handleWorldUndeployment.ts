@@ -46,6 +46,9 @@ export async function handleWorldUndeployment(
   try {
     loggerExtended.log(`Processing world undeployment for world: ${worldName}`)
 
+    // Read before the survivor set so both predate it: a deployment committing in between is
+    // something the survivor set cannot describe, and the lock may be contended for that long.
+    const snapshot = await PlaceModel.findWorldPlaceSnapshot(worldName)
     const activeScenes = await fetchWorldActiveScenes(worldName)
     const isTornDown = activeScenes.deploymentIds.length === 0
     const livePositions = new Set(activeScenes.positions)
@@ -65,7 +68,10 @@ export async function handleWorldUndeployment(
         worldName,
         event.timestamp,
         activeScenes.deploymentIds,
-        activeScenes.positions
+        activeScenes.positions,
+        // A world serving nothing has no survivor to spare, so the lock's ordering is the whole
+        // contract there and an undeployment stays authoritative over a deployment it raced.
+        isTornDown ? null : snapshot.revisions
       )
 
       // A reshaped world gets the same durable record per removed scene, so a later delivery of one
@@ -79,6 +85,9 @@ export async function handleWorldUndeployment(
             // scene.
             entityId: place.deployment_id || `legacy-place:${place.id}`,
             baseParcel: place.base_position,
+            // The row's own deployment timestamp bounds it, so anything its base rejects is
+            // strictly older than the content that was removed from there.
+            basePositionRejects: true,
             // decentraland-gatsby installs a global pg parser that returns timestamp columns as ISO
             // strings, so this is typed as a Date but is not one at runtime.
             undeployedAt: new Date(place.deployed_at),
@@ -87,12 +96,12 @@ export async function handleWorldUndeployment(
 
         // Identity only covers the rows this statement disabled, which leaves out every row that was
         // already disabled and every scene whose deployment has not arrived. Watermark the parcels
-        // instead: anything Places ever recorded for this world that nothing now serves was cleared
-        // by this event, and a parcel with nothing serving it cannot veto a survivor.
-        const knownPositions = await PlaceModel.findWorldPositions(worldName)
+        // instead: anything the snapshot recorded for this world that nothing now serves was cleared
+        // by this event, and a parcel with nothing serving it cannot veto a survivor. Parcels that
+        // appeared after the snapshot are left alone for the same reason the disable is restricted.
         await WorldDeploymentPositionWatermarkModel.recordPositions(
           worldName,
-          knownPositions.filter((position) => !livePositions.has(position)),
+          snapshot.positions.filter((position) => !livePositions.has(position)),
           new Date(event.timestamp),
           true
         )

@@ -237,6 +237,9 @@ async function recordReplacementRemovals(
       // The replacing deployment's entity timestamp, so the watermark rejects exactly what it
       // superseded rather than anything older than the moment Places noticed.
       undeployedAt,
+      // The replacement now occupies this base, and the bound above is its own timestamp, so the
+      // base may reject: everything it superseded there is strictly older.
+      basePositionRejects: true,
     }))
   )
 }

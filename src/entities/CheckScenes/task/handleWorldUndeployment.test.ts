@@ -17,7 +17,11 @@ const fetchWorldActiveScenesMock = jest.mocked(fetchWorldActiveScenes)
 describe("when handling a world undeployment event", () => {
   let disableByWorldId: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
-  let findWorldPositions: jest.SpyInstance
+  let findWorldPlaceSnapshot: jest.SpyInstance
+  let snapshot: {
+    revisions: Array<{ id: string; deployment_id: string | null }>
+    positions: string[]
+  }
   let recordPositions: jest.SpyInstance
   let recordScenes: jest.SpyInstance
   let recordWatermark: jest.SpyInstance
@@ -45,9 +49,10 @@ describe("when handling a world undeployment event", () => {
       .mockImplementation(async () => {
         calls.push("scene-watermark")
       })
-    findWorldPositions = jest
-      .spyOn(PlaceModel, "findWorldPositions")
-      .mockResolvedValue([])
+    snapshot = { revisions: [], positions: [] }
+    findWorldPlaceSnapshot = jest
+      .spyOn(PlaceModel, "findWorldPlaceSnapshot")
+      .mockResolvedValue(snapshot)
     recordPositions = jest
       .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
       .mockImplementation(async () => {
@@ -82,7 +87,8 @@ describe("when handling a world undeployment event", () => {
       "example.dcl.eth",
       event.timestamp,
       [],
-      []
+      [],
+      null
     )
   })
 
@@ -144,7 +150,8 @@ describe("when handling a world undeployment event", () => {
         "example.dcl.eth",
         event.timestamp,
         ["deployment-surviving"],
-        ["0,0"]
+        ["0,0"],
+        snapshot.revisions
       )
     })
 
@@ -155,7 +162,10 @@ describe("when handling a world undeployment event", () => {
     })
 
     it("should watermark the parcels the world held that nothing serves now", async () => {
-      findWorldPositions.mockResolvedValue(["1,1", "0,0", "2,2"])
+      findWorldPlaceSnapshot.mockResolvedValue({
+        revisions: snapshot.revisions,
+        positions: ["1,1", "0,0", "2,2"],
+      })
 
       await handleWorldUndeployment(event)
 
@@ -175,6 +185,7 @@ describe("when handling a world undeployment event", () => {
           entityId: "deployment-removed",
           baseParcel: "1,1",
           undeployedAt: survivingDeployedAt,
+          basePositionRejects: true,
         },
       ])
     })
@@ -192,6 +203,7 @@ describe("when handling a world undeployment event", () => {
             entityId: "legacy-place:place-removed",
             baseParcel: "1,1",
             undeployedAt: survivingDeployedAt,
+            basePositionRejects: true,
           },
         ])
       })

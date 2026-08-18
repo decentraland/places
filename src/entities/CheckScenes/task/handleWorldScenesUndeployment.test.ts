@@ -118,12 +118,14 @@ describe("when handling a world scenes undeployment event", () => {
         baseParcel: "1,1",
         parcels: ["1,1"],
         undeployedAt: new Date(event.timestamp),
+        basePositionRejects: true,
       },
       {
         entityId: "deployment-b",
         baseParcel: "2,2",
         parcels: ["2,2"],
         undeployedAt: new Date(event.timestamp),
+        basePositionRejects: true,
       },
     ])
   })
@@ -182,6 +184,7 @@ describe("when handling a world scenes undeployment event", () => {
           baseParcel: "1,1",
           parcels: ["1,1"],
           undeployedAt: new Date(event.timestamp),
+          basePositionRejects: true,
         },
       ])
     })
@@ -246,16 +249,27 @@ describe("when handling a world scenes undeployment event", () => {
       })
     })
 
-    it("should not claim that base, which would reject the deployment serving it", async () => {
+    it("should still tombstone that deployment by identity", async () => {
       await handleWorldScenesUndeployment(event)
 
       expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-b",
+        expect.objectContaining({ entityId: "deployment-a" }),
+        expect.objectContaining({ entityId: "deployment-b" }),
+      ])
+    })
+
+    it("should not let that base reject, since a deployment serves it", async () => {
+      await handleWorldScenesUndeployment(event)
+
+      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
+        expect.objectContaining({
+          baseParcel: "1,1",
+          basePositionRejects: false,
+        }),
+        expect.objectContaining({
           baseParcel: "2,2",
-          parcels: ["2,2"],
-          undeployedAt: new Date(event.timestamp),
-        },
+          basePositionRejects: true,
+        }),
       ])
     })
 
@@ -353,6 +367,7 @@ describe("when handling a world scenes undeployment event", () => {
           baseParcel: "1,1",
           parcels: ["1,1"],
           undeployedAt: new Date(event.timestamp),
+          basePositionRejects: true,
         },
       ])
     })

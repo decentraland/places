@@ -321,6 +321,58 @@ describe("when an undeployment follows the deployment that caused it", () => {
     })
   })
 
+  describe("and a deployment commits after the survivor set was read", () => {
+    const worldName = "raced-snapshot.dcl.eth"
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-raced-removed",
+        timestamp: replacedDeployedAt,
+        title: "Raced Removed Scene",
+        base: "7,89",
+        parcels: ["7,89"],
+      })
+
+      // The content server answers before the racing deployment is known locally, so the survivor
+      // set cannot account for it
+      mockFetchScenesAtPositions.mockImplementationOnce(async () => {
+        await deliverDeployment({
+          worldName,
+          entityId: "entity-raced-late",
+          timestamp: replacementDeployedAt,
+          title: "Raced Late Scene",
+          base: "0,0",
+          parcels: ["0,0"],
+        })
+        return { deploymentIds: [], positions: [] }
+      })
+
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-raced-removed",
+              baseParcel: "7,89",
+              parcels: ["7,89"],
+            },
+          ],
+          { timestamp: undeploymentEmittedAt }
+        )
+      )
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should leave the raced deployment enabled and still disable the removed scene", () => {
+      expect(enabledTitles).toEqual(["Raced Late Scene"])
+    })
+  })
+
   describe("and a world undeployment arrives for a world that serves nothing", () => {
     const worldName = "torn-down-world.dcl.eth"
     let enabledTitles: Array<string | null>

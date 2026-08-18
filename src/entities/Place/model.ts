@@ -377,23 +377,39 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Every parcel Places has ever recorded for a world, enabled or not.
+   * The enabled world places and every parcel the world is known to have held, as one reading.
    *
-   * A full-world undeployment names no scenes, so the parcels its place rows cover are the only
-   * record of what the world held. Disabled rows count: they are exactly the ones a disabling
-   * statement skips and therefore cannot watermark by identity.
+   * A full-world undeployment needs both, and both have to predate the survivor set read from the
+   * content server: a deployment committing after that read is something the survivor set cannot
+   * describe, so it must neither be disabled nor have its parcels retired. Disabled rows contribute
+   * parcels because they are exactly the ones a disabling statement skips and so cannot tombstone by
+   * identity.
    */
-  static async findWorldPositions(worldId: string): Promise<string[]> {
-    const rows = await this.namedQuery<{ position: string }>(
-      "find_world_positions",
+  static async findWorldPlaceSnapshot(worldId: string): Promise<{
+    revisions: Array<{ id: string; deployment_id: string | null }>
+    positions: string[]
+  }> {
+    const rows = await this.namedQuery<{
+      id: string
+      deployment_id: string | null
+      disabled: boolean
+      positions: string[]
+    }>(
+      "find_world_place_snapshot",
       SQL`
-        SELECT DISTINCT unnest("positions") AS "position"
+        SELECT "id", "deployment_id", "disabled", "positions"
         FROM ${table(this)}
         WHERE "world" IS TRUE
           AND "world_id" = ${worldId.toLowerCase()}
       `
     )
-    return rows.map((row) => row.position)
+
+    return {
+      revisions: rows
+        .filter((row) => !row.disabled)
+        .map(({ id, deployment_id }) => ({ id, deployment_id })),
+      positions: [...new Set(rows.flatMap((row) => row.positions))],
+    }
   }
 
   /**
@@ -678,6 +694,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * overlapping the footprint of a surviving scene, which keeps a stale row enabled where a live
    * scene covers its parcels; reconciling those is what bin/rebuildWorldPlaces.ts is for.
    *
+   * A snapshot restricts this to rows that existed, unchanged, when the survivor set was read, for
+   * the same reason the scene path needs it: every match here is inferred, so a row the survivor set
+   * predates cannot be judged by it. Pass null when the world serves nothing, where there is no
+   * survivor to spare and the per-world lock's ordering is the whole contract.
+   *
    * Ties go to the undeployment, matching the watermark predicates in WorldUndeploymentModel and
    * WorldSceneUndeploymentModel, so an equally timestamped deployment reaches the same state
    * whichever order it arrives in.
@@ -686,7 +707,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     worldId: string,
     eventTimestamp: number,
     liveDeploymentIds: string[],
-    livePositions: string[]
+    livePositions: string[],
+    snapshot: Array<{ id: string; deployment_id: string | null }> | null
   ): Promise<PlaceAttributes[]> {
     const normalizedWorldId = worldId.toLowerCase()
     const eventDate = new Date(eventTimestamp)
@@ -698,6 +720,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND ${removedUpstream(liveDeploymentIds, livePositions)}
+        ${conditional(
+          snapshot !== null,
+          SQL`AND ${withinSnapshot(snapshot ?? [])}`
+        )}
       RETURNING target.*
     `
     return this.namedQuery<PlaceAttributes>("disable_by_world_id", sql)

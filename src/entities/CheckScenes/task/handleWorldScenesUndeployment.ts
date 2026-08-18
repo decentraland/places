@@ -150,20 +150,19 @@ export async function handleWorldScenesUndeployment(
       // Durable watermark: the undeployment can arrive before the deployment it refers to, so
       // record it whether or not a place row matched.
       //
-      // Rejection matches a scene's base parcel as well as its identity, so a row for a base that
-      // something still serves would tombstone that base as of this removal and reject the very
-      // deployment serving it. Those are left out: the live place row already rejects older
-      // revisions at that base, and its own removal will record the base when it happens.
+      // Every removed deployment is tombstoned by identity, so a delayed delivery of one cannot
+      // recreate a scene that is gone. Base-parcel rejection is a separate question: a row whose
+      // base something still serves would reject the deployment serving it, so that row records
+      // identity only and leaves the base to the live place row and to its own eventual removal.
       await WorldSceneUndeploymentModel.recordScenes(
         worldName,
-        undeployedScenes
-          .filter((scene) => !livePositions.has(scene.baseParcel))
-          .map((scene) => ({
-            entityId: scene.entityId,
-            baseParcel: scene.baseParcel,
-            parcels: scene.parcels,
-            undeployedAt: undeployedAt(scene, event.timestamp),
-          }))
+        undeployedScenes.map((scene) => ({
+          entityId: scene.entityId,
+          baseParcel: scene.baseParcel,
+          parcels: scene.parcels,
+          undeployedAt: undeployedAt(scene, event.timestamp),
+          basePositionRejects: !livePositions.has(scene.baseParcel),
+        }))
       )
       await recordClearedPositions(
         worldName,

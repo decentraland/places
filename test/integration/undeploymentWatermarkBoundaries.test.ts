@@ -342,6 +342,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
         entityId: "entity-conflict",
         baseParcel: "5,5",
         undeployedAt: new Date(newerTimestamp),
+        basePositionRejects: true,
       },
     ])
     // Same deployment id, older event, disagreeing base position
@@ -350,6 +351,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
         entityId: "entity-conflict",
         baseParcel: "0,0",
         undeployedAt: new Date(olderTimestamp),
+        basePositionRejects: true,
       },
     ])
   })
