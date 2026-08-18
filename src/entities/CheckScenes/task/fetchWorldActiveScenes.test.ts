@@ -548,6 +548,52 @@ describe("when reading the scenes a world serves at given parcels", () => {
     })
   })
 
+  describe("and one chunk has a scene without a timestamp while another does not", () => {
+    let active: Awaited<ReturnType<typeof fetchWorldActiveScenesAtPositions>>
+    let positions: string[]
+
+    beforeEach(async () => {
+      positions = Array.from({ length: 501 }, (_, index) => `${index},0`)
+      // first chunk: a served scene reports no timestamp
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scenes: [{ entityId: "deployment-a", parcels: ["0,0"] }],
+          total: 1,
+        }),
+      } as Response)
+      // second chunk: a served scene does report one
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scenes: [
+            {
+              entityId: "deployment-b",
+              parcels: ["500,0"],
+              entity: { timestamp: 1_000 },
+            },
+          ],
+          total: 1,
+        }),
+      } as Response)
+
+      active = await fetchWorldActiveScenesAtPositions(
+        "example.dcl.eth",
+        positions,
+        CONTENT_SERVER_URL,
+        ALLOWED_HOSTS
+      )
+    })
+
+    it("should report no bound, since one served scene is unaccounted for", () => {
+      expect(active.oldestDeployedAt).toBeNull()
+    })
+
+    it("should still return every served deployment", () => {
+      expect(active.deploymentIds).toEqual(["deployment-a", "deployment-b"])
+    })
+  })
+
   describe("and more parcels were cleared than one request accepts", () => {
     let positions: string[]
 

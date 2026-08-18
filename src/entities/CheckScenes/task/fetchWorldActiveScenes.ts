@@ -59,7 +59,14 @@ export async function fetchWorldActiveScenes(
     worldsContentServerUrl,
     allowedContentServerHosts
   )
-  return collectScenes(contentServerUrl, worldName)
+  const { deploymentIds, positions, oldestDeployedAt, timestampsComplete } =
+    await collectScenes(contentServerUrl, worldName)
+
+  return {
+    deploymentIds,
+    positions,
+    oldestDeployedAt: timestampsComplete ? oldestDeployedAt : null,
+  }
 }
 
 /**
@@ -95,11 +102,15 @@ export async function fetchWorldActiveScenesAtPositions(
   const deploymentIds = new Set<string>()
   const covered = new Set<string>()
   let oldestDeployedAt: number | null = null
+  let timestampsComplete = true
 
   for (const batch of chunk(coordinates, MAX_COORDINATES_PER_REQUEST)) {
     const active = await collectScenes(contentServerUrl, worldName, batch)
     active.deploymentIds.forEach((id) => deploymentIds.add(id))
     active.positions.forEach((position) => covered.add(position))
+    // One chunk that could not report a timestamp makes the bound unusable for all of them, so the
+    // sentinel has to survive the merge rather than be skipped as a null.
+    timestampsComplete = timestampsComplete && active.timestampsComplete
     if (
       active.oldestDeployedAt !== null &&
       (oldestDeployedAt === null || active.oldestDeployedAt < oldestDeployedAt)
@@ -111,7 +122,7 @@ export async function fetchWorldActiveScenesAtPositions(
   return {
     deploymentIds: [...deploymentIds],
     positions: [...covered],
-    oldestDeployedAt,
+    oldestDeployedAt: timestampsComplete ? oldestDeployedAt : null,
   }
 }
 
@@ -126,11 +137,19 @@ export async function fetchWorldActiveScenesAtPositions(
  * changes between pages, the rows served add up to it, and no scene was served twice in place of one
  * that was missed.
  */
+type CollectedScenes = WorldActiveScenes & {
+  /**
+   * Whether every served scene reported a timestamp. Kept apart from the bound because a null bound
+   * also means "no scenes were served", and only the first of those may erase a caller's bound.
+   */
+  timestampsComplete: boolean
+}
+
 async function collectScenes(
   contentServerUrl: string,
   worldName: string,
   coordinates?: string[]
-): Promise<WorldActiveScenes> {
+): Promise<CollectedScenes> {
   const deploymentIds = new Set<string>()
   const positions = new Set<string>()
   let received = 0
@@ -209,7 +228,8 @@ async function collectScenes(
   return {
     deploymentIds: [...deploymentIds],
     positions: [...positions],
-    oldestDeployedAt: everySceneReportedATimestamp ? oldestDeployedAt : null,
+    oldestDeployedAt,
+    timestampsComplete: everySceneReportedATimestamp,
   }
 }
 
