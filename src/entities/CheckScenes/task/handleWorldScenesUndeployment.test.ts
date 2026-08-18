@@ -237,6 +237,7 @@ describe("when handling a world scenes undeployment event", () => {
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-replacement"],
         positions: ["1,1"],
+        oldestDeployedAt: null,
       })
     })
 

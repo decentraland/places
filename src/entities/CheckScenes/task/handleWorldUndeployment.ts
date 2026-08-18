@@ -67,7 +67,7 @@ export async function handleWorldUndeployment(
       // timestamps falls back to recording nothing at all.
       const watermarkAt = isTornDown
         ? event.timestamp
-        : activeScenes.oldestDeployedAt !== null
+        : typeof activeScenes.oldestDeployedAt === "number"
         ? activeScenes.oldestDeployedAt - 1
         : null
 

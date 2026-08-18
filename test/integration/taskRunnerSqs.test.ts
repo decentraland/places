@@ -142,10 +142,12 @@ describe("taskRunnerSqs integration", () => {
     jest.mocked(fetchWorldActiveScenes).mockResolvedValue({
       deploymentIds: [],
       positions: [],
+      oldestDeployedAt: null,
     })
     jest.mocked(fetchWorldActiveScenesAtPositions).mockResolvedValue({
       deploymentIds: [],
       positions: [],
+      oldestDeployedAt: null,
     })
   })
 
