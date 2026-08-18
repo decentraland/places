@@ -29,6 +29,7 @@ describe("when handling a world undeployment event", () => {
     fetchWorldActiveScenesMock.mockResolvedValue({
       deploymentIds: [],
       positions: [],
+      oldestDeployedAt: null,
     })
     lockWorldForDeployment = jest
       .spyOn(WorldModel, "lockWorldForDeployment")
@@ -114,6 +115,7 @@ describe("when handling a world undeployment event", () => {
   })
 
   describe("and the world still serves scenes after the undeployment", () => {
+    let oldestSurvivorDeployedAt: number
     let survivingDeployedAt: Date
     let removedPlace: PlaceAttributes
 
@@ -127,9 +129,11 @@ describe("when handling a world undeployment event", () => {
         // fixture uses one even though PlaceAttributes types it as a Date
         deployed_at: survivingDeployedAt.toISOString(),
       } as unknown as PlaceAttributes
+      oldestSurvivorDeployedAt = Date.parse("2026-08-02T10:00:00.000Z")
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-surviving"],
         positions: ["0,0"],
+        oldestDeployedAt: oldestSurvivorDeployedAt,
       })
       disableByWorldId.mockImplementation(async () => {
         calls.push("disable")
@@ -148,10 +152,38 @@ describe("when handling a world undeployment event", () => {
       )
     })
 
-    it("should not record a full-world watermark that would reject the surviving deployment", async () => {
+    it("should record the full-world watermark just below the oldest survivor", async () => {
       await handleWorldUndeployment(event)
 
-      expect(recordWatermark).not.toHaveBeenCalled()
+      expect(recordWatermark).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        oldestSurvivorDeployedAt - 1
+      )
+    })
+
+    it("should not record the event timestamp, which would reject the survivors", async () => {
+      await handleWorldUndeployment(event)
+
+      expect(recordWatermark).not.toHaveBeenCalledWith(
+        "example.dcl.eth",
+        event.timestamp
+      )
+    })
+
+    describe("and no served scene reported a deployment timestamp", () => {
+      beforeEach(() => {
+        fetchWorldActiveScenesMock.mockResolvedValue({
+          deploymentIds: ["deployment-surviving"],
+          positions: ["0,0"],
+          oldestDeployedAt: null,
+        })
+      })
+
+      it("should record no full-world watermark rather than guess a bound", async () => {
+        await handleWorldUndeployment(event)
+
+        expect(recordWatermark).not.toHaveBeenCalled()
+      })
     })
 
     it("should watermark the parcels the world held that nothing serves now", async () => {

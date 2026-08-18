@@ -29,10 +29,12 @@ jest.mock("../../src/entities/CheckScenes/task/fetchWorldActiveScenes", () => ({
   fetchWorldActiveScenes: jest.fn(async () => ({
     deploymentIds: [],
     positions: [],
+    oldestDeployedAt: null,
   })),
   fetchWorldActiveScenesAtPositions: jest.fn(async () => ({
     deploymentIds: [],
     positions: [],
+    oldestDeployedAt: null,
   })),
 }))
 
@@ -174,6 +176,7 @@ describe("when an undeployment follows the deployment that caused it", () => {
       mockFetchScenesAtPositions.mockResolvedValueOnce({
         deploymentIds: ["entity-replacement"],
         positions: ["0,0"],
+        oldestDeployedAt: replacementDeployedAt,
       })
 
       await handleWorldScenesUndeployment(
@@ -244,6 +247,7 @@ describe("when an undeployment follows the deployment that caused it", () => {
       mockFetchScenesAtPositions.mockResolvedValueOnce({
         deploymentIds: ["entity-legacy-replacement"],
         positions: ["0,0"],
+        oldestDeployedAt: replacementDeployedAt,
       })
 
       await handleWorldScenesUndeployment(
@@ -303,6 +307,7 @@ describe("when an undeployment follows the deployment that caused it", () => {
       mockFetchWorldActiveScenes.mockResolvedValueOnce({
         deploymentIds: ["entity-surviving"],
         positions: ["0,0"],
+        oldestDeployedAt: replacementDeployedAt,
       })
 
       await handleWorldUndeployment(
@@ -318,6 +323,60 @@ describe("when an undeployment follows the deployment that caused it", () => {
 
     it("should disable only the scenes the world stopped serving", () => {
       expect(enabledTitles).toEqual(["Surviving Scene"])
+    })
+  })
+
+  describe("and a removed scene's deployment is delivered after the reshape", () => {
+    const worldName = "reshaped-late-delivery.dcl.eth"
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-late-removed",
+        timestamp: replacedDeployedAt,
+        title: "Late Removed Scene",
+        base: "7,89",
+        parcels: ["7,89"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-reshape-survivor",
+        timestamp: replacementDeployedAt,
+        title: "Reshape Survivor",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      mockFetchWorldActiveScenes.mockResolvedValueOnce({
+        deploymentIds: ["entity-reshape-survivor"],
+        positions: ["0,0"],
+        oldestDeployedAt: replacementDeployedAt,
+      })
+
+      await handleWorldUndeployment(
+        createWorldUndeploymentEvent(worldName, {
+          timestamp: undeploymentEmittedAt,
+        })
+      )
+
+      // The removed scene's own deployment arrives again after the teardown was applied
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-late-removed",
+        timestamp: replacedDeployedAt,
+        title: "Late Removed Scene",
+        base: "7,89",
+        parcels: ["7,89"],
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should not recreate the removed scene, while keeping the survivor enabled", () => {
+      expect(enabledTitles).toEqual(["Reshape Survivor"])
     })
   })
 
@@ -368,6 +427,7 @@ describe("when an undeployment follows the deployment that caused it", () => {
       mockFetchScenesAtPositions.mockResolvedValueOnce({
         deploymentIds: ["entity-late-replacement"],
         positions: ["0,0"],
+        oldestDeployedAt: replacementDeployedAt,
       })
 
       await handleWorldScenesUndeployment(

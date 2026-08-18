@@ -44,6 +44,7 @@ describe("when reading the scenes a world currently serves", () => {
       expect(active).toEqual({
         deploymentIds: ["deployment-a", "deployment-b"],
         positions: ["0,0", "0,1", "5,5"],
+        oldestDeployedAt: null,
       })
     })
 
@@ -52,6 +53,76 @@ describe("when reading the scenes a world currently serves", () => {
         `${CONTENT_SERVER_URL}/world/example.dcl.eth/scenes?limit=100&offset=0`,
         expect.objectContaining({ signal: expect.anything() })
       )
+    })
+  })
+
+  describe("and the served scenes report their deployment timestamps", () => {
+    let active: Awaited<ReturnType<typeof fetchWorldActiveScenes>>
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scenes: [
+            {
+              entityId: "deployment-newer",
+              parcels: ["0,0"],
+              entity: { timestamp: 2_000 },
+            },
+            {
+              entityId: "deployment-older",
+              parcels: ["5,5"],
+              entity: { timestamp: 1_000 },
+            },
+          ],
+          total: 2,
+        }),
+      } as Response)
+
+      active = await fetchWorldActiveScenes(
+        "example.dcl.eth",
+        CONTENT_SERVER_URL,
+        ALLOWED_HOSTS
+      )
+    })
+
+    it("should report the earliest of them", () => {
+      expect(active.oldestDeployedAt).toBe(1_000)
+    })
+  })
+
+  describe("and one served scene reports no deployment timestamp", () => {
+    let active: Awaited<ReturnType<typeof fetchWorldActiveScenes>>
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          scenes: [
+            {
+              entityId: "deployment-a",
+              parcels: ["0,0"],
+              entity: { timestamp: 1_000 },
+            },
+            { entityId: "deployment-b", parcels: ["5,5"] },
+          ],
+          total: 2,
+        }),
+      } as Response)
+
+      active = await fetchWorldActiveScenes(
+        "example.dcl.eth",
+        CONTENT_SERVER_URL,
+        ALLOWED_HOSTS
+      )
+    })
+
+    it("should report no bound rather than one that ignores that scene", () => {
+      expect(active.oldestDeployedAt).toBeNull()
+    })
+
+    it("should still return every served deployment", () => {
+      expect(active.deploymentIds).toEqual(["deployment-a", "deployment-b"])
     })
   })
 
@@ -72,7 +143,11 @@ describe("when reading the scenes a world currently serves", () => {
     })
 
     it("should return an empty scene set", () => {
-      expect(active).toEqual({ deploymentIds: [], positions: [] })
+      expect(active).toEqual({
+        deploymentIds: [],
+        positions: [],
+        oldestDeployedAt: null,
+      })
     })
   })
 
@@ -443,6 +518,7 @@ describe("when reading the scenes a world serves at given parcels", () => {
       expect(active).toEqual({
         deploymentIds: ["deployment-a"],
         positions: ["0,0"],
+        oldestDeployedAt: null,
       })
     })
   })
@@ -460,7 +536,11 @@ describe("when reading the scenes a world serves at given parcels", () => {
     })
 
     it("should return an empty scene set", () => {
-      expect(active).toEqual({ deploymentIds: [], positions: [] })
+      expect(active).toEqual({
+        deploymentIds: [],
+        positions: [],
+        oldestDeployedAt: null,
+      })
     })
 
     it("should not call the content server", () => {

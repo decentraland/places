@@ -20,6 +20,12 @@ export type WorldActiveScenes = {
   deploymentIds: string[]
   /** Every parcel those deployments cover. */
   positions: string[]
+  /**
+   * The earliest entity timestamp among the served scenes, or null when the world serves nothing or
+   * any served scene did not report one. Callers that place a watermark below every survivor need
+   * this bound and must fall back when it is missing.
+   */
+  oldestDeployedAt: number | null
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -83,19 +89,30 @@ export async function fetchWorldActiveScenesAtPositions(
 
   const coordinates = [...new Set(positions)]
   if (coordinates.length === 0) {
-    return { deploymentIds: [], positions: [] }
+    return { deploymentIds: [], positions: [], oldestDeployedAt: null }
   }
 
   const deploymentIds = new Set<string>()
   const covered = new Set<string>()
+  let oldestDeployedAt: number | null = null
 
   for (const batch of chunk(coordinates, MAX_COORDINATES_PER_REQUEST)) {
     const active = await collectScenes(contentServerUrl, worldName, batch)
     active.deploymentIds.forEach((id) => deploymentIds.add(id))
     active.positions.forEach((position) => covered.add(position))
+    if (
+      active.oldestDeployedAt !== null &&
+      (oldestDeployedAt === null || active.oldestDeployedAt < oldestDeployedAt)
+    ) {
+      oldestDeployedAt = active.oldestDeployedAt
+    }
   }
 
-  return { deploymentIds: [...deploymentIds], positions: [...covered] }
+  return {
+    deploymentIds: [...deploymentIds],
+    positions: [...covered],
+    oldestDeployedAt,
+  }
 }
 
 /**
@@ -119,6 +136,8 @@ async function collectScenes(
   let received = 0
   let expected: number | null = null
   let complete = false
+  let oldestDeployedAt: number | null = null
+  let everySceneReportedATimestamp = true
 
   for (let page = 0; page < WORLD_SCENES_MAX_PAGES; page++) {
     const scenes = await fetchWorldScenesPage(
@@ -140,6 +159,14 @@ async function collectScenes(
       deploymentIds.add(scene.entityId)
       for (const parcel of scene.parcels) {
         positions.add(parcel)
+      }
+      if (scene.deployedAt === null) {
+        everySceneReportedATimestamp = false
+      } else if (
+        oldestDeployedAt === null ||
+        scene.deployedAt < oldestDeployedAt
+      ) {
+        oldestDeployedAt = scene.deployedAt
       }
     }
     received += scenes.rows.length
@@ -179,11 +206,19 @@ async function collectScenes(
     )
   }
 
-  return { deploymentIds: [...deploymentIds], positions: [...positions] }
+  return {
+    deploymentIds: [...deploymentIds],
+    positions: [...positions],
+    oldestDeployedAt: everySceneReportedATimestamp ? oldestDeployedAt : null,
+  }
 }
 
 type WorldScenesPage = {
-  rows: Array<{ entityId: string; parcels: string[] }>
+  rows: Array<{
+    entityId: string
+    parcels: string[]
+    deployedAt: number | null
+  }>
   total: number
 }
 
@@ -255,7 +290,19 @@ async function fetchWorldScenesPage(
       )
     }
 
-    return { entityId: scene.entityId, parcels: scene.parcels as string[] }
+    // Only used to bound a watermark below every survivor, so a missing timestamp degrades that
+    // caller rather than failing a read whose identities and parcels are sound.
+    const timestamp = isRecord(scene.entity) ? scene.entity.timestamp : null
+    const deployedAt =
+      typeof timestamp === "number" && Number.isFinite(timestamp)
+        ? timestamp
+        : null
+
+    return {
+      entityId: scene.entityId,
+      parcels: scene.parcels as string[],
+      deployedAt,
+    }
   })
 
   return { rows, total: body.total }

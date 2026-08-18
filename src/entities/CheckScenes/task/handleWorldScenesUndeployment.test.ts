@@ -40,6 +40,7 @@ describe("when handling a world scenes undeployment event", () => {
     fetchWorldActiveScenesMock.mockResolvedValue({
       deploymentIds: [],
       positions: [],
+      oldestDeployedAt: null,
     })
     lockWorldForDeployment = jest
       .spyOn(WorldModel, "lockWorldForDeployment")
@@ -148,6 +149,7 @@ describe("when handling a world scenes undeployment event", () => {
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-b"],
         positions: ["2,2"],
+        oldestDeployedAt: null,
       })
     })
 
@@ -271,6 +273,7 @@ describe("when handling a world scenes undeployment event", () => {
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-c"],
         positions: ["2,2"],
+        oldestDeployedAt: null,
       })
     })
 
@@ -291,6 +294,7 @@ describe("when handling a world scenes undeployment event", () => {
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-a", "deployment-b"],
         positions: ["1,1", "2,2"],
+        oldestDeployedAt: null,
       })
     })
 

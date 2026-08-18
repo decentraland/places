@@ -18,15 +18,16 @@ import WorldUndeploymentModel from "../../WorldUndeployment/model"
  * The event names no scenes and is stamped with the moment the removal was emitted, which is
  * always later than the entity timestamp of a deployment that replaced the world's scene set.
  * A world that still serves scenes was therefore reshaped rather than torn down, so what it
- * still serves is read from the content server and left alone, and no full-world watermark is
- * recorded: that watermark would reject every later delivery of those surviving deployments.
+ * still serves is read from the content server and left alone. Its full-world watermark cannot
+ * carry the event's own timestamp either, since that rejects the surviving deployments, so it is
+ * placed just below the oldest survivor instead: low enough to accept every one of them, high
+ * enough to retire everything older, which in a reshape is the whole removed set.
  *
- * Skipping it would cost the out-of-order protection for every scene this statement does not
- * disable -- rows already disabled, and scenes whose deployment has not arrived -- so the parcels
- * the world is known to have held are watermarked instead. What remains uncovered is a scene on
- * parcels no place row ever recorded, which nothing local can describe. A stale enabled place there
- * is the lesser failure and bin/rebuildWorldPlaces.ts reconciles it; recording the full-world
- * watermark instead rejects the surviving deployments outright and leaves the world invisible.
+ * Two things stay uncovered. A removed scene newer than the oldest survivor is not retired by that
+ * bound, and neither is one whose parcels no place row ever recorded, since the parcel sweep below
+ * can only describe what Places has seen. A stale enabled place is the lesser failure there and
+ * bin/rebuildWorldPlaces.ts reconciles it; the event timestamp would instead leave the world
+ * invisible.
  */
 export async function handleWorldUndeployment(
   event: WorldUndeploymentEvent
@@ -56,9 +57,22 @@ export async function handleWorldUndeployment(
       await WorldModel.lockWorldForDeployment(worldName)
 
       // Durable watermark: a deployment delivered later but produced before this event must not
-      // recreate the world, and disabling rows alone leaves no record once the lock is released
-      if (isTornDown) {
-        await WorldUndeploymentModel.recordWatermark(worldName, event.timestamp)
+      // recreate the world, and disabling rows alone leaves no record once the lock is released.
+      //
+      // A reshaped world cannot carry the event's own timestamp, which would reject the deployments
+      // it still serves. Every survivor is at least as new as the oldest of them, so a watermark
+      // placed just below that oldest one leaves all of them acceptable while still retiring
+      // everything older -- in a reshape, the entire set that was removed. Only a removed scene
+      // newer than the oldest survivor escapes it, and a world serving nothing that reports no
+      // timestamps falls back to recording nothing at all.
+      const watermarkAt = isTornDown
+        ? event.timestamp
+        : activeScenes.oldestDeployedAt !== null
+        ? activeScenes.oldestDeployedAt - 1
+        : null
+
+      if (watermarkAt !== null) {
+        await WorldUndeploymentModel.recordWatermark(worldName, watermarkAt)
       }
 
       const disabled = await PlaceModel.disableByWorldId(
