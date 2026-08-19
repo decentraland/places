@@ -11,6 +11,7 @@ import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/ta
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
+import WorldModel from "../../src/entities/World/model"
 import WorldDeploymentPositionWatermarkModel from "../../src/entities/WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../src/entities/WorldUndeployment/model"
@@ -403,6 +404,221 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should delete it, since it rejects that scene", () => {
       expect(remaining).toBe(0)
+    })
+  })
+
+  describe("and a full world watermark ties the oldest served scene exactly", () => {
+    const worldName = "repair-world-watermark-tie.dcl.eth"
+    let remaining: number
+
+    beforeEach(async () => {
+      // rejection is `undeployed_at >= deployedAt`, so an exact tie still rejects that scene
+      await WorldUndeploymentModel.recordWatermark(worldName, servedAt)
+
+      await repairWorld(
+        worldName,
+        [
+          servedScene({
+            entityId: "entity-live",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      remaining = (
+        await WorldUndeploymentModel.namedQuery(
+          "read_world_watermark",
+          SQL`SELECT * FROM world_undeployments WHERE "world_id" = ${worldName}`
+        )
+      ).length
+    })
+
+    it("should delete it, since a tie rejects the scene too", () => {
+      expect(remaining).toBe(0)
+    })
+  })
+
+  describe("and a tombstone at a served base predates that scene", () => {
+    const worldName = "repair-older-tombstone.dcl.eth"
+    let rejects: boolean | undefined
+
+    beforeEach(async () => {
+      // this tombstone cannot reject the served scene, so it must keep guarding its base against
+      // the older revisions it was recorded for
+      await WorldSceneUndeploymentModel.recordScenes(worldName, [
+        {
+          entityId: "entity-older",
+          baseParcel: "0,0",
+          undeployedAt: new Date(removedAt),
+          basePositionRejects: true,
+        },
+      ])
+
+      await repairWorld(
+        worldName,
+        [
+          servedScene({
+            entityId: "entity-live",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      rejects = (
+        await WorldSceneUndeploymentModel.namedQuery<{
+          base_position_rejects: boolean
+        }>(
+          "read_watermark",
+          SQL`SELECT "base_position_rejects" FROM world_scene_undeployments WHERE "world_id" = ${worldName}`
+        )
+      )[0]?.base_position_rejects
+    })
+
+    it("should leave its base still rejecting", () => {
+      expect(rejects).toBe(true)
+    })
+  })
+
+  describe("and a legacy row sits at a base an enabled place already covers", () => {
+    const worldName = "repair-legacy-taken-base.dcl.eth"
+    let enabledTitles: Array<string | null>
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-legacy",
+        timestamp: removedAt,
+        title: "Legacy Row",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-legacy", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+      // something already serves this base locally
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-current",
+        timestamp: Date.now(),
+        title: "Current Row",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      repair = await repairWorld(
+        worldName,
+        [
+          servedScene({
+            entityId: "entity-legacy",
+            base: "0,0",
+            deployedAt: removedAt,
+          }),
+        ],
+        false
+      )
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should not add a second active place at that base", () => {
+      expect(enabledTitles).toEqual(["Current Row"])
+    })
+
+    it("should report it rather than re-enable it", () => {
+      expect(repair.alreadyRepresented).toHaveLength(1)
+    })
+  })
+
+  describe("and a legacy row's footprint differs from the served scene's", () => {
+    const worldName = "repair-legacy-footprint.dcl.eth"
+    let enabled: number
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-shaped",
+        timestamp: removedAt,
+        title: "Shaped Legacy",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-shaped",
+              baseParcel: "0,0",
+              parcels: ["0,0", "1,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+
+      // same parcel count, different parcels: not the same scene
+      await repairWorld(
+        worldName,
+        [
+          servedScene({
+            entityId: "entity-other",
+            base: "0,0",
+            parcels: ["0,0", "2,0"],
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      enabled = (await PlaceModel.findEnabledWorldName(worldName)).length
+    })
+
+    it("should not treat an equally sized footprint as a match", () => {
+      expect(enabled).toBe(0)
+    })
+  })
+
+  describe("and the repair runs against a world", () => {
+    const worldName = "repair-lock.dcl.eth"
+    let lockWorldForDeployment: jest.SpyInstance
+
+    beforeEach(async () => {
+      lockWorldForDeployment = jest.spyOn(WorldModel, "lockWorldForDeployment")
+
+      await repairWorld(
+        worldName,
+        [
+          servedScene({
+            entityId: "entity-live",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    afterEach(() => {
+      lockWorldForDeployment.mockRestore()
+    })
+
+    it("should take the same per-world lock the ingestion path takes", () => {
+      expect(lockWorldForDeployment).toHaveBeenCalledWith(worldName)
     })
   })
 
