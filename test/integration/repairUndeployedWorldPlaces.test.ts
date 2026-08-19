@@ -10,6 +10,7 @@ import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extrac
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
+import { withDatabaseTransaction } from "../../src/entities/Database/model"
 import PlaceModel from "../../src/entities/Place/model"
 import WorldModel from "../../src/entities/World/model"
 import WorldDeploymentPositionWatermarkModel from "../../src/entities/WorldDeploymentPositionWatermark/model"
@@ -777,6 +778,57 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should read the served scenes only after taking the lock", () => {
       expect(order).toEqual(["lock", "fetch"])
+    })
+  })
+
+  describe("and the served scenes cannot be read", () => {
+    const worldName = "repair-unreadable.dcl.eth"
+    let stillDisabled: boolean
+    let lockReleased: boolean
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-unreadable",
+        timestamp: servedAt,
+        title: "Unreadable Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-unreadable", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        )
+      )
+
+      await expect(
+        repairWorld(
+          worldName,
+          async () => {
+            throw new Error("content server timed out")
+          },
+          false
+        )
+      ).rejects.toThrow("content server timed out")
+
+      stillDisabled =
+        (await PlaceModel.findEnabledWorldName(worldName)).length === 0
+      // the lock is transaction scoped, so it is free again once the failure rolled back; taking it
+      // outside any transaction of ours would hang if it were not
+      lockReleased = await withDatabaseTransaction(async () => {
+        await WorldModel.lockWorldForDeployment(worldName)
+        return true
+      })
+    })
+
+    it("should change nothing for that world", () => {
+      expect(stillDisabled).toBe(true)
+    })
+
+    it("should leave the world's lock free rather than held", () => {
+      expect(lockReleased).toBe(true)
     })
   })
 

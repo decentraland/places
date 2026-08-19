@@ -20,6 +20,10 @@
  * Places whose scene is genuinely gone are left disabled, and watermarks that guard content the
  * world no longer serves are left in place.
  *
+ * The served-scene read happens under the world's deployment lock, so it is bounded end to end: a
+ * world whose listing cannot be read within the deadline is failed and skipped, releasing the lock,
+ * rather than blocking that world's deployments.
+ *
  * Must run with TZ=UTC. Timestamps are compared against values the service wrote, node-postgres
  * renders a Date in the process timezone, and `timestamp` columns carry no offset -- so running this
  * from a machine in any other zone shifts every comparison by that offset and silently deletes the
@@ -107,6 +111,14 @@ type Stats = {
 
 /** Worlds Content Server caps and defaults its scene pages at 100 rows. */
 const SCENES_PAGE_SIZE = 100
+/** Per request, matching the service's own reader. */
+const SCENES_FETCH_TIMEOUT_MS = 15_000
+/**
+ * The whole read, not just one request. It happens under the per-world lock, which is what makes an
+ * unbounded read dangerous: a hung page would hold the lock and block that world's deployments and
+ * undeployments until the process died. Bounded end to end so the world fails and releases instead.
+ */
+const SERVED_SCENES_DEADLINE_MS = 60_000
 const SCENES_MAX_PAGES = 200
 const DELAY_BETWEEN_WORLDS_MS = 100
 
@@ -173,11 +185,26 @@ async function fetchServedScenes(
   const scenes: ServedScene[] = []
   let total: number | null = null
 
+  const deadline = Date.now() + SERVED_SCENES_DEADLINE_MS
+
   for (let page = 0; page < SCENES_MAX_PAGES; page++) {
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) {
+      throw new Error(
+        `Timed out reading the scenes of ${worldName} after ${
+          SERVED_SCENES_DEADLINE_MS / 1000
+        }s; skipping this world rather than holding its lock`
+      )
+    }
+
     const url = `${baseUrl}/world/${encodeURIComponent(
       worldName
     )}/scenes?limit=${SCENES_PAGE_SIZE}&offset=${scenes.length}`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(Math.min(remaining, SCENES_FETCH_TIMEOUT_MS)),
+      // the trusted host is what makes this answer authoritative; a redirect would move it elsewhere
+      redirect: "error",
+    })
     if (!response.ok) {
       await drainResponse(response)
       throw new Error(
@@ -192,7 +219,7 @@ async function fetchServedScenes(
     // The listing is ordered by creation with no tiebreaker and paged by offset, so a scene removed
     // mid-read slides rows past the offset unseen. A total that disagrees with the first page's is
     // that shift; without a total there is nothing to check the read against at all.
-    if (typeof body.total !== "number") {
+    if (typeof body.total !== "number" || body.total < 0) {
       throw new Error(
         `Scenes response for ${worldName} does not report how many scenes it has`
       )
