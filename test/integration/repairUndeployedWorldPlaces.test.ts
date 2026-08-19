@@ -807,8 +807,11 @@ describe("when repairing places an undeployment disabled", () => {
       expect(disabled).toBe(true)
     })
 
-    it("should report it as needing the parcel freed first", () => {
-      expect(repair.footprintTaken).toHaveLength(1)
+    it("should report it as undecided, since with the parcel held no footprint match was attempted", () => {
+      expect({
+        legacyUndecidable: repair.legacyUndecidable.length,
+        footprintTaken: repair.footprintTaken.length,
+      }).toEqual({ legacyUndecidable: 1, footprintTaken: 0 })
     })
 
     it("should not claim it as re-enabled by footprint", () => {
@@ -870,6 +873,136 @@ describe("when repairing places an undeployment disabled", () => {
     })
   })
 
+  /**
+   * What the first production run was mostly made of. A world deployed and undeployed many times over
+   * collects old rows at one base, and rows written before deployment ids were stored carry none. The
+   * only handle on such a row is its footprint, and that match is not attempted once the parcels are
+   * held — so nothing is known about it, and the report has to say that rather than assert a served
+   * match it never checked.
+   */
+  describe("and a legacy row's parcels are held, so nothing about it can be established", () => {
+    const worldName = "repair-legacy-undecided.dcl.eth"
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-old-revision",
+        timestamp: removedAt,
+        title: "Old Revision",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-old-revision", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+      // a place standing at that base now, carrying a deployment the world no longer serves
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-standing-stale",
+        timestamp: eventAt + 1,
+        title: "Standing Stale",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-now",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    it("should report it as undecided, not as a served scene being blocked", () => {
+      expect({
+        legacyUndecidable: repair.legacyUndecidable.length,
+        baseSquatted: repair.baseSquatted.length,
+        footprintTaken: repair.footprintTaken.length,
+      }).toEqual({ legacyUndecidable: 1, baseSquatted: 0, footprintTaken: 0 })
+    })
+
+    it("should still report the served scene as needing a rebuild, since the standing place holds a different deployment", () => {
+      expect(repair.servedWithoutPlace.map((scene) => scene.entityId)).toEqual([
+        "entity-served-now",
+      ])
+    })
+  })
+
+  /**
+   * The inverse: the place standing at that base has no deployment id either, and its footprint is the
+   * served scene's. It is very likely that scene's row, so calling the scene unrepresented would send
+   * an operator to rebuild a world whose place is already there.
+   */
+  describe("and a place standing at the served base has no deployment id but its footprint", () => {
+    const worldName = "repair-legacy-represents.dcl.eth"
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-gone",
+        timestamp: removedAt,
+        title: "Gone Revision",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-gone", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_disabled_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-standing-legacy",
+        timestamp: eventAt + 1,
+        title: "Standing Legacy",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await PlaceModel.namedQuery(
+        "clear_standing_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL
+            WHERE "world_id" = ${worldName} AND "disabled" IS FALSE`
+      )
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-now",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    it("should not claim nothing represents that scene", () => {
+      expect(repair.servedWithoutPlace).toHaveLength(0)
+    })
+  })
+
   describe("and a legacy row sits at a base an enabled place already covers", () => {
     const worldName = "repair-legacy-taken-base.dcl.eth"
     let enabledTitles: Array<string | null>
@@ -925,8 +1058,11 @@ describe("when repairing places an undeployment disabled", () => {
       expect(enabledTitles).toEqual(["Current Row"])
     })
 
-    it("should report it as needing the stale row cleared first", () => {
-      expect(repair.baseSquatted).toHaveLength(1)
+    it("should report it as undecided rather than as a blocked served scene", () => {
+      expect({
+        legacyUndecidable: repair.legacyUndecidable.length,
+        baseSquatted: repair.baseSquatted.length,
+      }).toEqual({ legacyUndecidable: 1, baseSquatted: 0 })
     })
   })
 

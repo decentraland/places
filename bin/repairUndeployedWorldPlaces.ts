@@ -137,6 +137,14 @@ export type WorldRepair = {
    * resolve, and which of the two is stale is not something this repair can tell.
    */
   footprintTaken: DisabledPlace[]
+  /**
+   * Rows with no deployment id whose parcels another place already holds. Nothing was established
+   * about them: without an identity the only way to match a legacy row is its footprint, and that
+   * match is not attempted once the parcels are taken. Reported as undecided rather than as a served
+   * scene being blocked, which is what a world redeployed and undeployed many times over accumulates
+   * and is usually nothing at all.
+   */
+  legacyUndecidable: DisabledPlace[]
   stillGone: number
   /**
    * Scenes the world serves that no enabled or re-enabled place represents. The repair cannot create
@@ -155,6 +163,7 @@ type Stats = {
   alreadyRepresented: number
   baseSquatted: number
   footprintTaken: number
+  legacyUndecidable: number
   servedWithoutPlace: number
   errored: number
 }
@@ -472,6 +481,7 @@ export async function repairWorld(
     const alreadyRepresented: DisabledPlace[] = []
     const baseSquatted: DisabledPlace[] = []
     const footprintTaken: DisabledPlace[] = []
+    const legacyUndecidable: DisabledPlace[] = []
     const stillGonePlaces: DisabledPlace[] = []
 
     // A scene whose place row was disabled by this bug gets a brand new row from the ingestion path
@@ -543,12 +553,11 @@ export async function repairWorld(
     }
 
     for (const place of legacy) {
-      if (basesTaken.has(place.base_position)) {
-        baseSquatted.push(place)
-        continue
-      }
-      if (takes(place)) {
-        footprintTaken.push(place)
+      // No identity, and no footprint match attempted below because the parcels are already held. So
+      // whether the world still serves this row's content is simply unknown -- saying it "matches a
+      // served scene" would assert a check that never ran.
+      if (basesTaken.has(place.base_position) || takes(place)) {
+        legacyUndecidable.push(place)
         continue
       }
 
@@ -716,8 +725,19 @@ export async function repairWorld(
     // only thing lowering a watermark would have bought, and it does not need a watermark -- see
     // servedWithoutPlace below and bin/rebuildWorldPlaces.ts, which writes rows directly and never
     // consults these tables.
+    // An occupying row with no deployment id claims nothing, so a served scene it stands for would
+    // otherwise read as one no place represents. Footprint and base are the only handle a legacy row
+    // offers -- the same handle the legacy match above uses -- so a scene they fit is represented, and
+    // saying otherwise would send an operator to rebuild a world whose place is already there.
+    const legacyOccupants = occupying.filter((place) => !place.deployment_id)
     const servedWithoutPlace = served.filter(
-      (scene) => !claimed.has(scene.entityId)
+      (scene) =>
+        !claimed.has(scene.entityId) &&
+        !legacyOccupants.some(
+          (place) =>
+            place.base_position === scene.base &&
+            sameFootprint(scene.parcels, place.positions || [])
+        )
     )
 
     const repair: WorldRepair = {
@@ -728,6 +748,7 @@ export async function repairWorld(
       alreadyRepresented,
       baseSquatted,
       footprintTaken,
+      legacyUndecidable,
       stillGone: stillGonePlaces.length,
       servedWithoutPlace,
     }
@@ -753,7 +774,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
 
   if (reenabled === 0) {
     logger.log(
-      `  Nothing to re-enable (${repair.stillGone} place(s) correctly disabled)`
+      `  Nothing to re-enable (${repair.stillGone} correctly disabled, ${repair.legacyUndecidable.length} undecided)`
     )
   }
 
@@ -814,6 +835,14 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
       )} matches a served scene, but a place already standing in this world holds one of its parcels (${forTerminal(
         place.positions.join(" ")
       )}). Re-enabling it would leave two active places on one parcel; clear the stale row first, or rebuild the world with bin/rebuildWorldPlaces.ts, then re-run this.`
+    )
+  }
+
+  for (const place of repair.legacyUndecidable) {
+    logger.log(
+      `  UNDECIDED: legacy place "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} carries no deployment id and its parcels are held by a place already standing here, so whether the world still serves its content cannot be told from either side. Left disabled. A world deployed and undeployed repeatedly collects these, and they usually need nothing.`
     )
   }
 
@@ -889,6 +918,7 @@ async function main(): Promise<number> {
     alreadyRepresented: 0,
     baseSquatted: 0,
     footprintTaken: 0,
+    legacyUndecidable: 0,
     servedWithoutPlace: 0,
     errored: 0,
   }
@@ -931,6 +961,7 @@ async function main(): Promise<number> {
         stats.alreadyRepresented += repair.alreadyRepresented.length
         stats.baseSquatted += repair.baseSquatted.length
         stats.footprintTaken += repair.footprintTaken.length
+        stats.legacyUndecidable += repair.legacyUndecidable.length
         stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
         logger.error(
@@ -956,6 +987,7 @@ async function main(): Promise<number> {
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
     logger.log(`Parcel held:          ${stats.footprintTaken}`)
+    logger.log(`Legacy, undecided:    ${stats.legacyUndecidable}`)
     logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)
     logger.log(`Errored worlds:       ${stats.errored}`)
     logger.log("=".repeat(60))
