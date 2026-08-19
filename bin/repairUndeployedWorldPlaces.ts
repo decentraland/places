@@ -119,6 +119,8 @@ const SCENES_FETCH_TIMEOUT_MS = 15_000
  * undeployments until the process died. Bounded end to end so the world fails and releases instead.
  */
 const SERVED_SCENES_DEADLINE_MS = 60_000
+/** How many times to re-read a multi-page listing looking for two that agree. */
+const STABLE_READ_ATTEMPTS = 3
 const SCENES_MAX_PAGES = 200
 const DELAY_BETWEEN_WORLDS_MS = 100
 
@@ -178,14 +180,55 @@ function parseArgs() {
  * smaller world, which is the mistake this repair exists to undo, so the rows served are reconciled
  * against the reported total and anything short throws.
  */
-async function fetchServedScenes(
+export async function fetchServedScenes(
   baseUrl: string,
   worldName: string
 ): Promise<ServedScene[]> {
+  const deadline = Date.now() + SERVED_SCENES_DEADLINE_MS
+  let read = await readScenePages(baseUrl, worldName, deadline)
+
+  // One page is one query upstream, so it is already a consistent snapshot. More than one is paged by
+  // offset over a listing ordered without a tiebreaker, where a removal before the next offset and an
+  // addition after the end keep the total unchanged, repeat nothing, and still hide a live scene. The
+  // checks inside readScenePages cannot see that, so agreement between two whole reads is what stands
+  // in for the snapshot the server does not offer. Every world today is a single page.
+  if (read.pages <= 1) return read.scenes
+
+  for (let attempt = 2; attempt <= STABLE_READ_ATTEMPTS; attempt++) {
+    const again = await readScenePages(baseUrl, worldName, deadline)
+    if (fingerprintScenes(read.scenes) === fingerprintScenes(again.scenes)) {
+      return again.scenes
+    }
+    read = again
+  }
+
+  throw new Error(
+    `Could not read a stable scene listing for ${worldName} across ${STABLE_READ_ATTEMPTS} attempts; skipping this world rather than acting on a torn reading`
+  )
+}
+
+/** Order-independent identity of a whole listing, for comparing two reads of it. */
+function fingerprintScenes(scenes: ServedScene[]): string {
+  return scenes
+    .map(
+      (scene) =>
+        `${scene.entityId}|${scene.base}|${[...scene.parcels]
+          .sort()
+          .join(",")}|${scene.deployedAt.getTime()}`
+    )
+    .sort()
+    .join(";")
+}
+
+async function readScenePages(
+  baseUrl: string,
+  worldName: string,
+  deadline: number
+): Promise<{ scenes: ServedScene[]; pages: number }> {
   const scenes: ServedScene[] = []
   let total: number | null = null
 
-  const deadline = Date.now() + SERVED_SCENES_DEADLINE_MS
+  let pages = 0
 
   for (let page = 0; page < SCENES_MAX_PAGES; page++) {
     const remaining = deadline - Date.now()
@@ -255,6 +298,8 @@ async function fetchServedScenes(
       })
     }
 
+    pages++
+
     if (body.scenes.length < SCENES_PAGE_SIZE) break
     if (total !== null && scenes.length >= total) break
   }
@@ -273,7 +318,7 @@ async function fetchServedScenes(
     )
   }
 
-  return scenes
+  return { scenes, pages }
 }
 
 // ── Queries ────────────────────────────────────────────────────────────

@@ -94,6 +94,8 @@ const WORLDS_PAGE_SIZE = 100
 const SCENES_PAGE_SIZE = 100
 /** Backstop against a total that never agrees with the rows served. */
 const SCENES_MAX_PAGES = 200
+/** How many times to re-read a multi-page listing looking for two that agree. */
+const STABLE_READ_ATTEMPTS = 3
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────
 
@@ -231,12 +233,54 @@ async function fetchAllWorlds(
  * would hide the rest of a large world, and orphan detection below disables the active places that
  * no scene in this list accounts for, so a short read would disable live places.
  */
-async function fetchWorldScenes(
+export async function fetchWorldScenes(
   baseUrl: string,
   worldName: string
 ): Promise<WorldScenesResponse["scenes"]> {
+  let read = await readScenePages(baseUrl, worldName)
+
+  // One page is one query upstream, so it is already a consistent snapshot. More than one is paged by
+  // offset over a listing ordered without a tiebreaker, where a removal before the next offset and an
+  // addition after the end keep the total unchanged, repeat nothing, and still hide a live scene --
+  // whose place the orphan sweep below would then disable. Agreement between two whole reads stands in
+  // for the snapshot the server does not offer. Every world today is a single page.
+  if (read.pages <= 1) return read.scenes
+
+  for (let attempt = 2; attempt <= STABLE_READ_ATTEMPTS; attempt++) {
+    const again = await readScenePages(baseUrl, worldName)
+    if (fingerprintScenes(read.scenes) === fingerprintScenes(again.scenes)) {
+      return again.scenes
+    }
+    read = again
+  }
+
+  throw new Error(
+    `Could not read a stable scene listing for ${worldName} across ${STABLE_READ_ATTEMPTS} attempts; skipping this world rather than judging its places against a torn reading`
+  )
+}
+
+/** Order-independent identity of a whole listing, for comparing two reads of it. */
+function fingerprintScenes(scenes: WorldScenesResponse["scenes"]): string {
+  return scenes
+    .map(
+      (scene) =>
+        `${scene.entityId}|${scene.entity?.timestamp}|${[
+          ...(scene.parcels || []),
+        ]
+          .sort()
+          .join(",")}`
+    )
+    .sort()
+    .join(";")
+}
+
+async function readScenePages(
+  baseUrl: string,
+  worldName: string
+): Promise<{ scenes: WorldScenesResponse["scenes"]; pages: number }> {
   const scenes: WorldScenesResponse["scenes"] = []
   let total: number | null = null
+  let pages = 0
 
   for (let page = 0; page < SCENES_MAX_PAGES; page++) {
     const url = `${baseUrl}/world/${encodeURIComponent(
@@ -271,6 +315,7 @@ async function fetchWorldScenes(
     }
 
     scenes.push(...data.scenes)
+    pages++
 
     if (data.scenes.length < SCENES_PAGE_SIZE) break
     if (total !== null && scenes.length >= total) break
@@ -290,7 +335,7 @@ async function fetchWorldScenes(
     )
   }
 
-  return scenes
+  return { scenes, pages }
 }
 
 // ── Dry-Run Diff Helper ────────────────────────────────────────────────
