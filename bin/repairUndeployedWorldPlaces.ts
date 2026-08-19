@@ -36,9 +36,11 @@
  * includeUndeployed flag that the HTTP handler never sets. Until it does, and for removals older than
  * that window, this repair cannot prove full coverage and so does not try.
  *
- * The one gap that leaves is a scene the world serves that no place row represents. It is reported per
- * world as NEEDS REBUILD: bin/rebuildWorldPlaces.ts writes place rows directly and never consults
- * these tables, so it fixes those without any guard being relaxed.
+ * The one gap that leaves is a scene the world serves that no place row represents, reported per world
+ * as UNREPRESENTED. This script cannot close it -- it only ever re-enables a row that already exists --
+ * but bin/rebuildWorldPlaces.ts writes place rows directly and never consults these tables, so it
+ * closes them without any guard being relaxed. The report states what was found and leaves the choice
+ * of tool to the operator rather than prescribing another destructive run per row.
  *
  * Operational precondition: no deployment for these worlds may still be undelivered or redeliverable
  * from before the repair. A rejected deployment still disables active places it supersedes, so a
@@ -798,7 +800,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
         place.title
       )}" at ${forTerminal(
         place.base_position
-      )} sits at a served base but its stored footprint does not match that scene; rebuild this world with bin/rebuildWorldPlaces.ts`
+      )} sits at a served base, but its stored footprint is not that scene's`
     )
   }
 
@@ -808,7 +810,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
         place.base_position
       )} disabled as an opt-out: the world serves ${forTerminal(
         scene.entityId
-      )} at it with placesConfig.optOut, so re-enabling it would list a place its owner asked to hide. Recorded as opt_out rather than undeployment, so it still reserves its parcels.`
+      )} at it with placesConfig.optOut. Recorded as opt_out rather than undeployment, so it still reserves its parcels.`
     )
   }
 
@@ -816,7 +818,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  ALREADY REPRESENTED: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} is covered by a place already standing in this world -- enabled, or disabled as an opt-out -- holding the same deployment; nothing to do`
+      )} is covered by a place already standing here holding the same deployment; nothing to do`
     )
   }
 
@@ -824,7 +826,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} matches a served scene, but an enabled place holds that base with a deployment the world does not serve. The world still shows stale content; rebuild it with bin/rebuildWorldPlaces.ts, then re-run this.`
+      )} matches a served scene, but a place already standing here holds that base with a deployment the world does not serve`
     )
   }
 
@@ -832,27 +834,17 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} matches a served scene, but a place already standing in this world holds one of its parcels (${forTerminal(
+      )} matches a served scene, but a place already standing here holds one of its parcels (${forTerminal(
         place.positions.join(" ")
-      )}). Re-enabling it would leave two active places on one parcel; clear the stale row first, or rebuild the world with bin/rebuildWorldPlaces.ts, then re-run this.`
-    )
-  }
-
-  for (const place of repair.legacyUndecidable) {
-    logger.log(
-      `  UNDECIDED: legacy place "${forTerminal(place.title)}" at ${forTerminal(
-        place.base_position
-      )} carries no deployment id and its parcels are held by a place already standing here, so whether the world still serves its content cannot be told from either side. Left disabled. A world deployed and undeployed repeatedly collects these, and they usually need nothing.`
+      )})`
     )
   }
 
   for (const scene of repair.servedWithoutPlace) {
     logger.log(
-      `  NEEDS REBUILD: the world serves ${forTerminal(
+      `  UNREPRESENTED: the world serves ${forTerminal(
         scene.entityId
-      )} at ${forTerminal(
-        scene.base
-      )} and no place row represents it. This repair only re-enables rows that exist, and the undeployment watermarks it leaves standing will reject a redelivery of that deployment; rebuild this world with bin/rebuildWorldPlaces.ts.`
+      )} at ${forTerminal(scene.base)} and no place row represents it`
     )
   }
 }
