@@ -253,8 +253,20 @@ async function fetchWorldScenes(
     if (!Array.isArray(data.scenes)) {
       throw new Error(`Unexpected scenes response for ${worldName}`)
     }
-    if (typeof data.total === "number") {
+    // The listing is ordered by creation with no tiebreaker and paged by offset, so a scene removed
+    // mid-read slides rows past the offset unseen. A total that disagrees with the first page's is
+    // that shift, and without a total there is nothing to check the read against.
+    if (typeof data.total !== "number") {
+      throw new Error(
+        `Scenes response for ${worldName} does not report how many scenes it has`
+      )
+    }
+    if (total === null) {
       total = data.total
+    } else if (data.total !== total) {
+      throw new Error(
+        `Scenes for ${worldName} changed while being read: ${total} scenes, then ${data.total}`
+      )
     }
 
     scenes.push(...data.scenes)
@@ -263,9 +275,17 @@ async function fetchWorldScenes(
     if (total !== null && scenes.length >= total) break
   }
 
-  if (total !== null && scenes.length !== total) {
+  if (scenes.length !== total) {
     throw new Error(
       `Content server served ${scenes.length} of ${total} scenes for ${worldName}`
+    )
+  }
+
+  // Deployment ids are unique per world upstream, so a duplicate means a page repeated a scene in
+  // place of one it skipped -- and orphan detection would then disable the live place it missed.
+  if (new Set(scenes.map((scene) => scene.entityId)).size !== scenes.length) {
+    throw new Error(
+      `Content server repeated a scene while serving ${worldName}; the listing shifted mid-read`
     )
   }
 
@@ -698,6 +718,7 @@ async function main() {
         logger.log(`  Found ${scenes.length} scene(s)`)
 
         const knownPlaceIds = new Set<string>()
+        let sceneErrors = 0
 
         for (const scene of scenes) {
           try {
@@ -718,11 +739,23 @@ async function main() {
               `  Error processing scene ${scene.entityId}: ${err.message}`
             )
             stats.errored++
+            sceneErrors++
           }
         }
 
         // Detect orphan places: active places in this world that have no
-        // corresponding scene in the content server
+        // corresponding scene in the content server.
+        //
+        // Only safe when every scene was accounted for. A scene that threw contributes no place id,
+        // so its live place would look like an orphan and be disabled over one subgraph or database
+        // hiccup.
+        if (sceneErrors > 0) {
+          logger.log(
+            `  Skipping orphan detection: ${sceneErrors} scene(s) failed, so the world's places cannot be judged complete`
+          )
+          continue
+        }
+
         const worldId = world.name.toLowerCase()
         const allWorldPlaces = await PlaceModel.findByWorldId(worldId)
         const orphanPlaces = allWorldPlaces.filter(
