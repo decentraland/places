@@ -7,19 +7,28 @@
  * 3. Re-run the same world processing logic used by the SQS task runner
  * 4. Insert/update places and world records in the database
  *
+ * Offline tool: run it with the scene consumer stopped. It writes places directly rather than through
+ * the deployment path, so it consults none of the undeployment guards and takes the per-world
+ * deployment lock only around the orphan sweep, where a concurrent deployment would otherwise have its
+ * fresh place disabled as an orphan. The insert, update and overlap-resolution writes are not under
+ * that lock, so running this against a live consumer can interleave with an in-flight deployment for
+ * the same world and let the older of the two win. Stopping the consumer is what makes that
+ * impossible; narrowing it to a lock held across each world's whole body is follow-up work.
+ *
  * Usage:
  *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *
  * Options:
- *   --dry-run                Preview changes without updating the database
+ *   --apply                  Commit the rebuild. Without it the run is a dry run and rolls back.
+ *   --dry-run                Ask for a dry run explicitly, which is also the default
  *   --limit N                Limit the number of worlds to process
  *   --world-name NAME        Process only a specific world
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
  *
  * Examples:
- *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --dry-run --limit 5
- *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --world-name "myworld.dcl.eth"
+ *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --limit 5
+ *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --apply --world-name "myworld.dcl.eth"
  */
 
 import { randomUUID } from "crypto"
@@ -34,6 +43,8 @@ import {
   createWorldInsertData,
   createWorldPlaceOptions,
 } from "./rebuildWorldPlacesOptions"
+import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
+import { forTerminal } from "./scriptTerminalText"
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"
 import { extractSceneJsonData } from "../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -45,6 +56,7 @@ import {
   fetchNameOwner,
   findNewDeployedPlace,
 } from "../src/entities/CheckScenes/utils"
+import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason, PlaceAttributes } from "../src/entities/Place/types"
 import PlaceCategories from "../src/entities/PlaceCategories/model"
@@ -72,7 +84,7 @@ interface WorldScenesResponse {
   total: number
 }
 
-interface Stats {
+export interface Stats {
   created: number
   updated: number
   disabled: number
@@ -93,24 +105,17 @@ const WORLDS_PAGE_SIZE = 100
 const SCENES_PAGE_SIZE = 100
 /** Backstop against a total that never agrees with the rows served. */
 const SCENES_MAX_PAGES = 200
+/** Per request, matching the service's own reader. */
+const SCENES_FETCH_TIMEOUT_MS = 15_000
+/** The whole read, so a slow listing cannot stall a run that disables places. */
+const SCENES_READ_DEADLINE_MS = 60_000
+/** How many times to re-read a multi-page listing looking for two that agree. */
+const STABLE_READ_ATTEMPTS = 3
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────
 
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const dryRun = args.includes("--dry-run")
-
-  const limitIndex = args.indexOf("--limit")
-  const limit = limitIndex !== -1 ? parseInt(args[limitIndex + 1], 10) : null
-
-  const worldNameIndex = args.indexOf("--world-name")
-  const worldName = worldNameIndex !== -1 ? args[worldNameIndex + 1] : null
-
-  const connStringIndex = args.indexOf("--connection-string")
-  const connectionString =
-    connStringIndex !== -1 ? args[connStringIndex + 1] : null
-
-  return { dryRun, limit, worldName, connectionString }
+function parseArgs(): ScriptArgs {
+  return parseScriptArgs(process.argv.slice(2))
 }
 
 // ── Category Helpers (from taskRunnerSqs) ──────────────────────────────
@@ -165,7 +170,9 @@ async function overridePlaceCategories(
 
   if (dryRun) {
     logger.log(
-      `    [DRY-RUN] Would set categories: ${validCategoriesArray.join(", ")}`
+      `    [DRY-RUN] Would set categories: ${forTerminal(
+        validCategoriesArray.join(", ")
+      )}`
     )
     return
   }
@@ -196,7 +203,10 @@ async function fetchAllWorlds(
 
   for (;;) {
     const url = `${baseUrl}/worlds?has_deployed_scenes=true&limit=${WORLDS_PAGE_SIZE}&offset=${offset}`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(SCENES_FETCH_TIMEOUT_MS),
+      redirect: "error",
+    })
     if (!response.ok) {
       await drainResponse(response)
       throw new Error(
@@ -230,18 +240,72 @@ async function fetchAllWorlds(
  * would hide the rest of a large world, and orphan detection below disables the active places that
  * no scene in this list accounts for, so a short read would disable live places.
  */
-async function fetchWorldScenes(
+export async function fetchWorldScenes(
   baseUrl: string,
   worldName: string
 ): Promise<WorldScenesResponse["scenes"]> {
+  let read = await readScenePages(baseUrl, worldName)
+
+  // One page is one query upstream, so it is already a consistent snapshot. More than one is paged by
+  // offset over a listing ordered without a tiebreaker, where a removal before the next offset and an
+  // addition after the end keep the total unchanged, repeat nothing, and still hide a live scene --
+  // whose place the orphan sweep below would then disable. Agreement between two whole reads stands in
+  // for the snapshot the server does not offer. Every world today is a single page.
+  if (read.pages <= 1) return read.scenes
+
+  for (let attempt = 2; attempt <= STABLE_READ_ATTEMPTS; attempt++) {
+    const again = await readScenePages(baseUrl, worldName)
+    if (fingerprintScenes(read.scenes) === fingerprintScenes(again.scenes)) {
+      return again.scenes
+    }
+    read = again
+  }
+
+  throw new Error(
+    `Could not read a stable scene listing for ${worldName} across ${STABLE_READ_ATTEMPTS} attempts; skipping this world rather than judging its places against a torn reading`
+  )
+}
+
+/** Order-independent identity of a whole listing, for comparing two reads of it. */
+function fingerprintScenes(scenes: WorldScenesResponse["scenes"]): string {
+  return scenes
+    .map(
+      (scene) =>
+        `${scene.entityId}|${scene.entity?.metadata?.scene?.base}|${
+          scene.entity?.timestamp
+        }|${[...(scene.parcels || [])].sort().join(",")}`
+    )
+    .sort()
+    .join(";")
+}
+
+async function readScenePages(
+  baseUrl: string,
+  worldName: string
+): Promise<{ scenes: WorldScenesResponse["scenes"]; pages: number }> {
   const scenes: WorldScenesResponse["scenes"] = []
   let total: number | null = null
+  let pages = 0
+  const deadline = Date.now() + SCENES_READ_DEADLINE_MS
 
   for (let page = 0; page < SCENES_MAX_PAGES; page++) {
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) {
+      throw new Error(
+        `Timed out reading the scenes of ${worldName} after ${
+          SCENES_READ_DEADLINE_MS / 1000
+        }s; skipping this world rather than judging its places against a partial listing`
+      )
+    }
+
     const url = `${baseUrl}/world/${encodeURIComponent(
       worldName
     )}/scenes?limit=${SCENES_PAGE_SIZE}&offset=${scenes.length}`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(Math.min(remaining, SCENES_FETCH_TIMEOUT_MS)),
+      // the trusted host is what makes this answer authoritative; a redirect would move it elsewhere
+      redirect: "error",
+    })
     if (!response.ok) {
       await drainResponse(response)
       throw new Error(
@@ -253,23 +317,44 @@ async function fetchWorldScenes(
     if (!Array.isArray(data.scenes)) {
       throw new Error(`Unexpected scenes response for ${worldName}`)
     }
-    if (typeof data.total === "number") {
+    // The listing is ordered by creation with no tiebreaker and paged by offset, so a scene removed
+    // mid-read slides rows past the offset unseen. A total that disagrees with the first page's is
+    // that shift, and without a total there is nothing to check the read against.
+    if (typeof data.total !== "number") {
+      throw new Error(
+        `Scenes response for ${worldName} does not report how many scenes it has`
+      )
+    }
+    if (total === null) {
       total = data.total
+    } else if (data.total !== total) {
+      throw new Error(
+        `Scenes for ${worldName} changed while being read: ${total} scenes, then ${data.total}`
+      )
     }
 
     scenes.push(...data.scenes)
+    pages++
 
     if (data.scenes.length < SCENES_PAGE_SIZE) break
     if (total !== null && scenes.length >= total) break
   }
 
-  if (total !== null && scenes.length !== total) {
+  if (scenes.length !== total) {
     throw new Error(
       `Content server served ${scenes.length} of ${total} scenes for ${worldName}`
     )
   }
 
-  return scenes
+  // Deployment ids are unique per world upstream, so a duplicate means a page repeated a scene in
+  // place of one it skipped -- and orphan detection would then disable the live place it missed.
+  if (new Set(scenes.map((scene) => scene.entityId)).size !== scenes.length) {
+    throw new Error(
+      `Content server repeated a scene while serving ${worldName}; the listing shifted mid-read`
+    )
+  }
+
+  return { scenes, pages }
 }
 
 // ── Dry-Run Diff Helper ────────────────────────────────────────────────
@@ -321,7 +406,9 @@ async function processWorldScene(
   const contentEntityScene = scene.entity as ContentEntityScene
 
   if (!contentEntityScene.metadata?.worldConfiguration) {
-    logger.log(`    Skipping scene ${scene.entityId}: no worldConfiguration`)
+    logger.log(
+      `    Skipping scene ${forTerminal(scene.entityId)}: no worldConfiguration`
+    )
     stats.skipped++
     return { processedPlaceId: null, disabledPlaceIds: [] }
   }
@@ -331,7 +418,9 @@ async function processWorldScene(
 
   if (!worldName) {
     logger.log(
-      `    Skipping scene ${scene.entityId}: worldConfiguration without name`
+      `    Skipping scene ${forTerminal(
+        scene.entityId
+      )}: worldConfiguration without name`
     )
     stats.skipped++
     return { processedPlaceId: null, disabledPlaceIds: [] }
@@ -351,7 +440,11 @@ async function processWorldScene(
   const nameOwner = await fetchNameOwner(worldName)
 
   if (!nameOwner) {
-    logger.log(`    WARNING: Could not resolve on-chain owner for ${worldName}`)
+    logger.log(
+      `    WARNING: Could not resolve on-chain owner for ${forTerminal(
+        worldName
+      )}`
+    )
   }
 
   // Ensure the place gets an owner: prefer deployment metadata, fall back to name owner
@@ -367,14 +460,18 @@ async function processWorldScene(
   if (dryRun) {
     if (!existingWorld) {
       logger.log(
-        `    [DRY-RUN] Would create world: ${worldName} (owner: ${
-          nameOwner || "unknown"
+        `    [DRY-RUN] Would create world: ${forTerminal(worldName)} (owner: ${
+          nameOwner ? forTerminal(nameOwner) : "unknown"
         })`
       )
     } else {
       const worldChanges: string[] = []
       if (nameOwner && existingWorld.owner !== nameOwner) {
-        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+        worldChanges.push(
+          `owner: ${forTerminal(existingWorld.owner)} → ${forTerminal(
+            nameOwner
+          )}`
+        )
       }
       if (existingWorld.show_in_places !== !isOptOut) {
         worldChanges.push(
@@ -390,12 +487,18 @@ async function processWorldScene(
   } else {
     if (!existingWorld) {
       logger.log(
-        `    Creating world: ${worldName} (owner: ${nameOwner || "unknown"})`
+        `    Creating world: ${forTerminal(worldName)} (owner: ${
+          nameOwner ? forTerminal(nameOwner) : "unknown"
+        })`
       )
     } else {
       const worldChanges: string[] = []
       if (nameOwner && existingWorld.owner !== nameOwner) {
-        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+        worldChanges.push(
+          `owner: ${forTerminal(existingWorld.owner)} → ${forTerminal(
+            nameOwner
+          )}`
+        )
       }
       if (existingWorld.show_in_places !== !isOptOut) {
         worldChanges.push(
@@ -440,8 +543,17 @@ async function processWorldScene(
   // Stale deployment protection: skip if a newer deployment already exists
   const newerPlace = findNewDeployedPlace(contentEntityScene, overlappingPlaces)
   if (newerPlace) {
-    logger.log(`    Skipping scene ${scene.entityId}: newer deployment exists`)
+    logger.log(
+      `    Skipping scene ${forTerminal(
+        scene.entityId
+      )}: newer deployment exists`
+    )
     stats.skipped++
+    // Nothing is returned as processed. Naming the newer place here would tell the orphan sweep that
+    // the listing accounts for that row, which it does not -- the sweep would then judge the rest of
+    // the world against a set containing a row no served scene produced. Counting the scene as
+    // unaccounted instead skips the sweep for this world, which protects that newer place and every
+    // other row here, and says why in the log.
     return { processedPlaceId: null, disabledPlaceIds: [] }
   } else if (overlappingPlaces.length === 1) {
     // Single overlap → update that place
@@ -539,11 +651,17 @@ async function processWorldScene(
     const place = placesToProcess.new
     if (dryRun) {
       logger.log(
-        `    [DRY-RUN] Would create place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    [DRY-RUN] Would create place: "${forTerminal(
+          place.title
+        )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+          place.id
+        )})`
       )
     } else {
       logger.log(
-        `    Created place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    Created place: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )} (id: ${forTerminal(place.id)})`
       )
       await PlaceModel.insertPlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
@@ -563,20 +681,34 @@ async function processWorldScene(
       const diffs = existingPlace ? getPlaceDiffs(existingPlace, place) : []
       if (diffs.length === 0) {
         logger.log(
-          `    [DRY-RUN] No changes for place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+          `    [DRY-RUN] No changes for place: "${forTerminal(
+            place.title
+          )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+            place.id
+          )})`
         )
       } else {
         logger.log(
-          `    [DRY-RUN] Would update place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+          `    [DRY-RUN] Would update place: "${forTerminal(
+            place.title
+          )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+            place.id
+          )})`
         )
         for (const diff of diffs) {
-          logger.log(`      ${diff.field}: ${diff.oldVal} → ${diff.newVal}`)
+          logger.log(
+            `      ${forTerminal(diff.field)}: ${forTerminal(
+              diff.oldVal
+            )} → ${forTerminal(diff.newVal)}`
+          )
         }
         stats.updated++
       }
     } else {
       logger.log(
-        `    Updated place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    Updated place: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )} (id: ${forTerminal(place.id)})`
       )
       await PlaceModel.updatePlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
@@ -603,13 +735,13 @@ async function processWorldScene(
       logger.log(
         `    [DRY-RUN] Would disable ${
           placesIdToDisable.length
-        } place(s): ${placesIdToDisable.join(", ")}`
+        } place(s): ${forTerminal(placesIdToDisable.join(", "))}`
       )
     } else {
       logger.log(
-        `    Disabled ${
-          placesIdToDisable.length
-        } place(s): ${placesIdToDisable.join(", ")}`
+        `    Disabled ${placesIdToDisable.length} place(s): ${forTerminal(
+          placesIdToDisable.join(", ")
+        )}`
       )
       await PlaceModel.disablePlaces(placesIdToDisable)
     }
@@ -620,9 +752,179 @@ async function processWorldScene(
   return { processedPlaceId: processedPlace?.id || null, disabledPlaceIds }
 }
 
+/**
+ * Disable the active places of a world that no scene in the content server accounts for.
+ *
+ * Extracted so the destructive half of the rebuild can be reasoned about and tested on its own, and
+ * so it can hold the per-world lock every other writer of world places takes. Without that lock the
+ * listing was snapshotted, then the places read seconds later, and any deployment landing in between
+ * produced an active place absent from both -- which this would disable.
+ *
+ * The places are re-read under the lock rather than trusting the ones read before it, and only rows
+ * still at the revision that reading captured can be orphans.
+ */
+/**
+ * The revision of every place a world holds, as `deployment_id|deployed_at`.
+ *
+ * Read before the content server is asked anything, so it describes the same moment the scene
+ * listing does. Ids alone are not enough: a replacement reuses the row it replaces, so a row present
+ * in both readings can still be a different revision by the time the sweep runs.
+ */
+export async function readPlaceRevisions(
+  worldId: string
+): Promise<Map<string, string>> {
+  const places = await PlaceModel.findByWorldId(worldId)
+  return new Map(places.map((place) => [place.id, revisionOf(place)]))
+}
+
+function revisionOf(place: PlaceAttributes): string {
+  return `${place.deployment_id}|${place.deployed_at}`
+}
+
+/**
+ * Rebuild one world: read its served scenes, apply each of them, then sweep orphans if -- and only if
+ * -- this world's places can be judged complete against that listing.
+ *
+ * Extracted from main so the completeness rule is reachable from a test. It is the one rule here that
+ * disables places from a derived argument rather than an event, and inspecting it was not enough: the
+ * two mistakes found in it so far were both in which scenes count as accounted for.
+ */
+export async function rebuildWorld(options: {
+  worldName: string
+  worldsContentServerUrl: string
+  dryRun: boolean
+  stats: Stats
+}): Promise<{ sweptOrphans: boolean; unaccountedScenes: number }> {
+  const { worldName, worldsContentServerUrl, dryRun, stats } = options
+
+  // Captured before the content server is asked, so the places and the scene listing describe
+  // the same moment. knownPlaceIds is then accumulated from that listing, well before the
+  // sweep takes its lock, so anything committed in between must not be judged by it.
+  const worldId = worldName.toLowerCase()
+  const placeRevisions = await readPlaceRevisions(worldId)
+
+  const scenes = await fetchWorldScenes(worldsContentServerUrl, worldName)
+  logger.log(`  Found ${scenes.length} scene(s)`)
+
+  const knownPlaceIds = new Set<string>()
+  let unaccountedScenes = 0
+
+  for (const scene of scenes) {
+    try {
+      const result = await processWorldScene(
+        scene,
+        worldsContentServerUrl,
+        dryRun,
+        stats
+      )
+      if (result.processedPlaceId) {
+        knownPlaceIds.add(result.processedPlaceId)
+      } else {
+        unaccountedScenes++
+      }
+      for (const id of result.disabledPlaceIds) {
+        knownPlaceIds.add(id)
+      }
+    } catch (err: any) {
+      logger.error(
+        `  Error processing scene ${forTerminal(scene.entityId)}: ${forTerminal(
+          err.message
+        )}`
+      )
+      stats.errored++
+      unaccountedScenes++
+    }
+  }
+
+  // Detect orphan places: active places in this world that have no corresponding scene in the
+  // content server.
+  //
+  // This is the only place in the repo that disables places from a derived argument rather
+  // than an event, so it may only run on a complete picture of the world. A scene that threw,
+  // or that was skipped without yielding a place, leaves its live place looking like an
+  // orphan; and a world that answered with no scenes at all is indistinguishable from a name
+  // that no longer resolves, which would take every place with it.
+  const activePlaces = (await PlaceModel.findByWorldId(worldId)).filter(
+    (place) => !place.disabled
+  )
+
+  if (unaccountedScenes > 0) {
+    logger.log(
+      `  Skipping orphan detection: ${unaccountedScenes} scene(s) yielded no place, so this world's places cannot be judged complete`
+    )
+    return { sweptOrphans: false, unaccountedScenes }
+  }
+
+  if (scenes.length === 0 && activePlaces.length > 0) {
+    logger.log(
+      `  Skipping orphan detection: the content server served no scenes for a world with ${activePlaces.length} active place(s), which reads the same as a name that no longer resolves`
+    )
+    return { sweptOrphans: false, unaccountedScenes }
+  }
+
+  await disableOrphanPlaces({
+    worldName,
+    worldId,
+    knownPlaceIds,
+    placeRevisions,
+    dryRun,
+    stats,
+  })
+
+  return { sweptOrphans: true, unaccountedScenes }
+}
+
+export async function disableOrphanPlaces(options: {
+  worldName: string
+  worldId: string
+  knownPlaceIds: Set<string>
+  placeRevisions: Map<string, string>
+  dryRun: boolean
+  stats: Stats
+}): Promise<void> {
+  const { worldName, worldId, knownPlaceIds, placeRevisions, dryRun, stats } =
+    options
+
+  const orphanPlaces = await withDatabaseTransaction(async () => {
+    await WorldModel.lockWorldForDeployment(worldName)
+
+    const orphans = (await PlaceModel.findByWorldId(worldId)).filter(
+      (place) =>
+        !place.disabled &&
+        !knownPlaceIds.has(place.id) &&
+        // Only a row still at the revision the scene listing was compared against. A row created or
+        // replaced since then is not something this run's listing can speak about, and a replacement
+        // keeps the same id, so the revision is what has to match rather than the id.
+        placeRevisions.get(place.id) === revisionOf(place)
+    )
+
+    if (orphans.length > 0 && !dryRun) {
+      await PlaceModel.disablePlaces(orphans.map((place) => place.id))
+    }
+
+    return orphans
+  })
+
+  if (orphanPlaces.length === 0) return
+
+  logger.log(
+    dryRun
+      ? `  [DRY-RUN] Would disable ${orphanPlaces.length} orphan place(s) with no matching scene:`
+      : `  Disabled ${orphanPlaces.length} orphan place(s) with no matching scene:`
+  )
+  for (const place of orphanPlaces) {
+    logger.log(
+      `    - "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} (id: ${forTerminal(place.id)})`
+    )
+  }
+  stats.disabled += orphanPlaces.length
+}
+
 // ── Main ───────────────────────────────────────────────────────────────
 
-async function main() {
+async function main(): Promise<number> {
   const { dryRun, limit, worldName, connectionString } = parseArgs()
 
   // Override CONNECTION_STRING if provided
@@ -641,7 +943,9 @@ async function main() {
   logger.log(`Worlds Content Server: ${worldsContentServerUrl}`)
   logger.log(`Mode: ${dryRun ? "DRY RUN (no changes will be made)" : "LIVE"}`)
   logger.log(`Limit: ${limit || "No limit"}`)
-  logger.log(`World filter: ${worldName || "All worlds"}`)
+  logger.log(
+    `World filter: ${worldName ? forTerminal(worldName) : "All worlds"}`
+  )
   logger.log("=".repeat(60))
 
   // Connect to database
@@ -688,74 +992,24 @@ async function main() {
     // Process each world
     for (let i = 0; i < worlds.length; i++) {
       const world = worlds[i]
-      logger.log(`[${i + 1}/${worlds.length}] Processing world: ${world.name}`)
+      logger.log(
+        `[${i + 1}/${worlds.length}] Processing world: ${forTerminal(
+          world.name
+        )}`
+      )
 
       try {
-        const scenes = await fetchWorldScenes(
+        await rebuildWorld({
+          worldName: world.name,
           worldsContentServerUrl,
-          world.name
-        )
-        logger.log(`  Found ${scenes.length} scene(s)`)
-
-        const knownPlaceIds = new Set<string>()
-
-        for (const scene of scenes) {
-          try {
-            const result = await processWorldScene(
-              scene,
-              worldsContentServerUrl,
-              dryRun,
-              stats
-            )
-            if (result.processedPlaceId) {
-              knownPlaceIds.add(result.processedPlaceId)
-            }
-            for (const id of result.disabledPlaceIds) {
-              knownPlaceIds.add(id)
-            }
-          } catch (err: any) {
-            logger.error(
-              `  Error processing scene ${scene.entityId}: ${err.message}`
-            )
-            stats.errored++
-          }
-        }
-
-        // Detect orphan places: active places in this world that have no
-        // corresponding scene in the content server
-        const worldId = world.name.toLowerCase()
-        const allWorldPlaces = await PlaceModel.findByWorldId(worldId)
-        const orphanPlaces = allWorldPlaces.filter(
-          (p) => !p.disabled && !knownPlaceIds.has(p.id)
-        )
-
-        if (orphanPlaces.length > 0) {
-          const orphanIds = orphanPlaces.map((p) => p.id)
-          if (dryRun) {
-            logger.log(
-              `  [DRY-RUN] Would disable ${orphanPlaces.length} orphan place(s) with no matching scene:`
-            )
-            for (const p of orphanPlaces) {
-              logger.log(
-                `    - "${p.title}" at ${p.base_position} (id: ${p.id})`
-              )
-            }
-          } else {
-            await PlaceModel.disablePlaces(orphanIds)
-            logger.log(
-              `  Disabled ${orphanPlaces.length} orphan place(s) with no matching scene:`
-            )
-            for (const p of orphanPlaces) {
-              logger.log(
-                `    - "${p.title}" at ${p.base_position} (id: ${p.id})`
-              )
-            }
-          }
-          stats.disabled += orphanPlaces.length
-        }
+          dryRun,
+          stats,
+        })
       } catch (err: any) {
         logger.error(
-          `  Error fetching scenes for ${world.name}: ${err.message}`
+          `  Error rebuilding ${forTerminal(world.name)}: ${forTerminal(
+            err.message
+          )}`
         )
         stats.errored++
       }
@@ -782,7 +1036,7 @@ async function main() {
     if (dryRun) {
       logger.log("")
       logger.log("This was a dry run. No changes were made to the database.")
-      logger.log("Run without --dry-run to apply changes.")
+      logger.log("Re-run with --apply to commit these changes.")
     }
 
     // Close database connection
@@ -792,11 +1046,19 @@ async function main() {
       // ignore close errors
     }
   }
+
+  return stats.errored
 }
 
 if (require.main === module) {
-  main().catch((error) => {
-    logger.error("Script failed:", error)
-    process.exit(1)
-  })
+  main()
+    .then((errored) => {
+      // This script inserts, updates and disables places. A world or scene it could not process is
+      // partial work an operator has to know about, so it must not exit the same way a clean run does.
+      if (errored > 0) process.exit(1)
+    })
+    .catch((error) => {
+      logger.error("Script failed:", error)
+      process.exit(1)
+    })
 }
