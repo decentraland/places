@@ -43,8 +43,12 @@ import {
   createWorldInsertData,
   createWorldPlaceOptions,
 } from "./rebuildWorldPlacesOptions"
-import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
-import { forTerminal } from "./scriptTerminalText"
+import {
+  ScriptArgs,
+  parseContentServerUrl,
+  parseScriptArgs,
+} from "./scriptArgs"
+import { describeError, forTerminal } from "./scriptTerminalText"
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"
 import { extractSceneJsonData } from "../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -827,9 +831,9 @@ export async function rebuildWorld(options: {
       }
     } catch (err: any) {
       logger.error(
-        `  Error processing scene ${forTerminal(scene.entityId)}: ${forTerminal(
-          err.message
-        )}`
+        `  Error processing scene ${forTerminal(
+          scene.entityId
+        )}: ${describeError(err)}`
       )
       stats.errored++
       unaccountedScenes++
@@ -932,10 +936,14 @@ async function main(): Promise<number> {
     process.env.CONNECTION_STRING = connectionString
   }
 
-  const worldsContentServerUrl = env(
-    "WORLDS_CONTENT_SERVER_URL",
-    "https://worlds-content-server.decentraland.org"
-  ).replace(/\/+$/, "")
+  // Checked before the database is touched and before any world is read, so a misconfigured value
+  // costs one line instead of one failure per world.
+  const worldsContentServerUrl = parseContentServerUrl(
+    env(
+      "WORLDS_CONTENT_SERVER_URL",
+      "https://worlds-content-server.decentraland.org"
+    )
+  )
 
   logger.log("=".repeat(60))
   logger.log("Rebuild World Places Script")
@@ -1007,9 +1015,7 @@ async function main(): Promise<number> {
         })
       } catch (err: any) {
         logger.error(
-          `  Error rebuilding ${forTerminal(world.name)}: ${forTerminal(
-            err.message
-          )}`
+          `  Error rebuilding ${forTerminal(world.name)}: ${describeError(err)}`
         )
         stats.errored++
       }
@@ -1058,7 +1064,7 @@ if (require.main === module) {
       if (errored > 0) process.exit(1)
     })
     .catch((error) => {
-      logger.error("Script failed:", error)
+      logger.error(`Script failed: ${describeError(error)}`, error)
       process.exit(1)
     })
 }

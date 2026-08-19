@@ -76,8 +76,12 @@ import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
-import { forTerminal } from "./scriptTerminalText"
+import {
+  ScriptArgs,
+  parseContentServerUrl,
+  parseScriptArgs,
+} from "./scriptArgs"
+import { describeError, forTerminal } from "./scriptTerminalText"
 import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason } from "../src/entities/Place/types"
@@ -833,10 +837,14 @@ async function main(): Promise<number> {
     process.env.CONNECTION_STRING = connectionString
   }
 
-  const worldsContentServerUrl = env(
-    "WORLDS_CONTENT_SERVER_URL",
-    "https://worlds-content-server.decentraland.org"
-  ).replace(/\/+$/, "")
+  // Checked before the database is touched and before any world is read, so a misconfigured value
+  // costs one line instead of one failure per world.
+  const worldsContentServerUrl = parseContentServerUrl(
+    env(
+      "WORLDS_CONTENT_SERVER_URL",
+      "https://worlds-content-server.decentraland.org"
+    )
+  )
 
   logger.log("=".repeat(60))
   logger.log("Repair Undeployed World Places")
@@ -925,9 +933,8 @@ async function main(): Promise<number> {
         stats.footprintTaken += repair.footprintTaken.length
         stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
         logger.error(
-          `  Error repairing ${forTerminal(worldId)}: ${forTerminal(message)}`
+          `  Error repairing ${forTerminal(worldId)}: ${describeError(error)}`
         )
         stats.errored++
       }
@@ -977,7 +984,7 @@ if (require.main === module) {
       if (errored > 0) process.exit(1)
     })
     .catch((error) => {
-      logger.error("Script failed:", error)
+      logger.error(`Script failed: ${describeError(error)}`, error)
       process.exit(1)
     })
 }

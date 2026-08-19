@@ -1,4 +1,4 @@
-import { forTerminal } from "./scriptTerminalText"
+import { describeError, forTerminal } from "./scriptTerminalText"
 
 describe("when printing deployment-authored text in a script report", () => {
   describe("and the text is ordinary", () => {
@@ -61,6 +61,58 @@ describe("when printing deployment-authored text in a script report", () => {
   describe("and there is no text at all", () => {
     it("should say so rather than print the word null", () => {
       expect(forTerminal(null)).toBe("(none)")
+    })
+  })
+})
+
+describe("when describing a failure to an operator", () => {
+  describe("and it is a fetch failure with the reason on cause", () => {
+    it('should print the reason, since "fetch failed" alone names no diagnosis', () => {
+      const error = Object.assign(new TypeError("fetch failed"), {
+        cause: new Error("getaddrinfo ENOTFOUND http"),
+      })
+
+      expect(describeError(error)).toBe(
+        "fetch failed — caused by: getaddrinfo ENOTFOUND http"
+      )
+    })
+  })
+
+  describe("and the cause chain is deeper", () => {
+    it("should follow it", () => {
+      const root = new Error("ECONNREFUSED")
+      const middle = Object.assign(new Error("connect failed"), { cause: root })
+      const top = Object.assign(new TypeError("fetch failed"), {
+        cause: middle,
+      })
+
+      expect(describeError(top)).toBe(
+        "fetch failed — caused by: connect failed — caused by: ECONNREFUSED"
+      )
+    })
+  })
+
+  describe("and a cause carries upstream text with an escape sequence", () => {
+    it("should sanitize it, since a remote body reaches the terminal this way", () => {
+      const error = Object.assign(new TypeError("fetch failed"), {
+        cause: new Error("\u001b[2Kupstream said no"),
+      })
+
+      expect(describeError(error)).toBe(
+        "fetch failed — caused by: upstream said no"
+      )
+    })
+  })
+
+  describe("and there is no cause", () => {
+    it("should print the message alone", () => {
+      expect(describeError(new Error("plain failure"))).toBe("plain failure")
+    })
+  })
+
+  describe("and what was thrown is not an error", () => {
+    it("should still say something", () => {
+      expect(describeError("just a string")).toBe("just a string")
     })
   })
 })

@@ -82,3 +82,43 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
     connectionString: values.get("--connection-string") ?? null,
   }
 }
+
+/**
+ * Validate the configured content server base URL.
+ *
+ * `new URL()` alone is not enough: it accepts "https://http://host" happily, reading the host as
+ * "http" and the rest as a path, which is what a doubled scheme in the environment produces. That got
+ * as far as a DNS lookup for a host called "http", once per world, reported only as "fetch failed" --
+ * so the check is here, before any world is touched, and it names what is wrong.
+ */
+export function parseContentServerUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "")
+
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' is not a URL. It needs a scheme and a host, as https://worlds-content-server.decentraland.org`
+    )
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' has scheme '${url.protocol}'; only http and https are content servers`
+    )
+  }
+
+  // A hostname with no dot that is not localhost is the signature of a second scheme inside the value:
+  // "https://http://host" parses with hostname "http".
+  if (
+    !url.hostname ||
+    (url.hostname !== "localhost" && !url.hostname.includes("."))
+  ) {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' resolves to host '${url.hostname}', which is not a hostname. Check for a repeated scheme, as in https://http://example.org`
+    )
+  }
+
+  return trimmed
+}

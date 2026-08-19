@@ -1,4 +1,4 @@
-import { parseScriptArgs } from "./scriptArgs"
+import { parseContentServerUrl, parseScriptArgs } from "./scriptArgs"
 
 describe("when parsing the arguments of a destructive world script", () => {
   describe("and no argument is given", () => {
@@ -119,6 +119,60 @@ describe("when parsing the arguments of a destructive world script", () => {
     it("should refuse rather than treat it as absent", () => {
       expect(() => parseScriptArgs(["--limit"])).toThrow(
         "--limit requires a value"
+      )
+    })
+  })
+})
+
+describe("when reading the configured content server URL", () => {
+  describe("and it is a plain https URL", () => {
+    it("should take it", () => {
+      expect(
+        parseContentServerUrl("https://worlds-content-server.decentraland.org")
+      ).toBe("https://worlds-content-server.decentraland.org")
+    })
+  })
+
+  describe("and it has a trailing slash", () => {
+    it("should strip it, since every path is appended to it", () => {
+      expect(
+        parseContentServerUrl(
+          "https://worlds-content-server.decentraland.zone/"
+        )
+      ).toBe("https://worlds-content-server.decentraland.zone")
+    })
+  })
+
+  describe("and it carries a second scheme", () => {
+    it("should refuse, rather than resolve a host called http once per world", () => {
+      expect(() =>
+        parseContentServerUrl(
+          "https://http://worlds-content-server.decentraland.zone"
+        )
+      ).toThrow("resolves to host 'http'")
+    })
+  })
+
+  describe("and it has no scheme at all", () => {
+    it("should refuse", () => {
+      expect(() =>
+        parseContentServerUrl("worlds-content-server.decentraland.zone")
+      ).toThrow("is not a URL")
+    })
+  })
+
+  describe("and it points somewhere that is not http", () => {
+    it("should refuse", () => {
+      expect(() => parseContentServerUrl("file:///etc/passwd")).toThrow(
+        "only http and https"
+      )
+    })
+  })
+
+  describe("and it is a local stub", () => {
+    it("should allow it, since that is how these scripts are rehearsed", () => {
+      expect(parseContentServerUrl("http://localhost:4597")).toBe(
+        "http://localhost:4597"
       )
     })
   })
