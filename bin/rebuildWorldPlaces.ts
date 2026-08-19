@@ -44,6 +44,7 @@ import {
   createWorldPlaceOptions,
 } from "./rebuildWorldPlacesOptions"
 import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
+import { forTerminal } from "./scriptTerminalText"
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"
 import { extractSceneJsonData } from "../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -403,7 +404,9 @@ async function processWorldScene(
   const contentEntityScene = scene.entity as ContentEntityScene
 
   if (!contentEntityScene.metadata?.worldConfiguration) {
-    logger.log(`    Skipping scene ${scene.entityId}: no worldConfiguration`)
+    logger.log(
+      `    Skipping scene ${forTerminal(scene.entityId)}: no worldConfiguration`
+    )
     stats.skipped++
     return { processedPlaceId: null, disabledPlaceIds: [] }
   }
@@ -433,7 +436,11 @@ async function processWorldScene(
   const nameOwner = await fetchNameOwner(worldName)
 
   if (!nameOwner) {
-    logger.log(`    WARNING: Could not resolve on-chain owner for ${worldName}`)
+    logger.log(
+      `    WARNING: Could not resolve on-chain owner for ${forTerminal(
+        worldName
+      )}`
+    )
   }
 
   // Ensure the place gets an owner: prefer deployment metadata, fall back to name owner
@@ -449,14 +456,18 @@ async function processWorldScene(
   if (dryRun) {
     if (!existingWorld) {
       logger.log(
-        `    [DRY-RUN] Would create world: ${worldName} (owner: ${
-          nameOwner || "unknown"
+        `    [DRY-RUN] Would create world: ${forTerminal(worldName)} (owner: ${
+          nameOwner ? forTerminal(nameOwner) : "unknown"
         })`
       )
     } else {
       const worldChanges: string[] = []
       if (nameOwner && existingWorld.owner !== nameOwner) {
-        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+        worldChanges.push(
+          `owner: ${forTerminal(existingWorld.owner)} → ${forTerminal(
+            nameOwner
+          )}`
+        )
       }
       if (existingWorld.show_in_places !== !isOptOut) {
         worldChanges.push(
@@ -472,12 +483,18 @@ async function processWorldScene(
   } else {
     if (!existingWorld) {
       logger.log(
-        `    Creating world: ${worldName} (owner: ${nameOwner || "unknown"})`
+        `    Creating world: ${forTerminal(worldName)} (owner: ${
+          nameOwner ? forTerminal(nameOwner) : "unknown"
+        })`
       )
     } else {
       const worldChanges: string[] = []
       if (nameOwner && existingWorld.owner !== nameOwner) {
-        worldChanges.push(`owner: ${existingWorld.owner} → ${nameOwner}`)
+        worldChanges.push(
+          `owner: ${forTerminal(existingWorld.owner)} → ${forTerminal(
+            nameOwner
+          )}`
+        )
       }
       if (existingWorld.show_in_places !== !isOptOut) {
         worldChanges.push(
@@ -522,7 +539,11 @@ async function processWorldScene(
   // Stale deployment protection: skip if a newer deployment already exists
   const newerPlace = findNewDeployedPlace(contentEntityScene, overlappingPlaces)
   if (newerPlace) {
-    logger.log(`    Skipping scene ${scene.entityId}: newer deployment exists`)
+    logger.log(
+      `    Skipping scene ${forTerminal(
+        scene.entityId
+      )}: newer deployment exists`
+    )
     stats.skipped++
     // That newer place is this scene's parcels accounted for. Returning nothing would leave it
     // outside knownPlaceIds and the orphan sweep would disable the very place this skip protects.
@@ -800,7 +821,9 @@ async function main() {
   logger.log(`Worlds Content Server: ${worldsContentServerUrl}`)
   logger.log(`Mode: ${dryRun ? "DRY RUN (no changes will be made)" : "LIVE"}`)
   logger.log(`Limit: ${limit || "No limit"}`)
-  logger.log(`World filter: ${worldName || "All worlds"}`)
+  logger.log(
+    `World filter: ${worldName ? forTerminal(worldName) : "All worlds"}`
+  )
   logger.log("=".repeat(60))
 
   // Connect to database
@@ -847,7 +870,11 @@ async function main() {
     // Process each world
     for (let i = 0; i < worlds.length; i++) {
       const world = worlds[i]
-      logger.log(`[${i + 1}/${worlds.length}] Processing world: ${world.name}`)
+      logger.log(
+        `[${i + 1}/${worlds.length}] Processing world: ${forTerminal(
+          world.name
+        )}`
+      )
 
       try {
         // Captured before the content server is asked, so the places and the scene listing describe
@@ -949,7 +976,7 @@ async function main() {
     if (dryRun) {
       logger.log("")
       logger.log("This was a dry run. No changes were made to the database.")
-      logger.log("Run without --dry-run to apply changes.")
+      logger.log("Re-run with --apply to commit these changes.")
     }
 
     // Close database connection

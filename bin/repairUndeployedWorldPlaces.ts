@@ -14,7 +14,9 @@
  *    legacy row when exactly one served scene fits its footprint
  * 3. Reports what it cannot fix, rather than guessing
  *
- * Places whose scene is genuinely gone are left disabled.
+ * Places whose scene is genuinely gone are left disabled, as are places whose scene the world serves
+ * with placesConfig.optOut: the owner asked not to be listed, and a row disabled by this bug is not
+ * evidence they changed their mind.
  *
  * It writes nothing else. In particular it never relaxes a durable undeployment guard, even one it
  * can prove is now too aggressive -- a tombstone naming a deployment the world still serves, or a
@@ -74,6 +76,7 @@ import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
+import { forTerminal } from "./scriptTerminalText"
 import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason } from "../src/entities/Place/types"
@@ -94,6 +97,11 @@ export type ServedScene = {
    * in UTC, say -- only agrees when the process happens to be UTC.
    */
   deployedAt: Date
+  /**
+   * Whether the scene asks not to be listed. Read the same way the deployment path reads it, so a
+   * repair and an ingestion of the same scene agree on what the owner asked for.
+   */
+  optOut: boolean
 }
 
 type DisabledPlace = {
@@ -110,6 +118,11 @@ export type WorldRepair = {
   reenabledByIdentity: DisabledPlace[]
   reenabledByFootprint: Array<{ place: DisabledPlace; scene: ServedScene }>
   ambiguous: DisabledPlace[]
+  /**
+   * Rows whose scene the world serves, but serves with placesConfig.optOut. Left disabled: the owner
+   * asked not to be listed, and re-enabling would publish the place against that.
+   */
+  optedOut: Array<{ place: DisabledPlace; scene: ServedScene }>
   alreadyRepresented: DisabledPlace[]
   baseSquatted: DisabledPlace[]
   stillGone: number
@@ -126,6 +139,7 @@ type Stats = {
   reenabled: number
   backfilled: number
   ambiguous: number
+  optedOut: number
   alreadyRepresented: number
   baseSquatted: number
   servedWithoutPlace: number
@@ -285,6 +299,11 @@ async function readScenePages(
         base,
         parcels,
         deployedAt: new Date(timestamp),
+        // Absent means listed, so this is not part of the identity check above. Coerced exactly as
+        // resolveWorldDeployment coerces it -- if ingestion would read a value as opt-out, so must a
+        // repair, or the two disagree about the same scene.
+        optOut:
+          !!scene?.entity?.metadata?.worldConfiguration?.placesConfig?.optOut,
       })
     }
 
@@ -413,7 +432,7 @@ export async function repairWorld(
     const served = await fetchServed()
     const now = new Date()
     const places = await findDisabledPlaces(worldId)
-    const servedIds = new Set(served.map((scene) => scene.entityId))
+    const servedById = new Map(served.map((scene) => [scene.entityId, scene]))
 
     const reenabledByIdentity: DisabledPlace[] = []
     const reenabledByFootprint: Array<{
@@ -421,6 +440,7 @@ export async function repairWorld(
       scene: ServedScene
     }> = []
     const ambiguous: DisabledPlace[] = []
+    const optedOut: Array<{ place: DisabledPlace; scene: ServedScene }> = []
     const alreadyRepresented: DisabledPlace[] = []
     const baseSquatted: DisabledPlace[] = []
     const stillGonePlaces: DisabledPlace[] = []
@@ -444,8 +464,16 @@ export async function repairWorld(
         legacy.push(place)
         continue
       }
-      if (!servedIds.has(place.deployment_id)) {
+      const servedScene = servedById.get(place.deployment_id)
+      if (!servedScene) {
         stillGonePlaces.push(place)
+      } else if (servedScene.optOut) {
+        // Unreachable today -- ingesting this very deployment would have stored it as an opt-out, and
+        // an already-disabled row is not what an undeployment disables -- but the guard costs one
+        // branch and does not depend on that reasoning holding elsewhere.
+        optedOut.push({ place, scene: servedScene })
+        claimed.add(place.deployment_id)
+        basesTaken.add(place.base_position)
       } else if (claimed.has(place.deployment_id)) {
         alreadyRepresented.push(place)
       } else if (basesTaken.has(place.base_position)) {
@@ -473,7 +501,17 @@ export async function repairWorld(
           sameFootprint(scene.parcels, place.positions)
       )
       if (exact.length === 1) {
-        reenabledByFootprint.push({ place, scene: exact[0] })
+        // This row carries no deployment id, so nothing here reflects what the served scene asks for:
+        // the deployment that set opt-out may never have reached Places at all, which is how a row
+        // disabled by the bad undeployment path can be matched to a scene the owner has since
+        // delisted. Re-enabling on that match would publish it against the owner's wish.
+        //
+        // Claimed and taken either way, so the scene does not also read as one no row represents.
+        if (exact[0].optOut) {
+          optedOut.push({ place, scene: exact[0] })
+        } else {
+          reenabledByFootprint.push({ place, scene: exact[0] })
+        }
         claimed.add(exact[0].entityId)
         basesTaken.add(place.base_position)
         continue
@@ -584,6 +622,7 @@ export async function repairWorld(
       reenabledByIdentity,
       reenabledByFootprint,
       ambiguous,
+      optedOut,
       alreadyRepresented,
       baseSquatted,
       stillGone: stillGonePlaces.length,
@@ -617,35 +656,61 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
 
   for (const place of repair.reenabledByIdentity) {
     logger.log(
-      `${prefix} re-enable "${place.title}" at ${place.base_position} (deployment ${place.deployment_id})`
+      `${prefix} re-enable "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} (deployment ${forTerminal(place.deployment_id)})`
     )
   }
   for (const { place, scene } of repair.reenabledByFootprint) {
     logger.log(
-      `${prefix} re-enable "${place.title}" at ${place.base_position} and backfill deployment ${scene.entityId}`
+      `${prefix} re-enable "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} and backfill deployment ${forTerminal(scene.entityId)}`
     )
   }
   for (const place of repair.ambiguous) {
     logger.log(
-      `  NEEDS REVIEW: legacy place "${place.title}" at ${place.base_position} sits at a served base but its stored footprint does not match that scene; rebuild this world with bin/rebuildWorldPlaces.ts`
+      `  NEEDS REVIEW: legacy place "${forTerminal(
+        place.title
+      )}" at ${forTerminal(
+        place.base_position
+      )} sits at a served base but its stored footprint does not match that scene; rebuild this world with bin/rebuildWorldPlaces.ts`
+    )
+  }
+
+  for (const { place, scene } of repair.optedOut) {
+    logger.log(
+      `  LEFT DISABLED: "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} matches served scene ${forTerminal(
+        scene.entityId
+      )}, but that scene sets placesConfig.optOut, so re-enabling it would list a place its owner asked to hide. Its stored reason still reads "undeployment"; nothing in the service reads that column.`
     )
   }
 
   for (const place of repair.alreadyRepresented) {
     logger.log(
-      `  ALREADY REPRESENTED: "${place.title}" at ${place.base_position} is covered by an enabled place holding the same deployment; nothing to do`
+      `  ALREADY REPRESENTED: "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} is covered by an enabled place holding the same deployment; nothing to do`
     )
   }
 
   for (const place of repair.baseSquatted) {
     logger.log(
-      `  NEEDS REVIEW: "${place.title}" at ${place.base_position} matches a served scene, but an enabled place holds that base with a deployment the world does not serve. The world still shows stale content; rebuild it with bin/rebuildWorldPlaces.ts, then re-run this.`
+      `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} matches a served scene, but an enabled place holds that base with a deployment the world does not serve. The world still shows stale content; rebuild it with bin/rebuildWorldPlaces.ts, then re-run this.`
     )
   }
 
   for (const scene of repair.servedWithoutPlace) {
     logger.log(
-      `  NEEDS REBUILD: the world serves ${scene.entityId} at ${scene.base} and no place row represents it. This repair only re-enables rows that exist, and the undeployment watermarks it leaves standing will reject a redelivery of that deployment; rebuild this world with bin/rebuildWorldPlaces.ts.`
+      `  NEEDS REBUILD: the world serves ${forTerminal(
+        scene.entityId
+      )} at ${forTerminal(
+        scene.base
+      )} and no place row represents it. This repair only re-enables rows that exist, and the undeployment watermarks it leaves standing will reject a redelivery of that deployment; rebuild this world with bin/rebuildWorldPlaces.ts.`
     )
   }
 }
@@ -670,7 +735,11 @@ async function main(): Promise<number> {
   logger.log(`Worlds Content Server: ${worldsContentServerUrl}`)
   logger.log(`Mode: ${dryRun ? "DRY RUN (rolled back)" : "LIVE"}`)
   logger.log(`Limit: ${limit || "No limit"}`)
-  logger.log(`World filter: ${worldName || "All affected worlds"}`)
+  logger.log(
+    `World filter: ${
+      worldName ? forTerminal(worldName) : "All affected worlds"
+    }`
+  )
   logger.log("=".repeat(60))
 
   // The service writes these timestamps from a UTC process and the columns carry no offset, so a
@@ -699,6 +768,7 @@ async function main(): Promise<number> {
     reenabled: 0,
     backfilled: 0,
     ambiguous: 0,
+    optedOut: 0,
     alreadyRepresented: 0,
     baseSquatted: 0,
     servedWithoutPlace: 0,
@@ -714,7 +784,7 @@ async function main(): Promise<number> {
 
     for (let index = 0; index < worlds.length; index++) {
       const worldId = worlds[index]
-      logger.log(`[${index + 1}/${worlds.length}] ${worldId}`)
+      logger.log(`[${index + 1}/${worlds.length}] ${forTerminal(worldId)}`)
 
       try {
         // Fetched inside repairWorld, under the per-world lock, so it cannot describe a world that
@@ -739,12 +809,15 @@ async function main(): Promise<number> {
           repair.reenabledByIdentity.length + repair.reenabledByFootprint.length
         stats.backfilled += repair.reenabledByFootprint.length
         stats.ambiguous += repair.ambiguous.length
+        stats.optedOut += repair.optedOut.length
         stats.alreadyRepresented += repair.alreadyRepresented.length
         stats.baseSquatted += repair.baseSquatted.length
         stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        logger.error(`  Error repairing ${worldId}: ${message}`)
+        logger.error(
+          `  Error repairing ${forTerminal(worldId)}: ${forTerminal(message)}`
+        )
         stats.errored++
       }
 
@@ -761,6 +834,7 @@ async function main(): Promise<number> {
     logger.log(`Places re-enabled:    ${stats.reenabled}`)
     logger.log(`Deployment ids added: ${stats.backfilled}`)
     logger.log(`Ambiguous legacy:     ${stats.ambiguous}`)
+    logger.log(`Opted out, hidden:    ${stats.optedOut}`)
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
     logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)

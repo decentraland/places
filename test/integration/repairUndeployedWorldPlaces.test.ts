@@ -108,12 +108,14 @@ function servedScene(options: {
   base: string
   parcels?: string[]
   deployedAt: number
+  optOut?: boolean
 }): ServedScene {
   return {
     entityId: options.entityId,
     base: options.base,
     parcels: options.parcels ?? [options.base],
     deployedAt: new Date(options.deployedAt),
+    optOut: options.optOut ?? false,
   }
 }
 
@@ -624,6 +626,193 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should report it as needing the stale row cleared first", () => {
       expect(repair.baseSquatted).toHaveLength(1)
+    })
+  })
+
+  /**
+   * The row carries no deployment id, so nothing stored on it reflects what the served scene asks
+   * for: the deployment that set the opt-out may never have reached Places, which is exactly what the
+   * rejected-deployment window this repair exists for would cause. Matching it by footprint and
+   * re-enabling would publish a place its owner asked to hide.
+   */
+  describe("and the served scene matching a legacy row asks not to be listed", () => {
+    const worldName = "repair-legacy-optout.dcl.eth"
+    let place: { disabled: boolean; deployment_id: string | null } | null
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-legacy-optout",
+        timestamp: removedAt,
+        title: "Legacy Opted Out",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-legacy-optout",
+              baseParcel: "0,0",
+              parcels: ["0,0", "1,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-optout",
+            base: "0,0",
+            parcels: ["1,0", "0,0"],
+            deployedAt: servedAt,
+            optOut: true,
+          }),
+        ],
+        false
+      )
+      place = await PlaceModel.namedQuery<{
+        disabled: boolean
+        deployment_id: string | null
+      }>(
+        "read_place",
+        SQL`SELECT "disabled", "deployment_id" FROM places WHERE "world_id" = ${worldName}`
+      ).then((rows) => rows[0] ?? null)
+    })
+
+    it("should leave it disabled rather than list it against the owner's wish", () => {
+      expect(place?.disabled).toBe(true)
+    })
+
+    it("should not claim it as re-enabled", () => {
+      expect(repair.reenabledByFootprint).toHaveLength(0)
+    })
+
+    it("should report it as left disabled for the opt-out", () => {
+      expect(repair.optedOut.map(({ scene }) => scene.entityId)).toEqual([
+        "entity-served-optout",
+      ])
+    })
+
+    it("should not backfill the deployment id of a scene it is not adopting", () => {
+      expect(place?.deployment_id).toBeNull()
+    })
+
+    it("should not also report the scene as one no place row represents", () => {
+      expect(repair.servedWithoutPlace).toHaveLength(0)
+    })
+  })
+
+  describe("and that same served scene does not ask to be hidden", () => {
+    const worldName = "repair-legacy-listed.dcl.eth"
+    let place: { disabled: boolean } | null
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-legacy-listed",
+        timestamp: removedAt,
+        title: "Legacy Listed",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-legacy-listed",
+              baseParcel: "0,0",
+              parcels: ["0,0", "1,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+
+      await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-listed",
+            base: "0,0",
+            parcels: ["1,0", "0,0"],
+            deployedAt: servedAt,
+            optOut: false,
+          }),
+        ],
+        false
+      )
+      place = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "world_id" = ${worldName}`
+      ).then((rows) => rows[0] ?? null)
+    })
+
+    it("should re-enable it, so the opt-out is what made the difference", () => {
+      expect(place?.disabled).toBe(false)
+    })
+  })
+
+  describe("and the served scene matching a row by identity asks not to be listed", () => {
+    const worldName = "repair-identity-optout.dcl.eth"
+    let place: { disabled: boolean } | null
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-identity-optout",
+        timestamp: servedAt,
+        title: "Identity Opted Out",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-identity-optout", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        )
+      )
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-identity-optout",
+            base: "0,0",
+            deployedAt: servedAt,
+            optOut: true,
+          }),
+        ],
+        false
+      )
+      place = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "world_id" = ${worldName}`
+      ).then((rows) => rows[0] ?? null)
+    })
+
+    it("should leave it disabled", () => {
+      expect(place?.disabled).toBe(true)
+    })
+
+    it("should report it as left disabled for the opt-out", () => {
+      expect(repair.optedOut).toHaveLength(1)
     })
   })
 

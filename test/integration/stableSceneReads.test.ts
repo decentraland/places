@@ -194,3 +194,80 @@ describe("when a paginated scene listing shifts underneath a read", () => {
     })
   })
 })
+
+/**
+ * The opt-out guard in the repair is only as good as this: the flag has to survive the trip from the
+ * content server's payload into the ServedScene the matching reads. It lives in the entity metadata
+ * rather than alongside the identity fields, so it is easy to drop while parsing.
+ */
+describe("when reading whether a served scene asks to be listed", () => {
+  let fetchMock: jest.SpyInstance
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, "fetch")
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  function listing(placesConfig: unknown) {
+    return {
+      ok: true,
+      json: async () => ({
+        total: 1,
+        scenes: [
+          {
+            entityId: "entity-a",
+            parcels: ["0,0"],
+            entity: {
+              timestamp: 1_700_000_000_000,
+              metadata: {
+                scene: { base: "0,0" },
+                worldConfiguration: { placesConfig },
+              },
+            },
+          },
+        ],
+      }),
+    } as Response
+  }
+
+  describe("and the scene sets placesConfig.optOut", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(listing({ optOut: true }))
+    })
+
+    it("should carry the flag through, since the repair decides whether to list on it", async () => {
+      const scenes = await fetchServedScenes(BASE, "opted-out.dcl.eth")
+
+      expect(scenes[0].optOut).toBe(true)
+    })
+  })
+
+  describe("and the scene sets placesConfig.optOut to false", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(listing({ optOut: false }))
+    })
+
+    it("should read it as listed", async () => {
+      const scenes = await fetchServedScenes(BASE, "listed.dcl.eth")
+
+      expect(scenes[0].optOut).toBe(false)
+    })
+  })
+
+  describe("and the scene has no placesConfig at all", () => {
+    beforeEach(() => {
+      fetchMock.mockResolvedValueOnce(
+        listing(undefined as unknown as Record<string, unknown>)
+      )
+    })
+
+    it("should read it as listed rather than fail the scene over a field it need not set", async () => {
+      const scenes = await fetchServedScenes(BASE, "plain.dcl.eth")
+
+      expect(scenes[0].optOut).toBe(false)
+    })
+  })
+})
