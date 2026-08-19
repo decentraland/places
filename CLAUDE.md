@@ -40,7 +40,9 @@ src/
 └── __mocks__/             # @dcl/ui-env mock for jest
 
 bin/                       # CLI tools (TS via ts-node)
-├── rebuildWorldPlaces.ts  # Rebuild worlds tables from worlds-content-server
+├── rebuildWorldPlaces.ts  # Rebuild worlds tables from worlds-content-server (offline; stop the consumer)
+├── repairUndeployedWorldPlaces.ts  # Re-enable places an undeployment disabled while their scene was served
+├── scriptArgs.ts          # Shared strict CLI parsing for the two destructive world scripts
 ├── populateSdk.ts         # One-time SDK column populator
 ├── snapshotToFiles.ts     # Export snapshot to files
 ├── filesToSqs.ts          # Upload files + send SQS messages
@@ -51,6 +53,9 @@ bin/                       # CLI tools (TS via ts-node)
 test/integration/          # Backend integration tests (Postgres + LocalStack required)
 docs/                      # OpenAPI spec + DB schemas + runbooks
 ```
+
+Both world scripts default to a dry run and need `--apply` to write. `repairUndeployedWorldPlaces.ts`
+additionally refuses to start outside `TZ=UTC`.
 
 ## Routes
 

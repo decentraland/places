@@ -7,19 +7,28 @@
  * 3. Re-run the same world processing logic used by the SQS task runner
  * 4. Insert/update places and world records in the database
  *
+ * Offline tool: run it with the scene consumer stopped. It writes places directly rather than through
+ * the deployment path, so it consults none of the undeployment guards and takes the per-world
+ * deployment lock only around the orphan sweep, where a concurrent deployment would otherwise have its
+ * fresh place disabled as an orphan. The insert, update and overlap-resolution writes are not under
+ * that lock, so running this against a live consumer can interleave with an in-flight deployment for
+ * the same world and let the older of the two win. Stopping the consumer is what makes that
+ * impossible; narrowing it to a lock held across each world's whole body is follow-up work.
+ *
  * Usage:
  *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *
  * Options:
- *   --dry-run                Preview changes without updating the database
+ *   --apply                  Commit the rebuild. Without it the run is a dry run and rolls back.
+ *   --dry-run                Ask for a dry run explicitly, which is also the default
  *   --limit N                Limit the number of worlds to process
  *   --world-name NAME        Process only a specific world
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
  *
  * Examples:
- *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --dry-run --limit 5
- *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --world-name "myworld.dcl.eth"
+ *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --limit 5
+ *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --apply --world-name "myworld.dcl.eth"
  */
 
 import { randomUUID } from "crypto"
@@ -34,6 +43,7 @@ import {
   createWorldInsertData,
   createWorldPlaceOptions,
 } from "./rebuildWorldPlacesOptions"
+import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
 import CategoryModel from "../src/entities/Category/model"
 import { DecentralandCategories } from "../src/entities/Category/types"
 import { extractSceneJsonData } from "../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -103,39 +113,8 @@ const STABLE_READ_ATTEMPTS = 3
 
 // ── CLI Argument Parsing ───────────────────────────────────────────────
 
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const KNOWN = ["--dry-run", "--limit", "--world-name", "--connection-string"]
-  // This script disables places and defaults to live, so a mistyped --dryrun must not slip through.
-  const unknown = args.filter(
-    (arg) => arg.startsWith("--") && !KNOWN.includes(arg)
-  )
-  if (unknown.length > 0) {
-    throw new Error(`Unrecognized option(s): ${unknown.join(", ")}`)
-  }
-
-  const value = (flag: string): string | null => {
-    const index = args.indexOf(flag)
-    if (index === -1) return null
-    const next = args[index + 1]
-    if (!next || next.startsWith("--")) {
-      throw new Error(`${flag} requires a value`)
-    }
-    return next
-  }
-
-  const rawLimit = value("--limit")
-  const limit = rawLimit === null ? null : Number.parseInt(rawLimit, 10)
-  if (limit !== null && (!Number.isInteger(limit) || limit <= 0)) {
-    throw new Error("--limit requires a positive whole number")
-  }
-
-  return {
-    dryRun: args.includes("--dry-run"),
-    limit,
-    worldName: value("--world-name"),
-    connectionString: value("--connection-string"),
-  }
+function parseArgs(): ScriptArgs {
+  return parseScriptArgs(process.argv.slice(2))
 }
 
 // ── Category Helpers (from taskRunnerSqs) ──────────────────────────────

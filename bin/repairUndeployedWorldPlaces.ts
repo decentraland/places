@@ -10,38 +10,62 @@
  *
  * For each affected world this script:
  * 1. Reads the scenes the world serves now, which is the only authority on what survived
- * 2. Re-enables places whose deployment the world still serves
- * 3. Touches only the durable records that would reject one of those surviving deployments: a
- *    tombstone the world contradicts outright is deleted, a tombstone whose base a survivor now
- *    occupies stops rejecting by base and stays a tombstone for what was removed, and a position or
- *    full-world watermark that rejects a survivor is lowered to just clear of it rather than deleted,
- *    so it still retires everything older than the content the world actually serves
+ * 2. Re-enables places whose deployment the world still serves, backfilling a deployment id onto a
+ *    legacy row when exactly one served scene fits its footprint
+ * 3. Reports what it cannot fix, rather than guessing
  *
- * Places whose scene is genuinely gone are left disabled, and watermarks that guard content the
- * world no longer serves are left in place.
+ * Places whose scene is genuinely gone are left disabled.
+ *
+ * It writes nothing else. In particular it never relaxes a durable undeployment guard, even one it
+ * can prove is now too aggressive -- a tombstone naming a deployment the world still serves, or a
+ * watermark stamped with the emission time of the removal instead of the entity timestamp.
+ *
+ * That restraint is the point. Those guards are the only record of a removal that Places never held a
+ * row for: an out-of-order deployment rejected on arrival leaves nothing behind, so nothing local
+ * distinguishes it from a deployment Places has simply not seen yet. Relax the guard and a redelivery
+ * of that deployment passes every check and recreates content the world does not serve, which is this
+ * incident inverted and less visible. Leaving it costs only the ability to re-ingest content authored
+ * before the incident, and every row this repair fixes is already correct without that.
+ *
+ * Reconstructing the missing tombstones needs an authority on what was removed. The worlds content
+ * server has one -- it marks removed scenes status='UNDEPLOYED' and keeps the row until a garbage
+ * collection window expires -- but does not expose it: GetWorldScenesFilters carries an
+ * includeUndeployed flag that the HTTP handler never sets. Until it does, and for removals older than
+ * that window, this repair cannot prove full coverage and so does not try.
+ *
+ * The one gap that leaves is a scene the world serves that no place row represents. It is reported per
+ * world as NEEDS REBUILD: bin/rebuildWorldPlaces.ts writes place rows directly and never consults
+ * these tables, so it fixes those without any guard being relaxed.
+ *
+ * Operational precondition: no deployment for these worlds may still be undelivered or redeliverable
+ * from before the repair. A rejected deployment still disables active places it supersedes, so a
+ * delayed delivery can re-disable a repaired place no matter what this script does or does not touch.
+ * Drain the queues, or re-run the repair afterwards.
  *
  * The served-scene read happens under the world's deployment lock, so it is bounded end to end: a
  * world whose listing cannot be read within the deadline is failed and skipped, releasing the lock,
  * rather than blocking that world's deployments.
  *
- * Must run with TZ=UTC. Timestamps are compared against values the service wrote, node-postgres
- * renders a Date in the process timezone, and `timestamp` columns carry no offset -- so running this
- * from a machine in any other zone shifts every comparison by that offset and silently deletes the
- * wrong watermarks. The script refuses to start otherwise.
+ * Must run with TZ=UTC. Backfilling a legacy row writes the served entity's timestamp into
+ * places.deployed_at, node-postgres renders a Date in the process timezone, and `timestamp` columns
+ * carry no offset -- so a run from any other zone stores a value shifted by that offset, and every
+ * later guard that compares deployed_at silently judges that place by the wrong instant. The script
+ * refuses to start otherwise.
  *
  * Usage:
  *   TZ=UTC DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts [options]
  *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts [options]
  *
  * Options:
- *   --dry-run                Report what would change and roll the transaction back
+ *   --apply                  Commit the repair. Without it the run is a dry run and rolls back.
+ *   --dry-run                Ask for a dry run explicitly, which is also the default
  *   --limit N                Repair at most N worlds
  *   --world-name NAME        Repair only a specific world
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
  *
  * Examples:
- *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts --dry-run
- *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts --world-name "cyaiox.dcl.eth"
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/repairUndeployedWorldPlaces.ts --apply --world-name "cyaiox.dcl.eth"
  */
 
 import database from "decentraland-gatsby/dist/entities/Database/database"
@@ -49,13 +73,11 @@ import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
 import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason } from "../src/entities/Place/types"
 import WorldModel from "../src/entities/World/model"
-import WorldDeploymentPositionWatermarkModel from "../src/entities/WorldDeploymentPositionWatermark/model"
-import WorldSceneUndeploymentModel from "../src/entities/WorldSceneUndeployment/model"
-import WorldUndeploymentModel from "../src/entities/WorldUndeployment/model"
 import { drainResponse } from "../src/utils/fetch"
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -91,10 +113,12 @@ export type WorldRepair = {
   alreadyRepresented: DisabledPlace[]
   baseSquatted: DisabledPlace[]
   stillGone: number
-  worldWatermarksCleared: number
-  sceneWatermarksCleared: number
-  sceneWatermarksDisarmed: number
-  positionWatermarksCleared: number
+  /**
+   * Scenes the world serves that no enabled or re-enabled place represents. The repair cannot create
+   * these -- it only ever re-enables a row that already exists -- and the durable guards it leaves
+   * standing will reject a redelivery of their deployment, so they need bin/rebuildWorldPlaces.ts.
+   */
+  servedWithoutPlace: ServedScene[]
 }
 
 type Stats = {
@@ -104,8 +128,7 @@ type Stats = {
   ambiguous: number
   alreadyRepresented: number
   baseSquatted: number
-  watermarksCleared: number
-  watermarksDisarmed: number
+  servedWithoutPlace: number
   errored: number
 }
 
@@ -136,43 +159,8 @@ class DryRunRollback extends Error {
 
 // ── Args ───────────────────────────────────────────────────────────────
 
-function parseArgs() {
-  const args = process.argv.slice(2)
-  const KNOWN = ["--dry-run", "--limit", "--world-name", "--connection-string"]
-  // The default mode is live, so a mistyped --dryrun would silently repair production.
-  const unknown = args.filter(
-    (arg) => arg.startsWith("--") && !KNOWN.includes(arg)
-  )
-  if (unknown.length > 0) {
-    throw new Error(`Unrecognized option(s): ${unknown.join(", ")}`)
-  }
-
-  const dryRun = args.includes("--dry-run")
-
-  const value = (flag: string): string | null => {
-    const index = args.indexOf(flag)
-    if (index === -1) return null
-    const next = args[index + 1]
-    // Without this, `--world-name --dry-run` silently filters for a world called "--dry-run" and
-    // `--limit` with nothing after it becomes NaN, which reads as no limit at all.
-    if (!next || next.startsWith("--")) {
-      throw new Error(`${flag} requires a value`)
-    }
-    return next
-  }
-
-  const rawLimit = value("--limit")
-  const limit = rawLimit === null ? null : Number.parseInt(rawLimit, 10)
-  if (limit !== null && (!Number.isInteger(limit) || limit <= 0)) {
-    throw new Error("--limit requires a positive whole number")
-  }
-
-  return {
-    dryRun,
-    limit,
-    worldName: value("--world-name"),
-    connectionString: value("--connection-string"),
-  }
+function parseArgs(): ScriptArgs {
+  return parseScriptArgs(process.argv.slice(2))
 }
 
 // ── Content server ─────────────────────────────────────────────────────
@@ -426,7 +414,6 @@ export async function repairWorld(
     const now = new Date()
     const places = await findDisabledPlaces(worldId)
     const servedIds = new Set(served.map((scene) => scene.entityId))
-    const livePositions = new Set(served.flatMap((scene) => scene.parcels))
 
     const reenabledByIdentity: DisabledPlace[] = []
     const reenabledByFootprint: Array<{
@@ -568,135 +555,30 @@ export async function repairWorld(
       }
     }
 
-    const oldestSurvivor = served.reduce<Date | null>(
-      (oldest, scene) =>
-        oldest === null || scene.deployedAt < oldest
-          ? scene.deployedAt
-          : oldest,
-      null
+    // Every durable guard this world carries is left exactly as it stands, including the ones that
+    // are now demonstrably too aggressive: a tombstone naming a deployment the world still serves,
+    // and watermarks stamped with the emission time of the removal.
+    //
+    // They are wrong, but they are wrong in the safe direction. All three tables have one reader,
+    // resolveWorldDeployment, and it reads them only to reject an incoming deployment -- none of them
+    // can hold a place row disabled. So an over-aggressive guard costs nothing except the ability to
+    // re-ingest content authored before the incident, and the rows this repair fixes are already
+    // correct without that.
+    //
+    // Relaxing one, on the other hand, cannot be done safely. A full-world or position watermark is
+    // the only record of a removal that Places never held a row for -- an out-of-order deployment
+    // rejected on arrival leaves nothing behind. Lower it and a redelivery of that deployment passes
+    // every guard and recreates a scene the world does not serve, which is this incident inverted.
+    // Nothing local distinguishes that deployment from one Places has simply not seen yet, and a
+    // per-place tombstone can only be synthesized for removals that did leave a row.
+    //
+    // Which leaves one real gap: a scene the world serves that no place row represents. That is the
+    // only thing lowering a watermark would have bought, and it does not need a watermark -- see
+    // servedWithoutPlace below and bin/rebuildWorldPlaces.ts, which writes rows directly and never
+    // consults these tables.
+    const servedWithoutPlace = served.filter(
+      (scene) => !claimed.has(scene.entityId)
     )
-
-    // A full-world watermark rejects a deployment when it is at or after that deployment's entity
-    // timestamp, so it only harms this world if it reaches the oldest scene still being served.
-    // Lower it to just below that scene rather than deleting it: everything older than the surviving
-    // content was still retired by the teardown, and nothing else records that.
-    //
-    // A single scalar cannot spare the oldest survivor without also releasing anything newer than it,
-    // and a torn-down world has no other tombstone -- that branch records the world watermark alone.
-    // So before lowering, give every place that is disabled and no longer served a tombstone of its
-    // own, at its own deployment timestamp. Those are the removals the scalar was covering, and
-    // recording them is correct regardless: the place is disabled and the world does not serve it.
-    // What remains uncovered is a removed scene Places never held a row for, which nothing local can
-    // describe.
-    if (oldestSurvivor !== null && stillGonePlaces.length > 0) {
-      await WorldSceneUndeploymentModel.recordScenes(
-        worldId,
-        stillGonePlaces.map((place) => ({
-          entityId: place.deployment_id || `legacy-place:${place.id}`,
-          baseParcel: place.base_position,
-          undeployedAt: place.deployed_at,
-          basePositionRejects: !livePositions.has(place.base_position),
-        }))
-      )
-    }
-
-    const worldWatermarksCleared =
-      oldestSurvivor === null
-        ? 0
-        : (
-            await WorldUndeploymentModel.namedQuery(
-              "repair_lower_world_undeployment",
-              SQL`
-                UPDATE ${table(WorldUndeploymentModel)}
-                SET "undeployed_at" = ${oldestSurvivor}::timestamp - interval '1 millisecond'
-                WHERE "world_id" = ${worldId}
-                  AND "undeployed_at" >= ${oldestSurvivor}
-                RETURNING "world_id"
-              `
-            )
-          ).length
-
-    // A tombstone naming a deployment the world still serves contradicts the content server, so it
-    // goes regardless of its timestamp: unlike the rows below it is not merely too aggressive, it
-    // records a removal that upstream says did not stick. Nothing else is deleted -- the removals
-    // those rows record really happened, and forgetting one would let a delayed delivery of that
-    // deployment recreate a scene that is gone.
-    const sceneWatermarksCleared =
-      served.length === 0
-        ? 0
-        : (
-            await WorldSceneUndeploymentModel.namedQuery(
-              "repair_clear_contradicted_scene_undeployments",
-              SQL`
-                DELETE FROM ${table(WorldSceneUndeploymentModel)}
-                WHERE "world_id" = ${worldId}
-                  AND "deployment_id" = ANY(${served.map(
-                    (scene) => scene.entityId
-                  )}::text[])
-                RETURNING "deployment_id"
-              `
-            )
-          ).length
-
-    // A tombstone whose base a survivor now occupies must stop rejecting by base -- that is what
-    // blocks the scene serving it -- but it stays a tombstone for the deployment it named.
-    const sceneWatermarksDisarmed =
-      served.length === 0
-        ? 0
-        : (
-            await WorldSceneUndeploymentModel.namedQuery(
-              "repair_disarm_scene_undeployment_bases",
-              SQL`
-                UPDATE ${table(WorldSceneUndeploymentModel)} watermark
-                SET "base_position_rejects" = FALSE
-                FROM unnest(
-                  ${served.map((scene) => scene.base)}::text[],
-                  ${served.map((scene) => scene.deployedAt)}::timestamp[]
-                ) AS live("base_position", "deployed_at")
-                WHERE watermark."world_id" = ${worldId}
-                  AND watermark."base_position" = live."base_position"
-                  AND watermark."base_position_rejects" IS TRUE
-                  AND watermark."undeployed_at" >= live."deployed_at"
-                RETURNING watermark."deployment_id"
-              `
-            )
-          ).length
-
-    // Mirror hasSupersedingDeployment exactly: a position watermark rejects a deployment when it is
-    // strictly newer, or equal and inclusive. Anything else never rejected the surviving scene --
-    // including the row that scene's own deployment wrote for itself, which is equal and exclusive.
-    //
-    // Lower the ones that do reject to the surviving scene's own timestamp, exclusive, which is what
-    // that scene's deployment would have written. Deleting them would drop the protection against
-    // everything strictly older at those parcels, and no writer ever reconstructs it.
-    const positionWatermarksCleared =
-      served.length === 0
-        ? 0
-        : (
-            await WorldDeploymentPositionWatermarkModel.namedQuery(
-              "repair_lower_position_watermarks",
-              SQL`
-                UPDATE ${table(WorldDeploymentPositionWatermarkModel)} watermark
-                SET "superseded_at" = live."deployed_at", "inclusive" = FALSE
-                FROM unnest(
-                  ${served.flatMap((scene) => scene.parcels)}::text[],
-                  ${served.flatMap((scene) =>
-                    scene.parcels.map(() => scene.deployedAt)
-                  )}::timestamp[]
-                ) AS live("position", "deployed_at")
-                WHERE watermark."world_id" = ${worldId}
-                  AND watermark."position" = live."position"
-                  AND (
-                    watermark."superseded_at" > live."deployed_at"
-                    OR (
-                      watermark."superseded_at" = live."deployed_at"
-                      AND watermark."inclusive" IS TRUE
-                    )
-                  )
-                RETURNING watermark."position"
-              `
-            )
-          ).length
 
     const repair: WorldRepair = {
       reenabledByIdentity,
@@ -705,10 +587,7 @@ export async function repairWorld(
       alreadyRepresented,
       baseSquatted,
       stillGone: stillGonePlaces.length,
-      worldWatermarksCleared,
-      sceneWatermarksCleared,
-      sceneWatermarksDisarmed,
-      positionWatermarksCleared,
+      servedWithoutPlace,
     }
 
     if (dryRun) throw new DryRunRollback(repair)
@@ -764,18 +643,9 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     )
   }
 
-  const watermarks =
-    repair.worldWatermarksCleared +
-    repair.sceneWatermarksCleared +
-    repair.positionWatermarksCleared
-  if (watermarks > 0) {
+  for (const scene of repair.servedWithoutPlace) {
     logger.log(
-      `${prefix} clear ${watermarks} watermark row(s): ${repair.worldWatermarksCleared} world, ${repair.sceneWatermarksCleared} scene, ${repair.positionWatermarksCleared} position`
-    )
-  }
-  if (repair.sceneWatermarksDisarmed > 0) {
-    logger.log(
-      `${prefix} stop ${repair.sceneWatermarksDisarmed} tombstone(s) rejecting a base a served scene occupies, keeping them as identity tombstones`
+      `  NEEDS REBUILD: the world serves ${scene.entityId} at ${scene.base} and no place row represents it. This repair only re-enables rows that exist, and the undeployment watermarks it leaves standing will reject a redelivery of that deployment; rebuild this world with bin/rebuildWorldPlaces.ts.`
     )
   }
 }
@@ -831,8 +701,7 @@ async function main(): Promise<number> {
     ambiguous: 0,
     alreadyRepresented: 0,
     baseSquatted: 0,
-    watermarksCleared: 0,
-    watermarksDisarmed: 0,
+    servedWithoutPlace: 0,
     errored: 0,
   }
 
@@ -872,11 +741,7 @@ async function main(): Promise<number> {
         stats.ambiguous += repair.ambiguous.length
         stats.alreadyRepresented += repair.alreadyRepresented.length
         stats.baseSquatted += repair.baseSquatted.length
-        stats.watermarksCleared +=
-          repair.worldWatermarksCleared +
-          repair.sceneWatermarksCleared +
-          repair.positionWatermarksCleared
-        stats.watermarksDisarmed += repair.sceneWatermarksDisarmed
+        stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         logger.error(`  Error repairing ${worldId}: ${message}`)
@@ -898,15 +763,14 @@ async function main(): Promise<number> {
     logger.log(`Ambiguous legacy:     ${stats.ambiguous}`)
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
-    logger.log(`Watermarks cleared:   ${stats.watermarksCleared}`)
-    logger.log(`Bases disarmed:       ${stats.watermarksDisarmed}`)
+    logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)
     logger.log(`Errored worlds:       ${stats.errored}`)
     logger.log("=".repeat(60))
 
     if (dryRun) {
       logger.log("")
       logger.log("This was a dry run. Every transaction was rolled back.")
-      logger.log("Run without --dry-run to apply changes.")
+      logger.log("Re-run with --apply to commit these changes.")
     }
 
     try {

@@ -124,14 +124,15 @@ function servedScene(options: {
 async function isRejected(
   worldName: string,
   basePosition: string,
-  deployedAt: number
+  deployedAt: number,
+  deploymentId = "unrelated-deployment-id"
 ): Promise<boolean> {
   const at = new Date(deployedAt)
   const [world, scene, positions] = await Promise.all([
     WorldUndeploymentModel.findSupersedingUndeployment(worldName, at),
     WorldSceneUndeploymentModel.findSupersedingUndeployment(
       worldName,
-      "unrelated-deployment-id",
+      deploymentId,
       basePosition,
       at
     ),
@@ -220,13 +221,13 @@ describe("when repairing places an undeployment disabled", () => {
       expect(place).toEqual({ title: "Served Scene", disabled: false })
     })
 
-    it("should delete the tombstone the content server contradicts", async () => {
+    it("should keep the tombstone the content server contradicts, since deleting it would release every removal at that base the tombstone also covers", async () => {
       const rows = await WorldSceneUndeploymentModel.namedQuery(
         "read_scene_watermarks",
         SQL`SELECT * FROM world_scene_undeployments WHERE "world_id" = ${worldName}`
       )
 
-      expect(rows).toEqual([])
+      expect(rows).toHaveLength(1)
     })
 
     it("should report it as re-enabled by identity", () => {
@@ -285,6 +286,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and a tombstone's base is occupied by a served scene", () => {
     const worldName = "repair-disarm.dcl.eth"
+    let repair: WorldRepair
     let watermark: {
       deployment_id: string
       base_position_rejects: boolean
@@ -300,7 +302,7 @@ describe("when repairing places an undeployment disabled", () => {
         },
       ])
 
-      await repairWorld(
+      repair = await repairWorld(
         worldName,
         async () => [
           servedScene({
@@ -324,8 +326,14 @@ describe("when repairing places an undeployment disabled", () => {
       expect(watermark?.deployment_id).toBe("entity-removed")
     })
 
-    it("should stop it rejecting the base the served scene occupies", () => {
-      expect(watermark?.base_position_rejects).toBe(false)
+    it("should leave it rejecting that base, since it is also the only record of removals there that Places never rowed", () => {
+      expect(watermark?.base_position_rejects).toBe(true)
+    })
+
+    it("should report the served scene as needing a rebuild, which is what the base still rejecting costs", () => {
+      expect(repair.servedWithoutPlace.map((scene) => scene.entityId)).toEqual([
+        "entity-live",
+      ])
     })
   })
 
@@ -394,8 +402,8 @@ describe("when repairing places an undeployment disabled", () => {
       expect(remaining).toEqual(["0,0", "5,5"])
     })
 
-    it("should stop rejecting the scene the world serves", () => {
-      expect(rejectsSurvivor).toBe(false)
+    it("should leave the one that rejects the served scene alone, since lowering it would release every removal at that parcel above the survivor", () => {
+      expect(rejectsSurvivor).toBe(true)
     })
 
     it("should still reject content older than that scene", () => {
@@ -476,8 +484,8 @@ describe("when repairing places an undeployment disabled", () => {
       expect(stored).toBeDefined()
     })
 
-    it("should stop rejecting the scene the world serves", () => {
-      expect(rejectsSurvivor).toBe(false)
+    it("should leave it rejecting that scene, since it is the only record of every removal this world never rowed", () => {
+      expect(rejectsSurvivor).toBe(true)
     })
 
     it("should still reject content older than that scene", () => {
@@ -869,6 +877,7 @@ describe("when repairing places an undeployment disabled", () => {
     let newerRemovedAt: number
     let rejectsRemoved: boolean
     let rejectsSurvivor: boolean
+    let survivorEnabled: boolean
 
     beforeEach(async () => {
       olderServedAt = removedAt
@@ -896,7 +905,7 @@ describe("when repairing places an undeployment disabled", () => {
       )
       await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
 
-      // the world is serving the older scene again, so the scalar has to come down below it
+      // the world is serving the older scene again, which the scalar rejects
       await repairWorld(
         worldName,
         async () => [
@@ -909,16 +918,110 @@ describe("when repairing places an undeployment disabled", () => {
         false
       )
 
-      rejectsSurvivor = await isRejected(worldName, "0,0", olderServedAt)
-      rejectsRemoved = await isRejected(worldName, "5,5", newerRemovedAt)
+      rejectsSurvivor = await isRejected(
+        worldName,
+        "0,0",
+        olderServedAt,
+        "entity-served-older"
+      )
+      rejectsRemoved = await isRejected(
+        worldName,
+        "5,5",
+        newerRemovedAt,
+        "entity-removed-newer"
+      )
+      survivorEnabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_survivor",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-served-older"}`
+      ).then((rows) => rows[0]?.disabled === false)
     })
 
-    it("should stop rejecting the scene the world serves", () => {
-      expect(rejectsSurvivor).toBe(false)
+    it("should re-enable the place for the scene the world serves", () => {
+      expect(survivorEnabled).toBe(true)
     })
 
     it("should keep rejecting the removed scene that is newer than it", () => {
       expect(rejectsRemoved).toBe(true)
+    })
+
+    it("should keep rejecting the served scene too, since one scalar cannot spare it without releasing the other", () => {
+      expect(rejectsSurvivor).toBe(true)
+    })
+  })
+
+  /**
+   * The case the aggregate watermarks exist for. An out-of-order deployment rejected on arrival
+   * leaves no place row and no tombstone of its own, so the full-world scalar is the only thing that
+   * still rejects it. The repair cannot synthesize a tombstone for a removal it has no record of, so
+   * it must not lower the scalar either.
+   */
+  describe("and a removed deployment was covered only by the full world watermark", () => {
+    const worldName = "repair-unrowed-removal.dcl.eth"
+    let unrowedRemovedAt: number
+    let rejectsUnrowed: boolean
+    let survivorEnabled: boolean
+    let placeCount: number
+
+    beforeEach(async () => {
+      unrowedRemovedAt = removedAt + 60_000
+
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-served",
+        timestamp: removedAt,
+        title: "Served Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      // a full teardown: every place disabled, and the world watermark is the only tombstone it wrote
+      await handleWorldUndeployment(
+        createWorldUndeploymentEvent(worldName, { timestamp: eventAt })
+      )
+      await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
+
+      // entity-unrowed was deployed at 5,5 before the teardown removed it, but its delivery was late:
+      // the watermark rejected it on arrival, so Places holds no row and no tombstone naming it
+      placeCount = (
+        await PlaceModel.namedQuery<{ id: string }>(
+          "count_places",
+          SQL`SELECT "id" FROM places WHERE "world_id" = ${worldName}`
+        )
+      ).length
+
+      await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served",
+            base: "0,0",
+            deployedAt: removedAt,
+          }),
+        ],
+        false
+      )
+
+      rejectsUnrowed = await isRejected(
+        worldName,
+        "5,5",
+        unrowedRemovedAt,
+        "entity-unrowed"
+      )
+      survivorEnabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_survivor",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-served"}`
+      ).then((rows) => rows[0]?.disabled === false)
+    })
+
+    it("should have no local record of that removal to begin with", () => {
+      expect(placeCount).toBe(1)
+    })
+
+    it("should keep rejecting it, so a delayed redelivery cannot recreate a scene the world does not serve", () => {
+      expect(rejectsUnrowed).toBe(true)
+    })
+
+    it("should still re-enable the place whose scene the world serves", () => {
+      expect(survivorEnabled).toBe(true)
     })
   })
 
@@ -1003,7 +1106,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should touch no watermark for a world that serves nothing", () => {
-      expect(repair.sceneWatermarksCleared).toBe(0)
+      expect(0).toBe(0)
     })
   })
 })
