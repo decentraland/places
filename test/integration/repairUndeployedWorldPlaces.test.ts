@@ -1104,6 +1104,12 @@ describe("when repairing places an undeployment disabled", () => {
         "entity-served-now",
       ])
     })
+
+    it("should carry that scene's deployment date, which is what separates fresh damage from an old gap", () => {
+      expect(repair.servedWithoutPlace[0].deployedAt).toEqual(
+        new Date(servedAt)
+      )
+    })
   })
 
   /**

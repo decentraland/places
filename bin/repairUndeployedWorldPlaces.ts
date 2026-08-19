@@ -909,7 +909,9 @@ function reportWorld(
     logger.log(
       `  UNREPRESENTED: the world serves ${forTerminal(
         scene.entityId
-      )} at ${forTerminal(scene.base)} and no place row represents it`
+      )} at ${forTerminal(scene.base)}, deployed ${forTerminal(
+        scene.deployedAt.toISOString()
+      )}, and no place row represents it`
     )
   }
 }
