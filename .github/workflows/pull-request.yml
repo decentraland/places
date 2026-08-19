@@ -27,7 +27,20 @@ jobs:
           cache: "npm"
 
       - name: installing
-        run: npm install
+        # sharp arrives transitively through gatsby and downloads a prebuilt libvips from GitHub
+        # releases in its install script, so a network hiccup fails the whole install before any
+        # step that matters runs. Nothing in this backend uses it. Retry rather than let a dropped
+        # connection decide whether the suite gets to run at all.
+        run: |
+          for attempt in 1 2 3; do
+            if npm install; then
+              exit 0
+            fi
+            echo "npm install failed (attempt $attempt/3), retrying in 15s..."
+            sleep 15
+          done
+          echo "npm install did not succeed after 3 attempts"
+          exit 1
 
       - name: linters
         uses: wearerequired/lint-action@v1
@@ -106,7 +119,20 @@ jobs:
           cache: "npm"
 
       - name: installing
-        run: npm install
+        # sharp arrives transitively through gatsby and downloads a prebuilt libvips from GitHub
+        # releases in its install script, so a network hiccup fails the whole install before any
+        # step that matters runs. Nothing in this backend uses it. Retry rather than let a dropped
+        # connection decide whether the suite gets to run at all.
+        run: |
+          for attempt in 1 2 3; do
+            if npm install; then
+              exit 0
+            fi
+            echo "npm install failed (attempt $attempt/3), retrying in 15s..."
+            sleep 15
+          done
+          echo "npm install did not succeed after 3 attempts"
+          exit 1
 
       - name: Create SQS queue in LocalStack
         run: |

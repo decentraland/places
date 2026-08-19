@@ -4,6 +4,10 @@ import CategoryModel from "../../src/entities/Category/model"
 import CheckScenesModel from "../../src/entities/CheckScenes/model"
 import { InvalidWorldSqsMessageError } from "../../src/entities/CheckScenes/task/errors"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
+import {
+  fetchWorldActiveScenes,
+  fetchWorldActiveScenesAtPositions,
+} from "../../src/entities/CheckScenes/task/fetchWorldActiveScenes"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
@@ -37,6 +41,18 @@ import type { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Cata
 // Mock external HTTP calls
 jest.mock("../../src/entities/CheckScenes/task/processEntityId")
 jest.mock("../../src/entities/CheckScenes/task/extractSceneJsonData")
+// Undeployment handlers ask the content server what the world still serves. These suites drive the
+// removal of every scene they created, so the default is a world that serves nothing.
+jest.mock("../../src/entities/CheckScenes/task/fetchWorldActiveScenes", () => ({
+  fetchWorldActiveScenes: jest.fn(async () => ({
+    deploymentIds: [],
+    positions: [],
+  })),
+  fetchWorldActiveScenesAtPositions: jest.fn(async () => ({
+    deploymentIds: [],
+    positions: [],
+  })),
+}))
 
 // Mock Slack notifications to prevent HTTP calls during tests
 jest.mock("../../src/entities/Slack/utils", () => ({
@@ -121,6 +137,16 @@ describe("taskRunnerSqs integration", () => {
   afterEach(async () => {
     await cleanTables()
     jest.resetAllMocks()
+    // resetAllMocks clears the implementation the module factory gave these, so restore the default
+    // of a world that serves nothing
+    jest.mocked(fetchWorldActiveScenes).mockResolvedValue({
+      deploymentIds: [],
+      positions: [],
+    })
+    jest.mocked(fetchWorldActiveScenesAtPositions).mockResolvedValue({
+      deploymentIds: [],
+      positions: [],
+    })
   })
 
   describe("when a world scene deployment is received for a new world", () => {

@@ -14,6 +14,18 @@ import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 // Mock external HTTP calls
 jest.mock("../../src/entities/CheckScenes/task/processEntityId")
 jest.mock("../../src/entities/CheckScenes/task/extractSceneJsonData")
+// Undeployment handlers ask the content server what the world still serves. These suites drive the
+// removal of every scene they created, so the default is a world that serves nothing.
+jest.mock("../../src/entities/CheckScenes/task/fetchWorldActiveScenes", () => ({
+  fetchWorldActiveScenes: jest.fn(async () => ({
+    deploymentIds: [],
+    positions: [],
+  })),
+  fetchWorldActiveScenesAtPositions: jest.fn(async () => ({
+    deploymentIds: [],
+    positions: [],
+  })),
+}))
 
 // Mock Slack notifications to prevent HTTP calls during tests
 jest.mock("../../src/entities/Slack/utils", () => ({

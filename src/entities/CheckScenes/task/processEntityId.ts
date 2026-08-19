@@ -89,6 +89,30 @@ export function getTrustedContentServerUrl(
   )
 }
 
+/**
+ * Validate the configured Worlds Content Server URL. It comes from the environment rather than from
+ * a message, so an untrusted or malformed value is a deployment misconfiguration: surface it as one
+ * so callers retry their input instead of discarding it as deterministically invalid.
+ */
+export function getTrustedWorldsContentServerUrl(
+  worldsContentServerUrl: string,
+  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+): string {
+  try {
+    return getTrustedContentServerUrl(
+      { contentServerUrls: [worldsContentServerUrl] },
+      allowedContentServerHosts
+    )
+  } catch (error) {
+    if (error instanceof InvalidWorldSqsMessageError) {
+      throw new ContentServerConfigurationError(
+        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
+      )
+    }
+    throw error
+  }
+}
+
 export async function processEntityId(
   job: DeploymentToSqs,
   allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")

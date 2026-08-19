@@ -2,7 +2,11 @@ import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import { InvalidWorldSqsMessageError } from "./errors"
-import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
+import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
+import {
+  ResolvedUndeployedScene,
+  resolveWorldSceneUndeploymentFootprints,
+} from "./resolveWorldSceneUndeploymentFootprints"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
@@ -50,9 +54,16 @@ function summarizeBasePositions(basePositions: string[]): string {
  * A place id is a local catalog UUID that may be preserved across redeployments so favorites,
  * moderation and other product state remain attached to the logical place. The worlds content
  * server neither owns nor knows that UUID. Its entity id instead identifies the exact immutable
- * deployment that produced the event. Matching the stored deployment id prevents a delayed
- * undeployment for an older entity from disabling a place that already represents a newer one.
- * Legacy rows without deployment ids use the guarded base-position fallback below.
+ * deployment that produced the event, which is what the disabling statement matches on first. It
+ * also retires the older revisions that removed content had replaced upstream, by footprint and by
+ * base position, because those revisions are gone even when their own removal never reached Places.
+ *
+ * Those wider matches cannot be bounded by the event's timestamp: it marks when the removal was
+ * emitted, which is always after the entity timestamp of the deployment that caused it, so a
+ * replacement looks older than the removal of what it replaced and sits at the same base and
+ * parcels. The scenes the world still serves are therefore read from the content server and left
+ * alone -- in the place rows, in the base parcels the scene watermark claims, and in the parcels the
+ * position watermark clears.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -82,10 +93,48 @@ export async function handleWorldScenesUndeployment(
     const resolvedScenes = await resolveWorldSceneUndeploymentFootprints(
       uniqueScenes
     )
-    const basePositions = resolvedScenes.map((scene) => scene.baseParcel)
-    const deploymentIds = resolvedScenes.map((scene) => scene.entityId)
-    const positions = [
+
+    // Only the parcels this event claims to have cleared can hold a place row it would disable, so
+    // the upstream lookup is scoped to them rather than to the whole world.
+    const clearedPositions = [
       ...new Set(resolvedScenes.flatMap((scene) => scene.parcels)),
+    ]
+    // Read before the lookup so the snapshot covers everything the survivor set cannot: a place
+    // committed for this world while the lookup ran or while the per-world lock was contended.
+    const snapshot = await PlaceModel.findEnabledWorldPlaceRevisions(worldName)
+    const activeScenes = await fetchWorldActiveScenesAtPositions(
+      worldName,
+      clearedPositions
+    )
+
+    const liveDeploymentIds = new Set(activeScenes.deploymentIds)
+    const livePositions = new Set(activeScenes.positions)
+
+    // An event naming a deployment the world still serves contradicts upstream state: a later
+    // redeployment of the same content is the ordinary cause, and acting on it would remove a
+    // scene players can still visit.
+    const undeployedScenes = resolvedScenes.filter(
+      (scene) => !liveDeploymentIds.has(scene.entityId)
+    )
+    const stillServed = resolvedScenes.length - undeployedScenes.length
+
+    if (stillServed > 0) {
+      loggerExtended.log(
+        `WARNING: skipped ${stillServed} undeployed scenes that ${worldName} still serves`
+      )
+    }
+
+    if (undeployedScenes.length === 0) {
+      loggerExtended.log(
+        `Every scene in the undeployment for world: ${worldName} is still served; nothing to disable`
+      )
+      return
+    }
+
+    const basePositions = undeployedScenes.map((scene) => scene.baseParcel)
+    const deploymentIds = undeployedScenes.map((scene) => scene.entityId)
+    const positions = [
+      ...new Set(undeployedScenes.flatMap((scene) => scene.parcels)),
     ]
     const basePositionsSummary = summarizeBasePositions(basePositions)
 
@@ -99,17 +148,26 @@ export async function handleWorldScenesUndeployment(
       await WorldModel.lockWorldForDeployment(worldName)
 
       // Durable watermark: the undeployment can arrive before the deployment it refers to, so
-      // record it whether or not a place row matched
+      // record it whether or not a place row matched.
+      //
+      // Every removed deployment is tombstoned by identity, so a delayed delivery of one cannot
+      // recreate a scene that is gone. Base-parcel rejection is a separate question: a row whose
+      // base something still serves would reject the deployment serving it, so that row records
+      // identity only and leaves the base to the live place row and to its own eventual removal.
       await WorldSceneUndeploymentModel.recordScenes(
         worldName,
-        resolvedScenes,
-        event.timestamp
+        undeployedScenes.map((scene) => ({
+          entityId: scene.entityId,
+          baseParcel: scene.baseParcel,
+          undeployedAt: undeployedAt(scene, event.timestamp),
+          basePositionRejects: !livePositions.has(scene.baseParcel),
+        }))
       )
-      await WorldDeploymentPositionWatermarkModel.recordPositions(
+      await recordClearedPositions(
         worldName,
-        positions,
-        new Date(event.timestamp),
-        true
+        undeployedScenes,
+        livePositions,
+        event.timestamp
       )
 
       return PlaceModel.disableByWorldIdAndDeployments(
@@ -117,7 +175,10 @@ export async function handleWorldScenesUndeployment(
         deploymentIds,
         basePositions,
         positions,
-        event.timestamp
+        event.timestamp,
+        activeScenes.deploymentIds,
+        activeScenes.positions,
+        snapshot
       )
     })
 
@@ -142,4 +203,52 @@ export async function handleWorldScenesUndeployment(
     ])
     throw error
   }
+}
+
+/**
+ * When the removed content's own deployment timestamp is known, bound the watermark by it rather
+ * than by the removal: the emission time retires every revision the base ever held, which is more
+ * than the removal proves. The immutable entity supplies it whenever the footprint had to be
+ * fetched. Content cannot be removed before it was deployed, so a timestamp past the event is not
+ * the removed content's and is clamped away.
+ */
+function undeployedAt(
+  scene: ResolvedUndeployedScene,
+  eventTimestamp: number
+): Date {
+  if (scene.deployedAt === null || scene.deployedAt > eventTimestamp) {
+    return new Date(eventTimestamp)
+  }
+  return new Date(scene.deployedAt)
+}
+
+/**
+ * Watermark the parcels the undeployment cleared, as of the moment it was emitted.
+ *
+ * Parcels a surviving scene occupies are left out, and the upstream lookup covers at least these
+ * parcels, so every parcel that remains has nothing serving it. The emission time is therefore both
+ * safe and the strongest bound available: no surviving deployment can be rejected by it, and it
+ * retires every revision the cleared parcels ever held rather than only those older than the last
+ * one Places happened to see.
+ */
+async function recordClearedPositions(
+  worldName: string,
+  undeployedScenes: ResolvedUndeployedScene[],
+  livePositions: Set<string>,
+  eventTimestamp: number
+): Promise<void> {
+  const cleared = [
+    ...new Set(
+      undeployedScenes
+        .flatMap((scene) => scene.parcels)
+        .filter((parcel) => !livePositions.has(parcel))
+    ),
+  ]
+
+  await WorldDeploymentPositionWatermarkModel.recordPositions(
+    worldName,
+    cleared,
+    new Date(eventTimestamp),
+    true
+  )
 }

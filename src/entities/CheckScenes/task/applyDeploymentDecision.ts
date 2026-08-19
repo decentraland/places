@@ -226,6 +226,7 @@ async function recordReplacementRemovals(
   replacedPlaces: PlaceAttributes[],
   replacedAt: number
 ): Promise<void> {
+  const undeployedAt = new Date(replacedAt)
   await WorldSceneUndeploymentModel.recordScenes(
     worldId,
     replacedPlaces.map((place) => ({
@@ -233,8 +234,13 @@ async function recordReplacementRemovals(
       // key while base-position matching still protects older deployments for that scene.
       entityId: place.deployment_id || `legacy-place:${place.id}`,
       baseParcel: place.base_position,
-    })),
-    replacedAt
+      // The replacing deployment's entity timestamp, so the watermark rejects exactly what it
+      // superseded rather than anything older than the moment Places noticed.
+      undeployedAt,
+      // The replacement now occupies this base, and the bound above is its own timestamp, so the
+      // base may reject: everything it superseded there is strictly older.
+      basePositionRejects: true,
+    }))
   )
 }
 

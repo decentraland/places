@@ -11,7 +11,17 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
   static tableName = "world_scene_undeployments"
 
   /**
-   * Record the undeployed scenes for a world, keeping the newest event timestamp per deployment.
+   * Record the undeployed scenes for a world, keeping the newest timestamp per deployment.
+   *
+   * Each scene also states whether its base parcel may reject: false when a replacement already
+   * served that base, which keeps the row an identity-only tombstone.
+   *
+   * Each scene carries the tightest bound its caller could establish: the deployment timestamp of
+   * the content that was removed when that is known, and the moment the removal was emitted
+   * otherwise. Rejection compares this against an incoming deployment's entity timestamp, and a
+   * removal is always emitted after the deployment that caused it, so the emission time retires more
+   * than the removal proves. Callers that cannot establish the tighter bound must therefore not
+   * record a base parcel something still serves, or the row will reject the deployment serving it.
    *
    * A deployment id is a content hash over the scene metadata the base parcel is derived from,
    * so repeat events for one scene carry the same base. The base is still only taken from an
@@ -21,35 +31,54 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    */
   static async recordScenes(
     worldId: string,
-    scenes: UndeployedScene[],
-    eventTimestamp: number
+    scenes: Array<
+      UndeployedScene & {
+        /**
+         * A Date, or the ISO string the pg timestamp parser returns for a value read from the
+         * database. Reconstructing a Date from that string would re-serialize it in the process
+         * timezone and shift what gets stored, so callers pass the read value through.
+         */
+        undeployedAt: Date | string
+        basePositionRejects: boolean
+      }
+    >
   ): Promise<void> {
     if (scenes.length === 0) {
       return
     }
 
     const normalizedWorldId = worldId.toLowerCase()
-    const undeployedAt = new Date(eventTimestamp)
     const uniqueScenes = [
       ...new Map(scenes.map((scene) => [scene.entityId, scene])).values(),
     ]
     const deploymentIds = uniqueScenes.map((scene) => scene.entityId)
     const basePositions = uniqueScenes.map((scene) => scene.baseParcel)
+    const undeployedAt = uniqueScenes.map((scene) => scene.undeployedAt)
+    const basePositionRejects = uniqueScenes.map(
+      (scene) => scene.basePositionRejects
+    )
 
     const sql = SQL`
       INSERT INTO ${table(
         this
-      )} ("world_id", "deployment_id", "base_position", "undeployed_at")
-      SELECT ${normalizedWorldId}, incoming."deployment_id", incoming."base_position", ${undeployedAt}
+      )} ("world_id", "deployment_id", "base_position", "undeployed_at", "base_position_rejects")
+      SELECT ${normalizedWorldId}, incoming."deployment_id", incoming."base_position", incoming."undeployed_at", incoming."base_position_rejects"
       FROM unnest(
         ${deploymentIds}::text[],
-        ${basePositions}::text[]
-      ) AS incoming("deployment_id", "base_position")
+        ${basePositions}::text[],
+        ${undeployedAt}::timestamp[],
+        ${basePositionRejects}::boolean[]
+      ) AS incoming("deployment_id", "base_position", "undeployed_at", "base_position_rejects")
       ON CONFLICT ("world_id", "deployment_id") DO UPDATE
       SET "base_position" = CASE
             WHEN EXCLUDED."undeployed_at" >= ${table(this)}."undeployed_at"
             THEN EXCLUDED."base_position"
             ELSE ${table(this)}."base_position"
+          END,
+          "base_position_rejects" = CASE
+            WHEN EXCLUDED."undeployed_at" >= ${table(this)}."undeployed_at"
+            THEN EXCLUDED."base_position_rejects"
+            ELSE ${table(this)}."base_position_rejects"
           END,
           "undeployed_at" = GREATEST(${table(
             this
@@ -64,6 +93,10 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    * deployment identity or the scene's base position, so an older revision of an undeployed
    * scene cannot be recreated either. Returns null when the deployment is newer than every
    * recorded undeployment for that scene.
+   *
+   * The base match is skipped for rows recorded while a replacement already served that base: they
+   * exist to tombstone the removed deployment by identity, and matching their base would reject the
+   * replacement instead.
    */
   static async findSupersedingUndeployment(
     worldId: string,
@@ -74,7 +107,10 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "world_id" = ${worldId.toLowerCase()}
-        AND ("deployment_id" = ${deploymentId} OR "base_position" = ${basePosition})
+        AND (
+          "deployment_id" = ${deploymentId}
+          OR ("base_position" = ${basePosition} AND "base_position_rejects" IS TRUE)
+        )
         AND "undeployed_at" >= ${deployedAt}
       ORDER BY "undeployed_at" DESC
       LIMIT 1
