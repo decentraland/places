@@ -15,9 +15,11 @@
  * the same world and let the older of the two win. Stopping the consumer is what makes that
  * impossible; narrowing it to a lock held across each world's whole body is follow-up work.
  *
+ * Must run with TZ=UTC, for the reason the guard in main() gives. The script refuses otherwise.
+ *
  * Usage:
- *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
- *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *
  * Options:
  *   --apply                  Commit the rebuild. Without it the run is a dry run and rolls back.
@@ -27,8 +29,8 @@
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
  *
  * Examples:
- *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --limit 5
- *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --apply --world-name "myworld.dcl.eth"
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --limit 5
+ *   TZ=UTC DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts --apply --world-name "myworld.dcl.eth"
  */
 
 import { randomUUID } from "crypto"
@@ -955,6 +957,23 @@ async function main(): Promise<number> {
     `World filter: ${worldName ? forTerminal(worldName) : "All worlds"}`
   )
   logger.log("=".repeat(60))
+
+  // This script writes places.deployed_at from each entity's timestamp, into a `timestamp` column that
+  // carries no offset, and node-postgres renders a Date in the process timezone. Run from another zone it
+  // stores every deployment shifted by that offset -- and deployed_at is exactly what the undeployment
+  // guards and the repair script compare against afterwards. No test can catch it: a test's fixtures and
+  // the code under test always share the process timezone.
+  //
+  // Ahead of the dry-run branch on purpose. A dry run writes nothing, but it reads and compares stored
+  // timestamps, so a preview taken under the wrong clock is a preview of a different run. Refusing here
+  // means the two modes agree.
+  if (new Date().getTimezoneOffset() !== 0) {
+    throw new Error(
+      `Refusing to run outside UTC: this process is offset by ${
+        -new Date().getTimezoneOffset() / 60
+      }h, which would shift every deployed_at it writes. Re-run with TZ=UTC.`
+    )
+  }
 
   // Connect to database
   if (!dryRun) {
