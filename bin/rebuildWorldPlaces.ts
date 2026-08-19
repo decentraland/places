@@ -651,22 +651,35 @@ async function processWorldScene(
  * listing was snapshotted, then the places read seconds later, and any deployment landing in between
  * produced an active place absent from both -- which this would disable.
  *
- * The places are re-read under the lock rather than trusting the ones read before it.
+ * The places are re-read under the lock rather than trusting the ones read before it, and only rows
+ * that existed before the scenes were processed can be orphans -- a place created since then is not
+ * something this run's scene list can speak about.
  */
 async function disableOrphanPlaces(options: {
   worldName: string
   worldId: string
   knownPlaceIds: Set<string>
+  preexistingPlaceIds: Set<string>
   dryRun: boolean
   stats: Stats
 }): Promise<void> {
-  const { worldName, worldId, knownPlaceIds, dryRun, stats } = options
+  const {
+    worldName,
+    worldId,
+    knownPlaceIds,
+    preexistingPlaceIds,
+    dryRun,
+    stats,
+  } = options
 
   const orphanPlaces = await withDatabaseTransaction(async () => {
     await WorldModel.lockWorldForDeployment(worldName)
 
     const orphans = (await PlaceModel.findByWorldId(worldId)).filter(
-      (place) => !place.disabled && !knownPlaceIds.has(place.id)
+      (place) =>
+        !place.disabled &&
+        !knownPlaceIds.has(place.id) &&
+        preexistingPlaceIds.has(place.id)
     )
 
     if (orphans.length > 0 && !dryRun) {
@@ -768,6 +781,15 @@ async function main() {
         )
         logger.log(`  Found ${scenes.length} scene(s)`)
 
+        // knownPlaceIds is accumulated while the scenes are processed, before the sweep takes its
+        // lock, so a place created in between would be re-read under the lock and look orphaned.
+        // Only rows that already existed can be candidates: anything newer is accounted for by
+        // whatever created it.
+        const worldId = world.name.toLowerCase()
+        const preexistingPlaceIds = new Set(
+          (await PlaceModel.findByWorldId(worldId)).map((place) => place.id)
+        )
+
         const knownPlaceIds = new Set<string>()
         let unaccountedScenes = 0
 
@@ -804,9 +826,9 @@ async function main() {
         // or that was skipped without yielding a place, leaves its live place looking like an
         // orphan; and a world that answered with no scenes at all is indistinguishable from a name
         // that no longer resolves, which would take every place with it.
-        const worldId = world.name.toLowerCase()
-        const worldPlaces = await PlaceModel.findByWorldId(worldId)
-        const activePlaces = worldPlaces.filter((place) => !place.disabled)
+        const activePlaces = (await PlaceModel.findByWorldId(worldId)).filter(
+          (place) => !place.disabled
+        )
 
         if (unaccountedScenes > 0) {
           logger.log(
@@ -821,6 +843,7 @@ async function main() {
             worldName: world.name,
             worldId,
             knownPlaceIds,
+            preexistingPlaceIds,
             dryRun,
             stats,
           })

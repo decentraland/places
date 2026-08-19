@@ -98,7 +98,6 @@ type Stats = {
   ambiguous: number
   alreadyRepresented: number
   baseSquatted: number
-  skipped: number
   watermarksCleared: number
   watermarksDisarmed: number
   errored: number
@@ -327,26 +326,29 @@ function sameFootprint(left: string[], right: string[]): boolean {
  */
 export async function repairWorld(
   rawWorldId: string,
-  served: ServedScene[],
-  dryRun: boolean,
-  servedReadAt: Date = new Date()
-): Promise<WorldRepair | null> {
+  fetchServed: () => Promise<ServedScene[]>,
+  dryRun: boolean
+): Promise<WorldRepair> {
   // world_id is stored lower-cased. This is exported, so a mixed-case argument would otherwise match
   // nothing at all and report a clean world.
   const worldId = rawWorldId.toLowerCase()
 
-  const run = async (): Promise<WorldRepair | null> => {
-    // Same lock every ingestion path takes. The lock gives mutual exclusion, not freshness: a
-    // genuine undeployment can still have committed between the served set being read and this
-    // transaction acquiring the lock. Acting on the stale reading would re-enable a place whose
-    // scene really is gone and delete the tombstone and watermarks that removal just wrote, with
-    // nothing left to redeliver them. So detect it and leave the world alone.
+  const run = async (): Promise<WorldRepair> => {
+    // Same lock every ingestion path takes, and the served set is read inside it.
+    //
+    // The lock alone gives mutual exclusion, not freshness: read the served set before it and a
+    // genuine undeployment can commit while the lock is being waited on, after which this would
+    // re-enable a place whose scene really is gone and delete the tombstone and watermarks that
+    // removal just wrote, with no message left to redeliver them. Detecting that after the fact is
+    // not possible either -- a removal for an already-disabled place writes durable records without
+    // touching any place row, so there is nothing local to notice.
+    //
+    // The service cannot hold this lock across an HTTP call because it would stall deployments for
+    // that world. A one-off operator repair has no such constraint: one world at a time, for the
+    // length of one request.
     await WorldModel.lockWorldForDeployment(worldId)
 
-    if (await disabledSince(worldId, servedReadAt)) {
-      return null
-    }
-
+    const served = await fetchServed()
     const now = new Date()
     const places = await findDisabledPlaces(worldId)
     const servedIds = new Set(served.map((scene) => scene.entityId))
@@ -469,8 +471,11 @@ export async function repairWorld(
             "updated_at" = ${now}
           FROM unnest(
             ${reenabledByFootprint.map(({ place }) => place.id)}::bpchar[],
-            ${reenabledByFootprint.map(({ scene }) => scene.entityId)}::text[]
-          ) AS matched("id", "deployment_id")
+            ${reenabledByFootprint.map(({ scene }) => scene.entityId)}::text[],
+            ${reenabledByFootprint.map(
+              ({ scene }) => scene.deployedAt
+            )}::timestamp[]
+          ) AS matched("id", "deployment_id", "deployed_at")
           WHERE target."id" = matched."id"
             AND target."world_id" = ${worldId}
             -- only ever backfills a row that has no identity of its own, which also makes a
@@ -623,26 +628,6 @@ export async function repairWorld(
   }
 }
 
-/**
- * Whether any place in this world was disabled after the served set was read, which means an
- * undeployment committed while it was being read and the set can no longer be trusted.
- */
-async function disabledSince(worldId: string, since: Date): Promise<boolean> {
-  const rows = await PlaceModel.namedQuery<{ exists: boolean }>(
-    "repair_places_disabled_since",
-    SQL`
-      SELECT EXISTS (
-        SELECT 1
-        FROM ${table(PlaceModel)}
-        WHERE "world" IS TRUE
-          AND "world_id" = ${worldId}
-          AND "disabled_at" > ${since}
-      ) AS "exists"
-    `
-  )
-  return rows[0]?.exists ?? false
-}
-
 // ── Reporting ──────────────────────────────────────────────────────────
 
 function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
@@ -751,7 +736,6 @@ async function main(): Promise<number> {
     ambiguous: 0,
     alreadyRepresented: 0,
     baseSquatted: 0,
-    skipped: 0,
     watermarksCleared: 0,
     watermarksDisarmed: 0,
     errored: 0,
@@ -769,19 +753,20 @@ async function main(): Promise<number> {
       logger.log(`[${index + 1}/${worlds.length}] ${worldId}`)
 
       try {
-        const servedReadAt = new Date()
-        const served = await fetchServedScenes(worldsContentServerUrl, worldId)
-        logger.log(`  Content server serves ${served.length} scene(s)`)
-
-        const repair = await repairWorld(worldId, served, dryRun, servedReadAt)
-
-        if (repair === null) {
-          logger.log(
-            `  Skipped: a place in this world was disabled after its served scenes were read, so that reading cannot be trusted. Re-run to pick it up.`
-          )
-          stats.skipped++
-          continue
-        }
+        // Fetched inside repairWorld, under the per-world lock, so it cannot describe a world that
+        // has already moved on.
+        const repair = await repairWorld(
+          worldId,
+          async () => {
+            const served = await fetchServedScenes(
+              worldsContentServerUrl,
+              worldId
+            )
+            logger.log(`  Content server serves ${served.length} scene(s)`)
+            return served
+          },
+          dryRun
+        )
 
         reportWorld(worldId, repair, dryRun)
 
@@ -818,7 +803,6 @@ async function main(): Promise<number> {
     logger.log(`Ambiguous legacy:     ${stats.ambiguous}`)
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
-    logger.log(`Skipped as stale:     ${stats.skipped}`)
     logger.log(`Watermarks cleared:   ${stats.watermarksCleared}`)
     logger.log(`Bases disarmed:       ${stats.watermarksDisarmed}`)
     logger.log(`Errored worlds:       ${stats.errored}`)

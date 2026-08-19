@@ -144,7 +144,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and the world still serves the disabled place's deployment", () => {
     const worldName = "repair-identity.dcl.eth"
-    let repair: WorldRepair | null
+    let repair: WorldRepair
     let place: { title: string | null; disabled: boolean } | null
 
     beforeEach(async () => {
@@ -166,7 +166,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       repair = await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-served",
             base: "0,0",
@@ -198,7 +198,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report it as re-enabled by identity", () => {
-      expect(repair!.reenabledByIdentity).toHaveLength(1)
+      expect(repair.reenabledByIdentity).toHaveLength(1)
     })
   })
 
@@ -234,7 +234,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-dup",
             base: "0,0",
@@ -270,7 +270,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -322,7 +322,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -380,7 +380,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -413,7 +413,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -463,7 +463,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -503,7 +503,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -530,7 +530,7 @@ describe("when repairing places an undeployment disabled", () => {
   describe("and a legacy row sits at a base an enabled place already covers", () => {
     const worldName = "repair-legacy-taken-base.dcl.eth"
     let enabledTitles: Array<string | null>
-    let repair: WorldRepair | null
+    let repair: WorldRepair
 
     beforeEach(async () => {
       await deliverDeployment({
@@ -564,7 +564,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       repair = await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-legacy",
             base: "0,0",
@@ -583,7 +583,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report it as needing the stale row cleared first", () => {
-      expect(repair!.baseSquatted).toHaveLength(1)
+      expect(repair.baseSquatted).toHaveLength(1)
     })
   })
 
@@ -621,7 +621,7 @@ describe("when repairing places an undeployment disabled", () => {
       // same parcel count, different parcels: not the same scene
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-other",
             base: "0,0",
@@ -648,7 +648,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-live",
             base: "0,0",
@@ -668,9 +668,121 @@ describe("when repairing places an undeployment disabled", () => {
     })
   })
 
+  describe("and a legacy row matches a served scene exactly", () => {
+    const worldName = "repair-legacy-backfill.dcl.eth"
+    let place: {
+      disabled: boolean
+      deployment_id: string | null
+      deployed_at: Date
+    } | null
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-legacy-exact",
+        timestamp: removedAt,
+        title: "Legacy Exact",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-legacy-exact",
+              baseParcel: "0,0",
+              parcels: ["0,0", "1,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      // rows written before deployment ids were stored carry none
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL WHERE "world_id" = ${worldName}`
+      )
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-legacy-exact",
+            base: "0,0",
+            parcels: ["1,0", "0,0"],
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      place = await PlaceModel.namedQuery<{
+        disabled: boolean
+        deployment_id: string | null
+        deployed_at: Date
+      }>(
+        "read_place",
+        SQL`SELECT "disabled", "deployment_id", "deployed_at" FROM places WHERE "world_id" = ${worldName}`
+      ).then((rows) => rows[0] ?? null)
+    })
+
+    it("should re-enable it", () => {
+      expect(place?.disabled).toBe(false)
+    })
+
+    it("should backfill the served scene's deployment id", () => {
+      expect(place?.deployment_id).toBe("entity-legacy-exact")
+    })
+
+    it("should carry that scene's timestamp too, so the row does not advertise a newer deployment than itself", async () => {
+      const reference = await PlaceModel.namedQuery<{ same: boolean }>(
+        "compare_deployed_at",
+        SQL`SELECT ("deployed_at" = ${new Date(
+          servedAt
+        )}) AS "same" FROM places WHERE "world_id" = ${worldName}`
+      )
+
+      expect(reference[0]?.same).toBe(true)
+    })
+
+    it("should report it as re-enabled by footprint", () => {
+      expect(repair.reenabledByFootprint).toHaveLength(1)
+    })
+  })
+
+  describe("and the world changes while the served scenes are being read", () => {
+    const worldName = "repair-read-under-lock.dcl.eth"
+    let order: string[]
+
+    beforeEach(async () => {
+      order = []
+      const lockWorldForDeployment = jest
+        .spyOn(WorldModel, "lockWorldForDeployment")
+        .mockImplementation(async () => {
+          order.push("lock")
+        })
+
+      await repairWorld(
+        worldName,
+        async () => {
+          order.push("fetch")
+          return []
+        },
+        false
+      )
+
+      lockWorldForDeployment.mockRestore()
+    })
+
+    it("should read the served scenes only after taking the lock", () => {
+      expect(order).toEqual(["lock", "fetch"])
+    })
+  })
+
   describe("and the run is a dry run", () => {
     const worldName = "repair-dry-run.dcl.eth"
-    let repair: WorldRepair | null
+    let repair: WorldRepair
     let stillDisabled: boolean
 
     beforeEach(async () => {
@@ -692,7 +804,7 @@ describe("when repairing places an undeployment disabled", () => {
 
       repair = await repairWorld(
         worldName,
-        [
+        async () => [
           servedScene({
             entityId: "entity-dry",
             base: "0,0",
@@ -706,7 +818,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report what it would have re-enabled", () => {
-      expect(repair!.reenabledByIdentity).toHaveLength(1)
+      expect(repair.reenabledByIdentity).toHaveLength(1)
     })
 
     it("should roll the change back", () => {
@@ -716,7 +828,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and the disabled place's scene is genuinely gone", () => {
     const worldName = "repair-gone.dcl.eth"
-    let repair: WorldRepair | null
+    let repair: WorldRepair
     let enabled: number
 
     beforeEach(async () => {
@@ -736,7 +848,7 @@ describe("when repairing places an undeployment disabled", () => {
         )
       )
 
-      repair = await repairWorld(worldName, [], false)
+      repair = await repairWorld(worldName, async () => [], false)
       enabled = (await PlaceModel.findEnabledWorldName(worldName)).length
     })
 
@@ -745,11 +857,11 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report nothing re-enabled", () => {
-      expect(repair!.reenabledByIdentity).toHaveLength(0)
+      expect(repair.reenabledByIdentity).toHaveLength(0)
     })
 
     it("should touch no watermark for a world that serves nothing", () => {
-      expect(repair!.sceneWatermarksCleared).toBe(0)
+      expect(repair.sceneWatermarksCleared).toBe(0)
     })
   })
 })
