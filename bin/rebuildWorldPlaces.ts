@@ -94,6 +94,10 @@ const WORLDS_PAGE_SIZE = 100
 const SCENES_PAGE_SIZE = 100
 /** Backstop against a total that never agrees with the rows served. */
 const SCENES_MAX_PAGES = 200
+/** Per request, matching the service's own reader. */
+const SCENES_FETCH_TIMEOUT_MS = 15_000
+/** The whole read, so a slow listing cannot stall a run that disables places. */
+const SCENES_READ_DEADLINE_MS = 60_000
 /** How many times to re-read a multi-page listing looking for two that agree. */
 const STABLE_READ_ATTEMPTS = 3
 
@@ -101,19 +105,37 @@ const STABLE_READ_ATTEMPTS = 3
 
 function parseArgs() {
   const args = process.argv.slice(2)
-  const dryRun = args.includes("--dry-run")
+  const KNOWN = ["--dry-run", "--limit", "--world-name", "--connection-string"]
+  // This script disables places and defaults to live, so a mistyped --dryrun must not slip through.
+  const unknown = args.filter(
+    (arg) => arg.startsWith("--") && !KNOWN.includes(arg)
+  )
+  if (unknown.length > 0) {
+    throw new Error(`Unrecognized option(s): ${unknown.join(", ")}`)
+  }
 
-  const limitIndex = args.indexOf("--limit")
-  const limit = limitIndex !== -1 ? parseInt(args[limitIndex + 1], 10) : null
+  const value = (flag: string): string | null => {
+    const index = args.indexOf(flag)
+    if (index === -1) return null
+    const next = args[index + 1]
+    if (!next || next.startsWith("--")) {
+      throw new Error(`${flag} requires a value`)
+    }
+    return next
+  }
 
-  const worldNameIndex = args.indexOf("--world-name")
-  const worldName = worldNameIndex !== -1 ? args[worldNameIndex + 1] : null
+  const rawLimit = value("--limit")
+  const limit = rawLimit === null ? null : Number.parseInt(rawLimit, 10)
+  if (limit !== null && (!Number.isInteger(limit) || limit <= 0)) {
+    throw new Error("--limit requires a positive whole number")
+  }
 
-  const connStringIndex = args.indexOf("--connection-string")
-  const connectionString =
-    connStringIndex !== -1 ? args[connStringIndex + 1] : null
-
-  return { dryRun, limit, worldName, connectionString }
+  return {
+    dryRun: args.includes("--dry-run"),
+    limit,
+    worldName: value("--world-name"),
+    connectionString: value("--connection-string"),
+  }
 }
 
 // ── Category Helpers (from taskRunnerSqs) ──────────────────────────────
@@ -199,7 +221,10 @@ async function fetchAllWorlds(
 
   for (;;) {
     const url = `${baseUrl}/worlds?has_deployed_scenes=true&limit=${WORLDS_PAGE_SIZE}&offset=${offset}`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(SCENES_FETCH_TIMEOUT_MS),
+      redirect: "error",
+    })
     if (!response.ok) {
       await drainResponse(response)
       throw new Error(
@@ -264,11 +289,9 @@ function fingerprintScenes(scenes: WorldScenesResponse["scenes"]): string {
   return scenes
     .map(
       (scene) =>
-        `${scene.entityId}|${scene.entity?.timestamp}|${[
-          ...(scene.parcels || []),
-        ]
-          .sort()
-          .join(",")}`
+        `${scene.entityId}|${scene.entity?.metadata?.scene?.base}|${
+          scene.entity?.timestamp
+        }|${[...(scene.parcels || [])].sort().join(",")}`
     )
     .sort()
     .join(";")
@@ -281,12 +304,26 @@ async function readScenePages(
   const scenes: WorldScenesResponse["scenes"] = []
   let total: number | null = null
   let pages = 0
+  const deadline = Date.now() + SCENES_READ_DEADLINE_MS
 
   for (let page = 0; page < SCENES_MAX_PAGES; page++) {
+    const remaining = deadline - Date.now()
+    if (remaining <= 0) {
+      throw new Error(
+        `Timed out reading the scenes of ${worldName} after ${
+          SCENES_READ_DEADLINE_MS / 1000
+        }s; skipping this world rather than judging its places against a partial listing`
+      )
+    }
+
     const url = `${baseUrl}/world/${encodeURIComponent(
       worldName
     )}/scenes?limit=${SCENES_PAGE_SIZE}&offset=${scenes.length}`
-    const response = await fetch(url)
+    const response = await fetch(url, {
+      signal: AbortSignal.timeout(Math.min(remaining, SCENES_FETCH_TIMEOUT_MS)),
+      // the trusted host is what makes this answer authoritative; a redirect would move it elsewhere
+      redirect: "error",
+    })
     if (!response.ok) {
       await drainResponse(response)
       throw new Error(

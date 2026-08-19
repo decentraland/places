@@ -8,6 +8,7 @@ import {
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
+import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import { withDatabaseTransaction } from "../../src/entities/Database/model"
@@ -20,7 +21,10 @@ import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
 } from "../fixtures/deploymentEvent"
-import { createWorldScenesUndeploymentEvent } from "../fixtures/undeploymentEvent"
+import {
+  createWorldScenesUndeploymentEvent,
+  createWorldUndeploymentEvent,
+} from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 
 jest.mock("../../src/entities/CheckScenes/task/processEntityId")
@@ -111,6 +115,33 @@ function servedScene(options: {
     parcels: options.parcels ?? [options.base],
     deployedAt: new Date(options.deployedAt),
   }
+}
+
+/**
+ * Whether any durable record would reject a deployment at this base and timestamp, asking the same
+ * guards the deployment path asks.
+ */
+async function isRejected(
+  worldName: string,
+  basePosition: string,
+  deployedAt: number
+): Promise<boolean> {
+  const at = new Date(deployedAt)
+  const [world, scene, positions] = await Promise.all([
+    WorldUndeploymentModel.findSupersedingUndeployment(worldName, at),
+    WorldSceneUndeploymentModel.findSupersedingUndeployment(
+      worldName,
+      "unrelated-deployment-id",
+      basePosition,
+      at
+    ),
+    WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+      worldName,
+      [basePosition],
+      at
+    ),
+  ])
+  return !!world || !!scene || positions
 }
 
 /**
@@ -829,6 +860,65 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should leave the world's lock free rather than held", () => {
       expect(lockReleased).toBe(true)
+    })
+  })
+
+  describe("and a removed scene is newer than the oldest served scene", () => {
+    const worldName = "repair-newer-removed.dcl.eth"
+    let olderServedAt: number
+    let newerRemovedAt: number
+    let rejectsRemoved: boolean
+    let rejectsSurvivor: boolean
+
+    beforeEach(async () => {
+      olderServedAt = removedAt
+      newerRemovedAt = removedAt + 60_000
+
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-served-older",
+        timestamp: olderServedAt,
+        title: "Older Served",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-removed-newer",
+        timestamp: newerRemovedAt,
+        title: "Newer Removed",
+        base: "5,5",
+        parcels: ["5,5"],
+      })
+      // a full teardown: every place disabled, and the world watermark is the only tombstone it wrote
+      await handleWorldUndeployment(
+        createWorldUndeploymentEvent(worldName, { timestamp: eventAt })
+      )
+      await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
+
+      // the world is serving the older scene again, so the scalar has to come down below it
+      await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-older",
+            base: "0,0",
+            deployedAt: olderServedAt,
+          }),
+        ],
+        false
+      )
+
+      rejectsSurvivor = await isRejected(worldName, "0,0", olderServedAt)
+      rejectsRemoved = await isRejected(worldName, "5,5", newerRemovedAt)
+    })
+
+    it("should stop rejecting the scene the world serves", () => {
+      expect(rejectsSurvivor).toBe(false)
+    })
+
+    it("should keep rejecting the removed scene that is newer than it", () => {
+      expect(rejectsRemoved).toBe(true)
     })
   })
 

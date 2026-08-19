@@ -80,6 +80,8 @@ type DisabledPlace = {
   base_position: string
   positions: string[]
   deployment_id: string | null
+  /** As the pg parser returns it; passed straight back so its value is never re-serialized. */
+  deployed_at: Date | string
 }
 
 export type WorldRepair = {
@@ -348,7 +350,7 @@ async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
   return PlaceModel.namedQuery<DisabledPlace>(
     "repair_find_disabled_places",
     SQL`
-      SELECT "id", "title", "base_position", "positions", "deployment_id"
+      SELECT "id", "title", "base_position", "positions", "deployment_id", "deployed_at"
       FROM ${table(PlaceModel)}
       WHERE "world" IS TRUE
         AND "world_id" = ${worldId}
@@ -424,6 +426,7 @@ export async function repairWorld(
     const now = new Date()
     const places = await findDisabledPlaces(worldId)
     const servedIds = new Set(served.map((scene) => scene.entityId))
+    const livePositions = new Set(served.flatMap((scene) => scene.parcels))
 
     const reenabledByIdentity: DisabledPlace[] = []
     const reenabledByFootprint: Array<{
@@ -433,7 +436,7 @@ export async function repairWorld(
     const ambiguous: DisabledPlace[] = []
     const alreadyRepresented: DisabledPlace[] = []
     const baseSquatted: DisabledPlace[] = []
-    let stillGone = 0
+    const stillGonePlaces: DisabledPlace[] = []
 
     // A scene whose place row was disabled by this bug gets a brand new row from the ingestion path
     // and from bin/rebuildWorldPlaces.ts, because neither looks at rows disabled as undeployments.
@@ -455,7 +458,7 @@ export async function repairWorld(
         continue
       }
       if (!servedIds.has(place.deployment_id)) {
-        stillGone++
+        stillGonePlaces.push(place)
       } else if (claimed.has(place.deployment_id)) {
         alreadyRepresented.push(place)
       } else if (basesTaken.has(place.base_position)) {
@@ -499,7 +502,7 @@ export async function repairWorld(
       if (unclaimedAtBase) {
         ambiguous.push(place)
       } else {
-        stillGone++
+        stillGonePlaces.push(place)
       }
     }
 
@@ -577,6 +580,26 @@ export async function repairWorld(
     // timestamp, so it only harms this world if it reaches the oldest scene still being served.
     // Lower it to just below that scene rather than deleting it: everything older than the surviving
     // content was still retired by the teardown, and nothing else records that.
+    //
+    // A single scalar cannot spare the oldest survivor without also releasing anything newer than it,
+    // and a torn-down world has no other tombstone -- that branch records the world watermark alone.
+    // So before lowering, give every place that is disabled and no longer served a tombstone of its
+    // own, at its own deployment timestamp. Those are the removals the scalar was covering, and
+    // recording them is correct regardless: the place is disabled and the world does not serve it.
+    // What remains uncovered is a removed scene Places never held a row for, which nothing local can
+    // describe.
+    if (oldestSurvivor !== null && stillGonePlaces.length > 0) {
+      await WorldSceneUndeploymentModel.recordScenes(
+        worldId,
+        stillGonePlaces.map((place) => ({
+          entityId: place.deployment_id || `legacy-place:${place.id}`,
+          baseParcel: place.base_position,
+          undeployedAt: place.deployed_at,
+          basePositionRejects: !livePositions.has(place.base_position),
+        }))
+      )
+    }
+
     const worldWatermarksCleared =
       oldestSurvivor === null
         ? 0
@@ -681,7 +704,7 @@ export async function repairWorld(
       ambiguous,
       alreadyRepresented,
       baseSquatted,
-      stillGone,
+      stillGone: stillGonePlaces.length,
       worldWatermarksCleared,
       sceneWatermarksCleared,
       sceneWatermarksDisarmed,

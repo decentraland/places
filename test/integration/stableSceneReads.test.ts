@@ -148,6 +148,35 @@ describe("when a paginated scene listing shifts underneath a read", () => {
     })
   })
 
+  describe("and only the base differs across reads of the rebuild listing", () => {
+    beforeEach(() => {
+      for (let attempt = 0; attempt < 3; attempt++) {
+        fetchMock.mockResolvedValueOnce(page(rows(0, 100), 130))
+        fetchMock.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            total: 130,
+            scenes: rows(100, 30).map((row) => ({
+              entityId: row.entityId,
+              parcels: [row.base],
+              entity: {
+                timestamp: row.timestamp,
+                // the base is what resolves and updates places downstream
+                metadata: { scene: { base: `${800 + attempt},0` } },
+              },
+            })),
+          }),
+        } as Response)
+      }
+    })
+
+    it("should refuse, since the base decides which place each scene updates", async () => {
+      await expect(
+        fetchWorldScenes(BASE, "shifting-base.dcl.eth")
+      ).rejects.toThrow("Could not read a stable scene listing")
+    })
+  })
+
   describe("and the rebuild reader gets two identical multi-page reads", () => {
     let scenes: Awaited<ReturnType<typeof fetchWorldScenes>>
 
