@@ -144,7 +144,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and the world still serves the disabled place's deployment", () => {
     const worldName = "repair-identity.dcl.eth"
-    let repair: WorldRepair
+    let repair: WorldRepair | null
     let place: { title: string | null; disabled: boolean } | null
 
     beforeEach(async () => {
@@ -198,7 +198,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report it as re-enabled by identity", () => {
-      expect(repair.reenabledByIdentity).toHaveLength(1)
+      expect(repair!.reenabledByIdentity).toHaveLength(1)
     })
   })
 
@@ -300,6 +300,8 @@ describe("when repairing places an undeployment disabled", () => {
   describe("and a position watermark never rejected the served scene", () => {
     const worldName = "repair-position.dcl.eth"
     let remaining: string[]
+    let rejectsSurvivor: boolean
+    let rejectsOlder: boolean
 
     beforeEach(async () => {
       // a deployment records its own positions at its own timestamp, exclusive: it never rejected
@@ -333,15 +335,39 @@ describe("when repairing places an undeployment disabled", () => {
       remaining = (
         await WorldDeploymentPositionWatermarkModel.namedQuery<{
           position: string
+          superseded_at: Date
+          inclusive: boolean
         }>(
           "read_positions",
-          SQL`SELECT "position" FROM world_deployment_position_watermarks WHERE "world_id" = ${worldName} ORDER BY "position"`
+          SQL`SELECT "position", "superseded_at", "inclusive" FROM world_deployment_position_watermarks WHERE "world_id" = ${worldName} ORDER BY "position"`
         )
       ).map((row) => row.position)
+      // asserting the rejection contract rather than stored numbers keeps this independent of the
+      // process timezone, which the write and read conventions otherwise cross
+      rejectsSurvivor =
+        await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+          worldName,
+          ["0,0", "5,5"],
+          new Date(servedAt)
+        )
+      rejectsOlder =
+        await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+          worldName,
+          ["5,5"],
+          new Date(removedAt)
+        )
     })
 
-    it("should delete only the watermark that rejects the served scene", () => {
-      expect(remaining).toEqual(["0,0"])
+    it("should keep both rows rather than delete either", () => {
+      expect(remaining).toEqual(["0,0", "5,5"])
+    })
+
+    it("should stop rejecting the scene the world serves", () => {
+      expect(rejectsSurvivor).toBe(false)
+    })
+
+    it("should still reject content older than that scene", () => {
+      expect(rejectsOlder).toBe(true)
     })
   })
 
@@ -378,7 +404,9 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and a full world watermark reaches a served scene", () => {
     const worldName = "repair-world-watermark-blocking.dcl.eth"
-    let remaining: number
+    let stored: Date | undefined
+    let rejectsSurvivor: boolean
+    let rejectsOlder: boolean
 
     beforeEach(async () => {
       await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
@@ -394,16 +422,34 @@ describe("when repairing places an undeployment disabled", () => {
         ],
         false
       )
-      remaining = (
-        await WorldUndeploymentModel.namedQuery(
+      stored = (
+        await WorldUndeploymentModel.namedQuery<{ undeployed_at: Date }>(
           "read_world_watermark",
-          SQL`SELECT * FROM world_undeployments WHERE "world_id" = ${worldName}`
+          SQL`SELECT "undeployed_at" FROM world_undeployments WHERE "world_id" = ${worldName}`
         )
-      ).length
+      )[0]?.undeployed_at
+      rejectsSurvivor =
+        !!(await WorldUndeploymentModel.findSupersedingUndeployment(
+          worldName,
+          new Date(servedAt)
+        ))
+      rejectsOlder =
+        !!(await WorldUndeploymentModel.findSupersedingUndeployment(
+          worldName,
+          new Date(removedAt)
+        ))
     })
 
-    it("should delete it, since it rejects that scene", () => {
-      expect(remaining).toBe(0)
+    it("should keep the row rather than delete it", () => {
+      expect(stored).toBeDefined()
+    })
+
+    it("should stop rejecting the scene the world serves", () => {
+      expect(rejectsSurvivor).toBe(false)
+    })
+
+    it("should still reject content older than that scene", () => {
+      expect(rejectsOlder).toBe(true)
     })
   })
 
@@ -434,8 +480,8 @@ describe("when repairing places an undeployment disabled", () => {
       ).length
     })
 
-    it("should delete it, since a tie rejects the scene too", () => {
-      expect(remaining).toBe(0)
+    it("should lower it, since a tie rejects the scene too", () => {
+      expect(remaining).toBe(1)
     })
   })
 
@@ -484,7 +530,7 @@ describe("when repairing places an undeployment disabled", () => {
   describe("and a legacy row sits at a base an enabled place already covers", () => {
     const worldName = "repair-legacy-taken-base.dcl.eth"
     let enabledTitles: Array<string | null>
-    let repair: WorldRepair
+    let repair: WorldRepair | null
 
     beforeEach(async () => {
       await deliverDeployment({
@@ -536,8 +582,8 @@ describe("when repairing places an undeployment disabled", () => {
       expect(enabledTitles).toEqual(["Current Row"])
     })
 
-    it("should report it rather than re-enable it", () => {
-      expect(repair.alreadyRepresented).toHaveLength(1)
+    it("should report it as needing the stale row cleared first", () => {
+      expect(repair!.baseSquatted).toHaveLength(1)
     })
   })
 
@@ -624,7 +670,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and the run is a dry run", () => {
     const worldName = "repair-dry-run.dcl.eth"
-    let repair: WorldRepair
+    let repair: WorldRepair | null
     let stillDisabled: boolean
 
     beforeEach(async () => {
@@ -660,7 +706,7 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report what it would have re-enabled", () => {
-      expect(repair.reenabledByIdentity).toHaveLength(1)
+      expect(repair!.reenabledByIdentity).toHaveLength(1)
     })
 
     it("should roll the change back", () => {
@@ -670,7 +716,7 @@ describe("when repairing places an undeployment disabled", () => {
 
   describe("and the disabled place's scene is genuinely gone", () => {
     const worldName = "repair-gone.dcl.eth"
-    let repair: WorldRepair
+    let repair: WorldRepair | null
     let enabled: number
 
     beforeEach(async () => {
@@ -699,11 +745,11 @@ describe("when repairing places an undeployment disabled", () => {
     })
 
     it("should report nothing re-enabled", () => {
-      expect(repair.reenabledByIdentity).toHaveLength(0)
+      expect(repair!.reenabledByIdentity).toHaveLength(0)
     })
 
     it("should touch no watermark for a world that serves nothing", () => {
-      expect(repair.sceneWatermarksCleared).toBe(0)
+      expect(repair!.sceneWatermarksCleared).toBe(0)
     })
   })
 })
