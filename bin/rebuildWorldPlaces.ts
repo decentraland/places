@@ -545,9 +545,12 @@ async function processWorldScene(
       )}: newer deployment exists`
     )
     stats.skipped++
-    // That newer place is this scene's parcels accounted for. Returning nothing would leave it
-    // outside knownPlaceIds and the orphan sweep would disable the very place this skip protects.
-    return { processedPlaceId: newerPlace.id, disabledPlaceIds: [] }
+    // Nothing is returned as processed. Naming the newer place here would tell the orphan sweep that
+    // the listing accounts for that row, which it does not -- the sweep would then judge the rest of
+    // the world against a set containing a row no served scene produced. Counting the scene as
+    // unaccounted instead skips the sweep for this world, which protects that newer place and every
+    // other row here, and says why in the log.
+    return { processedPlaceId: null, disabledPlaceIds: [] }
   } else if (overlappingPlaces.length === 1) {
     // Single overlap → update that place
     const existingPlace = overlappingPlaces[0]
@@ -754,6 +757,99 @@ function revisionOf(place: PlaceAttributes): string {
   return `${place.deployment_id}|${place.deployed_at}`
 }
 
+/**
+ * Rebuild one world: read its served scenes, apply each of them, then sweep orphans if -- and only if
+ * -- this world's places can be judged complete against that listing.
+ *
+ * Extracted from main so the completeness rule is reachable from a test. It is the one rule here that
+ * disables places from a derived argument rather than an event, and inspecting it was not enough: the
+ * two mistakes found in it so far were both in which scenes count as accounted for.
+ */
+export async function rebuildWorld(options: {
+  worldName: string
+  worldsContentServerUrl: string
+  dryRun: boolean
+  stats: Stats
+}): Promise<{ sweptOrphans: boolean; unaccountedScenes: number }> {
+  const { worldName, worldsContentServerUrl, dryRun, stats } = options
+
+  // Captured before the content server is asked, so the places and the scene listing describe
+  // the same moment. knownPlaceIds is then accumulated from that listing, well before the
+  // sweep takes its lock, so anything committed in between must not be judged by it.
+  const worldId = worldName.toLowerCase()
+  const placeRevisions = await readPlaceRevisions(worldId)
+
+  const scenes = await fetchWorldScenes(worldsContentServerUrl, worldName)
+  logger.log(`  Found ${scenes.length} scene(s)`)
+
+  const knownPlaceIds = new Set<string>()
+  let unaccountedScenes = 0
+
+  for (const scene of scenes) {
+    try {
+      const result = await processWorldScene(
+        scene,
+        worldsContentServerUrl,
+        dryRun,
+        stats
+      )
+      if (result.processedPlaceId) {
+        knownPlaceIds.add(result.processedPlaceId)
+      } else {
+        unaccountedScenes++
+      }
+      for (const id of result.disabledPlaceIds) {
+        knownPlaceIds.add(id)
+      }
+    } catch (err: any) {
+      logger.error(
+        `  Error processing scene ${forTerminal(scene.entityId)}: ${
+          err.message
+        }`
+      )
+      stats.errored++
+      unaccountedScenes++
+    }
+  }
+
+  // Detect orphan places: active places in this world that have no corresponding scene in the
+  // content server.
+  //
+  // This is the only place in the repo that disables places from a derived argument rather
+  // than an event, so it may only run on a complete picture of the world. A scene that threw,
+  // or that was skipped without yielding a place, leaves its live place looking like an
+  // orphan; and a world that answered with no scenes at all is indistinguishable from a name
+  // that no longer resolves, which would take every place with it.
+  const activePlaces = (await PlaceModel.findByWorldId(worldId)).filter(
+    (place) => !place.disabled
+  )
+
+  if (unaccountedScenes > 0) {
+    logger.log(
+      `  Skipping orphan detection: ${unaccountedScenes} scene(s) yielded no place, so this world's places cannot be judged complete`
+    )
+    return { sweptOrphans: false, unaccountedScenes }
+  }
+
+  if (scenes.length === 0 && activePlaces.length > 0) {
+    logger.log(
+      `  Skipping orphan detection: the content server served no scenes for a world with ${activePlaces.length} active place(s), which reads the same as a name that no longer resolves`
+    )
+    return { sweptOrphans: false, unaccountedScenes }
+  }
+
+  await disableOrphanPlaces({
+    worldName,
+    worldId,
+    knownPlaceIds,
+    placeRevisions,
+    dryRun,
+    stats,
+  })
+
+  return { sweptOrphans: true, unaccountedScenes }
+}
+
 export async function disableOrphanPlaces(options: {
   worldName: string
   worldId: string
@@ -802,7 +898,7 @@ export async function disableOrphanPlaces(options: {
 
 // ── Main ───────────────────────────────────────────────────────────────
 
-async function main() {
+async function main(): Promise<number> {
   const { dryRun, limit, worldName, connectionString } = parseArgs()
 
   // Override CONNECTION_STRING if provided
@@ -877,79 +973,15 @@ async function main() {
       )
 
       try {
-        // Captured before the content server is asked, so the places and the scene listing describe
-        // the same moment. knownPlaceIds is then accumulated from that listing, well before the
-        // sweep takes its lock, so anything committed in between must not be judged by it.
-        const worldId = world.name.toLowerCase()
-        const placeRevisions = await readPlaceRevisions(worldId)
-
-        const scenes = await fetchWorldScenes(
+        await rebuildWorld({
+          worldName: world.name,
           worldsContentServerUrl,
-          world.name
-        )
-        logger.log(`  Found ${scenes.length} scene(s)`)
-
-        const knownPlaceIds = new Set<string>()
-        let unaccountedScenes = 0
-
-        for (const scene of scenes) {
-          try {
-            const result = await processWorldScene(
-              scene,
-              worldsContentServerUrl,
-              dryRun,
-              stats
-            )
-            if (result.processedPlaceId) {
-              knownPlaceIds.add(result.processedPlaceId)
-            } else {
-              unaccountedScenes++
-            }
-            for (const id of result.disabledPlaceIds) {
-              knownPlaceIds.add(id)
-            }
-          } catch (err: any) {
-            logger.error(
-              `  Error processing scene ${scene.entityId}: ${err.message}`
-            )
-            stats.errored++
-            unaccountedScenes++
-          }
-        }
-
-        // Detect orphan places: active places in this world that have no corresponding scene in the
-        // content server.
-        //
-        // This is the only place in the repo that disables places from a derived argument rather
-        // than an event, so it may only run on a complete picture of the world. A scene that threw,
-        // or that was skipped without yielding a place, leaves its live place looking like an
-        // orphan; and a world that answered with no scenes at all is indistinguishable from a name
-        // that no longer resolves, which would take every place with it.
-        const activePlaces = (await PlaceModel.findByWorldId(worldId)).filter(
-          (place) => !place.disabled
-        )
-
-        if (unaccountedScenes > 0) {
-          logger.log(
-            `  Skipping orphan detection: ${unaccountedScenes} scene(s) yielded no place, so this world's places cannot be judged complete`
-          )
-        } else if (scenes.length === 0 && activePlaces.length > 0) {
-          logger.log(
-            `  Skipping orphan detection: the content server served no scenes for a world with ${activePlaces.length} active place(s), which reads the same as a name that no longer resolves`
-          )
-        } else {
-          await disableOrphanPlaces({
-            worldName: world.name,
-            worldId,
-            knownPlaceIds,
-            placeRevisions,
-            dryRun,
-            stats,
-          })
-        }
+          dryRun,
+          stats,
+        })
       } catch (err: any) {
         logger.error(
-          `  Error fetching scenes for ${world.name}: ${err.message}`
+          `  Error rebuilding ${forTerminal(world.name)}: ${err.message}`
         )
         stats.errored++
       }
@@ -986,11 +1018,19 @@ async function main() {
       // ignore close errors
     }
   }
+
+  return stats.errored
 }
 
 if (require.main === module) {
-  main().catch((error) => {
-    logger.error("Script failed:", error)
-    process.exit(1)
-  })
+  main()
+    .then((errored) => {
+      // This script inserts, updates and disables places. A world or scene it could not process is
+      // partial work an operator has to know about, so it must not exit the same way a clean run does.
+      if (errored > 0) process.exit(1)
+    })
+    .catch((error) => {
+      logger.error("Script failed:", error)
+      process.exit(1)
+    })
 }

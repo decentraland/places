@@ -35,8 +35,45 @@ describe("when parsing the arguments of a destructive world script", () => {
   describe("and a flag is misspelled", () => {
     it("should refuse, since --dryrun would otherwise read as no flag at all", () => {
       expect(() => parseScriptArgs(["--dryrun"])).toThrow(
-        "Unrecognized option(s): --dryrun"
+        "Unrecognized option: --dryrun"
       )
+    })
+  })
+
+  describe("and a bare world name is given without its flag", () => {
+    it("should refuse, since --apply myworld.dcl.eth reads as scoped but would run against every world", () => {
+      expect(() => parseScriptArgs(["--apply", "myworld.dcl.eth"])).toThrow(
+        "Unexpected argument: myworld.dcl.eth"
+      )
+    })
+  })
+
+  describe("and a stray token follows a flag that already took its value", () => {
+    it("should refuse rather than ignore it", () => {
+      expect(() =>
+        parseScriptArgs(["--limit", "5", "myworld.dcl.eth"])
+      ).toThrow("Unexpected argument: myworld.dcl.eth")
+    })
+  })
+
+  describe("and the same flag is given twice", () => {
+    it("should refuse rather than silently honour one of them", () => {
+      expect(() =>
+        parseScriptArgs([
+          "--world-name",
+          "a.dcl.eth",
+          "--world-name",
+          "b.dcl.eth",
+        ])
+      ).toThrow("--world-name was given more than once")
+    })
+  })
+
+  describe("and a value happens to look like a world name", () => {
+    it("should still take it as that flag's value", () => {
+      expect(
+        parseScriptArgs(["--world-name", "myworld.dcl.eth"]).worldName
+      ).toBe("myworld.dcl.eth")
     })
   })
 

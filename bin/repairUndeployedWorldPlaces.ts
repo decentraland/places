@@ -125,6 +125,12 @@ export type WorldRepair = {
   optedOut: Array<{ place: DisabledPlace; scene: ServedScene }>
   alreadyRepresented: DisabledPlace[]
   baseSquatted: DisabledPlace[]
+  /**
+   * Rows whose scene the world serves and whose base is free, but one of whose parcels another row
+   * already holds. Left disabled: two active places on one parcel is what the deployment path cannot
+   * resolve, and which of the two is stale is not something this repair can tell.
+   */
+  footprintTaken: DisabledPlace[]
   stillGone: number
   /**
    * Scenes the world serves that no enabled or re-enabled place represents. The repair cannot create
@@ -142,6 +148,7 @@ type Stats = {
   optedOut: number
   alreadyRepresented: number
   baseSquatted: number
+  footprintTaken: number
   servedWithoutPlace: number
   errored: number
 }
@@ -371,20 +378,35 @@ async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
  * The places this world already shows. Their scenes and base parcels are off limits: re-enabling a
  * second row for either leaves two active places the base fallback can never disable again.
  */
-async function findEnabledPlaces(
-  worldId: string
-): Promise<Array<{ deployment_id: string | null; base_position: string }>> {
+/**
+ * The places this world already has standing on it, in the sense the deployment path means by it:
+ * findActiveByWorldIdAndPositions treats a row as occupying its parcels when it is enabled *or*
+ * disabled as an opt-out, and overlaps on the whole footprint rather than the base parcel. A repair
+ * that reserved less than that would re-enable a row into a parcel another row already holds, and
+ * every later deployment touching that parcel would then find two overlaps where the code expects
+ * one.
+ */
+async function findOccupyingPlaces(worldId: string): Promise<
+  Array<{
+    deployment_id: string | null
+    base_position: string
+    positions: string[]
+  }>
+> {
   return PlaceModel.namedQuery<{
     deployment_id: string | null
     base_position: string
+    positions: string[]
   }>(
-    "repair_find_enabled_places",
+    "repair_find_occupying_places",
     SQL`
-      SELECT "deployment_id", "base_position"
+      SELECT "deployment_id", "base_position", "positions"
       FROM ${table(PlaceModel)}
       WHERE "world" IS TRUE
         AND "world_id" = ${worldId}
-        AND "disabled" IS FALSE
+        AND ("disabled" IS FALSE OR "disabled_reason" = ${
+          DisabledReason.OPT_OUT
+        })
     `
   )
 }
@@ -443,20 +465,33 @@ export async function repairWorld(
     const optedOut: Array<{ place: DisabledPlace; scene: ServedScene }> = []
     const alreadyRepresented: DisabledPlace[] = []
     const baseSquatted: DisabledPlace[] = []
+    const footprintTaken: DisabledPlace[] = []
     const stillGonePlaces: DisabledPlace[] = []
 
     // A scene whose place row was disabled by this bug gets a brand new row from the ingestion path
     // and from bin/rebuildWorldPlaces.ts, because neither looks at rows disabled as undeployments.
     // Re-enabling the old row on top of that leaves two enabled places carrying one deployment id at
     // one base, which then permanently blocks the base fallback that needs a single active row. So
-    // whatever is already enabled claims its scene and its base before anything is re-enabled.
-    const enabled = await findEnabledPlaces(worldId)
+    // whatever already occupies this world claims its scene, its base and its parcels before
+    // anything is re-enabled. Parcels as well as the base: a row's base being free says nothing about
+    // the rest of its footprint, and two active places overlapping on one parcel is the state the
+    // deployment path cannot resolve.
+    const occupying = await findOccupyingPlaces(worldId)
     const claimed = new Set(
-      enabled
+      occupying
         .map((place) => place.deployment_id)
         .filter((id): id is string => !!id)
     )
-    const basesTaken = new Set(enabled.map((place) => place.base_position))
+    const basesTaken = new Set(occupying.map((place) => place.base_position))
+    const positionsTaken = new Set(
+      occupying.flatMap((place) => place.positions || [])
+    )
+    const takes = (place: DisabledPlace): boolean =>
+      place.positions.some((position) => positionsTaken.has(position))
+    const reserve = (place: DisabledPlace): void => {
+      basesTaken.add(place.base_position)
+      place.positions.forEach((position) => positionsTaken.add(position))
+    }
     const legacy: DisabledPlace[] = []
 
     for (const place of places) {
@@ -473,24 +508,32 @@ export async function repairWorld(
         // branch and does not depend on that reasoning holding elsewhere.
         optedOut.push({ place, scene: servedScene })
         claimed.add(place.deployment_id)
-        basesTaken.add(place.base_position)
+        reserve(place)
       } else if (claimed.has(place.deployment_id)) {
         alreadyRepresented.push(place)
       } else if (basesTaken.has(place.base_position)) {
-        // Its scene is served, but another enabled row holds the base and that row's deployment is
-        // not what the world serves. Re-enabling would put two active places on one parcel, so this
-        // needs the stale row cleared first rather than a reassuring line in the report.
+        // Its scene is served, but another row holds the base and that row's deployment is not what
+        // the world serves. Re-enabling would put two active places on one parcel, so this needs the
+        // stale row cleared first rather than a reassuring line in the report.
         baseSquatted.push(place)
+      } else if (takes(place)) {
+        // Same conflict one parcel over: the base is free, but some parcel in this row's footprint is
+        // already held by a row at a different base.
+        footprintTaken.push(place)
       } else {
         reenabledByIdentity.push(place)
         claimed.add(place.deployment_id)
-        basesTaken.add(place.base_position)
+        reserve(place)
       }
     }
 
     for (const place of legacy) {
       if (basesTaken.has(place.base_position)) {
         baseSquatted.push(place)
+        continue
+      }
+      if (takes(place)) {
+        footprintTaken.push(place)
         continue
       }
 
@@ -513,7 +556,7 @@ export async function repairWorld(
           reenabledByFootprint.push({ place, scene: exact[0] })
         }
         claimed.add(exact[0].entityId)
-        basesTaken.add(place.base_position)
+        reserve(place)
         continue
       }
 
@@ -625,6 +668,7 @@ export async function repairWorld(
       optedOut,
       alreadyRepresented,
       baseSquatted,
+      footprintTaken,
       stillGone: stillGonePlaces.length,
       servedWithoutPlace,
     }
@@ -704,6 +748,16 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     )
   }
 
+  for (const place of repair.footprintTaken) {
+    logger.log(
+      `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} matches a served scene, but a place already standing in this world holds one of its parcels (${forTerminal(
+        place.positions.join(" ")
+      )}). Re-enabling it would leave two active places on one parcel; clear the stale row first, or rebuild the world with bin/rebuildWorldPlaces.ts, then re-run this.`
+    )
+  }
+
   for (const scene of repair.servedWithoutPlace) {
     logger.log(
       `  NEEDS REBUILD: the world serves ${forTerminal(
@@ -771,6 +825,7 @@ async function main(): Promise<number> {
     optedOut: 0,
     alreadyRepresented: 0,
     baseSquatted: 0,
+    footprintTaken: 0,
     servedWithoutPlace: 0,
     errored: 0,
   }
@@ -812,6 +867,7 @@ async function main(): Promise<number> {
         stats.optedOut += repair.optedOut.length
         stats.alreadyRepresented += repair.alreadyRepresented.length
         stats.baseSquatted += repair.baseSquatted.length
+        stats.footprintTaken += repair.footprintTaken.length
         stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
@@ -837,6 +893,7 @@ async function main(): Promise<number> {
     logger.log(`Opted out, hidden:    ${stats.optedOut}`)
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
+    logger.log(`Parcel held:          ${stats.footprintTaken}`)
     logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)
     logger.log(`Errored worlds:       ${stats.errored}`)
     logger.log("=".repeat(60))

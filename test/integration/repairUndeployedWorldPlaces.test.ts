@@ -569,6 +569,223 @@ describe("when repairing places an undeployment disabled", () => {
     })
   })
 
+  /**
+   * The deployment path reasons about overlaps with `positions && ...`, not by base parcel, so a free
+   * base says nothing about the rest of a row's footprint. Two active places sharing a parcel is the
+   * state that path cannot resolve: the next deployment touching that parcel finds two overlaps where
+   * the code handles one.
+   */
+  describe("and a place already standing in the world holds one of the served scene's parcels", () => {
+    const worldName = "repair-footprint-overlap.dcl.eth"
+    let repair: WorldRepair
+    let disabled: boolean | undefined
+    let activeAtSharedParcel: number
+
+    beforeEach(async () => {
+      // the row to repair: base 1,0, spanning 1,0 and 2,0
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-overlapping",
+        timestamp: servedAt,
+        title: "Overlapping Scene",
+        base: "1,0",
+        parcels: ["1,0", "2,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-overlapping",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      // a stale row left standing at a different base, 0,0, but reaching into 1,0
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-stale-neighbour",
+        timestamp: eventAt + 1,
+        title: "Stale Neighbour",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-overlapping",
+            base: "1,0",
+            parcels: ["1,0", "2,0"],
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+
+      disabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-overlapping"}`
+      ).then((rows) => rows[0]?.disabled)
+      activeAtSharedParcel = (
+        await PlaceModel.namedQuery<{ id: string }>(
+          "read_active_at_parcel",
+          SQL`SELECT "id" FROM places WHERE "world_id" = ${worldName} AND "disabled" IS FALSE AND "positions" && ${[
+            "1,0",
+          ]}`
+        )
+      ).length
+    })
+
+    it("should leave it disabled, since its base being free says nothing about its other parcels", () => {
+      expect(disabled).toBe(true)
+    })
+
+    it("should leave one active place on the shared parcel, not two", () => {
+      expect(activeAtSharedParcel).toBe(1)
+    })
+
+    it("should report it as needing the parcel freed first", () => {
+      expect(repair.footprintTaken).toHaveLength(1)
+    })
+
+    it("should not report it as re-enabled", () => {
+      expect(repair.reenabledByIdentity).toHaveLength(0)
+    })
+  })
+
+  describe("and a legacy row's parcels reach into one a standing place holds", () => {
+    const worldName = "repair-legacy-overlap.dcl.eth"
+    let repair: WorldRepair
+    let disabled: boolean | undefined
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-legacy-overlap",
+        timestamp: servedAt,
+        title: "Legacy Overlapping",
+        base: "1,0",
+        parcels: ["1,0", "2,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-legacy-overlap",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      // rows written before deployment ids were stored carry none, so this one can only be matched by
+      // its footprint -- and that footprint runs into a parcel the neighbour below holds
+      await PlaceModel.namedQuery(
+        "clear_deployment_id",
+        SQL`UPDATE places SET "deployment_id" = NULL
+            WHERE "world_id" = ${worldName} AND "base_position" = ${"1,0"}`
+      )
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-stale-neighbour",
+        timestamp: eventAt + 1,
+        title: "Stale Neighbour",
+        base: "0,0",
+        parcels: ["0,0", "2,0"],
+      })
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-legacy",
+            base: "1,0",
+            parcels: ["1,0", "2,0"],
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      disabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "world_id" = ${worldName} AND "base_position" = ${"1,0"}`
+      ).then((rows) => rows[0]?.disabled)
+    })
+
+    it("should leave it disabled rather than backfill an identity onto a row it cannot activate", () => {
+      expect(disabled).toBe(true)
+    })
+
+    it("should report it as needing the parcel freed first", () => {
+      expect(repair.footprintTaken).toHaveLength(1)
+    })
+
+    it("should not claim it as re-enabled by footprint", () => {
+      expect(repair.reenabledByFootprint).toHaveLength(0)
+    })
+  })
+
+  describe("and an opted-out place holds one of the served scene's parcels", () => {
+    const worldName = "repair-optout-occupies.dcl.eth"
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-to-repair",
+        timestamp: servedAt,
+        title: "To Repair",
+        base: "1,0",
+        parcels: ["1,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-to-repair", baseParcel: "1,0" }],
+          { timestamp: eventAt }
+        )
+      )
+      // findActiveByWorldIdAndPositions counts an opt-out row as occupying its parcels, so this
+      // repair has to as well or the two disagree about whether that parcel is free
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-opted-out",
+        timestamp: eventAt + 1,
+        title: "Opted Out Neighbour",
+        base: "0,0",
+        parcels: ["0,0", "1,0"],
+      })
+      await PlaceModel.namedQuery(
+        "make_opt_out",
+        SQL`UPDATE places SET "disabled" = TRUE, "disabled_reason" = 'opt_out'
+            WHERE "deployment_id" = ${"entity-opted-out"}`
+      )
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-to-repair",
+            base: "1,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    it("should treat that parcel as held, the way the deployment path does", () => {
+      expect(repair.footprintTaken).toHaveLength(1)
+    })
+  })
+
   describe("and a legacy row sits at a base an enabled place already covers", () => {
     const worldName = "repair-legacy-taken-base.dcl.eth"
     let enabledTitles: Array<string | null>

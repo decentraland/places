@@ -1,6 +1,9 @@
+import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
+
 import {
   disableOrphanPlaces,
   readPlaceRevisions,
+  rebuildWorld,
 } from "../../bin/rebuildWorldPlaces"
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
@@ -318,6 +321,144 @@ describe("when sweeping orphan places for a world", () => {
 
     it("should leave it enabled", () => {
       expect(enabledTitles).toEqual(["Dry Run Scene"])
+    })
+  })
+})
+
+/**
+ * The completeness rule that decides whether the sweep may run at all. Both mistakes found in it so
+ * far were about which scenes count as accounted for, so it is asserted here through the same entry
+ * point the script uses rather than by reading the branch.
+ */
+describe("when deciding whether a world's places can be judged complete", () => {
+  const BASE = "https://worlds-content-server.decentraland.org"
+  const day = 24 * 60 * 60 * 1000
+  let fetchMock: jest.SpyInstance
+  let olderServedAt: number
+  let newerLocalAt: number
+
+  beforeAll(async () => {
+    await initTestDb()
+  })
+
+  afterAll(async () => {
+    await closeTestDb()
+  })
+
+  beforeEach(() => {
+    fetchMock = jest.spyOn(global, "fetch")
+    // Without this the auto-mock resolves undefined, processWorldScene throws on destructuring it, and
+    // the scene counts as unaccounted for the wrong reason -- which would make these tests pass while
+    // proving nothing about the rule they are here for.
+    mockExtractSceneJsonData.mockResolvedValue({
+      creator: null,
+      runtimeVersion: null,
+    })
+    olderServedAt = Date.now() - 2 * day
+    newerLocalAt = Date.now() - day
+  })
+
+  afterEach(async () => {
+    await cleanTables()
+    jest.restoreAllMocks()
+    jest.clearAllMocks()
+  })
+
+  function listing(worldName: string, entityId: string, timestamp: number) {
+    const entity = createWorldContentEntityScene({
+      worldName,
+      title: "Served Scene",
+      base: "0,0",
+      parcels: ["0,0"],
+    })
+    entity.timestamp = timestamp
+    return {
+      ok: true,
+      json: async () => ({
+        total: 1,
+        scenes: [
+          {
+            worldName,
+            entityId,
+            deployer: "0xdeployer",
+            entity,
+            parcels: ["0,0"],
+            size: "1",
+            createdAt: new Date(timestamp).toISOString(),
+          },
+        ],
+      }),
+    } as Response
+  }
+
+  describe("and a served scene is older than the place already standing at its parcels", () => {
+    const worldName = "rebuild-stale-scene.dcl.eth"
+    let result: Awaited<ReturnType<typeof rebuildWorld>>
+    let stillEnabled: boolean | undefined
+    let stats: ReturnType<typeof emptyStats>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-newer-local",
+        timestamp: newerLocalAt,
+        title: "Newer Local",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      fetchMock.mockResolvedValueOnce(
+        listing(worldName, "entity-older-served", olderServedAt)
+      )
+
+      stats = emptyStats()
+      result = await rebuildWorld({
+        worldName,
+        worldsContentServerUrl: BASE,
+        dryRun: false,
+        stats,
+      })
+      stillEnabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-newer-local"}`
+      ).then((rows) => rows[0]?.disabled === false)
+    })
+
+    it("should count that scene as unaccounted for, since no place came of it", () => {
+      expect(result.unaccountedScenes).toBe(1)
+    })
+
+    it("should have skipped it rather than failed on it, which counts the same and would prove nothing", () => {
+      expect(stats).toMatchObject({ skipped: 1, errored: 0 })
+    })
+
+    it("should skip the sweep rather than judge the world against a listing that explains none of it", () => {
+      expect(result.sweptOrphans).toBe(false)
+    })
+
+    it("should leave the newer place enabled", () => {
+      expect(stillEnabled).toBe(true)
+    })
+  })
+
+  describe("and the listing accounts for every place in the world", () => {
+    const worldName = "rebuild-accounted.dcl.eth"
+    let result: Awaited<ReturnType<typeof rebuildWorld>>
+
+    beforeEach(async () => {
+      fetchMock.mockResolvedValueOnce(
+        listing(worldName, "entity-served", olderServedAt)
+      )
+
+      result = await rebuildWorld({
+        worldName,
+        worldsContentServerUrl: BASE,
+        dryRun: false,
+        stats: emptyStats(),
+      })
+    })
+
+    it("should sweep, since nothing is unexplained", () => {
+      expect(result.sweptOrphans).toBe(true)
     })
   })
 })

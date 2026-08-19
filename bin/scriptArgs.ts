@@ -22,34 +22,51 @@ const KNOWN = [
   "--connection-string",
 ]
 
+const TAKES_VALUE = ["--limit", "--world-name", "--connection-string"]
+
 export function parseScriptArgs(args: string[]): ScriptArgs {
-  const unknown = args.filter(
-    (arg) => arg.startsWith("--") && !KNOWN.includes(arg)
-  )
-  if (unknown.length > 0) {
-    throw new Error(`Unrecognized option(s): ${unknown.join(", ")}`)
-  }
+  const flags = new Set<string>()
+  const values = new Map<string, string>()
 
-  const apply = args.includes("--apply")
-  if (apply && args.includes("--dry-run")) {
-    throw new Error("--apply and --dry-run contradict each other")
-  }
+  // One pass, so every token is either a flag, a value consumed by the flag before it, or an error.
+  // Scanning for flags independently leaves a stray token unaccounted for, and `--apply myworld.dcl.eth`
+  // reads as a world-scoped run while actually running against every world.
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index]
 
-  const value = (flag: string): string | null => {
-    const index = args.indexOf(flag)
-    if (index === -1) return null
-    const next = args[index + 1]
+    if (!arg.startsWith("--")) {
+      throw new Error(
+        `Unexpected argument: ${arg}. Options take their value after the flag, as --world-name ${arg}`
+      )
+    }
+    if (!KNOWN.includes(arg)) {
+      throw new Error(`Unrecognized option: ${arg}`)
+    }
+    if (flags.has(arg)) {
+      throw new Error(`${arg} was given more than once`)
+    }
+    flags.add(arg)
+
+    if (!TAKES_VALUE.includes(arg)) continue
+
+    const value = args[index + 1]
     // Without this, `--world-name --apply` silently filters for a world called "--apply" and
     // `--limit` with nothing after it becomes NaN, which reads as no limit at all.
-    if (!next || next.startsWith("--")) {
-      throw new Error(`${flag} requires a value`)
+    if (!value || value.startsWith("--")) {
+      throw new Error(`${arg} requires a value`)
     }
-    return next
+    values.set(arg, value)
+    index++
+  }
+
+  const apply = flags.has("--apply")
+  if (apply && flags.has("--dry-run")) {
+    throw new Error("--apply and --dry-run contradict each other")
   }
 
   // parseInt stops at the first character it cannot read, so "10abc" and "1e9" would both quietly
   // become a limit that is not what was typed. Only digits are a limit.
-  const rawLimit = value("--limit")
+  const rawLimit = values.get("--limit") ?? null
   if (rawLimit !== null && !/^[0-9]+$/.test(rawLimit)) {
     throw new Error("--limit requires a positive whole number")
   }
@@ -61,7 +78,7 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
   return {
     dryRun: !apply,
     limit,
-    worldName: value("--world-name"),
-    connectionString: value("--connection-string"),
+    worldName: values.get("--world-name") ?? null,
+    connectionString: values.get("--connection-string") ?? null,
   }
 }
