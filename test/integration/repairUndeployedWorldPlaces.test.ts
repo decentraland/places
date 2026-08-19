@@ -658,6 +658,90 @@ describe("when repairing places an undeployment disabled", () => {
     })
   })
 
+  /**
+   * The identity opt-out branch writes, so it has to clear the same conflict checks the re-enable path
+   * does. Recording an opt-out reserves parcels, and doing that on a row whose parcels another place
+   * already holds would leave two occupying rows on them — the exact state those checks exist to stop.
+   * Reachable only by hand, as the branch itself is: an undeployment-disabled row whose own deployment
+   * the world serves with optOut, sitting under a place that already holds one of its parcels.
+   */
+  describe("and an opted-out served scene collides with a place already standing there", () => {
+    const worldName = "repair-optout-conflict.dcl.eth"
+    let repair: WorldRepair
+    let reason: string | null | undefined
+    let occupyingAtSharedParcel: number
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-optout-conflict",
+        timestamp: servedAt,
+        title: "Opted Out Conflicting",
+        base: "1,0",
+        parcels: ["1,0", "2,0"],
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-optout-conflict",
+              baseParcel: "1,0",
+              parcels: ["1,0", "2,0"],
+            },
+          ],
+          { timestamp: eventAt }
+        )
+      )
+      // a place left standing at another base, reaching into 2,0
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-standing",
+        timestamp: eventAt + 1,
+        title: "Standing Neighbour",
+        base: "3,0",
+        parcels: ["3,0", "2,0"],
+      })
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-optout-conflict",
+            base: "1,0",
+            parcels: ["1,0", "2,0"],
+            deployedAt: servedAt,
+            optOut: true,
+          }),
+        ],
+        false
+      )
+
+      reason = await PlaceModel.namedQuery<{ disabled_reason: string | null }>(
+        "read_place",
+        SQL`SELECT "disabled_reason" FROM places WHERE "deployment_id" = ${"entity-optout-conflict"}`
+      ).then((rows) => rows[0]?.disabled_reason)
+      occupyingAtSharedParcel = (
+        await PlaceModel.findActiveByWorldIdAndPositions(worldName, ["2,0"])
+      ).length
+    })
+
+    it("should report the collision rather than the opt-out", () => {
+      expect({
+        footprintTaken: repair.footprintTaken.length,
+        optedOut: repair.optedOut.length,
+      }).toEqual({ footprintTaken: 1, optedOut: 0 })
+    })
+
+    it("should leave the row untouched, since recording an opt-out would reserve the parcel twice", () => {
+      expect(reason).toBe("undeployment")
+    })
+
+    it("should leave one place occupying the shared parcel, not two", () => {
+      expect(occupyingAtSharedParcel).toBe(1)
+    })
+  })
+
   describe("and a legacy row's parcels reach into one a standing place holds", () => {
     const worldName = "repair-legacy-overlap.dcl.eth"
     let repair: WorldRepair

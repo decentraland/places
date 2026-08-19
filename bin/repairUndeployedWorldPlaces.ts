@@ -502,16 +502,16 @@ export async function repairWorld(
         continue
       }
       const servedScene = servedById.get(place.deployment_id)
+
+      // The three conflict checks come before the opt-out branch on purpose, because they answer a
+      // different question. They ask whether this row can be touched at all; the opt-out asks whether
+      // it should be listed. A row that collides with something already standing in this world cannot
+      // be written either way -- recording it as an opt-out would reserve its parcels a second time
+      // and leave two occupying rows on them, which is the state those checks exist to prevent. So a
+      // collision is reported and the row is left exactly as it is. The legacy loop below already
+      // reads in this order.
       if (!servedScene) {
         stillGonePlaces.push(place)
-      } else if (servedScene.optOut) {
-        // Unreachable today -- ingesting this very deployment would have stored it as an opt-out, and
-        // disableByWorldId only touches rows where disabled IS FALSE -- but the guard costs one branch
-        // and does not depend on that reasoning holding in another module. If it ever does fire, the
-        // write below is a no-op on the identity and timestamp and only corrects the reason.
-        optedOut.push({ place, scene: servedScene })
-        claimed.add(place.deployment_id)
-        reserve(place)
       } else if (claimed.has(place.deployment_id)) {
         alreadyRepresented.push(place)
       } else if (basesTaken.has(place.base_position)) {
@@ -523,6 +523,14 @@ export async function repairWorld(
         // Same conflict one parcel over: the base is free, but some parcel in this row's footprint is
         // already held by a row at a different base.
         footprintTaken.push(place)
+      } else if (servedScene.optOut) {
+        // Unreachable today -- ingesting this very deployment would have stored it as an opt-out, and
+        // disableByWorldId only touches rows where disabled IS FALSE -- but the guard costs one branch
+        // and does not depend on that reasoning holding in another module. If it ever does fire, the
+        // write is a no-op on the identity and timestamp and only corrects the reason.
+        optedOut.push({ place, scene: servedScene })
+        claimed.add(place.deployment_id)
+        reserve(place)
       } else {
         reenabledByIdentity.push(place)
         claimed.add(place.deployment_id)
@@ -783,7 +791,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  ALREADY REPRESENTED: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} is covered by an enabled place holding the same deployment; nothing to do`
+      )} is covered by a place already standing in this world -- enabled, or disabled as an opt-out -- holding the same deployment; nothing to do`
     )
   }
 
