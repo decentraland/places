@@ -5,6 +5,7 @@ describe("when parsing the arguments of a destructive world script", () => {
     it("should preview rather than write, so a bare invocation cannot change production", () => {
       expect(parseScriptArgs([])).toEqual({
         dryRun: true,
+        flags: new Set(),
         limit: null,
         worldName: null,
         connectionString: null,
@@ -173,6 +174,32 @@ describe("when reading the configured content server URL", () => {
     it("should allow it, since that is how these scripts are rehearsed", () => {
       expect(parseContentServerUrl("http://localhost:4597")).toBe(
         "http://localhost:4597"
+      )
+    })
+  })
+})
+
+describe("when a script declares an extra flag", () => {
+  describe("and the flag is given to a script that declared it", () => {
+    it("should record it", () => {
+      expect(
+        parseScriptArgs(["--verbose"], ["--verbose"]).flags.has("--verbose")
+      ).toBe(true)
+    })
+  })
+
+  describe("and the flag is given to a script that did not declare it", () => {
+    it("should refuse, rather than accept a flag it would ignore", () => {
+      expect(() => parseScriptArgs(["--verbose"])).toThrow(
+        "Unrecognized option: --verbose"
+      )
+    })
+  })
+
+  describe("and the flag is not given", () => {
+    it("should not record it", () => {
+      expect(parseScriptArgs([], ["--verbose"]).flags.has("--verbose")).toBe(
+        false
       )
     })
   })

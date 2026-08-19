@@ -13,6 +13,7 @@ import { processEntityId } from "../../src/entities/CheckScenes/task/processEnti
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import { withDatabaseTransaction } from "../../src/entities/Database/model"
 import PlaceModel from "../../src/entities/Place/model"
+import { DisabledReason } from "../../src/entities/Place/types"
 import WorldModel from "../../src/entities/World/model"
 import WorldDeploymentPositionWatermarkModel from "../../src/entities/WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployment/model"
@@ -116,6 +117,48 @@ function servedScene(options: {
     parcels: options.parcels ?? [options.base],
     deployedAt: new Date(options.deployedAt),
     optOut: options.optOut ?? false,
+  }
+}
+
+/**
+ * Write world place rows directly, with no deployment id, for shapes the deployment path cannot
+ * produce — an older revision sitting under a newer one at the same base being the main one.
+ */
+async function seedWorldRows(
+  worldName: string,
+  rows: Array<{
+    id: string
+    title: string
+    base: string
+    positions: string[]
+    deployedAt: number
+    disabled: boolean
+  }>
+): Promise<void> {
+  await WorldModel.namedQuery(
+    "seed_world",
+    SQL`INSERT INTO worlds ("id", "world_name", "content_rating", "categories", "show_in_places",
+          "single_player", "likes", "dislikes", "favorites", "created_at", "updated_at",
+          "is_private", "highlighted")
+        VALUES (${worldName}, ${worldName}, 'RP', ARRAY[]::text[], TRUE, FALSE, 0, 0, 0,
+          ${new Date()}, ${new Date()}, FALSE, FALSE)
+        ON CONFLICT ("id") DO NOTHING`
+  )
+
+  for (const row of rows) {
+    await PlaceModel.namedQuery(
+      "seed_place",
+      SQL`INSERT INTO places ("id", "title", "positions", "base_position", "content_rating",
+            "disabled", "disabled_at", "disabled_reason", "created_at", "updated_at", "favorites",
+            "likes", "dislikes", "categories", "highlighted", "world", "world_id", "world_name",
+            "deployment_id", "deployed_at")
+          VALUES (${row.id}, ${row.title}, ${row.positions}, ${row.base}, 'RP',
+            ${row.disabled},
+            ${row.disabled ? new Date() : null},
+            ${row.disabled ? DisabledReason.UNDEPLOYMENT : null},
+            ${new Date()}, ${new Date()}, 0, 0, 0, ARRAY[]::text[], FALSE, TRUE,
+            ${worldName}, ${worldName}, NULL, ${new Date(row.deployedAt)})`
+    )
   }
 }
 
@@ -807,11 +850,12 @@ describe("when repairing places an undeployment disabled", () => {
       expect(disabled).toBe(true)
     })
 
-    it("should report it as undecided, since with the parcel held no footprint match was attempted", () => {
+    it("should call it correctly disabled: the place holding that parcel is newer than it", () => {
       expect({
+        stillGone: repair.stillGone.length,
         legacyUndecidable: repair.legacyUndecidable.length,
         footprintTaken: repair.footprintTaken.length,
-      }).toEqual({ legacyUndecidable: 1, footprintTaken: 0 })
+      }).toEqual({ stillGone: 1, legacyUndecidable: 0, footprintTaken: 0 })
     })
 
     it("should not claim it as re-enabled by footprint", () => {
@@ -880,6 +924,120 @@ describe("when repairing places an undeployment disabled", () => {
    * held — so nothing is known about it, and the report has to say that rather than assert a served
    * match it never checked.
    */
+  /**
+   * A base anchors one scene, so a disabled row losing to a newer place standing on its parcels is a
+   * superseded revision, not an open question. This is what a world redeployed in place accumulates,
+   * and it was the largest category in the first production sweep.
+   *
+   * Both rows are written directly. Going through the deployment path cannot produce this shape: a
+   * second deployment at an overlapping footprint updates the row already there instead of adding one,
+   * and a deployment older than the undeployment watermark is rejected outright.
+   */
+  describe("and a legacy row is older than the place now standing on its parcels", () => {
+    const worldName = "repair-superseded-legacy.dcl.eth"
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await seedWorldRows(worldName, [
+        {
+          id: "00000000-0000-0000-0000-0000000f0001",
+          title: "Newer Standing",
+          base: "0,0",
+          positions: ["0,0"],
+          deployedAt: servedAt,
+          disabled: false,
+        },
+        {
+          id: "00000000-0000-0000-0000-0000000f0002",
+          title: "Older Revision",
+          base: "0,0",
+          positions: ["0,0"],
+          deployedAt: removedAt,
+          disabled: true,
+        },
+      ])
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-served-now",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    it("should call it correctly disabled rather than undecided", () => {
+      expect({
+        stillGone: repair.stillGone.length,
+        legacyUndecidable: repair.legacyUndecidable.length,
+      }).toEqual({ stillGone: 1, legacyUndecidable: 0 })
+    })
+  })
+
+  describe("and the place standing on its parcels is older than the legacy row", () => {
+    const worldName = "repair-older-occupant.dcl.eth"
+    let repair: WorldRepair
+
+    beforeEach(async () => {
+      await seedWorldRows(worldName, [
+        {
+          id: "00000000-0000-0000-0000-0000000f0003",
+          title: "Older Standing",
+          base: "0,0",
+          positions: ["0,0"],
+          deployedAt: removedAt,
+          disabled: false,
+        },
+        {
+          id: "00000000-0000-0000-0000-0000000f0004",
+          title: "Newer Disabled",
+          base: "5,5",
+          positions: ["5,5", "0,0"],
+          deployedAt: servedAt,
+          disabled: true,
+        },
+        // newer than the disabled row, but nowhere near it. Being newer is only decisive for a place
+        // that could actually be serving the same parcel.
+        {
+          id: "00000000-0000-0000-0000-0000000f0005",
+          title: "Unrelated Newer",
+          base: "50,50",
+          positions: ["50,50"],
+          deployedAt: eventAt,
+          disabled: false,
+        },
+      ])
+
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-older-standing",
+            base: "0,0",
+            deployedAt: removedAt,
+          }),
+        ],
+        false
+      )
+    })
+
+    it("should stay undecided, since the disabled row could be the live one and the standing row stale", () => {
+      expect({
+        stillGone: repair.stillGone.length,
+        legacyUndecidable: repair.legacyUndecidable.length,
+      }).toEqual({ stillGone: 0, legacyUndecidable: 1 })
+    })
+
+    it("should not let a newer place elsewhere in the world decide it", () => {
+      // the 50,50 row is newer than the disabled one and shares no parcel with it
+      expect(repair.stillGone).toHaveLength(0)
+    })
+  })
+
   describe("and a legacy row's parcels are held, so nothing about it can be established", () => {
     const worldName = "repair-legacy-undecided.dcl.eth"
     let repair: WorldRepair
@@ -927,12 +1085,18 @@ describe("when repairing places an undeployment disabled", () => {
       )
     })
 
-    it("should report it as undecided, not as a served scene being blocked", () => {
+    it("should call it correctly disabled, and never a served scene being blocked", () => {
       expect({
+        stillGone: repair.stillGone.length,
         legacyUndecidable: repair.legacyUndecidable.length,
         baseSquatted: repair.baseSquatted.length,
         footprintTaken: repair.footprintTaken.length,
-      }).toEqual({ legacyUndecidable: 1, baseSquatted: 0, footprintTaken: 0 })
+      }).toEqual({
+        stillGone: 1,
+        legacyUndecidable: 0,
+        baseSquatted: 0,
+        footprintTaken: 0,
+      })
     })
 
     it("should still report the served scene as needing a rebuild, since the standing place holds a different deployment", () => {
@@ -1058,11 +1222,12 @@ describe("when repairing places an undeployment disabled", () => {
       expect(enabledTitles).toEqual(["Current Row"])
     })
 
-    it("should report it as undecided rather than as a blocked served scene", () => {
+    it("should call it correctly disabled: the place holding that base is newer than it", () => {
       expect({
+        stillGone: repair.stillGone.length,
         legacyUndecidable: repair.legacyUndecidable.length,
         baseSquatted: repair.baseSquatted.length,
-      }).toEqual({ legacyUndecidable: 1, baseSquatted: 0 })
+      }).toEqual({ stillGone: 1, legacyUndecidable: 0, baseSquatted: 0 })
     })
   })
 

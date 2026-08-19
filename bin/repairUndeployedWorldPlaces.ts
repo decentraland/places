@@ -64,6 +64,7 @@
  * Options:
  *   --apply                  Commit the repair. Without it the run is a dry run and rolls back.
  *   --dry-run                Ask for a dry run explicitly, which is also the default
+ *   --verbose                Also list the rows left alone: correctly disabled, and undecided
  *   --limit N                Repair at most N worlds
  *   --world-name NAME        Repair only a specific world
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
@@ -147,7 +148,8 @@ export type WorldRepair = {
    * and is usually nothing at all.
    */
   legacyUndecidable: DisabledPlace[]
-  stillGone: number
+  /** Rows whose content the world no longer serves. Correct as they are; the largest bucket by far. */
+  stillGone: DisabledPlace[]
   /**
    * Scenes the world serves that no enabled or re-enabled place represents. The repair cannot create
    * these -- it only ever re-enables a row that already exists -- and the durable guards it leaves
@@ -165,6 +167,7 @@ type Stats = {
   alreadyRepresented: number
   baseSquatted: number
   footprintTaken: number
+  stillGone: number
   legacyUndecidable: number
   servedWithoutPlace: number
   errored: number
@@ -198,7 +201,7 @@ class DryRunRollback extends Error {
 // ── Args ───────────────────────────────────────────────────────────────
 
 function parseArgs(): ScriptArgs {
-  return parseScriptArgs(process.argv.slice(2))
+  return parseScriptArgs(process.argv.slice(2), ["--verbose"])
 }
 
 // ── Content server ─────────────────────────────────────────────────────
@@ -403,21 +406,19 @@ async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
  * every later deployment touching that parcel would then find two overlaps where the code expects
  * one.
  */
-async function findOccupyingPlaces(worldId: string): Promise<
-  Array<{
-    deployment_id: string | null
-    base_position: string
-    positions: string[]
-  }>
-> {
-  return PlaceModel.namedQuery<{
-    deployment_id: string | null
-    base_position: string
-    positions: string[]
-  }>(
+type OccupyingPlace = {
+  deployment_id: string | null
+  base_position: string
+  positions: string[]
+  /** As the pg parser returns it, like DisabledPlace.deployed_at. */
+  deployed_at: Date | string
+}
+
+async function findOccupyingPlaces(worldId: string): Promise<OccupyingPlace[]> {
+  return PlaceModel.namedQuery<OccupyingPlace>(
     "repair_find_occupying_places",
     SQL`
-      SELECT "deployment_id", "base_position", "positions"
+      SELECT "deployment_id", "base_position", "positions", "deployed_at"
       FROM ${table(PlaceModel)}
       WHERE "world" IS TRUE
         AND "world_id" = ${worldId}
@@ -426,6 +427,15 @@ async function findOccupyingPlaces(worldId: string): Promise<
         })
     `
   )
+}
+
+/**
+ * A stored timestamp as a number, however the driver handed it over. The gatsby pg parser renders a
+ * `timestamp` column as an ISO string by appending Z, so every value read here shares one clock --
+ * and the script refuses to run outside UTC, which is what keeps that true of values it writes.
+ */
+function asMillis(value: Date | string): number {
+  return value instanceof Date ? value.getTime() : Date.parse(value)
 }
 
 function sameFootprint(left: string[], right: string[]): boolean {
@@ -506,6 +516,33 @@ export async function repairWorld(
     )
     const takes = (place: DisabledPlace): boolean =>
       place.positions.some((position) => positionsTaken.has(position))
+
+    /**
+     * Whether a place already standing here rules this row out.
+     *
+     * A base anchors one scene and two scenes cannot hold the same parcel, so a row that collides with
+     * an occupant which is *newer* than it cannot be the live one -- the occupant is. That is the same
+     * judgement hasNewerActiveWorldDeployment makes on the deployment path, and it decides most of what
+     * would otherwise be reported as undecided: a world redeployed in place stacks older revisions at
+     * one base, and every one of them loses to the row standing there now.
+     *
+     * The reverse says nothing. If every collider is older, this row may be the live one and the
+     * standing rows stale, which is exactly the case no local record can settle.
+     */
+    const supersededByOccupant = (place: DisabledPlace): boolean => {
+      const placeAt = asMillis(place.deployed_at)
+      if (!Number.isFinite(placeAt)) return false
+      return occupying.some((occupant) => {
+        const occupantAt = asMillis(occupant.deployed_at)
+        if (!Number.isFinite(occupantAt) || occupantAt <= placeAt) return false
+        return (
+          occupant.base_position === place.base_position ||
+          (occupant.positions || []).some((position) =>
+            place.positions.includes(position)
+          )
+        )
+      })
+    }
     const reserve = (place: DisabledPlace): void => {
       basesTaken.add(place.base_position)
       place.positions.forEach((position) => positionsTaken.add(position))
@@ -559,7 +596,11 @@ export async function repairWorld(
       // whether the world still serves this row's content is simply unknown -- saying it "matches a
       // served scene" would assert a check that never ran.
       if (basesTaken.has(place.base_position) || takes(place)) {
-        legacyUndecidable.push(place)
+        if (supersededByOccupant(place)) {
+          stillGonePlaces.push(place)
+        } else {
+          legacyUndecidable.push(place)
+        }
         continue
       }
 
@@ -751,7 +792,7 @@ export async function repairWorld(
       baseSquatted,
       footprintTaken,
       legacyUndecidable,
-      stillGone: stillGonePlaces.length,
+      stillGone: stillGonePlaces,
       servedWithoutPlace,
     }
 
@@ -769,14 +810,19 @@ export async function repairWorld(
 
 // ── Reporting ──────────────────────────────────────────────────────────
 
-function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
+function reportWorld(
+  worldId: string,
+  repair: WorldRepair,
+  dryRun: boolean,
+  verbose: boolean
+) {
   const prefix = dryRun ? "  [DRY-RUN] would" : "  "
   const reenabled =
     repair.reenabledByIdentity.length + repair.reenabledByFootprint.length
 
   if (reenabled === 0) {
     logger.log(
-      `  Nothing to re-enable (${repair.stillGone} correctly disabled, ${repair.legacyUndecidable.length} undecided)`
+      `  Nothing to re-enable (${repair.stillGone.length} correctly disabled, ${repair.legacyUndecidable.length} undecided)`
     )
   }
 
@@ -840,6 +886,25 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     )
   }
 
+  if (verbose) {
+    for (const place of repair.stillGone) {
+      logger.log(
+        `  correctly disabled: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )}, deployed ${forTerminal(String(place.deployed_at))}`
+      )
+    }
+    for (const place of repair.legacyUndecidable) {
+      logger.log(
+        `  undecided: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )}, deployed ${forTerminal(
+          String(place.deployed_at)
+        )} — no deployment id, and its parcels are held by a place standing here that is no newer than it`
+      )
+    }
+  }
+
   for (const scene of repair.servedWithoutPlace) {
     logger.log(
       `  UNREPRESENTED: the world serves ${forTerminal(
@@ -852,7 +917,8 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main(): Promise<number> {
-  const { dryRun, limit, worldName, connectionString } = parseArgs()
+  const { dryRun, flags, limit, worldName, connectionString } = parseArgs()
+  const verbose = flags.has("--verbose")
 
   if (connectionString) {
     process.env.CONNECTION_STRING = connectionString
@@ -910,6 +976,7 @@ async function main(): Promise<number> {
     alreadyRepresented: 0,
     baseSquatted: 0,
     footprintTaken: 0,
+    stillGone: 0,
     legacyUndecidable: 0,
     servedWithoutPlace: 0,
     errored: 0,
@@ -942,11 +1009,12 @@ async function main(): Promise<number> {
           dryRun
         )
 
-        reportWorld(worldId, repair, dryRun)
+        reportWorld(worldId, repair, dryRun, verbose)
 
         stats.worlds++
         stats.reenabled +=
           repair.reenabledByIdentity.length + repair.reenabledByFootprint.length
+        stats.stillGone += repair.stillGone.length
         stats.backfilled += repair.reenabledByFootprint.length
         stats.ambiguous += repair.ambiguous.length
         stats.optedOut += repair.optedOut.length
@@ -980,6 +1048,7 @@ async function main(): Promise<number> {
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
     logger.log(`Parcel held:          ${stats.footprintTaken}`)
     logger.log(`Legacy, undecided:    ${stats.legacyUndecidable}`)
+    logger.log(`Correctly disabled:   ${stats.stillGone}`)
     logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)
     logger.log(`Errored worlds:       ${stats.errored}`)
     logger.log("=".repeat(60))

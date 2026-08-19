@@ -9,6 +9,12 @@
 export type ScriptArgs = {
   /** True unless --apply was given. Writing requires saying so. */
   dryRun: boolean
+  /**
+   * Every flag that was given, for the extras a caller declared. A script asks about its own flags
+   * through this; flags it did not declare are refused by the parser, so accepting one and ignoring it
+   * is not a state a script can reach.
+   */
+  flags: Set<string>
   limit: number | null
   worldName: string | null
   connectionString: string | null
@@ -24,7 +30,15 @@ const KNOWN = [
 
 const TAKES_VALUE = ["--limit", "--world-name", "--connection-string"]
 
-export function parseScriptArgs(args: string[]): ScriptArgs {
+/**
+ * @param extraFlags value-less flags this particular script understands. Kept per script rather than
+ *   in KNOWN so a flag only one of them acts on cannot be silently accepted by the other.
+ */
+export function parseScriptArgs(
+  args: string[],
+  extraFlags: string[] = []
+): ScriptArgs {
+  const known = [...KNOWN, ...extraFlags]
   const flags = new Set<string>()
   const values = new Map<string, string>()
 
@@ -39,7 +53,7 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
         `Unexpected argument: ${arg}. Options take their value after the flag, as --world-name ${arg}`
       )
     }
-    if (!KNOWN.includes(arg)) {
+    if (!known.includes(arg)) {
       throw new Error(`Unrecognized option: ${arg}`)
     }
     if (flags.has(arg)) {
@@ -77,6 +91,7 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
 
   return {
     dryRun: !apply,
+    flags,
     limit,
     worldName: values.get("--world-name") ?? null,
     connectionString: values.get("--connection-string") ?? null,
