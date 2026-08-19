@@ -73,7 +73,7 @@ interface WorldScenesResponse {
   total: number
 }
 
-interface Stats {
+export interface Stats {
   created: number
   updated: number
   disabled: number
@@ -652,25 +652,36 @@ async function processWorldScene(
  * produced an active place absent from both -- which this would disable.
  *
  * The places are re-read under the lock rather than trusting the ones read before it, and only rows
- * that existed before the scenes were processed can be orphans -- a place created since then is not
- * something this run's scene list can speak about.
+ * still at the revision that reading captured can be orphans.
  */
-async function disableOrphanPlaces(options: {
+/**
+ * The revision of every place a world holds, as `deployment_id|deployed_at`.
+ *
+ * Read before the content server is asked anything, so it describes the same moment the scene
+ * listing does. Ids alone are not enough: a replacement reuses the row it replaces, so a row present
+ * in both readings can still be a different revision by the time the sweep runs.
+ */
+export async function readPlaceRevisions(
+  worldId: string
+): Promise<Map<string, string>> {
+  const places = await PlaceModel.findByWorldId(worldId)
+  return new Map(places.map((place) => [place.id, revisionOf(place)]))
+}
+
+function revisionOf(place: PlaceAttributes): string {
+  return `${place.deployment_id}|${place.deployed_at}`
+}
+
+export async function disableOrphanPlaces(options: {
   worldName: string
   worldId: string
   knownPlaceIds: Set<string>
-  preexistingPlaceIds: Set<string>
+  placeRevisions: Map<string, string>
   dryRun: boolean
   stats: Stats
 }): Promise<void> {
-  const {
-    worldName,
-    worldId,
-    knownPlaceIds,
-    preexistingPlaceIds,
-    dryRun,
-    stats,
-  } = options
+  const { worldName, worldId, knownPlaceIds, placeRevisions, dryRun, stats } =
+    options
 
   const orphanPlaces = await withDatabaseTransaction(async () => {
     await WorldModel.lockWorldForDeployment(worldName)
@@ -679,7 +690,10 @@ async function disableOrphanPlaces(options: {
       (place) =>
         !place.disabled &&
         !knownPlaceIds.has(place.id) &&
-        preexistingPlaceIds.has(place.id)
+        // Only a row still at the revision the scene listing was compared against. A row created or
+        // replaced since then is not something this run's listing can speak about, and a replacement
+        // keeps the same id, so the revision is what has to match rather than the id.
+        placeRevisions.get(place.id) === revisionOf(place)
     )
 
     if (orphans.length > 0 && !dryRun) {
@@ -775,20 +789,17 @@ async function main() {
       logger.log(`[${i + 1}/${worlds.length}] Processing world: ${world.name}`)
 
       try {
+        // Captured before the content server is asked, so the places and the scene listing describe
+        // the same moment. knownPlaceIds is then accumulated from that listing, well before the
+        // sweep takes its lock, so anything committed in between must not be judged by it.
+        const worldId = world.name.toLowerCase()
+        const placeRevisions = await readPlaceRevisions(worldId)
+
         const scenes = await fetchWorldScenes(
           worldsContentServerUrl,
           world.name
         )
         logger.log(`  Found ${scenes.length} scene(s)`)
-
-        // knownPlaceIds is accumulated while the scenes are processed, before the sweep takes its
-        // lock, so a place created in between would be re-read under the lock and look orphaned.
-        // Only rows that already existed can be candidates: anything newer is accounted for by
-        // whatever created it.
-        const worldId = world.name.toLowerCase()
-        const preexistingPlaceIds = new Set(
-          (await PlaceModel.findByWorldId(worldId)).map((place) => place.id)
-        )
 
         const knownPlaceIds = new Set<string>()
         let unaccountedScenes = 0
@@ -843,7 +854,7 @@ async function main() {
             worldName: world.name,
             worldId,
             knownPlaceIds,
-            preexistingPlaceIds,
+            placeRevisions,
             dryRun,
             stats,
           })
