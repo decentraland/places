@@ -14,9 +14,10 @@
  *    legacy row when exactly one served scene fits its footprint
  * 3. Reports what it cannot fix, rather than guessing
  *
- * Places whose scene is genuinely gone are left disabled, as are places whose scene the world serves
- * with placesConfig.optOut: the owner asked not to be listed, and a row disabled by this bug is not
- * evidence they changed their mind.
+ * Places whose scene is genuinely gone are left disabled. So are places whose scene the world serves
+ * with placesConfig.optOut -- the owner asked not to be listed, and a row disabled by this bug is not
+ * evidence they changed their mind -- but those are re-recorded as opt-outs, which is the only disabled
+ * state that still reserves a row's parcels against the next deployment over them.
  *
  * It writes nothing else. In particular it never relaxes a durable undeployment guard, even one it
  * can prove is now too aggressive -- a tombstone naming a deployment the world still serves, or a
@@ -119,8 +120,9 @@ export type WorldRepair = {
   reenabledByFootprint: Array<{ place: DisabledPlace; scene: ServedScene }>
   ambiguous: DisabledPlace[]
   /**
-   * Rows whose scene the world serves, but serves with placesConfig.optOut. Left disabled: the owner
-   * asked not to be listed, and re-enabling would publish the place against that.
+   * Rows whose scene the world serves, but serves with placesConfig.optOut. Left disabled and recorded
+   * as an opt-out: the owner asked not to be listed, re-enabling would publish the place against that,
+   * and only an opt-out row reserves its parcels against the next deployment over them.
    */
   optedOut: Array<{ place: DisabledPlace; scene: ServedScene }>
   alreadyRepresented: DisabledPlace[]
@@ -504,8 +506,9 @@ export async function repairWorld(
         stillGonePlaces.push(place)
       } else if (servedScene.optOut) {
         // Unreachable today -- ingesting this very deployment would have stored it as an opt-out, and
-        // an already-disabled row is not what an undeployment disables -- but the guard costs one
-        // branch and does not depend on that reasoning holding elsewhere.
+        // disableByWorldId only touches rows where disabled IS FALSE -- but the guard costs one branch
+        // and does not depend on that reasoning holding in another module. If it ever does fire, the
+        // write below is a no-op on the identity and timestamp and only corrects the reason.
         optedOut.push({ place, scene: servedScene })
         claimed.add(place.deployment_id)
         reserve(place)
@@ -636,6 +639,50 @@ export async function repairWorld(
       }
     }
 
+    // An opted-out row has to say so, not merely stay disabled. Both overlap queries the deployment
+    // path uses -- findActiveByWorldIdAndPositions and hasNewerActiveWorldDeployment -- count a row as
+    // occupying its parcels when it is enabled OR disabled as an opt-out, and nothing else. Left
+    // reading "undeployment" the row is invisible to both, so its parcels read as free and the next
+    // deployment over them creates a second place and lists it -- publishing content whose owner is
+    // currently opted out, which is the thing leaving the row disabled was meant to prevent.
+    //
+    // The timestamp matters for the same reason: hasNewerActiveWorldDeployment compares deployed_at, so
+    // a row still carrying a legacy timestamp reads as older than the scene it stands for, and a
+    // deployment authored in between would pass as newer and replace it. The identity comes with it --
+    // for an identity match it is already that value, and a legacy match is now on record as standing
+    // for that scene, so the next undeployment can judge it directly.
+    if (optedOut.length > 0) {
+      const updated = await PlaceModel.namedRowCount(
+        "repair_mark_opted_out",
+        SQL`
+          UPDATE ${table(PlaceModel)} target
+          SET "disabled" = TRUE,
+            "disabled_reason" = ${DisabledReason.OPT_OUT},
+            -- it was already disabled, by the undeployment this repair is undoing; when that happened
+            -- is the truth about this row and is not ours to overwrite
+            "disabled_at" = COALESCE(target."disabled_at", ${now}),
+            "deployment_id" = matched."deployment_id",
+            "deployed_at" = matched."deployed_at",
+            "updated_at" = ${now}
+          FROM unnest(
+            ${optedOut.map(({ place }) => place.id)}::bpchar[],
+            ${optedOut.map(({ scene }) => scene.entityId)}::text[],
+            ${optedOut.map(({ scene }) => scene.deployedAt)}::timestamp[]
+          ) AS matched("id", "deployment_id", "deployed_at")
+          WHERE target."id" = matched."id"
+            AND target."world_id" = ${worldId}
+            AND target."disabled" IS TRUE
+            AND target."disabled_reason" = ${DisabledReason.UNDEPLOYMENT}
+        `
+      )
+
+      if (updated !== optedOut.length) {
+        throw new Error(
+          `Expected to mark ${optedOut.length} opted-out place(s) in ${worldId} but matched ${updated}; refusing to leave this world half repaired`
+        )
+      }
+    }
+
     // Every durable guard this world carries is left exactly as it stands, including the ones that
     // are now demonstrably too aggressive: a tombstone naming a deployment the world still serves,
     // and watermarks stamped with the emission time of the removal.
@@ -724,11 +771,11 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
 
   for (const { place, scene } of repair.optedOut) {
     logger.log(
-      `  LEFT DISABLED: "${forTerminal(place.title)}" at ${forTerminal(
+      `${prefix} leave "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} matches served scene ${forTerminal(
+      )} disabled as an opt-out: the world serves ${forTerminal(
         scene.entityId
-      )}, but that scene sets placesConfig.optOut, so re-enabling it would list a place its owner asked to hide. Its stored reason still reads "undeployment"; nothing in the service reads that column.`
+      )} at it with placesConfig.optOut, so re-enabling it would list a place its owner asked to hide. Recorded as opt_out rather than undeployment, so it still reserves its parcels.`
     )
   }
 

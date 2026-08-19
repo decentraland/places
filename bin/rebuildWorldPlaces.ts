@@ -170,7 +170,9 @@ async function overridePlaceCategories(
 
   if (dryRun) {
     logger.log(
-      `    [DRY-RUN] Would set categories: ${validCategoriesArray.join(", ")}`
+      `    [DRY-RUN] Would set categories: ${forTerminal(
+        validCategoriesArray.join(", ")
+      )}`
     )
     return
   }
@@ -416,7 +418,9 @@ async function processWorldScene(
 
   if (!worldName) {
     logger.log(
-      `    Skipping scene ${scene.entityId}: worldConfiguration without name`
+      `    Skipping scene ${forTerminal(
+        scene.entityId
+      )}: worldConfiguration without name`
     )
     stats.skipped++
     return { processedPlaceId: null, disabledPlaceIds: [] }
@@ -647,11 +651,17 @@ async function processWorldScene(
     const place = placesToProcess.new
     if (dryRun) {
       logger.log(
-        `    [DRY-RUN] Would create place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    [DRY-RUN] Would create place: "${forTerminal(
+          place.title
+        )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+          place.id
+        )})`
       )
     } else {
       logger.log(
-        `    Created place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    Created place: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )} (id: ${forTerminal(place.id)})`
       )
       await PlaceModel.insertPlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
@@ -671,20 +681,34 @@ async function processWorldScene(
       const diffs = existingPlace ? getPlaceDiffs(existingPlace, place) : []
       if (diffs.length === 0) {
         logger.log(
-          `    [DRY-RUN] No changes for place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+          `    [DRY-RUN] No changes for place: "${forTerminal(
+            place.title
+          )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+            place.id
+          )})`
         )
       } else {
         logger.log(
-          `    [DRY-RUN] Would update place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+          `    [DRY-RUN] Would update place: "${forTerminal(
+            place.title
+          )}" at ${forTerminal(place.base_position)} (id: ${forTerminal(
+            place.id
+          )})`
         )
         for (const diff of diffs) {
-          logger.log(`      ${diff.field}: ${diff.oldVal} → ${diff.newVal}`)
+          logger.log(
+            `      ${forTerminal(diff.field)}: ${forTerminal(
+              diff.oldVal
+            )} → ${forTerminal(diff.newVal)}`
+          )
         }
         stats.updated++
       }
     } else {
       logger.log(
-        `    Updated place: "${place.title}" at ${place.base_position} (id: ${place.id})`
+        `    Updated place: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )} (id: ${forTerminal(place.id)})`
       )
       await PlaceModel.updatePlace(place, REBUILD_PLACE_ATTRIBUTES)
       await overridePlaceCategories(
@@ -711,13 +735,13 @@ async function processWorldScene(
       logger.log(
         `    [DRY-RUN] Would disable ${
           placesIdToDisable.length
-        } place(s): ${placesIdToDisable.join(", ")}`
+        } place(s): ${forTerminal(placesIdToDisable.join(", "))}`
       )
     } else {
       logger.log(
-        `    Disabled ${
-          placesIdToDisable.length
-        } place(s): ${placesIdToDisable.join(", ")}`
+        `    Disabled ${placesIdToDisable.length} place(s): ${forTerminal(
+          placesIdToDisable.join(", ")
+        )}`
       )
       await PlaceModel.disablePlaces(placesIdToDisable)
     }
@@ -803,9 +827,9 @@ export async function rebuildWorld(options: {
       }
     } catch (err: any) {
       logger.error(
-        `  Error processing scene ${forTerminal(scene.entityId)}: ${
+        `  Error processing scene ${forTerminal(scene.entityId)}: ${forTerminal(
           err.message
-        }`
+        )}`
       )
       stats.errored++
       unaccountedScenes++
@@ -890,7 +914,9 @@ export async function disableOrphanPlaces(options: {
   )
   for (const place of orphanPlaces) {
     logger.log(
-      `    - "${place.title}" at ${place.base_position} (id: ${place.id})`
+      `    - "${forTerminal(place.title)}" at ${forTerminal(
+        place.base_position
+      )} (id: ${forTerminal(place.id)})`
     )
   }
   stats.disabled += orphanPlaces.length
@@ -981,7 +1007,9 @@ async function main(): Promise<number> {
         })
       } catch (err: any) {
         logger.error(
-          `  Error rebuilding ${forTerminal(world.name)}: ${err.message}`
+          `  Error rebuilding ${forTerminal(world.name)}: ${forTerminal(
+            err.message
+          )}`
         )
         stats.errored++
       }

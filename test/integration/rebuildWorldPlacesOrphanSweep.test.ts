@@ -1,4 +1,5 @@
 import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
+import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import {
   disableOrphanPlaces,
@@ -460,5 +461,74 @@ describe("when deciding whether a world's places can be judged complete", () => 
     it("should sweep, since nothing is unexplained", () => {
       expect(result.sweptOrphans).toBe(true)
     })
+  })
+})
+
+/**
+ * The sanitizer has its own unit tests; this covers the wiring, which is the part that was wrong twice.
+ * A title reaches the operator's terminal through the orphan report, and that report is what an operator
+ * reads before deciding a destructive run did the right thing.
+ */
+describe("when a place title reaches the orphan report", () => {
+  const worldName = "rebuild-hostile-title.dcl.eth"
+  const day = 24 * 60 * 60 * 1000
+  let logged: string
+
+  beforeAll(async () => {
+    await initTestDb()
+  })
+
+  afterAll(async () => {
+    await closeTestDb()
+  })
+
+  afterEach(async () => {
+    await cleanTables()
+    jest.restoreAllMocks()
+    jest.clearAllMocks()
+  })
+
+  beforeEach(async () => {
+    await deliverDeployment({
+      worldName,
+      entityId: "entity-hostile",
+      timestamp: Date.now() - day,
+      title: "Fine",
+      base: "0,0",
+      parcels: ["0,0"],
+    })
+    // a title carrying an erase-line sequence and a forged summary line, as a deployment could set it
+    await PlaceModel.namedQuery(
+      "set_hostile_title",
+      SQL`UPDATE places SET "title" = ${"\u001b[2K\r  Errored: 0"} WHERE "deployment_id" = ${"entity-hostile"}`
+    )
+
+    const lines: string[] = []
+    jest.spyOn(logger, "log").mockImplementation((...args: unknown[]) => {
+      lines.push(args.map((arg) => String(arg)).join(" "))
+    })
+
+    const worldId = worldName.toLowerCase()
+    await disableOrphanPlaces({
+      worldName,
+      worldId,
+      knownPlaceIds: new Set<string>(),
+      placeRevisions: await readPlaceRevisions(worldId),
+      dryRun: true,
+      stats: emptyStats(),
+    })
+    logged = lines.join("\n")
+  })
+
+  it("should have reported that place, so this is covering a line that was printed", () => {
+    expect(logged).toContain("Errored: 0")
+  })
+
+  it("should print no escape sequence", () => {
+    expect(logged).not.toContain("\u001b")
+  })
+
+  it("should print no carriage return, which would rewrite the line it sits on", () => {
+    expect(logged).not.toContain("\r")
   })
 })

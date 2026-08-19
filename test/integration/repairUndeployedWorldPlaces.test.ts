@@ -854,7 +854,11 @@ describe("when repairing places an undeployment disabled", () => {
    */
   describe("and the served scene matching a legacy row asks not to be listed", () => {
     const worldName = "repair-legacy-optout.dcl.eth"
-    let place: { disabled: boolean; deployment_id: string | null } | null
+    let place: {
+      disabled: boolean
+      deployment_id: string | null
+      disabled_reason: string | null
+    } | null
     let repair: WorldRepair
 
     beforeEach(async () => {
@@ -900,9 +904,10 @@ describe("when repairing places an undeployment disabled", () => {
       place = await PlaceModel.namedQuery<{
         disabled: boolean
         deployment_id: string | null
+        disabled_reason: string | null
       }>(
         "read_place",
-        SQL`SELECT "disabled", "deployment_id" FROM places WHERE "world_id" = ${worldName}`
+        SQL`SELECT "disabled", "deployment_id", "disabled_reason" FROM places WHERE "world_id" = ${worldName}`
       ).then((rows) => rows[0] ?? null)
     })
 
@@ -920,8 +925,33 @@ describe("when repairing places an undeployment disabled", () => {
       ])
     })
 
-    it("should not backfill the deployment id of a scene it is not adopting", () => {
-      expect(place?.deployment_id).toBeNull()
+    it("should record it as an opt-out, which is the only disabled state that reserves its parcels", () => {
+      expect(place?.disabled_reason).toBe("opt_out")
+    })
+
+    it("should backfill the served scene's identity, since the row now stands for it on record", () => {
+      expect(place?.deployment_id).toBe("entity-served-optout")
+    })
+
+    it("should carry that scene's timestamp, so hasNewerActiveWorldDeployment does not read the row as older than the scene it stands for", async () => {
+      const passesAsNewer = await PlaceModel.hasNewerActiveWorldDeployment(
+        worldName,
+        ["0,0"],
+        new Date(servedAt - 1000)
+      )
+
+      expect(passesAsNewer).toBe(true)
+    })
+
+    it("should be counted as occupying its parcels by the query the deployment path uses", async () => {
+      const occupying = await PlaceModel.findActiveByWorldIdAndPositions(
+        worldName,
+        ["0,0"]
+      )
+
+      expect(occupying.map((row) => row.deployment_id)).toEqual([
+        "entity-served-optout",
+      ])
     })
 
     it("should not also report the scene as one no place row represents", () => {
@@ -1030,6 +1060,15 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should report it as left disabled for the opt-out", () => {
       expect(repair.optedOut).toHaveLength(1)
+    })
+
+    it("should record the reason as opt_out, so the row still reserves its parcels", async () => {
+      const occupying = await PlaceModel.findActiveByWorldIdAndPositions(
+        worldName,
+        ["0,0"]
+      )
+
+      expect(occupying.map((row) => row.disabled_reason)).toEqual(["opt_out"])
     })
   })
 
