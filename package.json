@@ -5,15 +5,15 @@
   "version": "0.0.0-development",
   "author": "",
   "engines": {
-    "node": "18.*",
-    "npm": "8.* || 9.*"
+    "node": ">=22.0.0",
+    "npm": ">=10.0.0"
   },
   "dependencies": {
     "@dcl/hashing": "^3.0.4",
     "@dcl/schemas": "^27.1.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "aws-sdk": "^2.1002.0",
-    "decentraland-gatsby": "^8.4.8",
+    "decentraland-gatsby": "^9.0.0",
     "html-escaper": "^3.0.3",
     "node-pg-migrate": "^6.0.0",
     "pg": "^8.13.1",
