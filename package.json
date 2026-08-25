@@ -13,7 +13,7 @@
     "@dcl/schemas": "^27.1.0",
     "@well-known-components/pushable-channel": "^1.0.3",
     "aws-sdk": "^2.1002.0",
-    "decentraland-gatsby": "^9.0.0",
+    "decentraland-gatsby": "^9.0.1",
     "html-escaper": "^3.0.3",
     "node-pg-migrate": "^6.0.0",
     "pg": "^8.13.1",
