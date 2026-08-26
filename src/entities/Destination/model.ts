@@ -109,6 +109,11 @@ export default class DestinationModel {
     // When ordering by MOST_ACTIVE, expose a `live_user_count` column built from the realtime
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
     // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
+    //
+    // That column also outranks `highlighted` and `ranking` in the ORDER BY: a caller asking for
+    // MOST_ACTIVE wants the scenes people are actually in, and leaving curation first buried a
+    // busy scene under every featured/ranked one. Curation stays as the tie-breaker, so a feed
+    // where nobody is online keeps the exact order it has today.
     const placesSelect = filterMostActive
       ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
           options.placeUserCounts
@@ -128,9 +133,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${placesQuery}
         ORDER BY
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           p.highlighted DESC,
           p.ranking DESC NULLS LAST,
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
@@ -164,9 +169,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           w.highlighted DESC,
           w.ranking DESC NULLS LAST,
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
             `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC`
@@ -211,9 +216,9 @@ export default class DestinationModel {
         (${worldsQuery})
       ) sub
       ORDER BY
+        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
-        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(
           `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC`
