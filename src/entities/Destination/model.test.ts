@@ -13,6 +13,19 @@ function orderByOf(sql: string): string {
   return index === -1 ? "" : sql.slice(index).replace(/\s{2,}/gi, " ")
 }
 
+/**
+ * Position of a term inside the ORDER BY. Throws when the term is absent, so a precedence
+ * assertion cannot pass on a term that is not there: a raw indexOf would return -1, and -1 is
+ * lower than any real position.
+ */
+function positionOf(orderBy: string, term: string): number {
+  const index = orderBy.indexOf(term)
+  if (index === -1) {
+    throw new Error(`"${term}" is missing from the ORDER BY: ${orderBy}`)
+  }
+  return index
+}
+
 describe("findWithAggregates", () => {
   let placesNamedQuery: jest.SpyInstance
   let worldsNamedQuery: jest.SpyInstance
@@ -68,20 +81,20 @@ describe("findWithAggregates", () => {
       })
 
       it("should rank the live user count above the highlighted flag", () => {
-        expect(orderBy.indexOf("sub.live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("sub.highlighted DESC")
+        expect(positionOf(orderBy, "sub.live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.highlighted DESC")
         )
       })
 
       it("should rank the live user count above the curation ranking", () => {
-        expect(orderBy.indexOf("sub.live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("sub.ranking DESC")
+        expect(positionOf(orderBy, "sub.live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.ranking DESC")
         )
       })
 
       it("should keep the highlighted flag above the curation ranking as tie-breaker", () => {
-        expect(orderBy.indexOf("sub.highlighted DESC")).toBeLessThan(
-          orderBy.indexOf("sub.ranking DESC")
+        expect(positionOf(orderBy, "sub.highlighted DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.ranking DESC")
         )
       })
     })
@@ -102,14 +115,14 @@ describe("findWithAggregates", () => {
       })
 
       it("should rank the live user count above the highlighted flag", () => {
-        expect(orderBy.indexOf("live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("p.highlighted DESC")
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "p.highlighted DESC")
         )
       })
 
       it("should rank the live user count above the curation ranking", () => {
-        expect(orderBy.indexOf("live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("p.ranking DESC")
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "p.ranking DESC")
         )
       })
     })
@@ -130,14 +143,14 @@ describe("findWithAggregates", () => {
       })
 
       it("should rank the live user count above the highlighted flag", () => {
-        expect(orderBy.indexOf("live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("w.highlighted DESC")
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "w.highlighted DESC")
         )
       })
 
       it("should rank the live user count above the curation ranking", () => {
-        expect(orderBy.indexOf("live_user_count DESC")).toBeLessThan(
-          orderBy.indexOf("w.ranking DESC")
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "w.ranking DESC")
         )
       })
     })
