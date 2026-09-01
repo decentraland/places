@@ -69,7 +69,7 @@ export function processContentEntityScene(
   if (!samePlace) {
     const placefromContentEntity = createPlaceFromContentEntityScene(
       contentEntityScene,
-      {},
+      inheritedCuration(places, options.creator),
       options
     )
     return {
@@ -110,6 +110,48 @@ export function processContentEntityScene(
     update: placefromContentEntity,
     rating,
     disabled: places.filter((place) => samePlace.id !== place.id),
+  }
+}
+
+/**
+ * Carry the editorial curation of the place a redeployment replaces.
+ *
+ * A creator who redeploys with a different base parcel or footprint stops matching
+ * `findSamePlace`, so the deployment lands on a new row and the place it supersedes is
+ * disabled. Without this the new row starts at the column defaults, silently dropping
+ * the highlighted flag and the hand-set ranking, which is why curated positions kept
+ * reverting a day after being set.
+ *
+ * Inheriting is deliberately narrow. The candidates are only the places overlapping the
+ * incoming pointers, and a deployment landing on someone else's parcels is a takeover,
+ * not a continuation: carrying curation there would promote a scene nobody curated into
+ * the highlighted shelf. So it requires a single curated predecessor published by the
+ * same known creator, and a place whose creator was never recorded inherits nothing.
+ */
+function inheritedCuration(
+  places: PlaceAttributes[],
+  creator?: string | null
+): Partial<Omit<PlaceAttributes, "id">> {
+  if (!creator) {
+    return {}
+  }
+
+  const curated = places.filter(
+    (place) =>
+      (place.highlighted || (place.ranking ?? 0) > 0) &&
+      place.creator_address === creator
+  )
+
+  if (curated.length !== 1) {
+    return {}
+  }
+
+  const [predecessor] = curated
+
+  return {
+    highlighted: predecessor.highlighted,
+    highlighted_image: predecessor.highlighted_image,
+    ranking: predecessor.ranking,
   }
 }
 
@@ -177,6 +219,7 @@ export function createPlaceFromContentEntityScene(
     like_score: 0,
     highlighted: false,
     highlighted_image: null,
+    ranking: 0,
     disabled: false,
     world: !!contentEntityScene?.metadata?.worldConfiguration,
     world_name: worldName,
@@ -211,7 +254,6 @@ export function createPlaceFromContentEntityScene(
     categories: [],
     creator_address: options.creator || null,
     sdk: options.sdk || null,
-    ranking: 0,
   }
 
   placeParsed.textsearch = PlaceModel.textsearch(placeParsed)

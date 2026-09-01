@@ -152,4 +152,58 @@ describe("updateWorldRanking", () => {
       ).rejects.toThrow("Invalid Bearer Token")
     })
   })
+  describe("when the world is highlighted", () => {
+    let highlightedWorld: AggregateWorldAttributes
+
+    beforeEach(() => {
+      highlightedWorld = {
+        ...baseAggregateWorld,
+        highlighted: true,
+        ranking: 1800,
+      }
+      findByIdWithAggregates.mockResolvedValueOnce(highlightedWorld)
+      updateRankingSpy.mockResolvedValueOnce(undefined)
+    })
+
+    describe("and the data team token is used", () => {
+      it("should reject the request as editorial", async () => {
+        await expect(() =>
+          updateWorldRanking({
+            request: buildRequest(DATA_TEAM_TOKEN),
+            params: { world_id },
+            body: { ranking: 27 },
+            url: buildUrl(),
+          } as any)
+        ).rejects.toThrow(
+          "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
+        )
+      })
+
+      it("should leave the curated ranking untouched", async () => {
+        await expect(() =>
+          updateWorldRanking({
+            request: buildRequest(DATA_TEAM_TOKEN),
+            params: { world_id },
+            body: { ranking: 27 },
+            url: buildUrl(),
+          } as any)
+        ).rejects.toThrow()
+
+        expect(updateRankingSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the admin token is used", () => {
+      it("should write the requested ranking", async () => {
+        await updateWorldRanking({
+          request: buildRequest(ADMIN_TOKEN),
+          params: { world_id },
+          body: { ranking: 1700 },
+          url: buildUrl(),
+        } as any)
+
+        expect(updateRankingSpy).toHaveBeenCalledWith(world_id, 1700)
+      })
+    })
+  })
 })

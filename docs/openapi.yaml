@@ -557,6 +557,11 @@ paths:
         **Authentication:**
         Accepts the value of either the `DATA_TEAM_AUTH_TOKEN` or the
         `PLACES_ADMIN_AUTH_TOKEN` environment variable in the Authorization header.
+
+        **Highlighted entities are editorial.** While a place is highlighted its ranking is
+        the order the curated shelf is shown in, so only `PLACES_ADMIN_AUTH_TOKEN` may change
+        it; the data team token gets a 403. This keeps a scheduled scoring job from
+        overwriting hand-set positions.
       operationId: updatePlaceRanking
       parameters:
         - name: place_id
@@ -598,14 +603,24 @@ paths:
                 ok: false
                 error: "Authorization required"
         "403":
-          description: Forbidden - invalid authorization token
+          description: |
+            Forbidden - invalid authorization token, or the data team token was used on a
+            highlighted place, whose ranking only the admin token may change.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
-              example:
-                ok: false
-                error: "Invalid authorization token"
+              examples:
+                invalidToken:
+                  summary: Invalid authorization token
+                  value:
+                    ok: false
+                    error: "Invalid authorization token"
+                highlightedIsEditorial:
+                  summary: Highlighted ranking is admin-only
+                  value:
+                    ok: false
+                    error: "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
         "404":
           $ref: "#/components/responses/NotFound"
         "500":
