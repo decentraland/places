@@ -74,12 +74,16 @@ const OWNER_B = "0x000000000000000000000000000000000000000b"
 const CREATOR_A = "0x000000000000000000000000000000000000000c"
 const CREATOR_B = "0x000000000000000000000000000000000000000d"
 
+/** The Genesis City map render the Land API stores when a scene ships no navmap thumbnail. */
+const MAP_FALLBACK_IMAGE =
+  "https://api.decentraland.org/v2/map.png?height=1024&width=1024&selected=1%2C1"
+
 function createPlaceAttributes(
   overrides: Partial<PlaceAttributes> = {}
 ): PlaceAttributes {
   return {
     id: randomUUID(),
-    title: "Test Place",
+    title: "Copper Market",
     description: "A test place",
     image: "https://example.com/image.png",
     owner: null,
@@ -147,7 +151,7 @@ async function seedWorldWithOptions(
 ): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: overrides.title ?? "Test World",
+    title: overrides.title ?? "Rivet Yard",
     description: overrides.description ?? "A test world",
     show_in_places: true,
     single_player: false,
@@ -925,6 +929,46 @@ describe("when fetching destinations by IDs via POST /destinations", () => {
           expect(response.body.total).toBe(0)
         })
       })
+    })
+  })
+
+  /**
+   * `ids` is a lookup, not discovery: the caller already knows the destination it is asking about,
+   * so the content-quality filter of the generic feed steps aside. Asserted on the response body
+   * because the unit suite only inspects the emitted SQL text.
+   */
+  describe("and a place has a placeholder title and a fallback image", () => {
+    /**
+     * Deliberate negative fixture, kept on purpose: it fails both halves of the predicate at once.
+     * One test asserts the generic feed hides it, the next asserts POSTing its id brings it back.
+     * Remove it and nothing proves the `ids` bypass reaches the rows the filter hides.
+     */
+    let junkPlace: PlaceAttributes
+
+    beforeEach(async () => {
+      junkPlace = await seedPlace({
+        title: "Untitled",
+        image: MAP_FALLBACK_IMAGE,
+        base_position: "150,150",
+        positions: ["150,150"],
+      })
+    })
+
+    it("should not return the place from the generic feed", async () => {
+      const response = await supertest(app).get("/api/destinations").expect(200)
+
+      expect(response.body.data).toHaveLength(0)
+    })
+
+    it("should return the place when its id is posted", async () => {
+      const response = await supertest(app)
+        .post("/api/destinations")
+        .send([junkPlace.id])
+        .expect(201)
+
+      expect(
+        response.body.data.map((destination: { id: string }) => destination.id)
+      ).toEqual([junkPlace.id])
     })
   })
 })

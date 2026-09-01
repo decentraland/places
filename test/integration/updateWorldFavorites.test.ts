@@ -60,7 +60,7 @@ const worldName = "favtest.dcl.eth"
 async function seedWorld(name: string): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: "Favorites Test World",
+    title: "Fern Pavilion",
     description: "A world for testing favorites",
     show_in_places: true,
     single_player: false,

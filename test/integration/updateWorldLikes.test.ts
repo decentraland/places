@@ -60,7 +60,7 @@ const worldName = "liketest.dcl.eth"
 async function seedWorld(name: string): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: "Likes Test World",
+    title: "Willow Amphitheater",
     description: "A world for testing likes",
     show_in_places: true,
     single_player: false,

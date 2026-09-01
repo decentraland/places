@@ -72,7 +72,7 @@ function createPlaceAttributes(
 ): PlaceAttributes {
   return {
     id: randomUUID(),
-    title: "Test Place",
+    title: "Lantern Court",
     description: "A test place",
     image: "https://example.com/image.png",
     owner: null,

@@ -26,6 +26,23 @@ function positionOf(orderBy: string, term: string): number {
   return index
 }
 
+/**
+ * Fragments the content-quality filter contributes to the WHERE clause, one per entity branch.
+ *
+ * Each is qualified with the alias of the branch it guards, so its presence in the statement is
+ * what tells the two branches apart. The worlds image term is spelled out down to `IS NOT NULL`
+ * because `COALESCE(w.image, lp.image)` on its own also appears in the worlds SELECT list, where it
+ * would match whether or not the filter is applied.
+ */
+const PLACES_CONTENT_FILTER = "p.highlighted IS TRUE"
+const WORLDS_CONTENT_FILTER = "w.highlighted IS TRUE"
+const WORLDS_CONTENT_FILTER_IMAGE = "COALESCE(w.image, lp.image) IS NOT NULL"
+
+/** SQL text of the statement the model handed to its query runner. */
+function sqlOf(namedQuery: jest.SpyInstance): string {
+  return namedQuery.mock.calls[0][1].text
+}
+
 describe("findWithAggregates", () => {
   let placesNamedQuery: jest.SpyInstance
   let worldsNamedQuery: jest.SpyInstance
@@ -173,6 +190,554 @@ describe("findWithAggregates", () => {
       expect(orderBy).toContain(
         "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST"
       )
+    })
+  })
+
+  describe("when no filter narrows the feed to named destinations", () => {
+    describe("and neither only_places nor only_worlds is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should require content on the places branch", () => {
+        expect(sql).toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should require content on the worlds branch", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER)
+      })
+
+      it("should read the worlds image from the world and its latest place", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER_IMAGE)
+      })
+
+      it("should not read the worlds image from the world column alone", () => {
+        expect(sql).not.toContain("w.image IS NOT NULL")
+      })
+    })
+
+    describe("and only_places is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_places = true
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should require content on the places branch", () => {
+        expect(sql).toContain(PLACES_CONTENT_FILTER)
+      })
+    })
+
+    describe("and only_worlds is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_worlds = true
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(worldsNamedQuery)
+      })
+
+      it("should require content on the worlds branch", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER)
+      })
+
+      it("should read the worlds image from the world and its latest place", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER_IMAGE)
+      })
+    })
+  })
+
+  describe("when filtering by pointer", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.positions = ["0,0"]
+      await DestinationModel.findWithAggregates(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the places branch", () => {
+      expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by world names", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.world_names = ["paralax.dcl.eth"]
+      await DestinationModel.findWithAggregates(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the worlds branch", () => {
+      expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by names", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.names = ["paralax"]
+      await DestinationModel.findWithAggregates(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the worlds branch", () => {
+      expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+  })
+
+  describe("when looking up destinations the caller already named", () => {
+    describe("and searching", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.search = "plaza"
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by ids", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.ids = ["7bd4a0f2-1a1a-4d9f-9f7e-2f3b9a0c1d2e"]
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by owner", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.owner = "0x0000000000000000000000000000000000000001"
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by creator address", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.creator_address = "0x0000000000000000000000000000000000000002"
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering only favorites", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_favorites = true
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering only highlighted", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_highlighted = true
+        await DestinationModel.findWithAggregates(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+  })
+
+  describe("when filtering by categories", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.categories = ["art"]
+      await DestinationModel.findWithAggregates(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by sdk", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.sdk = "7"
+      await DestinationModel.findWithAggregates(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
+    })
+  })
+})
+
+describe("count", () => {
+  let placesNamedQuery: jest.SpyInstance
+  let worldsNamedQuery: jest.SpyInstance
+  let options: Parameters<typeof DestinationModel.count>[0]
+
+  beforeEach(() => {
+    placesNamedQuery = jest
+      .spyOn(PlaceModel, "namedQuery")
+      .mockResolvedValue([{ total: "0" }])
+    worldsNamedQuery = jest
+      .spyOn(WorldModel, "namedQuery")
+      .mockResolvedValue([{ total: "0" }])
+    options = {
+      positions: [],
+      world_names: [],
+      names: [],
+      only_favorites: false,
+      only_highlighted: false,
+      only_worlds: false,
+      only_places: false,
+      search: "",
+      categories: [],
+    }
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe("when no filter narrows the feed to named destinations", () => {
+    describe("and neither only_places nor only_worlds is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should require content on the places branch", () => {
+        expect(sql).toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should require content on the worlds branch", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER)
+      })
+
+      it("should read the worlds image from the world and its latest place", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER_IMAGE)
+      })
+
+      it("should not read the worlds image from the world column alone", () => {
+        expect(sql).not.toContain("w.image IS NOT NULL")
+      })
+    })
+
+    describe("and only_places is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_places = true
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should require content on the places branch", () => {
+        expect(sql).toContain(PLACES_CONTENT_FILTER)
+      })
+    })
+
+    describe("and only_worlds is set", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_worlds = true
+        await DestinationModel.count(options)
+        sql = sqlOf(worldsNamedQuery)
+      })
+
+      it("should require content on the worlds branch", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER)
+      })
+
+      it("should read the worlds image from the world and its latest place", () => {
+        expect(sql).toContain(WORLDS_CONTENT_FILTER_IMAGE)
+      })
+    })
+  })
+
+  describe("when filtering by pointer", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.positions = ["0,0"]
+      await DestinationModel.count(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the places branch", () => {
+      expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by world names", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.world_names = ["paralax.dcl.eth"]
+      await DestinationModel.count(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the worlds branch", () => {
+      expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by names", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.names = ["paralax"]
+      await DestinationModel.count(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should not require content on the worlds branch", () => {
+      expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+  })
+
+  describe("when looking up destinations the caller already named", () => {
+    describe("and searching", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.search = "plaza"
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by ids", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.ids = ["7bd4a0f2-1a1a-4d9f-9f7e-2f3b9a0c1d2e"]
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by owner", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.owner = "0x0000000000000000000000000000000000000001"
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering by creator address", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.creator_address = "0x0000000000000000000000000000000000000002"
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering only favorites", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_favorites = true
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+
+    describe("and filtering only highlighted", () => {
+      let sql: string
+
+      beforeEach(async () => {
+        options.only_highlighted = true
+        await DestinationModel.count(options)
+        sql = sqlOf(placesNamedQuery)
+      })
+
+      it("should not require content on the places branch", () => {
+        expect(sql).not.toContain(PLACES_CONTENT_FILTER)
+      })
+
+      it("should not require content on the worlds branch", () => {
+        expect(sql).not.toContain(WORLDS_CONTENT_FILTER)
+      })
+    })
+  })
+
+  describe("when filtering by categories", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.categories = ["art"]
+      await DestinationModel.count(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
+    })
+  })
+
+  describe("when filtering by sdk", () => {
+    let sql: string
+
+    beforeEach(async () => {
+      options.sdk = "7"
+      await DestinationModel.count(options)
+      sql = sqlOf(placesNamedQuery)
+    })
+
+    it("should still require content on the places branch", () => {
+      expect(sql).toContain(PLACES_CONTENT_FILTER)
+    })
+
+    it("should still require content on the worlds branch", () => {
+      expect(sql).toContain(WORLDS_CONTENT_FILTER)
     })
   })
 })

@@ -100,7 +100,7 @@ async function deployWorldScene(options: {
 
   const scene = createWorldContentEntityScene({
     worldName: options.worldName,
-    title: options.title ?? "Test Scene",
+    title: options.title ?? "Driftwood Studio",
     base: options.base ?? "0,0",
     parcels: options.parcels ?? ["0,0"],
   })

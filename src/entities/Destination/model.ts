@@ -80,6 +80,97 @@ function worldsLiveUserCountSelect(
   return SQL`, COALESCE(CASE LOWER(w.world_name)${cases} ELSE 0 END, 0)::int as live_user_count`
 }
 
+/**
+ * The subset of the destination filters that decides whether the content-quality filter applies.
+ * Every field is optional so both {@link DestinationModel.findWithAggregates} and
+ * {@link DestinationModel.count} option shapes satisfy it.
+ */
+type ContentQualityGateOptions = {
+  positions?: string[]
+  world_names?: string[]
+  names?: string[]
+  search?: string
+  ids?: string[]
+  owner?: string
+  creator_address?: string
+  only_favorites?: boolean
+  only_highlighted?: boolean
+}
+
+/**
+ * Filters that make the caller's intent narrower than discovery: it is looking up destinations it
+ * already knows about, or its own. Hiding a thumbnail-less row from such an answer would read as
+ * the destination having disappeared, so the filter steps aside for both entity types.
+ *
+ * `only_highlighted` is here for the same reason it is redundant: every row it returns is
+ * highlighted, which the predicate already keeps.
+ */
+function isLookupQuery(options: ContentQualityGateOptions): boolean {
+  return (
+    !!options.search ||
+    !!options.ids?.length ||
+    !!options.owner ||
+    !!options.creator_address ||
+    !!options.only_favorites ||
+    !!options.only_highlighted
+  )
+}
+
+/**
+ * Whether the places branch should be filtered. `pointer` names the parcels the caller is asking
+ * about, so it exempts places only -- the worlds sharing the page were not asked for by name.
+ */
+function requireContentForPlaces(options: ContentQualityGateOptions): boolean {
+  return !isLookupQuery(options) && !options.positions?.length
+}
+
+/**
+ * Whether the worlds branch should be filtered. `world_names` and `names` both name worlds, so
+ * they exempt worlds only, leaving the places branch filtered.
+ */
+function requireContentForWorlds(options: ContentQualityGateOptions): boolean {
+  return (
+    !isLookupQuery(options) &&
+    !options.world_names?.length &&
+    !options.names?.length
+  )
+}
+
+/**
+ * Project the destination options onto the subset {@link WorldModel.buildSubQuery} accepts.
+ *
+ * The worlds branch takes a narrower shape than the places one -- it has no `positions`, and its
+ * name filters are its own -- so every call site used to spell the same projection out by hand.
+ * Four copies drifting apart is how one of them ends up missing a filter.
+ */
+function worldSubQueryOptions(options: {
+  user?: string
+  only_favorites?: boolean
+  search?: string
+  categories?: string[]
+  only_highlighted?: boolean
+  world_names?: string[]
+  names?: string[]
+  owner?: string
+  ids?: string[]
+  sdk?: string
+  creator_address?: string
+}) {
+  return {
+    user: options.user,
+    only_favorites: !!options.only_favorites,
+    search: options.search,
+    categories: options.categories ?? [],
+    only_highlighted: !!options.only_highlighted,
+    world_names: options.world_names,
+    names: options.names,
+    owner: options.owner,
+    ids: options.ids,
+    sdk: options.sdk,
+    creator_address: options.creator_address,
+  }
+}
+
 export default class DestinationModel {
   /**
    * Find destinations with aggregates. Uses three strategies:
@@ -125,10 +216,16 @@ export default class DestinationModel {
         )}`
       : WORLDS_DESTINATION_SELECT
 
+    // The generic feed hides destinations that carry no information of their own. Decided per
+    // entity branch and shared with count() so the totals match the listing.
+    const placesRequireContent = requireContentForPlaces(options)
+    const worldsRequireContent = requireContentForWorlds(options)
+
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(options, {
         selectColumns: placesSelect,
         worldFilter: "always",
+        requireContent: placesRequireContent,
       })
       const sql = SQL`
         ${placesQuery}
@@ -151,20 +248,11 @@ export default class DestinationModel {
 
     if (options.only_worlds) {
       const worldsQuery = WorldModel.buildSubQuery(
+        worldSubQueryOptions(options),
         {
-          user: options.user,
-          only_favorites: options.only_favorites,
-          search: options.search,
-          categories: options.categories,
-          only_highlighted: options.only_highlighted,
-          world_names: options.world_names,
-          names: options.names,
-          owner: options.owner,
-          ids: options.ids,
-          sdk: options.sdk,
-          creator_address: options.creator_address,
-        },
-        { selectColumns: worldsSelect }
+          selectColumns: worldsSelect,
+          requireContent: worldsRequireContent,
+        }
       )
       const sql = SQL`
         ${worldsQuery}
@@ -189,23 +277,13 @@ export default class DestinationModel {
     const placesQuery = PlaceModel.buildSubQuery(options, {
       selectColumns: placesSelect,
       worldFilter: "always",
+      requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
-      {
-        user: options.user,
-        only_favorites: options.only_favorites,
-        search: options.search,
-        categories: options.categories,
-        only_highlighted: options.only_highlighted,
-        world_names: options.world_names,
-        names: options.names,
-        owner: options.owner,
-        ids: options.ids,
-        sdk: options.sdk,
-        creator_address: options.creator_address,
-      },
+      worldSubQueryOptions(options),
       {
         selectColumns: worldsSelect,
+        requireContent: worldsRequireContent,
       }
     )
 
@@ -277,10 +355,16 @@ export default class DestinationModel {
       only_places: options.only_places ?? false,
     }
 
+    // Same decision as findWithAggregates, from the same helpers: a total that counted rows the
+    // listing hides would paginate past the end of the feed.
+    const placesRequireContent = requireContentForPlaces(fullOptions)
+    const worldsRequireContent = requireContentForWorlds(fullOptions)
+
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
         forCount: true,
         worldFilter: "always",
+        requireContent: placesRequireContent,
       })
       const sql = SQL`SELECT count(*) as total FROM (${placesQuery}) sub`
       const results: { total: string }[] = await PlaceModel.namedQuery(
@@ -292,20 +376,8 @@ export default class DestinationModel {
 
     if (options.only_worlds) {
       const worldsQuery = WorldModel.buildSubQuery(
-        {
-          user: fullOptions.user,
-          only_favorites: fullOptions.only_favorites,
-          search: fullOptions.search,
-          categories: fullOptions.categories,
-          only_highlighted: fullOptions.only_highlighted,
-          world_names: fullOptions.world_names,
-          names: fullOptions.names,
-          owner: fullOptions.owner,
-          ids: fullOptions.ids,
-          sdk: fullOptions.sdk,
-          creator_address: fullOptions.creator_address,
-        },
-        { forCount: true }
+        worldSubQueryOptions(fullOptions),
+        { forCount: true, requireContent: worldsRequireContent }
       )
       const sql = SQL`SELECT count(*) as total FROM (${worldsQuery}) sub`
       const results: { total: string }[] = await WorldModel.namedQuery(
@@ -319,22 +391,11 @@ export default class DestinationModel {
     const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
       forCount: true,
       worldFilter: "always",
+      requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
-      {
-        user: fullOptions.user,
-        only_favorites: fullOptions.only_favorites,
-        search: fullOptions.search,
-        categories: fullOptions.categories,
-        only_highlighted: fullOptions.only_highlighted,
-        world_names: fullOptions.world_names,
-        names: fullOptions.names,
-        owner: fullOptions.owner,
-        ids: fullOptions.ids,
-        sdk: fullOptions.sdk,
-        creator_address: fullOptions.creator_address,
-      },
-      { forCount: true }
+      worldSubQueryOptions(fullOptions),
+      { forCount: true, requireContent: worldsRequireContent }
     )
 
     const sql = SQL`

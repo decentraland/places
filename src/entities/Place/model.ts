@@ -87,6 +87,7 @@ import {
 } from "../Map/types"
 import PlaceCategories from "../PlaceCategories/model"
 import PlacePositionModel from "../PlacePosition/model"
+import { buildContentQualityCondition } from "../shared/contentQuality"
 import {
   MIN_USER_ACTIVITY,
   buildTextsearch,
@@ -133,7 +134,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ids?: string[]
       names?: string[]
     },
-    opts?: { worldFilter?: "always" | "conditional" }
+    opts?: { worldFilter?: "always" | "conditional"; requireContent?: boolean }
   ): SQLStatement {
     const a = SQL.raw(alias)
     const worldFilter = opts?.worldFilter ?? "conditional"
@@ -198,6 +199,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           !!options.ids?.length,
           SQL` AND ${a}.id IN ${values(options.ids || [])}`
         )}
+        ${conditional(
+          opts?.requireContent ?? false,
+          buildContentQualityCondition(
+            SQL`${a}.highlighted`,
+            SQL`${a}.image`,
+            SQL`${a}.title`
+          )
+        )}
     `
   }
 
@@ -211,6 +220,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * @param opts.forCount - When true: SELECT p.id only, skip CTE/most_active/interaction columns
    * @param opts.worldFilter - Controls the "world is false" condition in WHERE
    * @param opts.selectColumns - Custom SELECT columns (default: p.*)
+   * @param opts.requireContent - Opt in to the content-quality filter (see
+   *   {@link buildContentQualityCondition}). Off by default: only the destinations feed asks for it,
+   *   and turning it on elsewhere would silently drop rows from /api/places.
    */
   static buildSubQuery(
     options: {
@@ -233,6 +245,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       forCount?: boolean
       worldFilter?: "always" | "conditional"
       selectColumns?: SQLStatement
+      requireContent?: boolean
     }
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
@@ -285,6 +298,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       )}
       WHERE ${this.buildWhereConditions("p", options, {
         worldFilter: opts?.worldFilter ?? "conditional",
+        requireContent: opts?.requireContent,
       })}
     `
   }
