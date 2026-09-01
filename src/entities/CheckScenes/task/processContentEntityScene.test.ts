@@ -3,6 +3,7 @@ import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.
 
 import { InvalidSceneBaseError, InvalidWorldSqsMessageError } from "./errors"
 import {
+  ProcessEntitySceneResult,
   assertSceneBaseIsAuthorized,
   createPlaceFromContentEntityScene,
   processContentEntityScene,
@@ -11,7 +12,7 @@ import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntityS
 import { contentEntitySceneMusicFestivalStage } from "../../../__data__/contentEntitySceneMusicFestivalStage"
 import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../../__data__/placeGenesisPlazaWithAggregatedAttributes"
-import { DisabledReason } from "../../Place/types"
+import { DisabledReason, PlaceAttributes } from "../../Place/types"
 
 describe("when asserting that the scene base is authorized", () => {
   let contentEntityScene: ContentEntityScene
@@ -327,5 +328,104 @@ describe("processContentEntityScene", () => {
     )
 
     expect(processEntitySceneResult).toBeNull()
+  })
+})
+
+describe("when a redeployment lands on a new place row", () => {
+  let curatedPredecessor: PlaceAttributes
+  let creator: string
+
+  beforeEach(() => {
+    creator = "0x4f7fe261619141ffa63fefee35bba886581292f4"
+    curatedPredecessor = {
+      ...(createPlaceFromContentEntityScene(
+        contentEntitySceneGenesisPlaza
+      ) as PlaceAttributes),
+      highlighted: true,
+      highlighted_image: "/images/places/banner.jpg",
+      ranking: 1900,
+      creator_address: creator,
+    }
+  })
+
+  describe("and the predecessor was published by the same creator", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [curatedPredecessor],
+        { creator }
+      )
+    })
+
+    it("should carry the highlighted flag to the new place", () => {
+      expect(result!.new!.highlighted).toBe(true)
+    })
+
+    it("should carry the curated ranking to the new place", () => {
+      expect(result!.new!.ranking).toBe(1900)
+    })
+
+    it("should carry the highlighted image to the new place", () => {
+      expect(result!.new!.highlighted_image).toBe("/images/places/banner.jpg")
+    })
+  })
+
+  describe("and the predecessor was published by another creator", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [curatedPredecessor],
+        { creator: "0x0000000000000000000000000000000000000001" }
+      )
+    })
+
+    it("should not promote the new place into the highlighted shelf", () => {
+      expect(result!.new!.highlighted).toBe(false)
+    })
+
+    it("should leave the new place at the default ranking", () => {
+      expect(result!.new!.ranking).toBe(0)
+    })
+  })
+
+  describe("and more than one curated predecessor was published by the same creator", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [
+          curatedPredecessor,
+          { ...curatedPredecessor, id: "6f1f6a8e-2b47-4f0e-9b3a-6c9d0f2e8a11" },
+        ],
+        { creator }
+      )
+    })
+
+    it("should not promote the new place into the highlighted shelf", () => {
+      expect(result!.new!.highlighted).toBe(false)
+    })
+
+    it("should leave the new place at the default ranking", () => {
+      expect(result!.new!.ranking).toBe(0)
+    })
+  })
+
+  describe("and the deployment has no known creator", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      result = processContentEntityScene(contentEntitySceneMusicFestivalStage, [
+        curatedPredecessor,
+      ])
+    })
+
+    it("should not promote the new place into the highlighted shelf", () => {
+      expect(result!.new!.highlighted).toBe(false)
+    })
   })
 })
