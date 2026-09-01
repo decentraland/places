@@ -4,7 +4,10 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
-import { requireRankingToken } from "../../shared/auth"
+import {
+  requireAdminTokenForHighlighted,
+  requireRankingToken,
+} from "../../shared/auth"
 import { createWkcValidator } from "../../shared/validate"
 import WorldModel from "../model"
 import {
@@ -28,7 +31,7 @@ const validateBody = createWkcValidator<UpdateWorldRankingBody>(
 export async function updateWorldRanking(
   ctx: Context<{ world_id: string }, "request" | "body" | "params">
 ): Promise<ApiResponse<AggregateWorldAttributes, {}>> {
-  await requireRankingToken(ctx)
+  const token = await requireRankingToken(ctx)
 
   const params = await validateParams(ctx.params)
   const body = await validateBody(ctx.body)
@@ -43,6 +46,8 @@ export async function updateWorldRanking(
       `Not found world "${params.world_id}"`
     )
   }
+
+  requireAdminTokenForHighlighted(token, world.highlighted)
 
   await WorldModel.updateRanking(params.world_id, body.ranking)
 

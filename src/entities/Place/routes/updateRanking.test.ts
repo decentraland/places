@@ -26,6 +26,13 @@ jest.mock("decentraland-gatsby/dist/utils/env", () => {
   })
 })
 
+// The Genesis Plaza fixture is highlighted, and a highlighted place accepts only the
+// admin token. Cases that exercise the data team path need an uncurated place.
+const uncuratedPlace = {
+  ...placeGenesisPlazaWithAggregatedAttributes,
+  highlighted: false,
+}
+
 const findByIdWithAggregates = jest.spyOn(PlaceModel, "findByIdWithAggregates")
 const updatePlace = jest.spyOn(PlaceModel, "updatePlace")
 
@@ -89,9 +96,7 @@ describe("updateRanking", () => {
     })
 
     test("should accept token with Bearer prefix", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
       updatePlace.mockResolvedValueOnce([] as any)
 
       const request = new Request("http://0.0.0.0/")
@@ -100,7 +105,7 @@ describe("updateRanking", () => {
 
       const response = await updateRanking({
         request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        params: { place_id: uncuratedPlace.id },
         body: { ranking: 0.85 },
         url,
       } as any)
@@ -222,9 +227,7 @@ describe("updateRanking", () => {
 
   describe("successful updates", () => {
     test("should update ranking to a positive number", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
       updatePlace.mockResolvedValueOnce([] as any)
 
       const request = new Request("http://0.0.0.0/")
@@ -233,7 +236,7 @@ describe("updateRanking", () => {
 
       const response = await updateRanking({
         request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        params: { place_id: uncuratedPlace.id },
         body: { ranking: 0.85 },
         url,
       } as any)
@@ -241,20 +244,18 @@ describe("updateRanking", () => {
       expect(response.body).toEqual({
         ok: true,
         data: {
-          ...placeGenesisPlazaWithAggregatedAttributes,
+          ...uncuratedPlace,
           ranking: 0.85,
         },
       })
       expect(updatePlace).toHaveBeenCalledWith(
-        { ...placeGenesisPlazaWithAggregatedAttributes, ranking: 0.85 },
+        { ...uncuratedPlace, ranking: 0.85 },
         ["ranking"]
       )
     })
 
     test("should update ranking to zero", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
       updatePlace.mockResolvedValueOnce([] as any)
 
       const request = new Request("http://0.0.0.0/")
@@ -263,7 +264,7 @@ describe("updateRanking", () => {
 
       const response = await updateRanking({
         request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        params: { place_id: uncuratedPlace.id },
         body: { ranking: 0 },
         url,
       } as any)
@@ -276,9 +277,7 @@ describe("updateRanking", () => {
     })
 
     test("should update ranking to a negative number", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
       updatePlace.mockResolvedValueOnce([] as any)
 
       const request = new Request("http://0.0.0.0/")
@@ -287,7 +286,7 @@ describe("updateRanking", () => {
 
       const response = await updateRanking({
         request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        params: { place_id: uncuratedPlace.id },
         body: { ranking: -0.5 },
         url,
       } as any)
@@ -296,9 +295,7 @@ describe("updateRanking", () => {
     })
 
     test("should set ranking to null", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(
-        placeGenesisPlazaWithAggregatedAttributes
-      )
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
       updatePlace.mockResolvedValueOnce([] as any)
 
       const request = new Request("http://0.0.0.0/")
@@ -307,7 +304,7 @@ describe("updateRanking", () => {
 
       const response = await updateRanking({
         request,
-        params: { place_id: placeGenesisPlazaWithAggregatedAttributes.id },
+        params: { place_id: uncuratedPlace.id },
         body: { ranking: null },
         url,
       } as any)
@@ -315,14 +312,84 @@ describe("updateRanking", () => {
       expect(response.body).toEqual({
         ok: true,
         data: {
-          ...placeGenesisPlazaWithAggregatedAttributes,
+          ...uncuratedPlace,
           ranking: null,
         },
       })
       expect(updatePlace).toHaveBeenCalledWith(
-        { ...placeGenesisPlazaWithAggregatedAttributes, ranking: null },
+        { ...uncuratedPlace, ranking: null },
         ["ranking"]
       )
+    })
+  })
+  describe("when the place is highlighted", () => {
+    let highlightedPlace: typeof placeGenesisPlazaWithAggregatedAttributes
+    let request: Request
+    let url: URL
+
+    beforeEach(() => {
+      highlightedPlace = {
+        ...placeGenesisPlazaWithAggregatedAttributes,
+        highlighted: true,
+        ranking: 1900,
+      }
+      url = new URL("https://localhost/")
+      findByIdWithAggregates.mockResolvedValueOnce(highlightedPlace)
+      updatePlace.mockResolvedValueOnce([] as any)
+    })
+
+    describe("and the data team token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
+      })
+
+      it("should reject the request as editorial", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: highlightedPlace.id },
+            body: { ranking: 27 },
+            url,
+          } as any)
+        ).rejects.toThrow(
+          "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
+        )
+      })
+
+      it("should leave the curated ranking untouched", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: highlightedPlace.id },
+            body: { ranking: 27 },
+            url,
+          } as any)
+        ).rejects.toThrow()
+
+        expect(updatePlace).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the admin token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      })
+
+      it("should write the requested ranking", async () => {
+        await updateRanking({
+          request,
+          params: { place_id: highlightedPlace.id },
+          body: { ranking: 1850 },
+          url,
+        } as any)
+
+        expect(updatePlace).toHaveBeenCalledWith(
+          expect.objectContaining({ ranking: 1850 }),
+          ["ranking"]
+        )
+      })
     })
   })
 })

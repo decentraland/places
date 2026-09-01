@@ -40,6 +40,18 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "sdk",
 ]
 
+/**
+ * A new row also persists the curation inherited from the place it supersedes. These
+ * columns stay out of `placesAttributes` on purpose: an in-place update must never
+ * write them, or every redeployment would reset the editorial ranking to the default.
+ */
+const placesInsertAttributes: Array<keyof PlaceAttributes> = [
+  ...placesAttributes,
+  "highlighted",
+  "highlighted_image",
+  "ranking",
+]
+
 export type AppliedDeploymentDecision = {
   placesToProcess: ProcessEntitySceneResult | null
   placesToDisable: PlaceAttributes[]
@@ -67,7 +79,7 @@ export async function applyDeploymentDecision({
   let placesToProcess = decision.placesToProcess
 
   if (placesToProcess?.new) {
-    await PlaceModel.insertPlace(placesToProcess.new, placesAttributes)
+    await PlaceModel.insertPlace(placesToProcess.new, placesInsertAttributes)
     await Promise.all([
       decision.kind === "genesis-city" &&
         PlacePositionModel.syncBasePosition(placesToProcess.new),

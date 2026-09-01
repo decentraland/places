@@ -4,7 +4,10 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
-import { requireRankingToken } from "../../shared/auth"
+import {
+  requireAdminTokenForHighlighted,
+  requireRankingToken,
+} from "../../shared/auth"
 import { createWkcValidator } from "../../shared/validate"
 import PlaceModel from "../model"
 import { getPlaceParamsSchema, updateRankingBodySchema } from "../schemas"
@@ -25,7 +28,7 @@ const validateUpdateRankingBody = createWkcValidator<UpdateRankingBody>(
 export async function updateRanking(
   ctx: Context<{ place_id: string }, "request" | "body" | "params">
 ): Promise<ApiResponse<AggregatePlaceAttributes, {}>> {
-  await requireRankingToken(ctx)
+  const token = await requireRankingToken(ctx)
 
   const params = await validateUpdateRankingParams(ctx.params)
   const body = await validateUpdateRankingBody(ctx.body)
@@ -40,6 +43,8 @@ export async function updateRanking(
       `Not found place "${params.place_id}"`
     )
   }
+
+  requireAdminTokenForHighlighted(token, place.highlighted)
 
   const newPlace = { ...place, ranking: body.ranking }
   await PlaceModel.updatePlace(newPlace, ["ranking"])
