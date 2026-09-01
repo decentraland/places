@@ -392,6 +392,29 @@ describe("when a redeployment lands on a new place row", () => {
     })
   })
 
+  describe("and more than one curated predecessor was published by the same creator", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [
+          curatedPredecessor,
+          { ...curatedPredecessor, id: "6f1f6a8e-2b47-4f0e-9b3a-6c9d0f2e8a11" },
+        ],
+        { creator }
+      )
+    })
+
+    it("should not promote the new place into the highlighted shelf", () => {
+      expect(result!.new!.highlighted).toBe(false)
+    })
+
+    it("should leave the new place at the default ranking", () => {
+      expect(result!.new!.ranking).toBe(0)
+    })
+  })
+
   describe("and the deployment has no known creator", () => {
     let result: ProcessEntitySceneResult | null
 
