@@ -468,7 +468,7 @@ describe("taskRunnerSqs integration", () => {
 
     const scene = createWorldContentEntityScene({
       worldName: options.worldName,
-      title: options.title ?? "Test Scene",
+      title: options.title ?? "Ember Workshop",
       base: options.base ?? "0,0",
       parcels: options.parcels ?? ["0,0"],
       optOut: options.optOut,
@@ -961,7 +961,7 @@ describe("taskRunnerSqs integration", () => {
       beforeEach(async () => {
         const scene = createWorldContentEntityScene({
           worldName: "ownertest.dcl.eth",
-          title: "Owner Test Scene",
+          title: "Owner Signal Scene",
         })
         // scene fixture has metadata.owner = 0x1234...
 

@@ -62,7 +62,7 @@ const worldName = "disabledtest.dcl.eth"
 async function seedWorld(name: string): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: "Disabled Field Test World",
+    title: "Marble Observatory",
     description: "A world for testing disabled fields in API responses",
     show_in_places: true,
     single_player: false,

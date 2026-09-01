@@ -23,6 +23,7 @@ import {
 } from "./types"
 import { ratingScale } from "../../utils/rating/contentRating"
 import { Model } from "../Database/model"
+import { buildContentQualityCondition } from "../shared/contentQuality"
 import {
   buildTextsearch,
   buildUpdateFavoritesQuery,
@@ -71,6 +72,8 @@ export default class WorldModel extends Model<WorldAttributes> {
    *
    * @param alias - Table alias (e.g., "w")
    * @param options - Filter options
+   * @param opts.requireContent - Opt in to the content-quality filter (see
+   *   {@link buildContentQualityCondition}). Requires the lateral join to be in scope.
    */
   static buildWhereConditions(
     alias: string,
@@ -84,7 +87,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       ids?: string[]
       sdk?: string
       creator_address?: string
-    }
+    },
+    opts?: { requireContent?: boolean }
   ): SQLStatement {
     const a = SQL.raw(alias)
     return SQL`
@@ -142,6 +146,16 @@ export default class WorldModel extends Model<WorldAttributes> {
               AND LOWER(wp.creator_address) = ${options.creator_address}
           )`
         )}
+        ${conditional(
+          opts?.requireContent ?? false,
+          buildContentQualityCondition(
+            SQL`${a}.highlighted`,
+            // A world inherits its thumbnail from the latest enabled place through the lateral
+            // join, so only the COALESCE says whether the feed has an image to show.
+            SQL`COALESCE(${a}.image, lp.image)`,
+            SQL`${a}.title`
+          )
+        )}
     `
   }
 
@@ -154,6 +168,9 @@ export default class WorldModel extends Model<WorldAttributes> {
    * @param options - Filter and search options
    * @param opts.forCount - When true: SELECT w.id only, skip interaction columns and rank
    * @param opts.selectColumns - Custom SELECT columns (default: w.* with COALESCE and extras)
+   * @param opts.requireContent - Opt in to the content-quality filter (see
+   *   {@link buildContentQualityCondition}). Off by default: only the destinations feed asks for it,
+   *   and turning it on elsewhere would silently drop rows from /api/worlds.
    */
   static buildSubQuery(
     options: {
@@ -174,6 +191,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       selectColumns?: SQLStatement
       /** Extra SELECT column(s) appended after user interaction columns (for UNION column/order alignment with places). */
       extraSelectAfterUserColumns?: SQLStatement
+      requireContent?: boolean
     }
   ): SQLStatement {
     const forCount = opts?.forCount ?? false
@@ -206,17 +224,21 @@ export default class WorldModel extends Model<WorldAttributes> {
         onlyFavorites: options.only_favorites,
         forCount,
       })}
-      ${this.buildWhereConditions("w", {
-        categories: options.categories,
-        search: options.search,
-        world_names: options.world_names,
-        names: options.names,
-        only_highlighted: options.only_highlighted,
-        owner: options.owner,
-        ids: options.ids,
-        sdk: options.sdk,
-        creator_address: options.creator_address,
-      })}
+      ${this.buildWhereConditions(
+        "w",
+        {
+          categories: options.categories,
+          search: options.search,
+          world_names: options.world_names,
+          names: options.names,
+          only_highlighted: options.only_highlighted,
+          owner: options.owner,
+          ids: options.ids,
+          sdk: options.sdk,
+          creator_address: options.creator_address,
+        },
+        { requireContent: opts?.requireContent }
+      )}
     `
   }
 

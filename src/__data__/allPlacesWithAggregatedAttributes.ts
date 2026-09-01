@@ -113,8 +113,8 @@ export const allPlacesWithAggregatedAttributes: AggregateDestinationAttributes[]
     },
     {
       id: "a7ce87fa-df3c-4a2f-bca6-bd2fe794d51a",
-      title: "Test World",
-      description: "Test World",
+      title: "Meridian Bazaar",
+      description: "Meridian Bazaar",
       image: "https://localhost:8000/images/places/genesis_plaza.jpg",
       owner: null,
       positions: [],

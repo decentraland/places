@@ -80,6 +80,62 @@ function worldsLiveUserCountSelect(
   return SQL`, COALESCE(CASE LOWER(w.world_name)${cases} ELSE 0 END, 0)::int as live_user_count`
 }
 
+/**
+ * The subset of the destination filters that decides whether the content-quality filter applies.
+ * Every field is optional so both {@link DestinationModel.findWithAggregates} and
+ * {@link DestinationModel.count} option shapes satisfy it.
+ */
+type ContentQualityGateOptions = {
+  positions?: string[]
+  world_names?: string[]
+  names?: string[]
+  search?: string
+  ids?: string[]
+  owner?: string
+  creator_address?: string
+  only_favorites?: boolean
+  only_highlighted?: boolean
+}
+
+/**
+ * Filters that make the caller's intent narrower than discovery: it is looking up destinations it
+ * already knows about, or its own. Hiding a thumbnail-less row from such an answer would read as
+ * the destination having disappeared, so the filter steps aside for both entity types.
+ *
+ * `only_highlighted` is here for the same reason it is redundant: every row it returns is
+ * highlighted, which the predicate already keeps.
+ */
+function isLookupQuery(options: ContentQualityGateOptions): boolean {
+  return (
+    !!options.search ||
+    !!options.ids?.length ||
+    !!options.owner ||
+    !!options.creator_address ||
+    !!options.only_favorites ||
+    !!options.only_highlighted
+  )
+}
+
+/**
+ * Whether the places branch should be filtered. `pointer` names the parcels the caller is asking
+ * about, so it exempts places only -- the worlds sharing the page were not asked for by name.
+ */
+function requireContentForPlaces(options: ContentQualityGateOptions): boolean {
+  return !isLookupQuery(options) && !options.positions?.length
+}
+
+/**
+ * Whether the worlds branch should be filtered. `world_names` and `names` both name worlds, so
+ * they exempt worlds only, leaving the places branch filtered.
+ */
+function requireContentForWorlds(options: ContentQualityGateOptions): boolean {
+  return (
+    !isLookupQuery(options) &&
+    !options.world_names?.length &&
+    !options.names?.length
+  )
+}
+
 export default class DestinationModel {
   /**
    * Find destinations with aggregates. Uses three strategies:
@@ -125,10 +181,16 @@ export default class DestinationModel {
         )}`
       : WORLDS_DESTINATION_SELECT
 
+    // The generic feed hides destinations that carry no information of their own. Decided per
+    // entity branch and shared with count() so the totals match the listing.
+    const placesRequireContent = requireContentForPlaces(options)
+    const worldsRequireContent = requireContentForWorlds(options)
+
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(options, {
         selectColumns: placesSelect,
         worldFilter: "always",
+        requireContent: placesRequireContent,
       })
       const sql = SQL`
         ${placesQuery}
@@ -164,7 +226,10 @@ export default class DestinationModel {
           sdk: options.sdk,
           creator_address: options.creator_address,
         },
-        { selectColumns: worldsSelect }
+        {
+          selectColumns: worldsSelect,
+          requireContent: worldsRequireContent,
+        }
       )
       const sql = SQL`
         ${worldsQuery}
@@ -189,6 +254,7 @@ export default class DestinationModel {
     const placesQuery = PlaceModel.buildSubQuery(options, {
       selectColumns: placesSelect,
       worldFilter: "always",
+      requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
       {
@@ -206,6 +272,7 @@ export default class DestinationModel {
       },
       {
         selectColumns: worldsSelect,
+        requireContent: worldsRequireContent,
       }
     )
 
@@ -277,10 +344,16 @@ export default class DestinationModel {
       only_places: options.only_places ?? false,
     }
 
+    // Same decision as findWithAggregates, from the same helpers: a total that counted rows the
+    // listing hides would paginate past the end of the feed.
+    const placesRequireContent = requireContentForPlaces(fullOptions)
+    const worldsRequireContent = requireContentForWorlds(fullOptions)
+
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
         forCount: true,
         worldFilter: "always",
+        requireContent: placesRequireContent,
       })
       const sql = SQL`SELECT count(*) as total FROM (${placesQuery}) sub`
       const results: { total: string }[] = await PlaceModel.namedQuery(
@@ -305,7 +378,7 @@ export default class DestinationModel {
           sdk: fullOptions.sdk,
           creator_address: fullOptions.creator_address,
         },
-        { forCount: true }
+        { forCount: true, requireContent: worldsRequireContent }
       )
       const sql = SQL`SELECT count(*) as total FROM (${worldsQuery}) sub`
       const results: { total: string }[] = await WorldModel.namedQuery(
@@ -319,6 +392,7 @@ export default class DestinationModel {
     const placesQuery = PlaceModel.buildSubQuery(fullOptions, {
       forCount: true,
       worldFilter: "always",
+      requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
       {
@@ -334,7 +408,7 @@ export default class DestinationModel {
         sdk: fullOptions.sdk,
         creator_address: fullOptions.creator_address,
       },
-      { forCount: true }
+      { forCount: true, requireContent: worldsRequireContent }
     )
 
     const sql = SQL`

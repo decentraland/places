@@ -6,6 +6,7 @@ import {
   AggregatePlaceAttributes,
   HotScene,
   PlaceAttributes,
+  WORLD_DEFAULT_THUMBNAIL_HASH,
   unwantedThumbnailHash,
 } from "./types"
 import { SceneStats, SceneStatsMap } from "../../api/DataTeam"
@@ -181,8 +182,7 @@ export function getThumbnailFromContentDeployment(
   }
 
   if (!thumbnail && deployment?.metadata?.worldConfiguration) {
-    thumbnail =
-      "https://peer.decentraland.org/content/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
+    thumbnail = `https://peer.decentraland.org/content/contents/${WORLD_DEFAULT_THUMBNAIL_HASH}`
   } else if (!thumbnail) {
     thumbnail = Land.getInstance().getMapImage({
       selected: positions,

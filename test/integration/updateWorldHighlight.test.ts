@@ -70,7 +70,7 @@ const worldName = "highlighttest.dcl.eth"
 async function seedWorld(name: string): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: "Highlight Test World",
+    title: "Beacon Overlook",
     description: "A world for testing highlights",
     show_in_places: true,
     single_player: false,

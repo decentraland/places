@@ -74,13 +74,53 @@ const OWNER_A = "0x000000000000000000000000000000000000000a"
 const OWNER_B = "0x000000000000000000000000000000000000000b"
 const CREATOR_A = "0x000000000000000000000000000000000000000c"
 const CREATOR_B = "0x000000000000000000000000000000000000000d"
+const OWNER_JUNK = "0x000000000000000000000000000000000000000e"
+const CREATOR_JUNK = "0x000000000000000000000000000000000000000f"
+
+/** A thumbnail that came from the scene itself, i.e. the one shape the filter must keep. */
+const REAL_IMAGE = "https://example.com/real-thumbnail.png"
+/** The Genesis City map render the Land API stores when a scene ships no navmap thumbnail. */
+const MAP_FALLBACK_IMAGE =
+  "https://api.decentraland.org/v2/map.png?height=1024&width=1024&selected=1%2C1"
+/** The generic thumbnail the deployment pipeline stores for a world scene that ships none. */
+const WORLD_DEFAULT_THUMBNAIL_IMAGE =
+  "https://worlds-content-server.decentraland.org/contents/bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
+/** One of the placeholder thumbnails listed in `unwantedThumbnailHash`. */
+const UNWANTED_THUMBNAIL_IMAGE =
+  "https://peer.decentraland.org/content/contents/bafkreihdwdcefgh4dqkjv67uzcmw7ojee6xedzdetojuzjevtenxquvyku"
+
+type DestinationsResponse = {
+  body: { data: { id: string; world: boolean }[] }
+}
+
+/**
+ * Ids of the returned destinations, sorted so an assertion does not depend on the feed order.
+ * Only meaningful for tests that assert on membership rather than on ranking.
+ */
+function sortedDestinationIds(response: DestinationsResponse): string[] {
+  return response.body.data.map((destination) => destination.id).sort()
+}
+
+function sortedPlaceIds(response: DestinationsResponse): string[] {
+  return response.body.data
+    .filter((destination) => !destination.world)
+    .map((destination) => destination.id)
+    .sort()
+}
+
+function sortedWorldIds(response: DestinationsResponse): string[] {
+  return response.body.data
+    .filter((destination) => destination.world)
+    .map((destination) => destination.id)
+    .sort()
+}
 
 function createPlaceAttributes(
   overrides: Partial<PlaceAttributes> = {}
 ): PlaceAttributes {
   return {
     id: randomUUID(),
-    title: "Test Place",
+    title: "Amber Hollow",
     description: "A test place",
     image: "https://example.com/image.png",
     owner: null,
@@ -140,6 +180,7 @@ async function seedWorldWithOptions(
   overrides: {
     title?: string
     description?: string
+    image?: string | null
     highlighted?: boolean
     ranking?: number
     created_at?: Date
@@ -150,8 +191,9 @@ async function seedWorldWithOptions(
 ): Promise<void> {
   await WorldModel.insertWorldIfNotExists({
     world_name: name,
-    title: overrides.title ?? "Test World",
+    title: overrides.title ?? "Solstice Gallery",
     description: overrides.description ?? "A test world",
+    image: overrides.image,
     show_in_places: true,
     single_player: false,
     skybox_time: null,
@@ -1443,6 +1485,694 @@ describe("when fetching destinations via GET /destinations", () => {
           expect(page1.body.total).toBe(3)
           expect(page2.body.data).toHaveLength(1)
           expect(page2.body.total).toBe(3)
+        })
+      })
+    })
+  })
+
+  /**
+   * The content-quality filter keeps a destination when `highlighted IS TRUE OR (the image is not
+   * a known fallback AND the title is not blank or a placeholder)`.
+   *
+   * These tests execute the predicate against Postgres and assert on the response body on purpose.
+   * The unit suite around `DestinationModel` only inspects the emitted SQL text, so deleting a
+   * whole term from the predicate leaves it green.
+   */
+  describe("and destinations carry fallback images or placeholder titles", () => {
+    describe("and the request is the generic feed", () => {
+      let placeWithContent: PlaceAttributes
+
+      beforeEach(async () => {
+        placeWithContent = await seedPlace({
+          title: "Amber Hollow",
+          image: REAL_IMAGE,
+          base_position: "100,100",
+          positions: ["100,100"],
+        })
+      })
+
+      it("should return a place whose title and image both come from its scene", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .expect(200)
+
+        expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+      })
+
+      describe("and a place image is the Genesis City map render", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Basalt Terrace",
+            image: MAP_FALLBACK_IMAGE,
+            base_position: "101,101",
+            positions: ["101,101"],
+          })
+        })
+
+        it("should not return the place with the map render", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place has no image at all", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Cinder Wharf",
+            image: null,
+            base_position: "102,102",
+            positions: ["102,102"],
+          })
+        })
+
+        it("should not return the place without an image", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place image carries the world default thumbnail hash", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Driftwood Pier",
+            image: WORLD_DEFAULT_THUMBNAIL_IMAGE,
+            base_position: "103,103",
+            positions: ["103,103"],
+          })
+        })
+
+        it("should not return the place with the default world thumbnail", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place image carries an unwanted thumbnail hash", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Ember Courtyard",
+            image: UNWANTED_THUMBNAIL_IMAGE,
+            base_position: "104,104",
+            positions: ["104,104"],
+          })
+        })
+
+        it("should not return the place with the unwanted thumbnail", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title uses test as a whole word", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Test Plaza",
+            image: REAL_IMAGE,
+            base_position: "105,105",
+            positions: ["105,105"],
+          })
+        })
+
+        it("should not return the place titled Test Plaza", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is a placeholder from the template list", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Untitled",
+            image: REAL_IMAGE,
+            base_position: "106,106",
+            positions: ["106,106"],
+          })
+        })
+
+        it("should not return the place titled Untitled", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is a placeholder padded with a trailing space", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Untitled ",
+            image: REAL_IMAGE,
+            base_position: "107,107",
+            positions: ["107,107"],
+          })
+        })
+
+        it("should not return the place titled Untitled with a trailing space", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is an empty string", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "",
+            description: "Faded Kiln",
+            image: REAL_IMAGE,
+            base_position: "108,108",
+            positions: ["108,108"],
+          })
+        })
+
+        it("should not return the place with an empty title", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is only whitespace", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "   ",
+            description: "Glass Aviary",
+            image: REAL_IMAGE,
+            base_position: "109,109",
+            positions: ["109,109"],
+          })
+        })
+
+        it("should not return the place with a whitespace-only title", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place has no title at all", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: null,
+            description: "Hollow Belfry",
+            image: REAL_IMAGE,
+            base_position: "110,110",
+            positions: ["110,110"],
+          })
+        })
+
+        it("should not return the place without a title", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is a placeholder that the whole-word regex cannot catch", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "TheTestScene",
+            image: REAL_IMAGE,
+            base_position: "111,111",
+            positions: ["111,111"],
+          })
+        })
+
+        it("should not return the place titled TheTestScene", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and place titles merely contain test inside a longer word", () => {
+        let placeContest: PlaceAttributes
+        let placeLatest: PlaceAttributes
+        let placeTesting: PlaceAttributes
+
+        beforeEach(async () => {
+          placeContest = await seedPlace({
+            title: "Contest Arena",
+            image: REAL_IMAGE,
+            base_position: "112,112",
+            positions: ["112,112"],
+          })
+          placeLatest = await seedPlace({
+            title: "Latest News",
+            image: REAL_IMAGE,
+            base_position: "113,113",
+            positions: ["113,113"],
+          })
+          placeTesting = await seedPlace({
+            title: "Testing Grounds",
+            image: REAL_IMAGE,
+            base_position: "114,114",
+            positions: ["114,114"],
+          })
+        })
+
+        it("should return the place titled Contest Arena", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toContain(placeContest.id)
+        })
+
+        it("should return the place titled Latest News", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toContain(placeLatest.id)
+        })
+
+        it("should return the place titled Testing Grounds", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toContain(placeTesting.id)
+        })
+      })
+
+      describe("and a place with a fallback image and a placeholder title is highlighted", () => {
+        let placeCurated: PlaceAttributes
+
+        beforeEach(async () => {
+          placeCurated = await seedPlace({
+            title: "Untitled",
+            image: MAP_FALLBACK_IMAGE,
+            highlighted: true,
+            base_position: "115,115",
+            positions: ["115,115"],
+          })
+        })
+
+        it("should return the highlighted place regardless of its columns", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toContain(placeCurated.id)
+        })
+      })
+    })
+
+    describe("and the generic feed mixes passing and failing places", () => {
+      beforeEach(async () => {
+        await seedPlace({
+          title: "Ironwood Atrium",
+          image: REAL_IMAGE,
+          base_position: "120,120",
+          positions: ["120,120"],
+        })
+        await seedPlace({
+          title: "Jasper Bazaar",
+          image: REAL_IMAGE,
+          base_position: "121,121",
+          positions: ["121,121"],
+        })
+        await seedPlace({
+          title: "Kelp Observatory",
+          image: REAL_IMAGE,
+          base_position: "122,122",
+          positions: ["122,122"],
+        })
+        await seedPlace({
+          title: "Lantern Bridge",
+          image: MAP_FALLBACK_IMAGE,
+          base_position: "123,123",
+          positions: ["123,123"],
+        })
+        await seedPlace({
+          title: "Marble Foundry",
+          image: null,
+          base_position: "124,124",
+          positions: ["124,124"],
+        })
+        await seedPlace({
+          title: "Untitled",
+          image: REAL_IMAGE,
+          base_position: "125,125",
+          positions: ["125,125"],
+        })
+        await seedPlace({
+          title: "Test Depot",
+          image: REAL_IMAGE,
+          base_position: "126,126",
+          positions: ["126,126"],
+        })
+      })
+
+      it("should count only the passing places in the total", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .expect(200)
+
+        expect(response.body.total).toBe(3)
+      })
+
+      it("should return one entry per passing place", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .expect(200)
+
+        expect(response.body.data).toHaveLength(3)
+      })
+    })
+
+    describe("and the request carries a filter that bypasses the check", () => {
+      /**
+       * Deliberate negative fixture, kept on purpose: it fails BOTH halves of the predicate at
+       * once (a placeholder title and a map fallback image). The generic-feed test below asserts it
+       * is absent, and every bypass test asserts the very same row comes back once the request
+       * names it. Remove it and nothing proves the bypasses reach the rows the filter hides.
+       */
+      let junkPlace: PlaceAttributes
+      let qualityPlace: PlaceAttributes
+
+      beforeEach(async () => {
+        junkPlace = await seedPlace({
+          title: "Untitled",
+          description: "Quarrystone Lookout",
+          image: MAP_FALLBACK_IMAGE,
+          owner: OWNER_JUNK,
+          creator_address: CREATOR_JUNK,
+          base_position: "150,150",
+          positions: ["150,150"],
+        })
+        qualityPlace = await seedPlace({
+          title: "Nettle Conservatory",
+          image: REAL_IMAGE,
+          base_position: "151,151",
+          positions: ["151,151"],
+        })
+
+        await seedWorldWithOptions("junk.dcl.eth", { title: "Untitled" })
+        await seedWorldPlace("junk.dcl.eth", { image: MAP_FALLBACK_IMAGE })
+
+        await seedWorldWithOptions("quality.dcl.eth", {
+          title: "Obsidian Atelier",
+        })
+        await seedWorldPlace("quality.dcl.eth", { image: REAL_IMAGE })
+      })
+
+      it("should hide both junk destinations from the unfiltered feed", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .expect(200)
+
+        expect(sortedDestinationIds(response)).toEqual(
+          [qualityPlace.id, "quality.dcl.eth"].sort()
+        )
+      })
+
+      describe("and the filter is search", () => {
+        it("should return the junk place matching the search text", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ search: "quarrystone" })
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([junkPlace.id])
+        })
+      })
+
+      describe("and the filter is owner", () => {
+        it("should return the junk place owned by the requested address", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ owner: OWNER_JUNK })
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([junkPlace.id])
+        })
+      })
+
+      describe("and the filter is creator_address", () => {
+        it("should return the junk place created by the requested address", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ creator_address: CREATOR_JUNK })
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([junkPlace.id])
+        })
+      })
+
+      describe("and the filter is only_favorites", () => {
+        beforeEach(async () => {
+          await UserFavoriteModel.create({
+            user: MOCK_USER_ADDRESS,
+            user_activity: 100,
+            entity_id: junkPlace.id,
+            created_at: new Date(),
+          })
+        })
+
+        it("should return the junk place the user favorited", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_favorites: "true" })
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([junkPlace.id])
+        })
+      })
+
+      describe("and the filter is pointer", () => {
+        beforeEach(async () => {
+          await database.query(
+            `INSERT INTO place_positions (position, base_position)
+             VALUES ($1, $2)
+             ON CONFLICT (position) DO NOTHING`,
+            ["150,150", junkPlace.base_position] as string[]
+          )
+        })
+
+        it("should return the junk place at the requested pointer", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?pointer=150%2C150")
+            .expect(200)
+
+          expect(sortedPlaceIds(response)).toEqual([junkPlace.id])
+        })
+
+        it("should keep hiding the junk world while pointer names parcels", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?pointer=150%2C150")
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["quality.dcl.eth"])
+        })
+      })
+
+      describe("and the filter is world_names", () => {
+        it("should return the junk world named in the request", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?world_names=junk.dcl.eth")
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["junk.dcl.eth"])
+        })
+
+        it("should keep hiding the junk place while world_names names worlds", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?world_names=junk.dcl.eth")
+            .expect(200)
+
+          expect(sortedPlaceIds(response)).toEqual([qualityPlace.id])
+        })
+      })
+
+      // `names` scopes the places branch to the places of the matching worlds, so unlike
+      // `world_names` it leaves no non-world place in the answer to assert the places branch is
+      // still filtered. The per-branch check lives in the `world_names` block above.
+      describe("and the filter is names", () => {
+        it("should return the junk world matched by partial name", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?names=junk")
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["junk.dcl.eth"])
+        })
+      })
+    })
+
+    describe("and the request carries a filter that does not bypass the check", () => {
+      let qualityPlace: PlaceAttributes
+
+      beforeEach(async () => {
+        qualityPlace = await seedPlace({
+          title: "Petrichor Gardens",
+          image: REAL_IMAGE,
+          base_position: "160,160",
+          positions: ["160,160"],
+          sdk: "7",
+        })
+        const junkPlace = await seedPlace({
+          title: "Untitled",
+          image: MAP_FALLBACK_IMAGE,
+          base_position: "161,161",
+          positions: ["161,161"],
+          sdk: "7",
+        })
+
+        await database.query(
+          `INSERT INTO place_categories (place_id, category_id) VALUES ($1, $2)`,
+          [qualityPlace.id, "art"] as string[]
+        )
+        await database.query(
+          `INSERT INTO place_categories (place_id, category_id) VALUES ($1, $2)`,
+          [junkPlace.id, "art"] as string[]
+        )
+      })
+
+      describe("and the filter is categories", () => {
+        it("should keep hiding the junk place in the requested category", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations?categories=art")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([qualityPlace.id])
+        })
+      })
+
+      describe("and the filter is sdk", () => {
+        it("should keep hiding the junk place on the requested sdk", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ sdk: "7" })
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([qualityPlace.id])
+        })
+      })
+    })
+
+    describe("and a world inherits its image from its latest enabled place", () => {
+      beforeEach(async () => {
+        await seedWorldWithOptions("inherited.dcl.eth", {
+          title: "Rosewood Pavilion",
+        })
+        await seedWorldPlace("inherited.dcl.eth", { image: REAL_IMAGE })
+      })
+
+      it("should return the world whose own image column is null", async () => {
+        const response = await supertest(app)
+          .get("/api/destinations")
+          .query({ only_worlds: "true" })
+          .expect(200)
+
+        expect(sortedWorldIds(response)).toEqual(["inherited.dcl.eth"])
+      })
+
+      describe("and the world image and its latest place image are both fallbacks", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("fallback.dcl.eth", {
+            title: "Saffron Terrace",
+            image: MAP_FALLBACK_IMAGE,
+          })
+          await seedWorldPlace("fallback.dcl.eth", {
+            image: WORLD_DEFAULT_THUMBNAIL_IMAGE,
+          })
+        })
+
+        it("should not return the world without any real image", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["inherited.dcl.eth"])
+        })
+      })
+
+      describe("and the world carries a real image while its latest place image is a fallback", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("ownimage.dcl.eth", {
+            title: "Thistle Rotunda",
+            image: REAL_IMAGE,
+          })
+          await seedWorldPlace("ownimage.dcl.eth", {
+            image: MAP_FALLBACK_IMAGE,
+          })
+        })
+
+        it("should return the world with its own real image", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(
+            ["inherited.dcl.eth", "ownimage.dcl.eth"].sort()
+          )
+        })
+      })
+
+      describe("and the world title is a placeholder", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("untitled.dcl.eth", { title: "Untitled" })
+          await seedWorldPlace("untitled.dcl.eth", { image: REAL_IMAGE })
+        })
+
+        it("should not return the world with a placeholder title", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["inherited.dcl.eth"])
+        })
+      })
+
+      describe("and a world with a fallback image and a placeholder title is highlighted", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("curated.dcl.eth", {
+            title: "Untitled",
+            image: MAP_FALLBACK_IMAGE,
+            highlighted: true,
+          })
+          await seedWorldPlace("curated.dcl.eth", {
+            image: MAP_FALLBACK_IMAGE,
+          })
+        })
+
+        it("should return the highlighted world regardless of its columns", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toContain("curated.dcl.eth")
         })
       })
     })

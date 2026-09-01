@@ -136,6 +136,39 @@ export const unwantedThumbnailHash = [
   "QmdfTbBqBPQ7VNxZEYEj14VmRuZBkqFbiwReogJgS1zR1n",
 ]
 
+/**
+ * Content hash of the generic thumbnail the deployment pipeline stores for a world whose scene
+ * ships none. It says nothing about the world, so it reads as a missing image.
+ */
+export const WORLD_DEFAULT_THUMBNAIL_HASH =
+  "bafkreidj26s7aenyxfthfdibnqonzqm5ptc4iamml744gmcyuokewkr76y"
+
+/**
+ * Path of the Genesis City map render stored for a place whose scene ships no navmap thumbnail.
+ * The image is generated from the parcel outline alone, so it carries no information either.
+ *
+ * Matched by path rather than by host on purpose. The URL comes from `Land.getMapImage()`, whose
+ * base is `env("LAND_URL")` and therefore differs per environment, so pinning the production host
+ * would leave the check silently inert wherever that variable points elsewhere -- and would also
+ * reject a genuine thumbnail that happened to be served from the same host. A stored image only
+ * carries this path when the Land API produced it: a thumbnail the scene ships is stored as a
+ * content hash, which never ends in a file name.
+ */
+export const MAP_FALLBACK_IMAGE_PATH = "/map.png"
+
+/**
+ * Titles the scene templates and editors ship with. Lowercase, compared case-insensitively against
+ * the whole title: a scene still carrying one of these has never been named.
+ */
+export const PLACEHOLDER_TITLES = [
+  "untitled",
+  "interactive-text",
+  "new scene",
+  "sdk7 scene template",
+  "empty scene",
+  "thetestscene",
+]
+
 export type UpdateRatingBody = {
   content_rating: SceneContentRating
   comment?: string
