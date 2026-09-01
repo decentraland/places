@@ -136,6 +136,41 @@ function requireContentForWorlds(options: ContentQualityGateOptions): boolean {
   )
 }
 
+/**
+ * Project the destination options onto the subset {@link WorldModel.buildSubQuery} accepts.
+ *
+ * The worlds branch takes a narrower shape than the places one -- it has no `positions`, and its
+ * name filters are its own -- so every call site used to spell the same projection out by hand.
+ * Four copies drifting apart is how one of them ends up missing a filter.
+ */
+function worldSubQueryOptions(options: {
+  user?: string
+  only_favorites?: boolean
+  search?: string
+  categories?: string[]
+  only_highlighted?: boolean
+  world_names?: string[]
+  names?: string[]
+  owner?: string
+  ids?: string[]
+  sdk?: string
+  creator_address?: string
+}) {
+  return {
+    user: options.user,
+    only_favorites: !!options.only_favorites,
+    search: options.search,
+    categories: options.categories ?? [],
+    only_highlighted: !!options.only_highlighted,
+    world_names: options.world_names,
+    names: options.names,
+    owner: options.owner,
+    ids: options.ids,
+    sdk: options.sdk,
+    creator_address: options.creator_address,
+  }
+}
+
 export default class DestinationModel {
   /**
    * Find destinations with aggregates. Uses three strategies:
@@ -213,19 +248,7 @@ export default class DestinationModel {
 
     if (options.only_worlds) {
       const worldsQuery = WorldModel.buildSubQuery(
-        {
-          user: options.user,
-          only_favorites: options.only_favorites,
-          search: options.search,
-          categories: options.categories,
-          only_highlighted: options.only_highlighted,
-          world_names: options.world_names,
-          names: options.names,
-          owner: options.owner,
-          ids: options.ids,
-          sdk: options.sdk,
-          creator_address: options.creator_address,
-        },
+        worldSubQueryOptions(options),
         {
           selectColumns: worldsSelect,
           requireContent: worldsRequireContent,
@@ -257,19 +280,7 @@ export default class DestinationModel {
       requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
-      {
-        user: options.user,
-        only_favorites: options.only_favorites,
-        search: options.search,
-        categories: options.categories,
-        only_highlighted: options.only_highlighted,
-        world_names: options.world_names,
-        names: options.names,
-        owner: options.owner,
-        ids: options.ids,
-        sdk: options.sdk,
-        creator_address: options.creator_address,
-      },
+      worldSubQueryOptions(options),
       {
         selectColumns: worldsSelect,
         requireContent: worldsRequireContent,
@@ -365,19 +376,7 @@ export default class DestinationModel {
 
     if (options.only_worlds) {
       const worldsQuery = WorldModel.buildSubQuery(
-        {
-          user: fullOptions.user,
-          only_favorites: fullOptions.only_favorites,
-          search: fullOptions.search,
-          categories: fullOptions.categories,
-          only_highlighted: fullOptions.only_highlighted,
-          world_names: fullOptions.world_names,
-          names: fullOptions.names,
-          owner: fullOptions.owner,
-          ids: fullOptions.ids,
-          sdk: fullOptions.sdk,
-          creator_address: fullOptions.creator_address,
-        },
+        worldSubQueryOptions(fullOptions),
         { forCount: true, requireContent: worldsRequireContent }
       )
       const sql = SQL`SELECT count(*) as total FROM (${worldsQuery}) sub`
@@ -395,19 +394,7 @@ export default class DestinationModel {
       requireContent: placesRequireContent,
     })
     const worldsQuery = WorldModel.buildSubQuery(
-      {
-        user: fullOptions.user,
-        only_favorites: fullOptions.only_favorites,
-        search: fullOptions.search,
-        categories: fullOptions.categories,
-        only_highlighted: fullOptions.only_highlighted,
-        world_names: fullOptions.world_names,
-        names: fullOptions.names,
-        owner: fullOptions.owner,
-        ids: fullOptions.ids,
-        sdk: fullOptions.sdk,
-        creator_address: fullOptions.creator_address,
-      },
+      worldSubQueryOptions(fullOptions),
       { forCount: true, requireContent: worldsRequireContent }
     )
 

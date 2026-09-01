@@ -43,7 +43,8 @@ const TEST_WORD_TITLE_REGEX = "\\mtest\\M"
  *
  * @param highlighted - the curation flag, qualified with the table alias
  * @param image - the image *as the query returns it*; for worlds that is the COALESCE over the
- *   world column and the latest place's, never the world column alone
+ *   world column and the latest place's, never the world column alone. Null, empty and blank are
+ *   all rejected: none of them gives the feed anything to render.
  * @param title - the title column, qualified with the table alias. A null, empty or blank title is
  *   rejected too: the deployment pipeline substitutes "Untitled" when a scene ships none, so a
  *   stored blank means the row predates that or came in through another path, and either way it
@@ -59,6 +60,7 @@ export function buildContentQualityCondition(
           ${highlighted} IS TRUE
           OR (
             ${image} IS NOT NULL
+            AND TRIM(${image}) <> ''
             AND NOT (${image} LIKE ANY (${PLACEHOLDER_IMAGE_PATTERNS}::text[]))
             AND TRIM(COALESCE(${title}, '')) <> ''
             AND ${title} !~* ${TEST_WORD_TITLE_REGEX}

@@ -1557,6 +1557,44 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and a place image is an empty string", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Hollow Quay",
+            image: "",
+            base_position: "103,103",
+            positions: ["103,103"],
+          })
+        })
+
+        it("should not return the place with a blank image", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place image is only whitespace", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Pale Cistern",
+            image: "   ",
+            base_position: "104,104",
+            positions: ["104,104"],
+          })
+        })
+
+        it("should not return the place with a whitespace-only image", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
       describe("and a place image carries the world default thumbnail hash", () => {
         beforeEach(async () => {
           await seedPlace({
