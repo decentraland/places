@@ -1633,6 +1633,67 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and a place title joins test to another word with an underscore", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "streaming_test",
+            image: REAL_IMAGE,
+            base_position: "111,111",
+            positions: ["111,111"],
+          })
+        })
+
+        it("should not return the underscored test place", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is a placeholder with a trailing counter", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "New Scene 6",
+            image: REAL_IMAGE,
+            base_position: "112,112",
+            positions: ["112,112"],
+          })
+        })
+
+        it("should not return the numbered placeholder place", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title merely ends in a number", () => {
+        let numberedPlace: PlaceAttributes
+
+        beforeEach(async () => {
+          numberedPlace = await seedPlace({
+            title: "Scene 5",
+            image: REAL_IMAGE,
+            base_position: "113,113",
+            positions: ["113,113"],
+          })
+        })
+
+        it("should return the place whose number is part of its name", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual(
+            [placeWithContent.id, numberedPlace.id].sort()
+          )
+        })
+      })
+
       describe("and a place title uses test as a whole word", () => {
         beforeEach(async () => {
           await seedPlace({

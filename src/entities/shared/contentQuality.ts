@@ -23,13 +23,25 @@ const PLACEHOLDER_IMAGE_PATTERNS = [
 ]
 
 /**
- * Rejects a title that uses "test" as a whole word, which is how throwaway scenes name themselves.
+ * Rejects a title that uses "test" as a separate word, which is how throwaway scenes name themselves.
  *
- * `\m` and `\M` are the word-start and word-end constraints of PostgreSQL's regular expressions;
- * `\b` is a backspace there, not a boundary. Written with doubled backslashes because a lone `\m`
- * in a JavaScript string literal collapses to `m`.
+ * The separator is spelled out as "not alphanumeric" rather than using PostgreSQL's `\m` and `\M`
+ * word anchors, because those count the underscore as a word character: `streaming_test` has no
+ * word boundary before "test" and slipped through. Anything that is not a letter or a digit reads
+ * as a separator here, so `streaming_test`, `test-scene` and `Test Plaza` are all caught while
+ * `Contest`, `Latest`, `protest` and `Testing Ground` keep their letters glued to the match and stay.
+ *
+ * (`\b` is not an option either: in PostgreSQL it means backspace, not a boundary.)
  */
-const TEST_WORD_TITLE_REGEX = "\\mtest\\M"
+const TEST_WORD_TITLE_REGEX = "(^|[^a-z0-9])test([^a-z0-9]|$)"
+
+/**
+ * Trailing counter the editors append when a creator makes several scenes in a row: "New Scene 6",
+ * "Untitled 3". Stripped before the title is compared against {@link PLACEHOLDER_TITLES} so the
+ * numbered copies are caught by the same list as the originals. Only a trailing run of digits goes,
+ * so a title that earns its number ("Scene 5", "Level 3") keeps it and stays out of the list.
+ */
+const PLACEHOLDER_TITLE_SUFFIX_REGEX = "\\s*[0-9]+\\s*$"
 
 /**
  * Require a destination to carry information of its own: an image and a title that the deployment
@@ -64,7 +76,8 @@ export function buildContentQualityCondition(
             AND NOT (${image} LIKE ANY (${PLACEHOLDER_IMAGE_PATTERNS}::text[]))
             AND TRIM(COALESCE(${title}, '')) <> ''
             AND ${title} !~* ${TEST_WORD_TITLE_REGEX}
-            AND LOWER(TRIM(${title})) <> ALL (${PLACEHOLDER_TITLES}::text[])
+            AND LOWER(TRIM(REGEXP_REPLACE(${title}, ${PLACEHOLDER_TITLE_SUFFIX_REGEX}, '')))
+              <> ALL (${PLACEHOLDER_TITLES}::text[])
           )
         )`
 }
