@@ -1839,6 +1839,27 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and a place title glues test after an uppercase letter", () => {
+        beforeEach(async () => {
+          // Seen on zone: the letter before "Test" is itself a capital, so a rule that only
+          // accepted a lowercase neighbour let this through.
+          await seedPlace({
+            title: "ABTestScene1",
+            image: REAL_IMAGE,
+            base_position: "117,117",
+            positions: ["117,117"],
+          })
+        })
+
+        it("should not return the test place named after an initialism", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
       describe("and a place title is the ordinary word contest", () => {
         let contestPlace: PlaceAttributes
 

@@ -34,14 +34,15 @@ const PLACEHOLDER_IMAGE_PATTERNS = [
  *
  * Capitalisation is the other separator: in `conTest` the capital T starts a new word, so it is a
  * test scene, while `contest` is an ordinary English word and stays. This half is deliberately
- * case-sensitive, which is why the whole pattern is applied with `!~` rather than `!~*`. It also
- * covers `TheTestScene` and `TestScene`, where "Test" is bounded by capitals rather than by
- * punctuation.
+ * case-sensitive, which is why the whole pattern is applied with `!~` rather than `!~*`. The letter
+ * before it may be either case, since `ABTestScene` breaks the word just as `TheTestScene` does; it
+ * is the capital T that carries the signal, not what precedes it. `TestScene` at the start of a
+ * title is covered the same way.
  *
  * Kept by both halves: `contest`, `Contest`, `Latest`, `protest`, `testament`, `Testing Grounds`.
  */
 const TEST_WORD_TITLE_REGEX =
-  "(^|[^A-Za-z0-9])[Tt][Ee][Ss][Tt]([^A-Za-z0-9]|$)|(^|[a-z0-9])Test([A-Z]|[^A-Za-z0-9]|$)"
+  "(^|[^A-Za-z0-9])[Tt][Ee][Ss][Tt]([^A-Za-z0-9]|$)|(^|[A-Za-z0-9])Test([A-Z]|[^A-Za-z0-9]|$)"
 
 /**
  * Trailing counter the editors append when a creator makes several scenes in a row: "New Scene 6",
