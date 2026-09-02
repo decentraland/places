@@ -47,9 +47,16 @@ const TEST_WORD_TITLE_REGEX =
  * Trailing counter the editors append when a creator makes several scenes in a row: "New Scene 6",
  * "Untitled 3". Stripped before the title is compared against {@link PLACEHOLDER_TITLES} so the
  * numbered copies are caught by the same list as the originals. Only a trailing run of digits goes,
- * so a title that earns its number ("Scene 5", "Level 3") keeps it and stays out of the list.
+ * and the number carries no meaning of its own either way: "Scene 5" is stripped to a placeholder
+ * and hidden, while "The Land 5" and "Level 3" strip to real names and stay.
  */
 const PLACEHOLDER_TITLE_SUFFIX_REGEX = "\\s*[0-9]+\\s*$"
+
+/**
+ * Contact name the sdk-commands template ships when the creator never fills one in. It identifies
+ * the tooling rather than a person, so it counts as no contact at all.
+ */
+const TEMPLATE_CONTACT_NAME = "sdk"
 
 /**
  * Require a destination to carry information of its own: an image and a title that the deployment
@@ -69,11 +76,18 @@ const PLACEHOLDER_TITLE_SUFFIX_REGEX = "\\s*[0-9]+\\s*$"
  *   rejected too: the deployment pipeline substitutes "Untitled" when a scene ships none, so a
  *   stored blank means the row predates that or came in through another path, and either way it
  *   names nothing.
+ * @param owner - the owner address column
+ * @param contactName - the contact name column. Together with `owner` these answer "is there anyone
+ *   behind this scene": a destination nobody claims has no creator to send a visitor to, and the web
+ *   has been hiding those in the browser for a while. Doing it here is what makes the two surfaces
+ *   agree.
  */
 export function buildContentQualityCondition(
   highlighted: SQLStatement,
   image: SQLStatement,
-  title: SQLStatement
+  title: SQLStatement,
+  owner: SQLStatement,
+  contactName: SQLStatement
 ): SQLStatement {
   return SQL`
         AND (
@@ -86,6 +100,13 @@ export function buildContentQualityCondition(
             AND ${title} !~ ${TEST_WORD_TITLE_REGEX}
             AND LOWER(TRIM(REGEXP_REPLACE(${title}, ${PLACEHOLDER_TITLE_SUFFIX_REGEX}, '')))
               <> ALL (${PLACEHOLDER_TITLES}::text[])
+            AND (
+              TRIM(COALESCE(${owner}, '')) <> ''
+              OR (
+                TRIM(COALESCE(${contactName}, '')) <> ''
+                AND LOWER(TRIM(${contactName})) <> ${TEMPLATE_CONTACT_NAME}
+              )
+            )
           )
         )`
 }

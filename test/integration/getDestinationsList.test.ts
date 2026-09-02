@@ -126,7 +126,9 @@ function createPlaceAttributes(
     owner: null,
     positions: ["0,0"],
     base_position: "0,0",
-    contact_name: null,
+    // Every real scene names someone, and the feed now requires it, so the default fixture has to
+    // as well. The tests that exercise the identity rule override this back to null.
+    contact_name: "Amber Hollow Studio",
     contact_email: null,
     content_rating: SceneContentRating.RATING_PENDING,
     categories: [],
@@ -1538,6 +1540,73 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and a place has no owner and no contact name", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Verdant Annex",
+            image: REAL_IMAGE,
+            owner: null,
+            contact_name: null,
+            base_position: "121,121",
+            positions: ["121,121"],
+          })
+        })
+
+        it("should not return the place nobody claims", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place carries only the sdk template contact name", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Slate Foundry",
+            image: REAL_IMAGE,
+            owner: null,
+            contact_name: "SDK",
+            base_position: "122,122",
+            positions: ["122,122"],
+          })
+        })
+
+        it("should not return the place whose contact is the template default", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place has a contact name but no owner", () => {
+        let contactOnlyPlace: PlaceAttributes
+
+        beforeEach(async () => {
+          contactOnlyPlace = await seedPlace({
+            title: "Halcyon Works",
+            image: REAL_IMAGE,
+            owner: null,
+            contact_name: "METATIGER",
+            base_position: "123,123",
+            positions: ["123,123"],
+          })
+        })
+
+        it("should return the place whose creator is named", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual(
+            [placeWithContent.id, contactOnlyPlace.id].sort()
+          )
+        })
+      })
+
       describe("and a place has no image at all", () => {
         beforeEach(async () => {
           await seedPlace({
@@ -2272,6 +2341,77 @@ describe("when fetching destinations via GET /destinations", () => {
             .expect(200)
 
           expect(sortedWorldIds(response)).toEqual(["inherited.dcl.eth"])
+        })
+      })
+
+      describe("and neither the world nor its latest place names a creator", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("nobody.dcl.eth", {
+            title: "Cinder Loft",
+          })
+          await seedWorldPlace("nobody.dcl.eth", {
+            image: REAL_IMAGE,
+            contact_name: null,
+            creator_address: null,
+          })
+        })
+
+        it("should not return the world nobody claims", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(["inherited.dcl.eth"])
+        })
+      })
+
+      describe("and the world has an owner while its latest place names nobody", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("owned.dcl.eth", {
+            title: "Basalt Commons",
+            owner: OWNER_JUNK,
+          })
+          await seedWorldPlace("owned.dcl.eth", {
+            image: REAL_IMAGE,
+            contact_name: null,
+            creator_address: null,
+          })
+        })
+
+        it("should return the world whose owner stands in for the creator", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(
+            ["inherited.dcl.eth", "owned.dcl.eth"].sort()
+          )
+        })
+      })
+
+      describe("and the world has no owner while its latest place records who deployed it", () => {
+        beforeEach(async () => {
+          await seedWorldWithOptions("deployed.dcl.eth", {
+            title: "Juniper Hall",
+          })
+          await seedWorldPlace("deployed.dcl.eth", {
+            image: REAL_IMAGE,
+            contact_name: null,
+            creator_address: CREATOR_JUNK,
+          })
+        })
+
+        it("should return the world whose deployer stands in for the creator", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ only_worlds: "true" })
+            .expect(200)
+
+          expect(sortedWorldIds(response)).toEqual(
+            ["deployed.dcl.eth", "inherited.dcl.eth"].sort()
+          )
         })
       })
 
