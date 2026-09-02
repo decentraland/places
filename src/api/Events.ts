@@ -60,15 +60,6 @@ export default class Events extends API {
   }
 
   /**
-   * Batch check for live events for multiple destinations.
-   * Uses POST with body { placeIds: [...] } as required by the events API.
-   * For land places pass the place UUID; for worlds pass the world name.
-   * Results are cached per identifier for 5 minutes.
-   *
-   * @param destinationIds - Array of identifiers: UUIDs for land places, world names for worlds
-   * @returns Map where keys are the supplied identifiers and values indicate live event status
-   */
-  /**
    * Resolve the live event of each destination, by name.
    *
    * The name is what callers render next to the LIVE badge, and it is only available here: the
@@ -78,6 +69,12 @@ export default class Events extends API {
    * A destination with no live event maps to null, so "has an event" stays a truthiness check.
    * Where a destination hosts several at once the first the search returns wins; the caller only
    * ever shows one.
+   *
+   * Sent as POST with a `{ placeIds: [...] }` body, as the events API requires. Results are cached
+   * per identifier for 5 minutes.
+   *
+   * @param destinationIds - Array of identifiers: UUIDs for land places, world names for worlds
+   * @returns Map from each supplied identifier to its live event's name, or null when it has none
    */
   async checkLiveEventsForDestinations(
     destinationIds: string[]

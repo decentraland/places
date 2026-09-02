@@ -106,12 +106,12 @@ export async function fetchConnectedUsersForDestinations(
 }
 
 /**
- * Fetches live event status for a list of destinations from the events API.
- * Returns a map where keys are destination identifiers (place UUID for land places,
- * world name for worlds), and values indicate whether there's a live event.
+ * Fetches the live event of each destination from the events API.
+ * Keys are destination identifiers (place UUID for land places, world name for worlds).
  *
  * @param destinations - Array of destination attributes (places and/or worlds)
- * @returns Promise resolving to a map of destination identifiers to live event status
+ * @returns Promise resolving to a map from each identifier to the name of the live event running
+ *   there, or null when it has none
  */
 export async function fetchLiveEventsForDestinations(
   destinations: AggregateDestinationAttributes[]
@@ -191,7 +191,7 @@ export function destinationsWithAggregates(
 
     // Get live event status if requested
     let live: boolean | undefined
-    let live_event_name: string | null | undefined
+    let live_event_name: string | null = null
     if (options?.withLiveEvents && options.liveEventsMap) {
       // Use world_name for worlds, UUID for land places
       const liveKey =
@@ -222,7 +222,7 @@ export function destinationsWithAggregates(
 
     if (options?.withLiveEvents) {
       result.live = live ?? false
-      result.live_event_name = live_event_name ?? null
+      result.live_event_name = live_event_name
     }
 
     return result

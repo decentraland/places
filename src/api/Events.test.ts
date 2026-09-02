@@ -91,7 +91,7 @@ describe("Events API", () => {
         ])
       })
 
-      it("should return false for all destinations", () => {
+      it("should return null for all destinations", () => {
         expect(result.get("place-1")).toBeNull()
         expect(result.get("place-2")).toBeNull()
       })
@@ -117,7 +117,7 @@ describe("Events API", () => {
         consoleErrorSpy.mockRestore()
       })
 
-      it("should return false for all destinations", () => {
+      it("should return null for all destinations", () => {
         expect(result.get("place-1")).toBeNull()
         expect(result.get("place-2")).toBeNull()
       })

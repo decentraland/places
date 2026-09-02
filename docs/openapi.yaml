@@ -1983,6 +1983,21 @@ components:
               "0x1234567890abcdef1234567890abcdef12345678",
               "0xabcdef1234567890abcdef1234567890abcdef12",
             ]
+        live:
+          type: boolean
+          description: |
+            Whether an event is running at this place right now.
+            Only included when `with_live_events=true` query parameter is set.
+          example: true
+        live_event_name:
+          type: string
+          description: |
+            Title of the event currently running at this place, for labelling the badge `live`
+            turns on. Null whenever `live` is false, so the two can never disagree. Where several
+            events run at once it carries the first one.
+            Only included when `with_live_events=true` query parameter is set.
+          nullable: true
+          example: "Watch Party Wednesdays"
 
     World:
       type: object
