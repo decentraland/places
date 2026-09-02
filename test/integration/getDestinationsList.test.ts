@@ -1671,15 +1671,34 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and a place is titled after the bare template word", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "Scene 5",
+            image: REAL_IMAGE,
+            base_position: "113,113",
+            positions: ["113,113"],
+          })
+        })
+
+        it("should not return the place titled Scene with a counter", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
       describe("and a place title merely ends in a number", () => {
         let numberedPlace: PlaceAttributes
 
         beforeEach(async () => {
           numberedPlace = await seedPlace({
-            title: "Scene 5",
+            title: "The Land 5",
             image: REAL_IMAGE,
-            base_position: "113,113",
-            positions: ["113,113"],
+            base_position: "114,114",
+            positions: ["114,114"],
           })
         })
 
@@ -1690,6 +1709,48 @@ describe("when fetching destinations via GET /destinations", () => {
 
           expect(sortedDestinationIds(response)).toEqual(
             [placeWithContent.id, numberedPlace.id].sort()
+          )
+        })
+      })
+
+      describe("and a place title glues test to another word in camel case", () => {
+        beforeEach(async () => {
+          await seedPlace({
+            title: "conTest",
+            image: REAL_IMAGE,
+            base_position: "115,115",
+            positions: ["115,115"],
+          })
+        })
+
+        it("should not return the camel-cased test place", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a place title is the ordinary word contest", () => {
+        let contestPlace: PlaceAttributes
+
+        beforeEach(async () => {
+          contestPlace = await seedPlace({
+            title: "contest",
+            image: REAL_IMAGE,
+            base_position: "116,116",
+            positions: ["116,116"],
+          })
+        })
+
+        it("should return the place named after a real word", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual(
+            [placeWithContent.id, contestPlace.id].sort()
           )
         })
       })
