@@ -206,7 +206,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
             SQL`${a}.image`,
             SQL`${a}.title`,
             SQL`${a}.owner`,
-            SQL`${a}.contact_name`
+            SQL`${a}.contact_name`,
+            SQL`${a}.base_position`
           )
         )}
     `

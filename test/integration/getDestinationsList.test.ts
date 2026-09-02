@@ -298,8 +298,8 @@ describe("when fetching destinations via GET /destinations", () => {
       placeMuseum = await seedPlace({
         title: "Museum District",
         description: "Art and culture exhibition space",
-        base_position: "10,10",
-        positions: ["10,10"],
+        base_position: "12,12",
+        positions: ["12,12"],
         owner: OWNER_B,
         creator_address: CREATOR_B,
         highlighted: false,
@@ -976,13 +976,13 @@ describe("when fetching destinations via GET /destinations", () => {
             `INSERT INTO place_positions (position, base_position)
              VALUES ($1, $2)
              ON CONFLICT (position) DO NOTHING`,
-            ["10,10", placeMuseum.base_position] as string[]
+            ["12,12", placeMuseum.base_position] as string[]
           )
         })
 
         it("should filter places by position and return all worlds", async () => {
           const response = await supertest(app)
-            .get("/api/destinations?pointer=10%2C10")
+            .get("/api/destinations?pointer=12%2C12")
             .expect(200)
 
           expect(response.body.ok).toBe(true)
@@ -1309,7 +1309,7 @@ describe("when fetching destinations via GET /destinations", () => {
           const indexOf = (predicate: (d: (typeof data)[0]) => boolean) =>
             data.findIndex(predicate)
           const indexMuseum = indexOf(
-            (d) => !d.world && d.base_position === "10,10"
+            (d) => !d.world && d.base_position === "12,12"
           )
           const indexGarden = indexOf(
             (d) => !d.world && d.base_position === "20,20"
@@ -1341,10 +1341,10 @@ describe("when fetching destinations via GET /destinations", () => {
           const mostActivePlaces = data.filter(
             (d) =>
               !d.world &&
-              (d.base_position === "10,10" || d.base_position === "20,20")
+              (d.base_position === "12,12" || d.base_position === "20,20")
           )
           const indexMuseum = mostActivePlaces.findIndex(
-            (d) => d.base_position === "10,10"
+            (d) => d.base_position === "12,12"
           )
           const indexGarden = mostActivePlaces.findIndex(
             (d) => d.base_position === "20,20"
@@ -1353,7 +1353,7 @@ describe("when fetching destinations via GET /destinations", () => {
           // even though Museum has the higher like_score (30 vs 10). See #7344.
           expect(indexGarden).toBeLessThan(indexMuseum)
           expect(mostActivePlaces[indexGarden].base_position).toBe("20,20")
-          expect(mostActivePlaces[indexMuseum].base_position).toBe("10,10")
+          expect(mostActivePlaces[indexMuseum].base_position).toBe("12,12")
         })
       })
     })
@@ -1604,6 +1604,44 @@ describe("when fetching destinations via GET /destinations", () => {
           expect(sortedDestinationIds(response)).toEqual(
             [placeWithContent.id, contactOnlyPlace.id].sort()
           )
+        })
+      })
+
+      describe("and a place sits on a road parcel", () => {
+        beforeEach(async () => {
+          // -1,-10 is a road on the Genesis City map, seeded into road_positions by migration.
+          // Everything else about this place is legitimate, so only the road rule can hide it.
+          const roadPlace = await seedPlace({
+            title: "Kerbside Gallery",
+            image: REAL_IMAGE,
+            contact_name: "Decentraland Foundation",
+            base_position: "-1,-10",
+            positions: ["-1,-10"],
+          })
+          // pointer lookups resolve through place_positions, which seedPlace does not populate.
+          await database.query(
+            `INSERT INTO place_positions (position, base_position) VALUES ($1, $2)`,
+            ["-1,-10", roadPlace.base_position] as string[]
+          )
+        })
+
+        it("should not return the place built on a road", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+
+        it("should still return the road place when its parcel is asked for by pointer", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ pointer: "-1,-10" })
+            .expect(200)
+
+          expect(
+            response.body.data.map((d: { title: string }) => d.title)
+          ).toEqual(["Kerbside Gallery"])
         })
       })
 

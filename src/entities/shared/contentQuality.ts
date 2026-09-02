@@ -87,8 +87,18 @@ export function buildContentQualityCondition(
   image: SQLStatement,
   title: SQLStatement,
   owner: SQLStatement,
-  contactName: SQLStatement
+  contactName: SQLStatement,
+  basePosition?: SQLStatement
 ): SQLStatement {
+  // Roads only exist in Genesis City, so only the places branch passes a base position. A road
+  // clears every other check here: it has an image, a title and the Foundation as contact. The map
+  // is the sole authority on what is a road, and `road_positions` is its list.
+  const notARoad = basePosition
+    ? SQL`
+            AND NOT EXISTS (
+              SELECT 1 FROM road_positions rp WHERE rp.position = ${basePosition}
+            )`
+    : SQL``
   return SQL`
         AND (
           ${highlighted} IS TRUE
@@ -106,7 +116,7 @@ export function buildContentQualityCondition(
                 TRIM(COALESCE(${contactName}, '')) <> ''
                 AND LOWER(TRIM(${contactName})) <> ${TEMPLATE_CONTACT_NAME}
               )
-            )
+            )${notARoad}
           )
         )`
 }
