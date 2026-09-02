@@ -157,16 +157,24 @@ export const WORLD_DEFAULT_THUMBNAIL_HASH =
 export const MAP_FALLBACK_IMAGE_PATH = "/map.png"
 
 /**
- * Titles the scene templates and editors ship with. Lowercase, compared case-insensitively against
- * the whole title: a scene still carrying one of these has never been named.
+ * Titles the scene templates and editors ship with. Lowercase, and compared against the *whole*
+ * title, so a scene still carrying one of these has never been named. Matching the whole title is
+ * what lets a real name that happens to contain one of these words through: "Scene" is a
+ * placeholder, "Scene of the Crime" and "Scenery" are names.
+ *
+ * A trailing counter is stripped before the comparison, since the editors append one when a creator
+ * makes several scenes in a row, so "New Scene 6" and "Scene 5" are caught with their originals. The
+ * number itself carries no meaning either way: "The Land 5" and "Level 3" are names and stay.
  */
 export const PLACEHOLDER_TITLES = [
   "untitled",
   "interactive-text",
+  "interactive text",
+  "scene",
   "new scene",
   "sdk7 scene template",
   "empty scene",
-  "thetestscene",
+  "empty",
 ]
 
 export type UpdateRatingBody = {

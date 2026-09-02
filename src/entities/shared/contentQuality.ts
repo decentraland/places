@@ -23,13 +23,33 @@ const PLACEHOLDER_IMAGE_PATTERNS = [
 ]
 
 /**
- * Rejects a title that uses "test" as a whole word, which is how throwaway scenes name themselves.
+ * Rejects a title that uses "test" as a word of its own, which is how throwaway scenes name
+ * themselves. Two ways a title can do that, and the pattern needs both.
  *
- * `\m` and `\M` are the word-start and word-end constraints of PostgreSQL's regular expressions;
- * `\b` is a backspace there, not a boundary. Written with doubled backslashes because a lone `\m`
- * in a JavaScript string literal collapses to `m`.
+ * Punctuation, spaces and the string's edges are separators, matched case-insensitively:
+ * `Test Plaza`, `streaming_test`, `test-scene`, `TEST`. Underscores have to be spelled out this way
+ * because PostgreSQL's `\m` and `\M` word anchors count the underscore as a word character, so
+ * `streaming_test` has no boundary before "test" and slipped through. (`\b` is not an option either:
+ * in PostgreSQL that means backspace.)
+ *
+ * Capitalisation is the other separator: in `conTest` the capital T starts a new word, so it is a
+ * test scene, while `contest` is an ordinary English word and stays. This half is deliberately
+ * case-sensitive, which is why the whole pattern is applied with `!~` rather than `!~*`. It also
+ * covers `TheTestScene` and `TestScene`, where "Test" is bounded by capitals rather than by
+ * punctuation.
+ *
+ * Kept by both halves: `contest`, `Contest`, `Latest`, `protest`, `testament`, `Testing Grounds`.
  */
-const TEST_WORD_TITLE_REGEX = "\\mtest\\M"
+const TEST_WORD_TITLE_REGEX =
+  "(^|[^A-Za-z0-9])[Tt][Ee][Ss][Tt]([^A-Za-z0-9]|$)|(^|[a-z0-9])Test([A-Z]|[^A-Za-z0-9]|$)"
+
+/**
+ * Trailing counter the editors append when a creator makes several scenes in a row: "New Scene 6",
+ * "Untitled 3". Stripped before the title is compared against {@link PLACEHOLDER_TITLES} so the
+ * numbered copies are caught by the same list as the originals. Only a trailing run of digits goes,
+ * so a title that earns its number ("Scene 5", "Level 3") keeps it and stays out of the list.
+ */
+const PLACEHOLDER_TITLE_SUFFIX_REGEX = "\\s*[0-9]+\\s*$"
 
 /**
  * Require a destination to carry information of its own: an image and a title that the deployment
@@ -63,8 +83,9 @@ export function buildContentQualityCondition(
             AND TRIM(${image}) <> ''
             AND NOT (${image} LIKE ANY (${PLACEHOLDER_IMAGE_PATTERNS}::text[]))
             AND TRIM(COALESCE(${title}, '')) <> ''
-            AND ${title} !~* ${TEST_WORD_TITLE_REGEX}
-            AND LOWER(TRIM(${title})) <> ALL (${PLACEHOLDER_TITLES}::text[])
+            AND ${title} !~ ${TEST_WORD_TITLE_REGEX}
+            AND LOWER(TRIM(REGEXP_REPLACE(${title}, ${PLACEHOLDER_TITLE_SUFFIX_REGEX}, '')))
+              <> ALL (${PLACEHOLDER_TITLES}::text[])
           )
         )`
 }
