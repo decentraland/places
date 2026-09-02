@@ -217,6 +217,16 @@ describe("findWithAggregates", () => {
       it("should not read the worlds image from the world column alone", () => {
         expect(sql).not.toContain("w.image IS NOT NULL")
       })
+
+      it("should keep road parcels out of the places branch", () => {
+        expect(sql).toContain(
+          "road_positions rp WHERE rp.position = p.base_position"
+        )
+      })
+
+      it("should not apply the road rule to the worlds branch", () => {
+        expect(sql).not.toContain("rp.position = w.")
+      })
     })
 
     describe("and only_places is set", () => {
@@ -505,6 +515,16 @@ describe("count", () => {
 
       it("should not read the worlds image from the world column alone", () => {
         expect(sql).not.toContain("w.image IS NOT NULL")
+      })
+
+      it("should keep road parcels out of the places branch", () => {
+        expect(sql).toContain(
+          "road_positions rp WHERE rp.position = p.base_position"
+        )
+      })
+
+      it("should not apply the road rule to the worlds branch", () => {
+        expect(sql).not.toContain("rp.position = w.")
       })
     })
 
