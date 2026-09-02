@@ -153,7 +153,10 @@ export default class WorldModel extends Model<WorldAttributes> {
             // A world inherits its thumbnail from the latest enabled place through the lateral
             // join, so only the COALESCE says whether the feed has an image to show.
             SQL`COALESCE(${a}.image, lp.image)`,
-            SQL`${a}.title`
+            SQL`${a}.title`,
+            // A world's own owner, or the creator of the place it inherits from.
+            SQL`COALESCE(${a}.owner, lp.creator_address)`,
+            SQL`lp.contact_name`
           )
         )}
     `

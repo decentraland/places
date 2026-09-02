@@ -204,7 +204,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           buildContentQualityCondition(
             SQL`${a}.highlighted`,
             SQL`${a}.image`,
-            SQL`${a}.title`
+            SQL`${a}.title`,
+            SQL`${a}.owner`,
+            SQL`${a}.contact_name`
           )
         )}
     `
