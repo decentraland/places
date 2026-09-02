@@ -30,7 +30,8 @@ export type EventsResponse = {
 }
 
 type CachedLiveStatus = {
-  isLive: boolean
+  /** Name of the live event, or null when the destination has none. */
+  eventName: string | null
   expiresAt: number
 }
 
@@ -59,18 +60,26 @@ export default class Events extends API {
   }
 
   /**
-   * Batch check for live events for multiple destinations.
-   * Uses POST with body { placeIds: [...] } as required by the events API.
-   * For land places pass the place UUID; for worlds pass the world name.
-   * Results are cached per identifier for 5 minutes.
+   * Resolve the live event of each destination, by name.
+   *
+   * The name is what callers render next to the LIVE badge, and it is only available here: the
+   * events search is the one call that has the event object, so reducing it to a boolean threw away
+   * the only copy and left consumers unable to say *which* event is live.
+   *
+   * A destination with no live event maps to null, so "has an event" stays a truthiness check.
+   * Where a destination hosts several at once the first the search returns wins; the caller only
+   * ever shows one.
+   *
+   * Sent as POST with a `{ placeIds: [...] }` body, as the events API requires. Results are cached
+   * per identifier for 5 minutes.
    *
    * @param destinationIds - Array of identifiers: UUIDs for land places, world names for worlds
-   * @returns Map where keys are the supplied identifiers and values indicate live event status
+   * @returns Map from each supplied identifier to its live event's name, or null when it has none
    */
   async checkLiveEventsForDestinations(
     destinationIds: string[]
-  ): Promise<Map<string, boolean>> {
-    const liveEventsMap = new Map<string, boolean>()
+  ): Promise<Map<string, string | null>> {
+    const liveEventsMap = new Map<string, string | null>()
 
     if (destinationIds.length === 0) {
       return liveEventsMap
@@ -83,7 +92,7 @@ export default class Events extends API {
     for (const id of destinationIds) {
       const cached = Events.liveEventCache.get(id)
       if (cached && cached.expiresAt > now) {
-        liveEventsMap.set(id, cached.isLive)
+        liveEventsMap.set(id, cached.eventName)
       } else {
         uncachedIds.push(id)
       }
@@ -117,16 +126,21 @@ export default class Events extends API {
         fetchOptions
       )
 
-      // Initialize uncached IDs as false (no live event)
+      // Initialize uncached IDs as null (no live event)
       for (const id of uncachedIds) {
-        liveEventsMap.set(id, false)
+        liveEventsMap.set(id, null)
       }
 
-      // Mark destinations that have live events
+      // Name the destinations that have live events. The first event wins, so a destination
+      // hosting several keeps the one the search ranked first.
       if (response.ok && response.data?.events) {
         for (const event of response.data.events) {
-          if (event.place_id && uncachedIds.includes(event.place_id)) {
-            liveEventsMap.set(event.place_id, true)
+          if (
+            event.place_id &&
+            uncachedIds.includes(event.place_id) &&
+            !liveEventsMap.get(event.place_id)
+          ) {
+            liveEventsMap.set(event.place_id, event.name ?? null)
           }
         }
       }
@@ -135,7 +149,7 @@ export default class Events extends API {
       const expiresAt = now + Events.CACHE_TTL_MS
       for (const id of uncachedIds) {
         Events.liveEventCache.set(id, {
-          isLive: liveEventsMap.get(id) ?? false,
+          eventName: liveEventsMap.get(id) ?? null,
           expiresAt,
         })
       }
@@ -143,9 +157,9 @@ export default class Events extends API {
       return liveEventsMap
     } catch (error) {
       console.error(`Error checking live events for destinations:`, error)
-      // Return false for uncached IDs on error
+      // Return null for uncached IDs on error
       for (const id of uncachedIds) {
-        liveEventsMap.set(id, false)
+        liveEventsMap.set(id, null)
       }
       return liveEventsMap
     } finally {

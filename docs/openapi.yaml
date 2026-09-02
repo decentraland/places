@@ -1140,7 +1140,10 @@ paths:
           in: query
           description: |
             Include whether the destination has a live event.
-            When enabled, adds `live` boolean to each destination.
+            When enabled, adds a `live` boolean to each destination, plus `live_event_name` with
+            the event's title so a caller can label the badge it just decided to show.
+            `live_event_name` is null whenever `live` is false, and where a destination hosts
+            several live events at once it carries the first one.
             Data is cached for 5 minutes for performance.
           required: false
           schema:
@@ -1980,6 +1983,21 @@ components:
               "0x1234567890abcdef1234567890abcdef12345678",
               "0xabcdef1234567890abcdef1234567890abcdef12",
             ]
+        live:
+          type: boolean
+          description: |
+            Whether an event is running at this place right now.
+            Only included when `with_live_events=true` query parameter is set.
+          example: true
+        live_event_name:
+          type: string
+          description: |
+            Title of the event currently running at this place, for labelling the badge `live`
+            turns on. Null whenever `live` is false, so the two can never disagree. Where several
+            events run at once it carries the first one.
+            Only included when `with_live_events=true` query parameter is set.
+          nullable: true
+          example: "Watch Party Wednesdays"
 
     World:
       type: object

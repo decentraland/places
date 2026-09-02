@@ -6,7 +6,11 @@ import { HotScene, PlaceListOrderBy } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
 export type ConnectedUsersMap = Map<string, string[]>
-export type LiveEventsMap = Map<string, boolean>
+/**
+ * Destination identifier to the name of the live event running there, or null when there is none.
+ * Null rather than absent so a lookup miss and "no event" read the same way.
+ */
+export type LiveEventsMap = Map<string, string | null>
 
 export type RealtimeUserCounts = {
   placeUserCounts: { base_position: string; count: number }[]
@@ -102,12 +106,12 @@ export async function fetchConnectedUsersForDestinations(
 }
 
 /**
- * Fetches live event status for a list of destinations from the events API.
- * Returns a map where keys are destination identifiers (place UUID for land places,
- * world name for worlds), and values indicate whether there's a live event.
+ * Fetches the live event of each destination from the events API.
+ * Keys are destination identifiers (place UUID for land places, world name for worlds).
  *
  * @param destinations - Array of destination attributes (places and/or worlds)
- * @returns Promise resolving to a map of destination identifiers to live event status
+ * @returns Promise resolving to a map from each identifier to the name of the live event running
+ *   there, or null when it has none
  */
 export async function fetchLiveEventsForDestinations(
   destinations: AggregateDestinationAttributes[]
@@ -187,18 +191,24 @@ export function destinationsWithAggregates(
 
     // Get live event status if requested
     let live: boolean | undefined
+    let live_event_name: string | null = null
     if (options?.withLiveEvents && options.liveEventsMap) {
       // Use world_name for worlds, UUID for land places
       const liveKey =
         destination.world && destination.world_name
           ? destination.world_name
           : destination.id
-      live = options.liveEventsMap.get(liveKey) ?? false
+      const eventName = options.liveEventsMap.get(liveKey) ?? null
+      live = !!eventName
+      // Named alongside the flag so a caller can label the badge it just decided to show. Null
+      // whenever `live` is false, so the two can never disagree.
+      live_event_name = eventName
     }
 
     const result: AggregateDestinationAttributes & {
       connected_addresses?: string[]
       live?: boolean
+      live_event_name?: string | null
     } = {
       ...destination,
       is_private: destination.is_private ?? false,
@@ -212,6 +222,7 @@ export function destinationsWithAggregates(
 
     if (options?.withLiveEvents) {
       result.live = live ?? false
+      result.live_event_name = live_event_name
     }
 
     return result
