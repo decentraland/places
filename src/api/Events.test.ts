@@ -16,18 +16,24 @@ describe("Events API", () => {
 
   describe("when checking live events for multiple destinations", () => {
     describe("and the API returns live events for some destinations", () => {
-      let result: Map<string, boolean>
+      let result: Map<string, string | null>
 
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
           ok: true,
           data: {
             events: [
-              { id: "event-1", place_id: "place-1", live: true },
+              {
+                id: "event-1",
+                place_id: "place-1",
+                live: true,
+                name: "Movie Night",
+              },
               {
                 id: "event-world",
                 place_id: "my-world.dcl.eth",
                 live: true,
+                name: "World Party",
               },
             ],
             total: 2,
@@ -41,13 +47,16 @@ describe("Events API", () => {
         ])
       })
 
-      it("should return true for destinations with live events", () => {
-        expect(result.get("place-1")).toBe(true)
-        expect(result.get("my-world.dcl.eth")).toBe(true)
+      it("should name the event of a place that has one", () => {
+        expect(result.get("place-1")).toBe("Movie Night")
       })
 
-      it("should return false for destinations without live events", () => {
-        expect(result.get("place-2")).toBe(false)
+      it("should name the event of a world that has one", () => {
+        expect(result.get("my-world.dcl.eth")).toBe("World Party")
+      })
+
+      it("should return null for destinations without live events", () => {
+        expect(result.get("place-2")).toBeNull()
       })
 
       it("should call the events API search endpoint with list=live query param", () => {
@@ -65,7 +74,7 @@ describe("Events API", () => {
     })
 
     describe("and the API returns no live events", () => {
-      let result: Map<string, boolean>
+      let result: Map<string, string | null>
 
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
@@ -83,13 +92,13 @@ describe("Events API", () => {
       })
 
       it("should return false for all destinations", () => {
-        expect(result.get("place-1")).toBe(false)
-        expect(result.get("place-2")).toBe(false)
+        expect(result.get("place-1")).toBeNull()
+        expect(result.get("place-2")).toBeNull()
       })
     })
 
     describe("and the API call fails", () => {
-      let result: Map<string, boolean>
+      let result: Map<string, string | null>
       let consoleErrorSpy: jest.SpyInstance
 
       beforeEach(async () => {
@@ -109,8 +118,8 @@ describe("Events API", () => {
       })
 
       it("should return false for all destinations", () => {
-        expect(result.get("place-1")).toBe(false)
-        expect(result.get("place-2")).toBe(false)
+        expect(result.get("place-1")).toBeNull()
+        expect(result.get("place-2")).toBeNull()
       })
 
       it("should log the error", () => {
@@ -126,7 +135,14 @@ describe("Events API", () => {
         fetchMock = jest.spyOn(Events.get(), "fetch").mockResolvedValueOnce({
           ok: true,
           data: {
-            events: [{ id: "event-1", place_id: "place-1", live: true }],
+            events: [
+              {
+                id: "event-1",
+                place_id: "place-1",
+                live: true,
+                name: "Movie Night",
+              },
+            ],
             total: 1,
           },
         })
@@ -149,7 +165,7 @@ describe("Events API", () => {
     })
 
     describe("and requesting new IDs alongside cached IDs", () => {
-      let result: Map<string, boolean>
+      let result: Map<string, string | null>
 
       beforeEach(async () => {
         fetchMock = jest
@@ -158,7 +174,14 @@ describe("Events API", () => {
           .mockResolvedValueOnce({
             ok: true,
             data: {
-              events: [{ id: "event-1", place_id: "place-1", live: true }],
+              events: [
+                {
+                  id: "event-1",
+                  place_id: "place-1",
+                  live: true,
+                  name: "Movie Night",
+                },
+              ],
               total: 1,
             },
           })
@@ -166,7 +189,14 @@ describe("Events API", () => {
           .mockResolvedValueOnce({
             ok: true,
             data: {
-              events: [{ id: "event-3", place_id: "place-3", live: true }],
+              events: [
+                {
+                  id: "event-3",
+                  place_id: "place-3",
+                  live: true,
+                  name: "Late Set",
+                },
+              ],
               total: 1,
             },
           })
@@ -188,15 +218,15 @@ describe("Events API", () => {
         expect(fetchMock).toHaveBeenCalledTimes(2)
       })
 
-      it("should return correct live status for all IDs", () => {
-        expect(result.get("place-1")).toBe(true) // from cache
-        expect(result.get("place-2")).toBe(false) // from cache
-        expect(result.get("place-3")).toBe(true) // freshly fetched
+      it("should name the event of every id, cached or freshly fetched", () => {
+        expect(result.get("place-1")).toBe("Movie Night") // from cache
+        expect(result.get("place-2")).toBeNull() // from cache
+        expect(result.get("place-3")).toBe("Late Set") // freshly fetched
       })
     })
 
     describe("and an empty array is passed", () => {
-      let result: Map<string, boolean>
+      let result: Map<string, string | null>
 
       beforeEach(async () => {
         fetchMock = jest.spyOn(Events.get(), "fetch")

@@ -45,6 +45,18 @@ jest.mock("../../src/entities/Slack/utils", () => ({
   notifyDisablePlaces: jest.fn(),
 }))
 
+let liveEventsStub = new Map<string, string | null>()
+
+// The events service is the only source of the live event name, so the integration test stands in
+// for it rather than reaching the network.
+jest.mock("../../src/entities/Destination/utils", () => {
+  const actual = jest.requireActual("../../src/entities/Destination/utils")
+  return {
+    ...actual,
+    fetchLiveEventsForDestinations: jest.fn(async () => liveEventsStub),
+  }
+})
+
 jest.mock("../../src/modules/hotScenes", () => ({
   getHotScenes: jest.fn().mockReturnValue([]),
 }))
@@ -1836,6 +1848,71 @@ describe("when fetching destinations via GET /destinations", () => {
             .expect(200)
 
           expect(sortedDestinationIds(response)).toEqual([placeWithContent.id])
+        })
+      })
+
+      describe("and a live event is running at a destination", () => {
+        let livePlace: PlaceAttributes
+
+        beforeEach(async () => {
+          livePlace = await seedPlace({
+            title: "Marble Observatory",
+            image: REAL_IMAGE,
+            base_position: "118,118",
+            positions: ["118,118"],
+          })
+          liveEventsStub = new Map([[livePlace.id, "Watch Party Wednesdays"]])
+        })
+
+        afterEach(() => {
+          liveEventsStub = new Map()
+        })
+
+        it("should flag the destination as live", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ with_live_events: "true" })
+            .expect(200)
+
+          const place = response.body.data.find(
+            (d: { id: string }) => d.id === livePlace.id
+          )
+          expect(place.live).toBe(true)
+        })
+
+        it("should name the live event", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ with_live_events: "true" })
+            .expect(200)
+
+          const place = response.body.data.find(
+            (d: { id: string }) => d.id === livePlace.id
+          )
+          expect(place.live_event_name).toBe("Watch Party Wednesdays")
+        })
+
+        it("should leave the event name null on a destination without one", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ with_live_events: "true" })
+            .expect(200)
+
+          const place = response.body.data.find(
+            (d: { id: string }) => d.id === placeWithContent.id
+          )
+          expect(place.live_event_name).toBeNull()
+        })
+
+        it("should omit the event name when live events were not requested", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .expect(200)
+
+          const place = response.body.data.find(
+            (d: { id: string }) => d.id === livePlace.id
+          )
+          expect(place.live_event_name).toBeUndefined()
         })
       })
 

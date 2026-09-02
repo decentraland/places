@@ -1140,7 +1140,10 @@ paths:
           in: query
           description: |
             Include whether the destination has a live event.
-            When enabled, adds `live` boolean to each destination.
+            When enabled, adds a `live` boolean to each destination, plus `live_event_name` with
+            the event's title so a caller can label the badge it just decided to show.
+            `live_event_name` is null whenever `live` is false, and where a destination hosts
+            several live events at once it carries the first one.
             Data is cached for 5 minutes for performance.
           required: false
           schema:
