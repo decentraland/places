@@ -109,6 +109,12 @@ describe("findWithAggregates", () => {
         )
       })
 
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+      })
+
       it("should keep the highlighted flag above the curation ranking as tie-breaker", () => {
         expect(positionOf(orderBy, "sub.highlighted DESC")).toBeLessThan(
           positionOf(orderBy, "sub.ranking DESC")
