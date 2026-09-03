@@ -23,9 +23,15 @@ export default class CommsGatekeeper extends API {
 
   static Cache = new Map<string, CommsGatekeeper>()
 
-  // Cache for participant addresses with 5-minute TTL
+  // Who is standing in a room right now, so it goes stale the moment somebody walks out. Scenes and
+  // worlds are cached under separate keys that expire independently, so while both entries are warm
+  // a person who left Genesis City for a world is still listed in the scene and not yet listed in
+  // the world. The TTL is the width of that window, and at five minutes it was wide enough for QA to
+  // watch an avatar sit in the wrong place across a whole event. Thirty seconds keeps the fan-out
+  // bounded (one call per room per window, not one per request) while making the window short enough
+  // that nobody reads it as a bug.
   private static participantsCache = new Map<string, CachedParticipants>()
-  private static readonly CACHE_TTL_MS = Time.Minute * 5 // 5 minutes
+  private static readonly CACHE_TTL_MS = Time.Second * 30
 
   static from(url: string) {
     if (!this.Cache.has(url)) {
