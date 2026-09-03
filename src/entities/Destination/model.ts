@@ -216,16 +216,17 @@ export default class DestinationModel {
         )}`
       : WORLDS_DESTINATION_SELECT
 
+    // The generic feed hides destinations that carry no information of their own. Decided per
+    // entity branch and shared with count() so the totals match the listing.
+    const placesRequireContent = requireContentForPlaces(options)
+    const worldsRequireContent = requireContentForWorlds(options)
+
     // Every ORDER BY below ends in the row id. Without it the sort is not total: the tail of the
     // feed has `live_user_count`, `ranking` and `like_score` all tied at zero, and `updated_at` is
     // shared by whole batches of rows written together, so Postgres was free to return any
     // permutation of them. It chose differently depending on the plan, and the plan changes with
     // the LIMIT, so the explorer asking for 20 and the web asking for 48 saw different orders from
     // row 8 down. The id breaks every remaining tie and costs nothing, since it is the primary key.
-    // The generic feed hides destinations that carry no information of their own. Decided per
-    // entity branch and shared with count() so the totals match the listing.
-    const placesRequireContent = requireContentForPlaces(options)
-    const worldsRequireContent = requireContentForWorlds(options)
 
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(options, {
