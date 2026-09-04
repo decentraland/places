@@ -159,7 +159,9 @@ export function destinationsWithAggregates(
       user_count =
         (worldsLiveData?.perWorld &&
           worldsLiveData.perWorld.find(
-            (world) => world.worldName === destination.world_name
+            (world) =>
+              world.worldName?.toLowerCase() ===
+              destination.world_name?.toLowerCase()
           )?.users) ||
         0
       // TODO: Get Worlds user visits when available
