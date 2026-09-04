@@ -7,6 +7,7 @@ import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { sceneStatsGenesisPlaza } from "../../__data__/sceneStatsGenesisPlaza"
 import { worldsLiveData } from "../../__data__/worldsLiveData"
+import { WorldLiveDataProps } from "../World/types"
 
 describe("get of AggregatePlaceAttributes", () => {
   test("should return a place of type AggregateCoordinatePlaceAttributes", () => {
@@ -147,5 +148,43 @@ describe("get of AllPlacesWithAggregates", () => {
         user_visits: 0,
       },
     ])
+  })
+})
+
+describe("get of AllPlacesWithAggregates for a world whose name is mixed case", () => {
+  /**
+   * `/live-data` from worlds-content-server always reports `worldName` lowercased,
+   * while `world_name` in the database keeps the name's original casing.
+   */
+  const spaceRunnerLiveData: WorldLiveDataProps = {
+    perWorld: [{ worldName: "spacerunner.dcl.eth", users: 3 }],
+    totalUsers: 3,
+  }
+
+  const worldPlace = (world_name: string) => ({
+    ...allPlacesWithAggregatedAttributes[1],
+    world_name,
+  })
+
+  test("should return the live user count when the live data world name differs only in casing", () => {
+    const [place] = allPlacesWithAggregates(
+      [worldPlace("SpaceRunner.dcl.eth")] as any,
+      [hotSceneGenesisPlaza],
+      sceneStatsGenesisPlaza,
+      spaceRunnerLiveData
+    )
+
+    expect(place.user_count).toBe(3)
+  })
+
+  test("should return a user count of zero when the live data is for an unrelated world", () => {
+    const [place] = allPlacesWithAggregates(
+      [worldPlace("OtherWorld.dcl.eth")] as any,
+      [hotSceneGenesisPlaza],
+      sceneStatsGenesisPlaza,
+      spaceRunnerLiveData
+    )
+
+    expect(place.user_count).toBe(0)
   })
 })
