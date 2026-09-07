@@ -5,6 +5,7 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
 import {
+  isAdminToken,
   requireAdminTokenForCuratedRanking,
   requireRankingToken,
 } from "../../shared/auth"
@@ -50,7 +51,24 @@ export async function updateRanking(
   })
 
   const newPlace = { ...place, ranking: body.ranking }
-  await PlaceModel.updatePlace(newPlace, ["ranking"])
+
+  if (isAdminToken(token)) {
+    await PlaceModel.updatePlace(newPlace, ["ranking"])
+
+    return new ApiResponse(newPlace)
+  }
+
+  // The check above read the row; this writes it. An admin curating the place in between would
+  // otherwise slip through, so the automated path carries the condition into the statement and
+  // refuses when it wrote nothing.
+  const written = await PlaceModel.updateRankingFromScore(place, body.ranking)
+
+  if (written === 0) {
+    throw new ErrorResponse(
+      Response.Forbidden,
+      "The ranking of this place is editorial and can only be changed with the admin token"
+    )
+  }
 
   return new ApiResponse(newPlace)
 }

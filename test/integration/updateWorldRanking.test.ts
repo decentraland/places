@@ -247,6 +247,47 @@ describe("when updating the ranking of a world via PUT /worlds/:world_id/ranking
     })
   })
 
+  describe("and the world becomes curated between the read and the write", () => {
+    beforeEach(async () => {
+      await seedWorld(worldName)
+    })
+
+    // The route refuses a curated world before writing, but that check reads the row and the write
+    // happens after it. These exercise the predicate that closes the gap, by calling the write the
+    // automated path uses against a row that is already curated. Only real SQL can prove it.
+    it("should write nothing when the world was excluded in the meantime", async () => {
+      await WorldModel.updateExcludeFromRanking(worldName, true)
+
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(0)
+    })
+
+    it("should leave the ranking alone when the world was excluded in the meantime", async () => {
+      await WorldModel.updateExcludeFromRanking(worldName, true)
+      await WorldModel.updateRankingFromScore(worldName, 42)
+
+      const world = await WorldModel.findByIdWithAggregates(worldName, {
+        user: undefined,
+      })
+      expect(world?.ranking).toBe(0)
+    })
+
+    it("should write nothing when the world was featured in the meantime", async () => {
+      await WorldModel.updateHighlighted(worldName, true)
+
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(0)
+    })
+
+    it("should still write while the world is neither featured nor excluded", async () => {
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(1)
+    })
+  })
+
   describe("and the world is excluded from the automated ranking", () => {
     beforeEach(async () => {
       await seedWorld(worldName)

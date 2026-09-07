@@ -720,6 +720,31 @@ export default class WorldModel extends Model<WorldAttributes> {
     await this.namedQuery("update_exclude_from_ranking", sql)
   }
 
+  /**
+   * Write a ranking on behalf of the automated score, and report whether it landed.
+   *
+   * The route refuses a curated world before reaching here, but that check reads the row and the
+   * write happens after, so an admin toggling `highlighted` or `exclude_from_ranking` in between
+   * would let the score through. Carrying the condition in the same statement as the write is the
+   * only place it can be atomic. A count of 0 means the world became curated while the request was
+   * in flight, and the score must not claim success.
+   */
+  static async updateRankingFromScore(
+    worldId: string,
+    ranking: number | null
+  ): Promise<number> {
+    const now = new Date()
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET ranking = ${ranking},
+          updated_at = ${now}
+      WHERE id = ${worldId}
+        AND highlighted IS FALSE
+        AND exclude_from_ranking IS FALSE
+    `
+    return this.namedRowCount("update_ranking_from_score", sql)
+  }
+
   static async updateRanking(
     worldId: string,
     ranking: number | null

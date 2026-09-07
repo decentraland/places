@@ -21,6 +21,19 @@ export async function requireRankingToken(
 }
 
 /**
+ * Whether this token is the editorial admin's rather than the automated pipeline's.
+ *
+ * Exposed so a route can pick the write path that matches the caller: the admin writes a ranking
+ * unconditionally, the pipeline writes one only while the row is still not curated. An unset admin
+ * token never matches, so an empty environment variable cannot authorise anything.
+ */
+export function isAdminToken(token: string): boolean {
+  const adminToken = env("PLACES_ADMIN_AUTH_TOKEN", "")
+
+  return !!adminToken && token === adminToken
+}
+
+/**
  * Guards a curated ranking against the automated pipeline.
  *
  * `ranking` has two writers: the data team job (DATA_TEAM_AUTH_TOKEN) computing a
@@ -45,9 +58,7 @@ export function requireAdminTokenForCuratedRanking(
     return
   }
 
-  const adminToken = env("PLACES_ADMIN_AUTH_TOKEN", "")
-
-  if (!adminToken || token !== adminToken) {
+  if (!isAdminToken(token)) {
     throw new ErrorResponse(
       Response.Forbidden,
       curation.highlighted
