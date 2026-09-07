@@ -87,6 +87,7 @@ function createPlaceAttributes(
     updated_at: new Date(),
     highlighted: false,
     highlighted_image: null,
+    exclude_from_ranking: false,
     world: false,
     world_name: null,
     world_id: null,

@@ -120,7 +120,8 @@ export function processContentEntityScene(
  * `findSamePlace`, so the deployment lands on a new row and the place it supersedes is
  * disabled. Without this the new row starts at the column defaults, silently dropping
  * the highlighted flag and the hand-set ranking, which is why curated positions kept
- * reverting a day after being set.
+ * reverting a day after being set. `exclude_from_ranking` travels the same way: a world kept out
+ * of the automated score would rejoin it on the creator's next deployment otherwise.
  *
  * Inheriting is deliberately narrow. The candidates are only the places overlapping the
  * incoming pointers, and a deployment landing on someone else's parcels is a takeover,
@@ -138,7 +139,9 @@ function inheritedCuration(
 
   const curated = places.filter(
     (place) =>
-      (place.highlighted || (place.ranking ?? 0) > 0) &&
+      (place.highlighted ||
+        place.exclude_from_ranking ||
+        (place.ranking ?? 0) > 0) &&
       place.creator_address === creator
   )
 
@@ -152,6 +155,7 @@ function inheritedCuration(
     highlighted: predecessor.highlighted,
     highlighted_image: predecessor.highlighted_image,
     ranking: predecessor.ranking,
+    exclude_from_ranking: predecessor.exclude_from_ranking,
   }
 }
 
@@ -219,6 +223,7 @@ export function createPlaceFromContentEntityScene(
     like_score: 0,
     highlighted: false,
     highlighted_image: null,
+    exclude_from_ranking: false,
     ranking: 0,
     disabled: false,
     world: !!contentEntityScene?.metadata?.worldConfiguration,

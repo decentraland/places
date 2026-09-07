@@ -8,6 +8,10 @@ import { getPlaceCategories } from "./getPlaceCategories"
 import { getPlaceList } from "./getPlaceList"
 import { getPlaceListById } from "./getPlaceListById"
 import { getPlaceStatusListById } from "./getPlaceStatusListById"
+import {
+  excludePlaceFromRanking,
+  includePlaceInRanking,
+} from "./rankingExclusion"
 import { updateDisabled } from "./updateDisabled"
 import { updateHighlight } from "./updateHighlight"
 import { updateRanking } from "./updateRanking"
@@ -43,5 +47,8 @@ export default routes((router) => {
   router.get("/places/:place_id/categories", getPlaceCategories)
   router.put("/places/:place_id/featured", featurePlace)
   router.delete("/places/:place_id/featured", unfeaturePlace)
+
+  router.put("/places/:place_id/ranking-exclusion", excludePlaceFromRanking)
+  router.delete("/places/:place_id/ranking-exclusion", includePlaceInRanking)
   router.post("/places/status", getPlaceStatusListById)
 }, {})

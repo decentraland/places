@@ -108,6 +108,7 @@ describe("when resolving a world deployment", () => {
       is_private: false,
       highlighted: false,
       highlighted_image: null,
+      exclude_from_ranking: false,
       ranking: 0,
       settings_version: null,
       likes: 0,

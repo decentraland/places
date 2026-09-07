@@ -10,6 +10,7 @@ import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
 const DATA_TEAM_TOKEN = "test-data-team-token"
+const ADMIN_TOKEN = "test-admin-token"
 
 // Mock env to return a known bearer token for DATA_TEAM_AUTH_TOKEN
 // while passing through all other env calls to the real implementation
@@ -20,6 +21,9 @@ jest.mock("decentraland-gatsby/dist/utils/env", () => {
     .mockImplementation((key: string, fallback?: string) => {
       if (key === "DATA_TEAM_AUTH_TOKEN") {
         return DATA_TEAM_TOKEN
+      }
+      if (key === "PLACES_ADMIN_AUTH_TOKEN") {
+        return "test-admin-token"
       }
       return actual.default(key, fallback)
     })
@@ -123,6 +127,7 @@ async function seedPlaceForWorld(worldId: string): Promise<void> {
     updated_at: new Date(),
     highlighted: false,
     highlighted_image: null,
+    exclude_from_ranking: false,
     world: true,
     world_name: worldId,
     world_id: worldId,
@@ -239,6 +244,102 @@ describe("when updating the ranking of a world via PUT /worlds/:world_id/ranking
         .send({})
 
       expect(response.status).toBe(400)
+    })
+  })
+
+  describe("and the world becomes curated between the read and the write", () => {
+    beforeEach(async () => {
+      await seedWorld(worldName)
+    })
+
+    // The route refuses a curated world before writing, but that check reads the row and the write
+    // happens after it. These exercise the predicate that closes the gap, by calling the write the
+    // automated path uses against a row that is already curated. Only real SQL can prove it.
+    it("should write nothing when the world was excluded in the meantime", async () => {
+      await WorldModel.updateExcludeFromRanking(worldName, true)
+
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(0)
+    })
+
+    it("should leave the ranking alone when the world was excluded in the meantime", async () => {
+      await WorldModel.updateExcludeFromRanking(worldName, true)
+      await WorldModel.updateRankingFromScore(worldName, 42)
+
+      const world = await WorldModel.findByIdWithAggregates(worldName, {
+        user: undefined,
+      })
+      expect(world?.ranking).toBe(0)
+    })
+
+    it("should write nothing when the world was featured in the meantime", async () => {
+      await WorldModel.updateHighlighted(worldName, true)
+
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(0)
+    })
+
+    it("should still write while the world is neither featured nor excluded", async () => {
+      await expect(
+        WorldModel.updateRankingFromScore(worldName, 42)
+      ).resolves.toBe(1)
+    })
+  })
+
+  describe("and the world is excluded from the automated ranking", () => {
+    beforeEach(async () => {
+      await seedWorld(worldName)
+      await supertest(app)
+        .put(`/api/worlds/${worldName}/ranking-exclusion`)
+        .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+        .expect(201)
+    })
+
+    it("should refuse the data team ranking write", async () => {
+      await supertest(app)
+        .put(`/api/worlds/${worldName}/ranking`)
+        .set("Authorization", `Bearer ${DATA_TEAM_TOKEN}`)
+        .send({ ranking: 42 })
+        .expect(403)
+    })
+
+    it("should leave the ranking where it was", async () => {
+      await supertest(app)
+        .put(`/api/worlds/${worldName}/ranking`)
+        .set("Authorization", `Bearer ${DATA_TEAM_TOKEN}`)
+        .send({ ranking: 42 })
+
+      const world = await WorldModel.findByIdWithAggregates(worldName, {
+        user: undefined,
+      })
+      expect(world?.ranking).toBe(0)
+    })
+
+    it("should keep the world listed in the worlds catalogue", async () => {
+      const response = await supertest(app)
+        .get(`/api/worlds/${worldName}`)
+        .expect(200)
+
+      expect(response.body.data.world_name).toBe(worldName)
+    })
+
+    describe("and the exclusion is lifted", () => {
+      beforeEach(async () => {
+        await supertest(app)
+          .delete(`/api/worlds/${worldName}/ranking-exclusion`)
+          .set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+          .expect(200)
+      })
+
+      it("should accept the data team ranking write again", async () => {
+        await supertest(app)
+          .put(`/api/worlds/${worldName}/ranking`)
+          .set("Authorization", `Bearer ${DATA_TEAM_TOKEN}`)
+          .send({ ranking: 42 })
+          .expect(201)
+      })
     })
   })
 })

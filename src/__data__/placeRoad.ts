@@ -11,6 +11,7 @@ export const placeRoad: PlaceAttributes = {
   like_score: 0,
   highlighted: false,
   highlighted_image: null,
+  exclude_from_ranking: false,
   disabled: false,
   updated_at: new Date("2023-03-28T18:37:39.918Z"),
   world: false,

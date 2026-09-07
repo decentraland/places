@@ -16,6 +16,14 @@ export type WorldAttributes = BaseEntityAttributes & {
   highlighted: boolean
   highlighted_image: string | null
   ranking: number | null
+  /**
+   * Keeps the automated discovery score from ranking this destination while it stays browsable.
+   * Distinct from `highlighted`, `hidden` and `disabled`: featuring moves where it shows, hiding
+   * takes it out of browse, disabling takes it out of the catalogue. This one only refuses the
+   * automated ranking write, so a one-off like an internal event world can be listed normally
+   * without the score deciding its position.
+   */
+  exclude_from_ranking: boolean
   /** worlds-content-server settings version last applied; orders mirrored writes. */
   settings_version: number | null
 }

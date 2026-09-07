@@ -6,6 +6,10 @@ import { featureWorld, unfeatureWorld } from "./featured"
 import { getWorld } from "./getWorld"
 import { getWorldList } from "./getWorldList"
 import { getWorldNamesList } from "./getWorldNamesList"
+import {
+  excludeWorldFromRanking,
+  includeWorldInRanking,
+} from "./rankingExclusion"
 import { updateWorldFavorites } from "./updateWorldFavorites"
 import { updateWorldHighlight } from "./updateWorldHighlight"
 import { updateWorldLikes } from "./updateWorldLikes"
@@ -42,4 +46,7 @@ export default routes((router) => {
   router.put("/worlds/:world_id/rating", updateWorldRating)
   router.put("/worlds/:world_id/featured", featureWorld)
   router.delete("/worlds/:world_id/featured", unfeatureWorld)
+
+  router.put("/worlds/:world_id/ranking-exclusion", excludeWorldFromRanking)
+  router.delete("/worlds/:world_id/ranking-exclusion", includeWorldInRanking)
 }, {})

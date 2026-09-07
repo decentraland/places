@@ -461,6 +461,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       skybox_time: world.skybox_time ?? null,
       is_private: world.is_private ?? false,
       highlighted: world.highlighted ?? false,
+      exclude_from_ranking: world.exclude_from_ranking ?? false,
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
       settings_version: world.settings_version ?? null,
@@ -694,6 +695,54 @@ export default class WorldModel extends Model<WorldAttributes> {
       WHERE id = ${worldId}
     `
     await this.namedQuery("update_highlighted", sql)
+  }
+
+  /**
+   * Marks a world as browsable but out of reach of the automated discovery score.
+   *
+   * Clearing the ranking in the same statement is deliberate: the flag says the score must not
+   * decide this world's position, and leaving a value the score wrote earlier would freeze exactly
+   * the number we just decided not to trust. Turning the flag back off leaves the ranking at 0
+   * until the next run computes one, which is the same state a brand new world starts in.
+   */
+  static async updateExcludeFromRanking(
+    worldId: string,
+    excludeFromRanking: boolean
+  ): Promise<void> {
+    const now = new Date()
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET exclude_from_ranking = ${excludeFromRanking},
+          ${conditional(excludeFromRanking, SQL`ranking = 0,`)}
+          updated_at = ${now}
+      WHERE id = ${worldId}
+    `
+    await this.namedQuery("update_exclude_from_ranking", sql)
+  }
+
+  /**
+   * Write a ranking on behalf of the automated score, and report whether it landed.
+   *
+   * The route refuses a curated world before reaching here, but that check reads the row and the
+   * write happens after, so an admin toggling `highlighted` or `exclude_from_ranking` in between
+   * would let the score through. Carrying the condition in the same statement as the write is the
+   * only place it can be atomic. A count of 0 means the world became curated while the request was
+   * in flight, and the score must not claim success.
+   */
+  static async updateRankingFromScore(
+    worldId: string,
+    ranking: number | null
+  ): Promise<number> {
+    const now = new Date()
+    const sql = SQL`
+      UPDATE ${table(this)}
+      SET ranking = ${ranking},
+          updated_at = ${now}
+      WHERE id = ${worldId}
+        AND highlighted IS FALSE
+        AND exclude_from_ranking IS FALSE
+    `
+    return this.namedRowCount("update_ranking_from_score", sql)
   }
 
   static async updateRanking(

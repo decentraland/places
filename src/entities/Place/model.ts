@@ -877,7 +877,8 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   private static buildUpdatePlaceQuery(
     place: Partial<PlaceAttributes>,
     attributes: Array<keyof PlaceAttributes>,
-    rejectOlderDeployment = false
+    rejectOlderDeployment = false,
+    requireNotCurated = false
   ): SQLStatement {
     const keys = unique(diff(attributes, ["id", "created_at"])) as Array<
       keyof PlaceAttributes
@@ -896,6 +897,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     ${conditional(
       rejectOlderDeployment,
       SQL`AND ("deployed_at" IS NULL OR "deployed_at" <= ${place.deployed_at})`
+    )}
+    ${conditional(
+      requireNotCurated,
+      SQL`AND "highlighted" IS FALSE AND "exclude_from_ranking" IS FALSE`
     )}`
   }
 
@@ -913,6 +918,31 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * Store a new deployment revision on an existing place, rejecting the write when the stored row
    * already holds a newer revision. Returns the number of updated rows: 0 means the write was stale.
    */
+  /**
+   * Write a ranking on behalf of the automated score, and report whether it landed.
+   *
+   * The route refuses a curated place before reaching here, but that check reads the row and the
+   * write happens after, so an admin toggling `highlighted` or `exclude_from_ranking` in between
+   * would let the score through. Carrying the condition in the same statement as the write is the
+   * only place it can be atomic, which is what makes the documented guarantee true rather than
+   * merely likely. A count of 0 means the place became curated while the request was in flight,
+   * or that it is no longer writable at all, and either way the score must not claim success.
+   */
+  static async updateRankingFromScore(
+    place: Pick<PlaceAttributes, "id" | "world">,
+    ranking: number | null
+  ): Promise<number> {
+    return this.namedRowCount(
+      "update_ranking_from_score",
+      this.buildUpdatePlaceQuery(
+        { ...place, ranking, updated_at: new Date() },
+        ["ranking", "updated_at"],
+        false,
+        true
+      )
+    )
+  }
+
   static async updatePlaceFromDeployment(
     place: Partial<PlaceAttributes>,
     attributes: Array<keyof PlaceAttributes>

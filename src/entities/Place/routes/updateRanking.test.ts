@@ -35,6 +35,7 @@ const uncuratedPlace = {
 
 const findByIdWithAggregates = jest.spyOn(PlaceModel, "findByIdWithAggregates")
 const updatePlace = jest.spyOn(PlaceModel, "updatePlace")
+const updateRankingFromScore = jest.spyOn(PlaceModel, "updateRankingFromScore")
 
 beforeEach(() => {
   mockDataTeamToken = VALID_TOKEN
@@ -44,6 +45,13 @@ beforeEach(() => {
 afterEach(() => {
   findByIdWithAggregates.mockReset()
   updatePlace.mockReset()
+  updateRankingFromScore.mockReset()
+})
+
+beforeEach(() => {
+  // The data team path writes through updateRankingFromScore, which reports how many rows it
+  // touched. Default to one so the existing cases keep exercising a successful write.
+  updateRankingFromScore.mockResolvedValue(1)
 })
 
 describe("updateRanking", () => {
@@ -248,10 +256,7 @@ describe("updateRanking", () => {
           ranking: 0.85,
         },
       })
-      expect(updatePlace).toHaveBeenCalledWith(
-        { ...uncuratedPlace, ranking: 0.85 },
-        ["ranking"]
-      )
+      expect(updateRankingFromScore).toHaveBeenCalledWith(uncuratedPlace, 0.85)
     })
 
     test("should update ranking to zero", async () => {
@@ -270,10 +275,7 @@ describe("updateRanking", () => {
       } as any)
 
       expect(response.body.data.ranking).toBe(0)
-      expect(updatePlace).toHaveBeenCalledWith(
-        expect.objectContaining({ ranking: 0 }),
-        ["ranking"]
-      )
+      expect(updateRankingFromScore).toHaveBeenCalledWith(uncuratedPlace, 0)
     })
 
     test("should update ranking to a negative number", async () => {
@@ -316,10 +318,7 @@ describe("updateRanking", () => {
           ranking: null,
         },
       })
-      expect(updatePlace).toHaveBeenCalledWith(
-        { ...uncuratedPlace, ranking: null },
-        ["ranking"]
-      )
+      expect(updateRankingFromScore).toHaveBeenCalledWith(uncuratedPlace, null)
     })
   })
   describe("when the place is highlighted", () => {
@@ -387,6 +386,109 @@ describe("updateRanking", () => {
 
         expect(updatePlace).toHaveBeenCalledWith(
           expect.objectContaining({ ranking: 1850 }),
+          ["ranking"]
+        )
+      })
+    })
+  })
+
+  describe("when the place becomes curated while the request is in flight", () => {
+    let request: Request
+    let url: URL
+
+    beforeEach(() => {
+      // The row read at the start of the request was not curated, so the guard let it through.
+      // An admin featuring or excluding the place in the meantime makes the conditional write
+      // match nothing, which is the only signal that the row changed under us.
+      findByIdWithAggregates.mockResolvedValueOnce(uncuratedPlace)
+      updateRankingFromScore.mockResolvedValueOnce(0)
+      request = new Request("http://0.0.0.0/")
+      request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
+      url = new URL("https://localhost/")
+    })
+
+    it("should refuse the data team write rather than report success", async () => {
+      await expect(() =>
+        updateRanking({
+          request,
+          params: { place_id: uncuratedPlace.id },
+          body: { ranking: 42 },
+          url,
+        } as any)
+      ).rejects.toThrow(
+        "The ranking of this place is editorial and can only be changed with the admin token"
+      )
+    })
+  })
+
+  describe("when the place is excluded from the automated ranking", () => {
+    let excludedPlace: typeof placeGenesisPlazaWithAggregatedAttributes
+    let request: Request
+    let url: URL
+
+    beforeEach(() => {
+      // Not highlighted and with no ranking of its own, so the only thing keeping the score out
+      // is the flag. This is the shape of an internal one-off world: browsable, never ranked.
+      excludedPlace = {
+        ...placeGenesisPlazaWithAggregatedAttributes,
+        highlighted: false,
+        ranking: 0,
+        exclude_from_ranking: true,
+      }
+      url = new URL("https://localhost/")
+      findByIdWithAggregates.mockResolvedValueOnce(excludedPlace)
+      updatePlace.mockResolvedValueOnce([] as any)
+    })
+
+    describe("and the data team token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
+      })
+
+      it("should reject the request", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: excludedPlace.id },
+            body: { ranking: 42 },
+            url,
+          } as any)
+        ).rejects.toThrow(
+          "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
+        )
+      })
+
+      it("should not write anything", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: excludedPlace.id },
+            body: { ranking: 42 },
+            url,
+          } as any)
+        ).rejects.toThrow()
+
+        expect(updatePlace).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the admin token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      })
+
+      it("should still write the requested ranking", async () => {
+        await updateRanking({
+          request,
+          params: { place_id: excludedPlace.id },
+          body: { ranking: 500 },
+          url,
+        } as any)
+
+        expect(updatePlace).toHaveBeenCalledWith(
+          expect.objectContaining({ ranking: 500 }),
           ["ranking"]
         )
       })

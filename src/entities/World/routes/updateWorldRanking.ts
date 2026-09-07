@@ -5,7 +5,8 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
 import {
-  requireAdminTokenForHighlighted,
+  isAdminToken,
+  requireAdminTokenForCuratedRanking,
   requireRankingToken,
 } from "../../shared/auth"
 import { createWkcValidator } from "../../shared/validate"
@@ -47,13 +48,35 @@ export async function updateWorldRanking(
     )
   }
 
-  requireAdminTokenForHighlighted(token, world.highlighted)
-
-  await WorldModel.updateRanking(params.world_id, body.ranking)
+  requireAdminTokenForCuratedRanking(token, {
+    highlighted: world.highlighted,
+    exclude_from_ranking: world.exclude_from_ranking,
+  })
 
   const updatedWorld: AggregateWorldAttributes = {
     ...world,
     ranking: body.ranking,
+  }
+
+  if (isAdminToken(token)) {
+    await WorldModel.updateRanking(params.world_id, body.ranking)
+
+    return new ApiResponse(updatedWorld)
+  }
+
+  // The check above read the row; this writes it. An admin curating the world in between would
+  // otherwise slip through, so the automated path carries the condition into the statement and
+  // refuses when it wrote nothing.
+  const written = await WorldModel.updateRankingFromScore(
+    params.world_id,
+    body.ranking
+  )
+
+  if (written === 0) {
+    throw new ErrorResponse(
+      Response.Forbidden,
+      "The ranking of this world is editorial and can only be changed with the admin token"
+    )
   }
 
   return new ApiResponse(updatedWorld)
