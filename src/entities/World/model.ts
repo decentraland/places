@@ -83,6 +83,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       names?: string[]
       world_names?: string[]
       only_highlighted?: boolean
+      only_excluded_from_ranking?: boolean
       owner?: string
       ids?: string[]
       sdk?: string
@@ -102,6 +103,10 @@ export default class WorldModel extends Model<WorldAttributes> {
         ${conditional(
           options.only_highlighted ?? false,
           SQL`AND ${a}.highlighted = TRUE`
+        )}
+        ${conditional(
+          options.only_excluded_from_ranking ?? false,
+          SQL`AND ${a}.exclude_from_ranking = TRUE`
         )}
         ${conditional(
           !!options.search,
@@ -184,6 +189,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       names?: string[]
       world_names?: string[]
       only_highlighted?: boolean
+      only_excluded_from_ranking?: boolean
       owner?: string
       ids?: string[]
       sdk?: string
@@ -235,6 +241,7 @@ export default class WorldModel extends Model<WorldAttributes> {
           world_names: options.world_names,
           names: options.names,
           only_highlighted: options.only_highlighted,
+          only_excluded_from_ranking: options.only_excluded_from_ranking,
           owner: options.owner,
           ids: options.ids,
           sdk: options.sdk,
@@ -355,6 +362,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     const subQuery = this.buildSubQuery({
       user: options.user,
       only_favorites: options.only_favorites,
+      only_excluded_from_ranking: options.only_excluded_from_ranking,
       search: options.search,
       categories: options.categories,
       world_names: options.names,
@@ -379,7 +387,13 @@ export default class WorldModel extends Model<WorldAttributes> {
   static async countWorlds(
     options: Pick<
       FindWorldWithAggregatesOptions,
-      "user" | "only_favorites" | "names" | "search" | "categories" | "owner"
+      | "user"
+      | "only_favorites"
+      | "only_excluded_from_ranking"
+      | "names"
+      | "search"
+      | "categories"
+      | "owner"
     >
   ): Promise<number> {
     const isMissingEthereumAddress =
@@ -393,6 +407,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       {
         user: options.user,
         only_favorites: options.only_favorites,
+        only_excluded_from_ranking: options.only_excluded_from_ranking,
         search: options.search,
         categories: options.categories,
         world_names: options.names,

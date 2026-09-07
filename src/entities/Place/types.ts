@@ -105,6 +105,7 @@ export type GetPlaceListQuery = {
   positions: string[]
   only_favorites: string
   only_highlighted: string
+  only_excluded_from_ranking?: string
   order_by: string
   order: string
   with_realms_detail: string
@@ -121,6 +122,7 @@ export type PlaceListOptions = {
   limit: number
   only_favorites: boolean
   only_highlighted: boolean
+  only_excluded_from_ranking?: boolean
   positions: string[]
   order_by: string
   order: string

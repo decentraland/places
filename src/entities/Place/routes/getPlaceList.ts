@@ -46,6 +46,9 @@ export const getPlaceList = Router.memo(
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
+      only_excluded_from_ranking: ctx.url.searchParams.get(
+        "only_excluded_from_ranking"
+      ),
       order_by:
         oneOf(ctx.url.searchParams.get("order_by"), [
           PlaceListOrderBy.LIKE_SCORE_BEST,
@@ -76,6 +79,7 @@ export const getPlaceList = Router.memo(
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
+      only_excluded_from_ranking: !!bool(query.only_excluded_from_ranking),
       positions: query.positions,
       order_by: query.order_by,
       order: query.order,

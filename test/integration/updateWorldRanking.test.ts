@@ -247,6 +247,45 @@ describe("when updating the ranking of a world via PUT /worlds/:world_id/ranking
     })
   })
 
+  describe("and the caller asks which worlds are excluded from the ranking", () => {
+    beforeEach(async () => {
+      await seedWorld(worldName)
+      await seedPlaceForWorld(worldName)
+      await seedWorld("stillranked.dcl.eth")
+      await seedPlaceForWorld("stillranked.dcl.eth")
+      await WorldModel.updateExcludeFromRanking(worldName, true)
+    })
+
+    // Without a server-side filter the only way to answer this is to page the whole catalogue,
+    // and production holds 1,646 worlds and 24,418 places against a limit capped at 100. A caller
+    // would read one page, find nothing, and report that no entry is excluded.
+    it("should return the excluded world", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(
+        response.body.data.map((w: { world_name: string }) => w.world_name)
+      ).toEqual([worldName])
+    })
+
+    it("should count only the excluded world", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(response.body.total).toBe(1)
+    })
+
+    it("should return both worlds when the filter is not asked for", async () => {
+      const response = await supertest(app).get("/api/worlds").expect(200)
+
+      expect(response.body.total).toBe(2)
+    })
+  })
+
   describe("and the world becomes curated between the read and the write", () => {
     beforeEach(async () => {
       await seedWorld(worldName)

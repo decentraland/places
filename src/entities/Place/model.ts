@@ -127,6 +127,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       search?: string
       positions?: string[]
       only_highlighted?: boolean
+      only_excluded_from_ranking?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string
@@ -157,6 +158,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         ${conditional(
           options.only_highlighted ?? false,
           SQL`AND highlighted = TRUE`
+        )}
+        ${conditional(
+          options.only_excluded_from_ranking ?? false,
+          SQL`AND exclude_from_ranking = TRUE`
         )}
         ${conditional(!!options.search, SQL`AND rank > 0`)}
         ${conditional(
@@ -234,6 +239,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       search?: string
       positions?: string[]
       only_highlighted?: boolean
+      only_excluded_from_ranking?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string

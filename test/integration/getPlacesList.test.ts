@@ -260,4 +260,49 @@ describe("when fetching places via GET /api/places", () => {
       expect(response.body.data[0].title).toBe("Franky's Tavern")
     })
   })
+  describe("and the ranking exclusion filter is applied", () => {
+    beforeEach(async () => {
+      await seedPlace({
+        title: "Gathering Hall",
+        base_position: "30,30",
+        positions: ["30,30"],
+        exclude_from_ranking: true,
+      })
+      await seedPlace({
+        title: "Still Ranked",
+        base_position: "31,31",
+        positions: ["31,31"],
+        exclude_from_ranking: false,
+      })
+    })
+
+    // Without a server side filter the only way to answer "what is excluded" is to page the whole
+    // catalogue, and production holds more than 24,000 places against a limit capped at 100. A
+    // caller would read one page, find nothing, and report that no place is excluded.
+    it("should return only the excluded place", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(response.body.data.map((p: { title: string }) => p.title)).toEqual(
+        ["Gathering Hall"]
+      )
+    })
+
+    it("should count only the excluded place", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(response.body.total).toBe(1)
+    })
+
+    it("should return both places when the filter is not asked for", async () => {
+      const response = await supertest(app).get("/api/places").expect(200)
+
+      expect(response.body.total).toBe(2)
+    })
+  })
 })

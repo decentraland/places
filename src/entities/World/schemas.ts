@@ -29,6 +29,13 @@ export const getWorldListQuerySchema = schema({
       description: "True if shows only favorite worlds",
       nullable: true as any,
     },
+    only_excluded_from_ranking: {
+      type: "string",
+      format: "boolean",
+      description:
+        "True to show only entries the automated ranking is not allowed to touch",
+      nullable: true as any,
+    },
     order_by: {
       type: "string",
       description: "Order worlds by",
