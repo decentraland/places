@@ -26,6 +26,7 @@ const baseWorldAttributes: WorldAttributes = {
   is_private: false,
   highlighted: false,
   highlighted_image: null,
+  exclude_from_ranking: false,
   ranking: null,
   settings_version: null,
 }
@@ -68,6 +69,7 @@ const aggregatePlaceAttributes: AggregatePlaceAttributes = {
   contact_email: null,
   highlighted: false,
   highlighted_image: null,
+  exclude_from_ranking: false,
   world: false,
   world_id: null,
   deployed_at: new Date(),

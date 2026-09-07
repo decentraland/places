@@ -409,6 +409,7 @@ export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes
     like_score: 0,
     highlighted: true,
     highlighted_image: "/images/places/genesis_plaza_banner.jpg",
+    exclude_from_ranking: false,
     user_favorite: false,
     user_like: false,
     user_dislike: false,

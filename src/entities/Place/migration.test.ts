@@ -69,6 +69,7 @@ describe("createPlaceFromEntityScene", () => {
       created_at: place.created_at,
       updated_at: place.updated_at,
       highlighted_image: place.highlighted_image,
+      exclude_from_ranking: false,
     })
   })
   test("should return a place with the correct data with contact_name = author-name", async () => {
@@ -94,6 +95,7 @@ describe("createPlaceFromEntityScene", () => {
       created_at: place.created_at,
       updated_at: place.updated_at,
       highlighted_image: place.highlighted_image,
+      exclude_from_ranking: false,
     })
   })
 })

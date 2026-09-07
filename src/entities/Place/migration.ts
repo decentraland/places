@@ -70,6 +70,7 @@ export function createPlaceFromEntityScene(
     contact_email: entityScene?.metadata?.contact?.email || null,
     content_rating: getContentRating(entityScene, data),
     highlighted: false,
+    exclude_from_ranking: false,
     highlighted_image: null,
     disabled: false,
     disabled_at:

@@ -96,6 +96,7 @@ async function seedPlaceForWorld(worldId: string): Promise<void> {
     updated_at: new Date(),
     highlighted: false,
     highlighted_image: null,
+    exclude_from_ranking: false,
     world: true,
     world_name: worldId,
     world_id: worldId,

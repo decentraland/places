@@ -392,4 +392,78 @@ describe("updateRanking", () => {
       })
     })
   })
+
+  describe("when the place is excluded from the automated ranking", () => {
+    let excludedPlace: typeof placeGenesisPlazaWithAggregatedAttributes
+    let request: Request
+    let url: URL
+
+    beforeEach(() => {
+      // Not highlighted and with no ranking of its own, so the only thing keeping the score out
+      // is the flag. This is the shape of an internal one-off world: browsable, never ranked.
+      excludedPlace = {
+        ...placeGenesisPlazaWithAggregatedAttributes,
+        highlighted: false,
+        ranking: 0,
+        exclude_from_ranking: true,
+      }
+      url = new URL("https://localhost/")
+      findByIdWithAggregates.mockResolvedValueOnce(excludedPlace)
+      updatePlace.mockResolvedValueOnce([] as any)
+    })
+
+    describe("and the data team token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${VALID_TOKEN}`)
+      })
+
+      it("should reject the request", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: excludedPlace.id },
+            body: { ranking: 42 },
+            url,
+          } as any)
+        ).rejects.toThrow(
+          "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
+        )
+      })
+
+      it("should not write anything", async () => {
+        await expect(() =>
+          updateRanking({
+            request,
+            params: { place_id: excludedPlace.id },
+            body: { ranking: 42 },
+            url,
+          } as any)
+        ).rejects.toThrow()
+
+        expect(updatePlace).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the admin token is used", () => {
+      beforeEach(() => {
+        request = new Request("http://0.0.0.0/")
+        request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      })
+
+      it("should still write the requested ranking", async () => {
+        await updateRanking({
+          request,
+          params: { place_id: excludedPlace.id },
+          body: { ranking: 500 },
+          url,
+        } as any)
+
+        expect(updatePlace).toHaveBeenCalledWith(
+          expect.objectContaining({ ranking: 500 }),
+          ["ranking"]
+        )
+      })
+    })
+  })
 })

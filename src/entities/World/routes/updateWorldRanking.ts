@@ -5,7 +5,7 @@ import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Respo
 import { AjvObjectSchema } from "decentraland-gatsby/dist/entities/Schema/types"
 
 import {
-  requireAdminTokenForHighlighted,
+  requireAdminTokenForCuratedRanking,
   requireRankingToken,
 } from "../../shared/auth"
 import { createWkcValidator } from "../../shared/validate"
@@ -47,7 +47,10 @@ export async function updateWorldRanking(
     )
   }
 
-  requireAdminTokenForHighlighted(token, world.highlighted)
+  requireAdminTokenForCuratedRanking(token, {
+    highlighted: world.highlighted,
+    exclude_from_ranking: world.exclude_from_ranking,
+  })
 
   await WorldModel.updateRanking(params.world_id, body.ranking)
 

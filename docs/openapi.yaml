@@ -558,9 +558,11 @@ paths:
         Accepts the value of either the `DATA_TEAM_AUTH_TOKEN` or the
         `PLACES_ADMIN_AUTH_TOKEN` environment variable in the Authorization header.
 
-        **Highlighted entities are editorial.** While a place is highlighted its ranking is
-        the order the curated shelf is shown in, so only `PLACES_ADMIN_AUTH_TOKEN` may change
-        it; the data team token gets a 403. This keeps a scheduled scoring job from
+        **Curated rankings are editorial.** Two states make a ranking off limits to the data
+        team token, which gets a 403: while a place is highlighted its ranking is the order the
+        curated shelf is shown in, and a place carrying `exclude_from_ranking` must stay
+        browsable while the automated score leaves it alone. `PLACES_ADMIN_AUTH_TOKEN` may
+        still set a ranking by hand in both cases. This keeps a scheduled scoring job from
         overwriting hand-set positions.
       operationId: updatePlaceRanking
       parameters:
@@ -632,6 +634,86 @@ paths:
               example:
                 ok: false
                 error: "Service authentication not configured"
+
+  /places/{place_id}/ranking-exclusion:
+    put:
+      tags:
+        - Places
+      summary: Exclude a place from the automated ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Mark a place as browsable but out of reach of the automated discovery score.
+
+        The place keeps appearing in listings exactly as before. What changes is that the
+        scheduled scoring job can no longer set its ranking: `PUT /places/{place_id}/ranking`
+        answers 403 for the data team token while this is set. `PLACES_ADMIN_AUTH_TOKEN` may
+        still set a ranking by hand.
+
+        This exists because no other flag says "list it, just do not rank it". `highlighted`
+        moves the place onto the featured shelf, `hidden` takes it out of browse, and
+        `disabled` takes it out of the catalogue. A one-off such as an internal event world
+        needs none of those.
+
+        Setting the exclusion also clears the stored ranking to 0, so a value the score wrote
+        earlier does not freeze in place. The flag survives a redeployment by the same creator.
+
+        **Authentication:** requires the value of `PLACES_ADMIN_AUTH_TOKEN`. The data team
+        token is not accepted here.
+      operationId: excludePlaceFromRanking
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to exclude from the automated ranking
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "201":
+          description: Place excluded from the automated ranking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Places
+      summary: Return a place to the automated ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Clear the exclusion so the automated discovery score may rank this place again.
+
+        The ranking stays at whatever it holds until the next scoring run computes one, which
+        for a place excluded through this endpoint means 0, the same state a newly deployed
+        place starts in.
+
+        **Authentication:** requires the value of `PLACES_ADMIN_AUTH_TOKEN`.
+      operationId: includePlaceInRanking
+      parameters:
+        - name: place_id
+          in: path
+          required: true
+          description: UUID of the place to return to the automated ranking
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Place returned to the automated ranking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaceResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /places/{place_id}/highlight:
     put:
@@ -990,6 +1072,146 @@ paths:
                 $ref: "#/components/schemas/WorldListResponse"
         "400":
           $ref: "#/components/responses/BadRequest"
+
+  /worlds/{world_id}/ranking:
+    put:
+      tags:
+        - Worlds
+      summary: Update world ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Update the ranking score for a world. **Requires service token authentication.**
+
+        This is the endpoint that moves a world in browse. Worlds are ordered by their own
+        `ranking` column, which is not the same column as a place's: writing to
+        `PUT /places/{place_id}/ranking` for the place row that backs a world succeeds and
+        changes nothing in browse. Address a world by its name, lowercased, which is its id.
+
+        Higher ranking values appear first, after highlighted worlds. Send `null` to remove the
+        ranking.
+
+        **Authentication:**
+        Accepts the value of either the `DATA_TEAM_AUTH_TOKEN` or the
+        `PLACES_ADMIN_AUTH_TOKEN` environment variable in the Authorization header.
+
+        **Curated rankings are editorial.** Two states make a ranking off limits to the data
+        team token, which gets a 403: while a world is highlighted its ranking is the order the
+        curated shelf is shown in, and a world carrying `exclude_from_ranking` must stay
+        browsable while the automated score leaves it alone.
+      operationId: updateWorldRanking
+      parameters:
+        - name: world_id
+          in: path
+          required: true
+          description: World id, which is the world name lowercased (for example `gather.dcl.eth`)
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateRankingBody"
+            examples:
+              setRanking:
+                summary: Set ranking value
+                value:
+                  ranking: 1800
+              removeRanking:
+                summary: Remove ranking (set to null)
+                value:
+                  ranking: null
+      responses:
+        "201":
+          description: Ranking updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/World"
+        "400":
+          description: Invalid body, for example a missing ranking field
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          description: The ranking is editorial and the data team token may not change it
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                ok: false
+                error: "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /worlds/{world_id}/ranking-exclusion:
+    put:
+      tags:
+        - Worlds
+      summary: Exclude a world from the automated ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Mark a world as browsable but out of reach of the automated discovery score. Same
+        semantics as the places endpoint: the world keeps appearing in listings and only the
+        scheduled scoring job is refused, with a 403 on the world ranking endpoint.
+
+        Setting the exclusion also clears the stored ranking to 0.
+
+        **Authentication:** requires the value of `PLACES_ADMIN_AUTH_TOKEN`.
+      operationId: excludeWorldFromRanking
+      parameters:
+        - name: world_id
+          in: path
+          required: true
+          description: World id, which is the world name lowercased (for example `gather.dcl.eth`)
+          schema:
+            type: string
+      responses:
+        "201":
+          description: World excluded from the automated ranking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/World"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+    delete:
+      tags:
+        - Worlds
+      summary: Return a world to the automated ranking 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Clear the exclusion so the automated discovery score may rank this world again.
+
+        **Authentication:** requires the value of `PLACES_ADMIN_AUTH_TOKEN`.
+      operationId: includeWorldInRanking
+      parameters:
+        - name: world_id
+          in: path
+          required: true
+          description: World id, which is the world name lowercased (for example `gather.dcl.eth`)
+          schema:
+            type: string
+      responses:
+        "200":
+          description: World returned to the automated ranking
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/World"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
 
   /destinations:
     get:
@@ -1898,6 +2120,16 @@ components:
             True if this place is highlighted/featured by administrators.
             Highlighted places appear at the top of listing endpoints.
           example: false
+        exclude_from_ranking:
+          type: boolean
+          default: false
+          description: |
+            True if the automated discovery score must not rank this entity. It stays browsable
+            and keeps appearing in listings; only the scheduled scoring job is refused, with a
+            403 on the ranking endpoint. Distinct from `highlighted`, which moves where the
+            entity shows, and from `hidden` and `disabled`, which take it out of browse and out
+            of the catalogue. Survives a redeployment.
+          example: false
         favorites:
           type: integer
           minimum: 0
@@ -2074,6 +2306,16 @@ components:
         highlighted:
           type: boolean
           description: True if this world is highlighted/featured by administrators
+        exclude_from_ranking:
+          type: boolean
+          default: false
+          description: |
+            True if the automated discovery score must not rank this entity. It stays browsable
+            and keeps appearing in listings; only the scheduled scoring job is refused, with a
+            403 on the ranking endpoint. Distinct from `highlighted`, which moves where the
+            entity shows, and from `hidden` and `disabled`, which take it out of browse and out
+            of the catalogue. Survives a redeployment.
+          example: false
         favorites:
           type: integer
           minimum: 0

@@ -46,6 +46,7 @@ const baseAggregateWorld: AggregateWorldAttributes = {
   is_private: false,
   highlighted: false,
   highlighted_image: null,
+  exclude_from_ranking: false,
   ranking: null,
   settings_version: null,
   user_like: false,
@@ -203,6 +204,64 @@ describe("updateWorldRanking", () => {
         } as any)
 
         expect(updateRankingSpy).toHaveBeenCalledWith(world_id, 1700)
+      })
+    })
+  })
+
+  describe("when the world is excluded from the automated ranking", () => {
+    let excludedWorld: AggregateWorldAttributes
+
+    beforeEach(() => {
+      // Neither highlighted nor ranked, so the flag is the only thing standing between this world
+      // and the score. Gathering Stage is exactly this: browsable, never ranked.
+      excludedWorld = {
+        ...baseAggregateWorld,
+        highlighted: false,
+        ranking: 0,
+        exclude_from_ranking: true,
+      }
+      findByIdWithAggregates.mockResolvedValueOnce(excludedWorld)
+      updateRankingSpy.mockResolvedValueOnce(undefined)
+    })
+
+    describe("and the data team token is used", () => {
+      it("should reject the request", async () => {
+        await expect(() =>
+          updateWorldRanking({
+            request: buildRequest(DATA_TEAM_TOKEN),
+            params: { world_id },
+            body: { ranking: 42 },
+            url: buildUrl(),
+          } as any)
+        ).rejects.toThrow(
+          "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
+        )
+      })
+
+      it("should not write anything", async () => {
+        await expect(() =>
+          updateWorldRanking({
+            request: buildRequest(DATA_TEAM_TOKEN),
+            params: { world_id },
+            body: { ranking: 42 },
+            url: buildUrl(),
+          } as any)
+        ).rejects.toThrow()
+
+        expect(updateRankingSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the admin token is used", () => {
+      it("should still write the requested ranking", async () => {
+        await updateWorldRanking({
+          request: buildRequest(ADMIN_TOKEN),
+          params: { world_id },
+          body: { ranking: 500 },
+          url: buildUrl(),
+        } as any)
+
+        expect(updateRankingSpy).toHaveBeenCalledWith(world_id, 500)
       })
     })
   })

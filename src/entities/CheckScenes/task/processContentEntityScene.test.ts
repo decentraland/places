@@ -343,6 +343,7 @@ describe("when a redeployment lands on a new place row", () => {
       ) as PlaceAttributes),
       highlighted: true,
       highlighted_image: "/images/places/banner.jpg",
+      exclude_from_ranking: false,
       ranking: 1900,
       creator_address: creator,
     }
@@ -369,6 +370,33 @@ describe("when a redeployment lands on a new place row", () => {
 
     it("should carry the highlighted image to the new place", () => {
       expect(result!.new!.highlighted_image).toBe("/images/places/banner.jpg")
+    })
+  })
+
+  describe("and the predecessor was only excluded from the automated ranking", () => {
+    let result: ProcessEntitySceneResult | null
+
+    beforeEach(() => {
+      // Nothing else marks this place as curated: not highlighted, no ranking. If the exclusion
+      // did not count as curation the row would rejoin the score the next time its creator
+      // deployed, which is the same silent reversion the highlighted flag used to suffer.
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [
+          {
+            ...curatedPredecessor,
+            highlighted: false,
+            highlighted_image: null,
+            ranking: 0,
+            exclude_from_ranking: true,
+          },
+        ],
+        { creator }
+      )
+    })
+
+    it("should carry the exclusion to the new place", () => {
+      expect(result!.new!.exclude_from_ranking).toBe(true)
     })
   })
 

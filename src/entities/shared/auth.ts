@@ -21,19 +21,27 @@ export async function requireRankingToken(
 }
 
 /**
- * Guards the ranking of a highlighted entity against the automated pipeline.
+ * Guards a curated ranking against the automated pipeline.
  *
  * `ranking` has two writers: the data team job (DATA_TEAM_AUTH_TOKEN) computing a
- * score, and the editorial admin (PLACES_ADMIN_AUTH_TOKEN) setting the order the
- * highlighted shelf is shown in. They share one column, so the scheduled job kept
- * overwriting hand-curated positions hours after they were set. While an entity is
- * highlighted its ranking is editorial, so only the admin token may move it.
+ * score, and the editorial admin (PLACES_ADMIN_AUTH_TOKEN) deciding the order. They
+ * share one column, so the scheduled job kept overwriting hand-set positions hours
+ * after they were set.
+ *
+ * Two states make a ranking editorial. While an entity is highlighted its position on
+ * the featured shelf is a curatorial choice. And `exclude_from_ranking` marks a
+ * destination that must stay browsable while the score leaves it alone, which no other
+ * flag expresses: featuring moves where it shows and hiding takes it out of browse.
+ *
+ * Either state means only the admin token may move the ranking. The admin is still
+ * allowed to set one by hand, because the flag says the automated score must not rank
+ * this entity, not that nobody may.
  */
-export function requireAdminTokenForHighlighted(
+export function requireAdminTokenForCuratedRanking(
   token: string,
-  highlighted: boolean
+  curation: { highlighted: boolean; exclude_from_ranking: boolean }
 ): void {
-  if (!highlighted) {
+  if (!curation.highlighted && !curation.exclude_from_ranking) {
     return
   }
 
@@ -42,7 +50,9 @@ export function requireAdminTokenForHighlighted(
   if (!adminToken || token !== adminToken) {
     throw new ErrorResponse(
       Response.Forbidden,
-      "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
+      curation.highlighted
+        ? "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
+        : "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
     )
   }
 }
