@@ -221,6 +221,13 @@ export default class DestinationModel {
     const placesRequireContent = requireContentForPlaces(options)
     const worldsRequireContent = requireContentForWorlds(options)
 
+    // Every ORDER BY below ends in the row id. Without it the sort is not total: the tail of the
+    // feed has `live_user_count`, `ranking` and `like_score` all tied at zero, and `updated_at` is
+    // shared by whole batches of rows written together, so Postgres was free to return any
+    // permutation of them. It chose differently depending on the plan, and the plan changes with
+    // the LIMIT, so the explorer asking for 20 and the web asking for 48 saw different orders from
+    // row 8 down. The id breaks every remaining tie and costs nothing, since it is the primary key.
+
     if (options.only_places) {
       const placesQuery = PlaceModel.buildSubQuery(options, {
         selectColumns: placesSelect,
@@ -235,7 +242,7 @@ export default class DestinationModel {
           p.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
-            `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC`
+            `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC, p.id ASC`
           )}
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
@@ -262,7 +269,7 @@ export default class DestinationModel {
           w.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
-            `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC`
+            `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC, w.id ASC`
           )}
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
@@ -299,7 +306,7 @@ export default class DestinationModel {
         sub.ranking DESC NULLS LAST,
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(
-          `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC`
+          `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC, sub.id ASC`
         )}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}

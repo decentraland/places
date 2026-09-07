@@ -1851,6 +1851,45 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and several destinations tie on every ordering column", () => {
+        beforeEach(async () => {
+          // The real feed's tail looks like this: no live users, no ranking, the same like_score,
+          // and one timestamp shared by a whole batch of rows written together. With nothing left
+          // to break the tie the sort was not total, and Postgres returned a different permutation
+          // depending on the plan it picked, which changes with the LIMIT.
+          const sameMoment = new Date("2026-02-26T16:48:46.914Z")
+          for (let i = 0; i < 12; i++) {
+            await seedPlace({
+              title: `Tied Hall ${String.fromCharCode(65 + i)}`,
+              image: REAL_IMAGE,
+              base_position: `20${i},200`,
+              positions: [`20${i},200`],
+              like_score: 0.2065433,
+              ranking: 0,
+              updated_at: sameMoment,
+            })
+          }
+        })
+
+        it("should return the same order whatever the limit is", async () => {
+          const small = await supertest(app)
+            .get("/api/destinations")
+            .query({ limit: "5" })
+            .expect(200)
+          const large = await supertest(app)
+            .get("/api/destinations")
+            .query({ limit: "13" })
+            .expect(200)
+
+          const smallIds = small.body.data.map((d: { id: string }) => d.id)
+          expect(
+            large.body.data
+              .slice(0, smallIds.length)
+              .map((d: { id: string }) => d.id)
+          ).toEqual(smallIds)
+        })
+      })
+
       describe("and a live event is running at a destination", () => {
         let livePlace: PlaceAttributes
 

@@ -109,6 +109,12 @@ describe("findWithAggregates", () => {
         )
       })
 
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+      })
+
       it("should keep the highlighted flag above the curation ranking as tie-breaker", () => {
         expect(positionOf(orderBy, "sub.highlighted DESC")).toBeLessThan(
           positionOf(orderBy, "sub.ranking DESC")
@@ -142,6 +148,12 @@ describe("findWithAggregates", () => {
           positionOf(orderBy, "p.ranking DESC")
         )
       })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, 'p."deployed_at" DESC')).toBeLessThan(
+          positionOf(orderBy, "p.id ASC")
+        )
+      })
     })
 
     describe("and only_worlds is set", () => {
@@ -168,6 +180,12 @@ describe("findWithAggregates", () => {
       it("should rank the live user count above the curation ranking", () => {
         expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
           positionOf(orderBy, "w.ranking DESC")
+        )
+      })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "w.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.id ASC")
         )
       })
     })
