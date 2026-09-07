@@ -362,6 +362,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     const subQuery = this.buildSubQuery({
       user: options.user,
       only_favorites: options.only_favorites,
+      only_highlighted: options.only_highlighted,
       only_excluded_from_ranking: options.only_excluded_from_ranking,
       search: options.search,
       categories: options.categories,
@@ -389,6 +390,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       FindWorldWithAggregatesOptions,
       | "user"
       | "only_favorites"
+      | "only_highlighted"
       | "only_excluded_from_ranking"
       | "names"
       | "search"
@@ -407,6 +409,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       {
         user: options.user,
         only_favorites: options.only_favorites,
+        only_highlighted: options.only_highlighted,
         only_excluded_from_ranking: options.only_excluded_from_ranking,
         search: options.search,
         categories: options.categories,

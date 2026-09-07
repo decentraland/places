@@ -286,6 +286,38 @@ describe("when updating the ranking of a world via PUT /worlds/:world_id/ranking
     })
   })
 
+  describe("and the caller asks which worlds are featured", () => {
+    beforeEach(async () => {
+      await seedWorld(worldName)
+      await seedPlaceForWorld(worldName)
+      await seedWorld("notfeatured.dcl.eth")
+      await seedPlaceForWorld("notfeatured.dcl.eth")
+      await WorldModel.updateHighlighted(worldName, true)
+    })
+
+    // The worlds subquery forwarded no flags at all, so this parameter was silently ignored and
+    // callers were left filtering a capped page themselves, which misses whatever is not on it.
+    it("should return only the featured world", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ only_highlighted: "true" })
+        .expect(200)
+
+      expect(
+        response.body.data.map((w: { world_name: string }) => w.world_name)
+      ).toEqual([worldName])
+    })
+
+    it("should count only the featured world", async () => {
+      const response = await supertest(app)
+        .get("/api/worlds")
+        .query({ only_highlighted: "true" })
+        .expect(200)
+
+      expect(response.body.total).toBe(1)
+    })
+  })
+
   describe("and the world becomes curated between the read and the write", () => {
     beforeEach(async () => {
       await seedWorld(worldName)

@@ -29,6 +29,7 @@ export const getWorldList = Router.memo(
       offset: ctx.url.searchParams.get("offset"),
       limit: ctx.url.searchParams.get("limit"),
       only_favorites: ctx.url.searchParams.get("only_favorites"),
+      only_highlighted: ctx.url.searchParams.get("only_highlighted"),
       only_excluded_from_ranking: ctx.url.searchParams.get(
         "only_excluded_from_ranking"
       ),
@@ -56,6 +57,7 @@ export const getWorldList = Router.memo(
       offset: numeric(query.offset, { min: 0 }) ?? 0,
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
+      only_highlighted: !!bool(query.only_highlighted),
       only_excluded_from_ranking: !!bool(query.only_excluded_from_ranking),
       names: query.names,
       order_by: query.order_by,

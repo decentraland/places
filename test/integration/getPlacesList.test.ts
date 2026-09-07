@@ -304,5 +304,25 @@ describe("when fetching places via GET /api/places", () => {
 
       expect(response.body.total).toBe(2)
     })
+
+    // `/api/places` hands these two orderings to their own handlers, which parse the query
+    // themselves. A filter wired only into the default path is silently dropped here.
+    // `/api/places` hands most_active to its own handler, which parses the query itself, so a
+    // filter wired only into the default path is silently dropped there. The sibling user_visits
+    // handler gets the same wiring but cannot be covered: it passes an order_by its own validator
+    // rejects, so that ordering answers 400 to everyone, with or without this parameter.
+    it.each([["most_active"]])(
+      "should still filter when ordering by %s",
+      async (orderBy) => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ only_excluded_from_ranking: "true", order_by: orderBy })
+          .expect(200)
+
+        expect(
+          response.body.data.map((p: { title: string }) => p.title)
+        ).toEqual(["Gathering Hall"])
+      }
+    )
   })
 })

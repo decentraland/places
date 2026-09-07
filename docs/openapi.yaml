@@ -1017,6 +1017,14 @@ paths:
           style: form
           explode: true
           example: ["my-world", "art-space"]
+        - name: only_highlighted
+          in: query
+          description: Show only worlds marked as highlighted by moderators
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
         - name: only_excluded_from_ranking
           in: query
           description: |
