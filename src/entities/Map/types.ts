@@ -23,7 +23,12 @@ export type AggregateCoordinatePlaceAttributes = Pick<
   positions?: string[]
 }
 
-export type GetAllPlaceListQuery = Omit<GetPlaceListQuery, "owner"> & {
+// The map draws every parcel, so it has no use for the browse filters: `owner` narrows to one
+// creator and `only_excluded_from_ranking` answers an editorial question about the feed.
+export type GetAllPlaceListQuery = Omit<
+  GetPlaceListQuery,
+  "owner" | "only_excluded_from_ranking"
+> & {
   names: string[]
 }
 

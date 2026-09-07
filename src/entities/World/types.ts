@@ -52,6 +52,8 @@ export type GetWorldListQuery = {
   offset: string
   names: string[]
   only_favorites: string
+  only_highlighted?: string
+  only_excluded_from_ranking?: string
   order_by: string
   order: string
   search: string
@@ -69,6 +71,8 @@ export type WorldListOptions = {
   offset: number
   limit: number
   only_favorites: boolean
+  only_highlighted?: boolean
+  only_excluded_from_ranking?: boolean
   names: string[]
   order_by: string
   order: string

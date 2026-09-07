@@ -183,6 +183,18 @@ paths:
           schema:
             type: boolean
             default: false
+        - name: only_excluded_from_ranking
+          in: query
+          description: |
+            Show only entries the automated daily ranking is not allowed to touch. Those entries
+            are listed normally by every other query; this is how to audit which ones carry the
+            exclusion, since the catalogue is far larger than the page limit and scanning it would
+            miss them.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
         - name: order_by
           in: query
           description: |
@@ -1005,6 +1017,26 @@ paths:
           style: form
           explode: true
           example: ["my-world", "art-space"]
+        - name: only_highlighted
+          in: query
+          description: Show only worlds marked as highlighted by moderators
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
+        - name: only_excluded_from_ranking
+          in: query
+          description: |
+            Show only worlds the automated daily ranking is not allowed to touch. Those worlds are
+            listed normally by every other query; this is how to audit which ones carry the
+            exclusion, since the catalogue is far larger than the page limit and scanning it would
+            miss them.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
         - name: only_favorites
           in: query
           description: Show only authenticated user's favorite worlds (requires auth)

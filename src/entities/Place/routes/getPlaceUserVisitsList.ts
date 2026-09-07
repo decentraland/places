@@ -22,6 +22,9 @@ export const getPlaceUserVisitsList = Router.memo(
       only_favorites: ctx.url.searchParams.get("only_favorites"),
       only_featured: ctx.url.searchParams.get("only_featured"),
       only_highlighted: ctx.url.searchParams.get("only_highlighted"),
+      only_excluded_from_ranking: ctx.url.searchParams.get(
+        "only_excluded_from_ranking"
+      ),
       order_by: PlaceListOrderBy.USER_VISITS,
       order: ctx.url.searchParams.get("order") || "desc",
       with_realms_detail: ctx.url.searchParams.get("with_realms_detail"),
@@ -48,6 +51,7 @@ export const getPlaceUserVisitsList = Router.memo(
       limit: numeric(query.limit, { min: 0, max: 100 }) ?? 100,
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
+      only_excluded_from_ranking: !!bool(query.only_excluded_from_ranking),
       positions: ctx.url.searchParams.getAll("positions"),
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order: query.order,

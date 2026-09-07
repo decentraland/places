@@ -260,4 +260,69 @@ describe("when fetching places via GET /api/places", () => {
       expect(response.body.data[0].title).toBe("Franky's Tavern")
     })
   })
+  describe("and the ranking exclusion filter is applied", () => {
+    beforeEach(async () => {
+      await seedPlace({
+        title: "Gathering Hall",
+        base_position: "30,30",
+        positions: ["30,30"],
+        exclude_from_ranking: true,
+      })
+      await seedPlace({
+        title: "Still Ranked",
+        base_position: "31,31",
+        positions: ["31,31"],
+        exclude_from_ranking: false,
+      })
+    })
+
+    // Without a server side filter the only way to answer "what is excluded" is to page the whole
+    // catalogue, and production holds more than 24,000 places against a limit capped at 100. A
+    // caller would read one page, find nothing, and report that no place is excluded.
+    it("should return only the excluded place", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(response.body.data.map((p: { title: string }) => p.title)).toEqual(
+        ["Gathering Hall"]
+      )
+    })
+
+    it("should count only the excluded place", async () => {
+      const response = await supertest(app)
+        .get("/api/places")
+        .query({ only_excluded_from_ranking: "true" })
+        .expect(200)
+
+      expect(response.body.total).toBe(1)
+    })
+
+    it("should return both places when the filter is not asked for", async () => {
+      const response = await supertest(app).get("/api/places").expect(200)
+
+      expect(response.body.total).toBe(2)
+    })
+
+    // `/api/places` hands these two orderings to their own handlers, which parse the query
+    // themselves. A filter wired only into the default path is silently dropped here.
+    // `/api/places` hands most_active to its own handler, which parses the query itself, so a
+    // filter wired only into the default path is silently dropped there. The sibling user_visits
+    // handler gets the same wiring but cannot be covered: it passes an order_by its own validator
+    // rejects, so that ordering answers 400 to everyone, with or without this parameter.
+    it.each([["most_active"]])(
+      "should still filter when ordering by %s",
+      async (orderBy) => {
+        const response = await supertest(app)
+          .get("/api/places")
+          .query({ only_excluded_from_ranking: "true", order_by: orderBy })
+          .expect(200)
+
+        expect(
+          response.body.data.map((p: { title: string }) => p.title)
+        ).toEqual(["Gathering Hall"])
+      }
+    )
+  })
 })
