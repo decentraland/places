@@ -83,5 +83,27 @@ describe("destinationsWithAggregates", () => {
         expect(destination.user_count).toBe(0)
       })
     })
+
+    describe("and both world names are missing", () => {
+      it("should not treat malformed live data as a match", () => {
+        const worldsLiveData = {
+          perWorld: [{ worldName: undefined, users: 3 }],
+          totalUsers: 3,
+        } as unknown as WorldLiveDataProps
+        const destinationWithoutWorldName = {
+          ...worldDestination("SpaceRunner.dcl.eth"),
+          world_name: null,
+        }
+
+        const [destination] = destinationsWithAggregates(
+          [destinationWithoutWorldName],
+          [],
+          {},
+          worldsLiveData
+        )
+
+        expect(destination.user_count).toBe(0)
+      })
+    })
   })
 })

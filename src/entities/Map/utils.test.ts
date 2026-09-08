@@ -187,4 +187,24 @@ describe("get of AllPlacesWithAggregates for a world whose name is mixed case", 
 
     expect(place.user_count).toBe(0)
   })
+
+  test("should not match malformed live data when both world names are missing", () => {
+    const malformedLiveData = {
+      perWorld: [{ worldName: undefined, users: 3 }],
+      totalUsers: 3,
+    } as unknown as WorldLiveDataProps
+    const placeWithoutWorldName = {
+      ...worldPlace("SpaceRunner.dcl.eth"),
+      world_name: null,
+    }
+
+    const [place] = allPlacesWithAggregates(
+      [placeWithoutWorldName] as any,
+      [hotSceneGenesisPlaza],
+      sceneStatsGenesisPlaza,
+      malformedLiveData
+    )
+
+    expect(place.user_count).toBe(0)
+  })
 })
