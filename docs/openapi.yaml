@@ -1675,7 +1675,11 @@ paths:
                           one world and none of them is the world.
                       ranking:
                         type: number
-                        description: Higher values appear first in browse
+                        minimum: 0
+                        description: |
+                          Higher values appear first in browse. A negative value from the automated
+                          score is always a broken run, so it is rejected with a 400 rather than
+                          written.
             example:
               entries:
                 - entity_type: place
