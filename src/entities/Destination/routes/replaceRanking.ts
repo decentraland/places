@@ -95,9 +95,12 @@ function findDuplicatedIds(entries: ReplaceRankingBody["entries"]): string[] {
   const duplicated = new Set<string>()
 
   for (const entry of entries) {
+    // Reported with the entity type, not the bare id: the two id spaces are a UUID and a world
+    // name so a cross-type collision is far fetched, but the message exists to be diagnosed from
+    // a log and the type is half of what identifies the row.
     const key = `${entry.entity_type}:${entry.id}`
     if (seen.has(key)) {
-      duplicated.add(entry.id)
+      duplicated.add(key)
     }
     seen.add(key)
   }

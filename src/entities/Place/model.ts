@@ -954,6 +954,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
     const found = new Set(rows.map((row) => row.id))
 
+    // The buckets are exclusive so the caller's skip counts add up to what it sent. A place can be
+    // both curated and world-backed, and reporting it twice would make the totals exceed the
+    // payload and invite double counting in whatever reads them. Curation wins the tie because it
+    // is the reason a human would care.
     return {
       writable: rows
         .filter(
@@ -963,7 +967,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       curated: rows
         .filter((row) => row.highlighted || row.exclude_from_ranking)
         .map((row) => row.id),
-      world_backed: rows.filter((row) => row.world).map((row) => row.id),
+      world_backed: rows
+        .filter(
+          (row) => row.world && !row.highlighted && !row.exclude_from_ranking
+        )
+        .map((row) => row.id),
       missing: ids.filter((id) => !found.has(id)),
     }
   }

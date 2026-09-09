@@ -173,7 +173,9 @@ export const replaceRankingBodySchema = schema({
           },
           ranking: {
             type: "number",
-            description: "Higher values appear first in browse",
+            minimum: 0,
+            description:
+              "Higher values appear first in browse. A negative value from the automated score is always a broken run, so it is rejected here rather than written.",
           },
         },
       },

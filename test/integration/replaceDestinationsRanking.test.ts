@@ -400,6 +400,46 @@ describe("when replacing the automated ranking set via PUT /destinations/ranking
     })
   })
 
+  describe("and a place is both curated and backing a world", () => {
+    let both: PlaceAttributes
+    let response: Awaited<ReturnType<typeof replace>>
+
+    beforeEach(async () => {
+      await seedWorld("bothworld.dcl.eth")
+      both = await seedPlace({
+        base_position: "11,11",
+        world: true,
+        world_name: "bothworld.dcl.eth",
+        world_id: "bothworld.dcl.eth",
+        highlighted: true,
+        ranking: 1900,
+      })
+
+      response = await replace([
+        { entity_type: "place", id: both.id, ranking: 5 },
+      ]).expect(201)
+    })
+
+    // Reported once, or the caller's skip counts exceed what it sent and anything totalling them
+    // double counts.
+    it("should report it under curated only", () => {
+      expect(response.body.data.places).toMatchObject({
+        skipped_curated: [both.id],
+        skipped_world_backed: [],
+      })
+    })
+  })
+
+  describe("and a ranking is negative", () => {
+    it("should reject the request", async () => {
+      const place = await seedPlace({ base_position: "12,12" })
+
+      await replace([
+        { entity_type: "place", id: place.id, ranking: -1 },
+      ]).expect(400)
+    })
+  })
+
   describe("and the payload names a destination that does not exist", () => {
     it("should report it as missing", async () => {
       const absent = randomUUID()
