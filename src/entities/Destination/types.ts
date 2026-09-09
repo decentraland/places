@@ -119,3 +119,37 @@ export type DestinationListClientOptions = {
 }
 
 export { PlaceListOrderBy as DestinationsListOrderBy }
+
+/**
+ * One destination's ranking for a single run of the automated score.
+ *
+ * `entity_type` decides which table and which id shape applies: a Genesis City scene is addressed
+ * by its place UUID, a world by its name lowercased, which is the world's id. A world is never
+ * addressed by place id, because several catalogue places can back one world and none of them is
+ * the world.
+ */
+export type ReplaceRankingEntry = {
+  entity_type: "place" | "world"
+  id: string
+  ranking: number
+}
+
+export type ReplaceRankingBody = {
+  entries: ReplaceRankingEntry[]
+}
+
+export type ReplaceRankingResult = {
+  places: {
+    applied: number
+    cleared: number
+    skipped_curated: string[]
+    skipped_world_backed: string[]
+    skipped_missing: string[]
+  }
+  worlds: {
+    applied: number
+    cleared: number
+    skipped_curated: string[]
+    skipped_missing: string[]
+  }
+}
