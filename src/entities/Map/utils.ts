@@ -75,7 +75,9 @@ export function allPlacesWithAggregates(
       user_count =
         (worldsLiveData?.perWorld &&
           worldsLiveData.perWorld.find(
-            (world) => world.worldName === place.world_name
+            (world) =>
+              world.worldName?.toLowerCase() != null &&
+              world.worldName.toLowerCase() === place.world_name?.toLowerCase()
           )?.users) ||
         0
       // TODO: Get Worlds user visits
