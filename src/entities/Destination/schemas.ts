@@ -134,6 +134,53 @@ export const getDestinationsListQuerySchema = schema({
   },
 })
 
+/**
+ * A run of the automated score is one request, so the cap bounds how much a single call may
+ * rewrite. It sits far above the real set, which was 122 destinations on 2026-09-09, and exists
+ * because an unbounded bulk write that also clears what it omits is not something to leave open.
+ */
+const MAX_RANKING_ENTRIES = 5000
+
+export const replaceRankingBodySchema = schema({
+  type: "object",
+  description:
+    "The complete ranked set produced by one run of the automated score",
+  additionalProperties: false,
+  required: ["entries"] as const,
+  properties: {
+    entries: {
+      type: "array",
+      maxItems: MAX_RANKING_ENTRIES,
+      description:
+        "Every destination that ranks in this run. Any automated ranking absent from this list is cleared.",
+      items: {
+        type: "object",
+        additionalProperties: false,
+        required: ["entity_type", "id", "ranking"] as const,
+        properties: {
+          entity_type: {
+            type: "string",
+            enum: ["place", "world"],
+            description:
+              "Which table and id shape applies: a place UUID, or a world name lowercased",
+          },
+          id: {
+            type: "string",
+            minLength: 1,
+            maxLength: 255,
+            description:
+              "Place UUID for a Genesis City scene, lowercased world name for a world",
+          },
+          ranking: {
+            type: "number",
+            description: "Higher values appear first in browse",
+          },
+        },
+      },
+    },
+  },
+})
+
 export const destinationSchema = placeSchema
 
 export const destinationResponseSchema = schema.api(destinationSchema)

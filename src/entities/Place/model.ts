@@ -921,9 +921,115 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Store a new deployment revision on an existing place, rejecting the write when the stored row
-   * already holds a newer revision. Returns the number of updated rows: 0 means the write was stale.
+   * Classify the requested ids so a set replace can report what it did not write, and why.
+   *
+   * Three outcomes need to stay apart because they call for different follow-up: a curated place
+   * was deliberately left alone, a missing one is a mismatch between the export and the catalogue,
+   * and a place backing a world is a category error on the caller's side. Collapsing them into one
+   * count loses exactly the distinction the caller needs to act on.
    */
+  static async classifyForRankingReplace(ids: string[]): Promise<{
+    writable: string[]
+    curated: string[]
+    world_backed: string[]
+    missing: string[]
+  }> {
+    if (ids.length === 0) {
+      return { writable: [], curated: [], world_backed: [], missing: [] }
+    }
+
+    const rows = await this.namedQuery<{
+      id: string
+      highlighted: boolean
+      exclude_from_ranking: boolean
+      world: boolean
+    }>(
+      "classify_for_ranking_replace",
+      SQL`
+        SELECT "id", "highlighted", "exclude_from_ranking", "world"
+        FROM ${table(this)}
+        WHERE "id" IN ${values(ids)}
+      `
+    )
+
+    const found = new Set(rows.map((row) => row.id))
+
+    return {
+      writable: rows
+        .filter(
+          (row) => !row.highlighted && !row.exclude_from_ranking && !row.world
+        )
+        .map((row) => row.id),
+      curated: rows
+        .filter((row) => row.highlighted || row.exclude_from_ranking)
+        .map((row) => row.id),
+      world_backed: rows.filter((row) => row.world).map((row) => row.id),
+      missing: ids.filter((id) => !found.has(id)),
+    }
+  }
+
+  /**
+   * Write the rankings of one run and clear every automated ranking the run did not name.
+   *
+   * This is what makes the export authoritative for the whole non-curated population rather than
+   * only for the rows it sends. Without the clear, a destination that qualified once and later
+   * dropped out keeps its number forever, which is how the retired legacy feed left values above
+   * the current maximum sitting at the top of the browse order.
+   *
+   * The clear deliberately reaches rows the apply refuses to write. A place backing a world is
+   * never given a ranking, because browse orders worlds by their own column and would never read
+   * it, but one already carrying a stale value should lose it.
+   *
+   * Curation is protected by the predicate rather than by the caller. A clear-what-is-missing
+   * operation is far more dangerous than a single write if it ever reaches the featured shelf, so
+   * the guarantee lives in the same statement as the write.
+   */
+  static async applyRankingReplace(
+    entries: { id: string; ranking: number }[]
+  ): Promise<{ applied: number; cleared: number }> {
+    const now = new Date()
+    let applied = 0
+
+    if (entries.length > 0) {
+      // places.id is character(36), so the incoming ids are bound as bpchar to keep both sides
+      // under the same padding rules. As uuid or text the comparison either errors outright or
+      // rtrims only the column side, and an id shorter than 36 characters would match nothing.
+      const incoming = join(
+        entries.map(
+          (entry) => SQL`(${entry.id}::bpchar, ${entry.ranking}::float)`
+        ),
+        SQL`, `
+      )
+      applied = await this.namedRowCount(
+        "apply_ranking_replace",
+        SQL`
+          UPDATE ${table(this)} AS p
+          SET "ranking" = incoming.ranking, "updated_at" = ${now}
+          FROM (VALUES ${incoming}) AS incoming(id, ranking)
+          WHERE p."id" = incoming.id
+            AND p."highlighted" IS FALSE
+            AND p."exclude_from_ranking" IS FALSE
+            AND p."world" IS FALSE
+        `
+      )
+    }
+
+    const keep = entries.map((entry) => entry.id)
+    const cleared = await this.namedRowCount(
+      "clear_ranking_replace",
+      SQL`
+        UPDATE ${table(this)}
+        SET "ranking" = 0, "updated_at" = ${now}
+        WHERE "ranking" IS DISTINCT FROM 0
+          AND "highlighted" IS FALSE
+          AND "exclude_from_ranking" IS FALSE
+          ${conditional(keep.length > 0, SQL`AND "id" NOT IN ${values(keep)}`)}
+      `
+    )
+
+    return { applied, cleared }
+  }
+
   /**
    * Write a ranking on behalf of the automated score, and report whether it landed.
    *
@@ -949,6 +1055,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     )
   }
 
+  /**
+   * Store a new deployment revision on an existing place, rejecting the write when the stored row
+   * already holds a newer revision. Returns the number of updated rows: 0 means the write was stale.
+   */
   static async updatePlaceFromDeployment(
     place: Partial<PlaceAttributes>,
     attributes: Array<keyof PlaceAttributes>

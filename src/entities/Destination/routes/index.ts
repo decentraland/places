@@ -4,6 +4,7 @@ import env from "decentraland-gatsby/dist/utils/env"
 
 import { getDestinationsList } from "./getDestinationsList"
 import { getDestinationsListById } from "./getDestinationsListById"
+import { replaceRanking } from "./replaceRanking"
 
 export const DECENTRALAND_URL = env("DECENTRALAND_URL", "")
 
@@ -27,4 +28,5 @@ export default routes((router) => {
   )
   router.get("/destinations", getDestinationsList)
   router.post("/destinations", getDestinationsListById)
+  router.put("/destinations/ranking", replaceRanking)
 }, {})

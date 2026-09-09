@@ -739,6 +739,95 @@ export default class WorldModel extends Model<WorldAttributes> {
   }
 
   /**
+   * Classify the requested world ids so a set replace can report what it did not write, and why.
+   *
+   * A curated world was deliberately left alone; a missing one is a mismatch between the export and
+   * the catalogue. Those need different follow-up, so they do not collapse into one count.
+   */
+  static async classifyForRankingReplace(
+    ids: string[]
+  ): Promise<{ writable: string[]; curated: string[]; missing: string[] }> {
+    if (ids.length === 0) {
+      return { writable: [], curated: [], missing: [] }
+    }
+
+    const rows = await this.namedQuery<{
+      id: string
+      highlighted: boolean
+      exclude_from_ranking: boolean
+    }>(
+      "classify_for_ranking_replace",
+      SQL`
+        SELECT "id", "highlighted", "exclude_from_ranking"
+        FROM ${table(this)}
+        WHERE "id" IN ${values(ids)}
+      `
+    )
+
+    const found = new Set(rows.map((row) => row.id))
+
+    return {
+      writable: rows
+        .filter((row) => !row.highlighted && !row.exclude_from_ranking)
+        .map((row) => row.id),
+      curated: rows
+        .filter((row) => row.highlighted || row.exclude_from_ranking)
+        .map((row) => row.id),
+      missing: ids.filter((id) => !found.has(id)),
+    }
+  }
+
+  /**
+   * Write the rankings of one run and clear every automated ranking the run did not name.
+   *
+   * The counterpart of the places method, and the same reasoning: without the clear, a world that
+   * qualified once and later dropped out keeps its number forever. Curation is protected by the
+   * predicate rather than by the caller, because clearing what is missing is far more dangerous
+   * than a single write if it ever reaches the featured shelf.
+   */
+  static async applyRankingReplace(
+    entries: { id: string; ranking: number }[]
+  ): Promise<{ applied: number; cleared: number }> {
+    const now = new Date()
+    let applied = 0
+
+    if (entries.length > 0) {
+      const incoming = join(
+        entries.map(
+          (entry) => SQL`(${entry.id}::text, ${entry.ranking}::float)`
+        ),
+        SQL`, `
+      )
+      applied = await this.namedRowCount(
+        "apply_ranking_replace",
+        SQL`
+          UPDATE ${table(this)} AS w
+          SET "ranking" = incoming.ranking, "updated_at" = ${now}
+          FROM (VALUES ${incoming}) AS incoming(id, ranking)
+          WHERE w."id" = incoming.id
+            AND w."highlighted" IS FALSE
+            AND w."exclude_from_ranking" IS FALSE
+        `
+      )
+    }
+
+    const keep = entries.map((entry) => entry.id)
+    const cleared = await this.namedRowCount(
+      "clear_ranking_replace",
+      SQL`
+        UPDATE ${table(this)}
+        SET "ranking" = 0, "updated_at" = ${now}
+        WHERE "ranking" IS DISTINCT FROM 0
+          AND "highlighted" IS FALSE
+          AND "exclude_from_ranking" IS FALSE
+          ${conditional(keep.length > 0, SQL`AND "id" NOT IN ${values(keep)}`)}
+      `
+    )
+
+    return { applied, cleared }
+  }
+
+  /**
    * Write a ranking on behalf of the automated score, and report whether it landed.
    *
    * The route refuses a curated world before reaching here, but that check reads the row and the

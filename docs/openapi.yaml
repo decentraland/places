@@ -1608,6 +1608,144 @@ paths:
         "400":
           $ref: "#/components/responses/BadRequest"
 
+  /destinations/ranking:
+    put:
+      tags:
+        - Destinations
+      summary: Replace the automated ranking set 🔒 (Service token)
+      security:
+        - ServiceToken: []
+      description: |
+        Replace the whole automated ranking set in one transaction: every ranking in the payload is
+        written, and every automated ranking absent from it is cleared.
+
+        This exists because a per-row write can only say what does rank. The daily score rebuilds
+        its eligible set from scratch, but it has no way to say what stopped ranking, so a
+        destination that qualified yesterday and not today keeps its number forever. That is how
+        the retired legacy feed left values above the current maximum sitting at the top of browse
+        order.
+
+        Both halves share one transaction. A clear followed by a separate write would leave a
+        window where the entire non-curated population reads as unranked, and browse requests
+        landing in it would see no order at all.
+
+        **Curated destinations are never touched**, by the write or by the clear. Anything
+        `highlighted` or carrying `exclude_from_ranking` keeps its ranking exactly as it is, and
+        that is enforced in the same statement as the write rather than trusted to the caller.
+
+        A place backing a world is never given a ranking, because browse orders worlds by their own
+        column and would never read it. One that already carries a stale value does get cleared.
+
+        Send each destination once. A repeated id is a broken run rather than a row to skip, so the
+        whole request is rejected with a 400 before anything is written.
+
+        **Authentication:**
+        Accepts the value of either the `DATA_TEAM_AUTH_TOKEN` or the `PLACES_ADMIN_AUTH_TOKEN`
+        environment variable in the Authorization header.
+      operationId: replaceDestinationsRanking
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+                - entries
+              properties:
+                entries:
+                  type: array
+                  maxItems: 5000
+                  items:
+                    type: object
+                    additionalProperties: false
+                    required:
+                      - entity_type
+                      - id
+                      - ranking
+                    properties:
+                      entity_type:
+                        type: string
+                        enum: [place, world]
+                      id:
+                        type: string
+                        description: |
+                          Place UUID for a Genesis City scene, lowercased world name for a world. A
+                          world is never addressed by place id: several catalogue places can back
+                          one world and none of them is the world.
+                      ranking:
+                        type: number
+                        description: Higher values appear first in browse
+            example:
+              entries:
+                - entity_type: place
+                  id: ac7f4d9a-4265-4614-a94e-952f1aeea6c9
+                  ranking: 122
+                - entity_type: world
+                  id: gather.dcl.eth
+                  ranking: 121
+      responses:
+        "201":
+          description: |
+            The set was replaced. The counts and the skipped ids are for the caller's log: `applied`
+            and `cleared` say how much moved, and the skipped lists say what did not and why, which
+            need different follow-up. A curated destination was deliberately left alone, a missing
+            one is a mismatch between the caller's set and the catalogue, and a world-backed place
+            is a category error in the payload.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      places:
+                        type: object
+                        properties:
+                          applied:
+                            type: integer
+                          cleared:
+                            type: integer
+                          skipped_curated:
+                            type: array
+                            items:
+                              type: string
+                          skipped_world_backed:
+                            type: array
+                            items:
+                              type: string
+                          skipped_missing:
+                            type: array
+                            items:
+                              type: string
+                      worlds:
+                        type: object
+                        properties:
+                          applied:
+                            type: integer
+                          cleared:
+                            type: integer
+                          skipped_curated:
+                            type: array
+                            items:
+                              type: string
+                          skipped_missing:
+                            type: array
+                            items:
+                              type: string
+        "400":
+          description: |
+            The payload is malformed, or it names the same destination twice. Nothing is written.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
   /world_names:
     get:
       tags:
