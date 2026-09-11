@@ -36,9 +36,11 @@
  * includeUndeployed flag that the HTTP handler never sets. Until it does, and for removals older than
  * that window, this repair cannot prove full coverage and so does not try.
  *
- * The one gap that leaves is a scene the world serves that no place row represents. It is reported per
- * world as NEEDS REBUILD: bin/rebuildWorldPlaces.ts writes place rows directly and never consults
- * these tables, so it fixes those without any guard being relaxed.
+ * The one gap that leaves is a scene the world serves that no place row represents, reported per world
+ * as UNREPRESENTED. This script cannot close it -- it only ever re-enables a row that already exists --
+ * but bin/rebuildWorldPlaces.ts writes place rows directly and never consults these tables, so it
+ * closes them without any guard being relaxed. The report states what was found and leaves the choice
+ * of tool to the operator rather than prescribing another destructive run per row.
  *
  * Operational precondition: no deployment for these worlds may still be undelivered or redeliverable
  * from before the repair. A rejected deployment still disables active places it supersedes, so a
@@ -62,6 +64,7 @@
  * Options:
  *   --apply                  Commit the repair. Without it the run is a dry run and rolls back.
  *   --dry-run                Ask for a dry run explicitly, which is also the default
+ *   --verbose                Also list the rows left alone: correctly disabled, and undecided
  *   --limit N                Repair at most N worlds
  *   --world-name NAME        Repair only a specific world
  *   --connection-string URL  Override the CONNECTION_STRING environment variable
@@ -76,8 +79,12 @@ import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
-import { forTerminal } from "./scriptTerminalText"
+import {
+  ScriptArgs,
+  parseContentServerUrl,
+  parseScriptArgs,
+} from "./scriptArgs"
+import { describeError, forTerminal } from "./scriptTerminalText"
 import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason } from "../src/entities/Place/types"
@@ -133,7 +140,16 @@ export type WorldRepair = {
    * resolve, and which of the two is stale is not something this repair can tell.
    */
   footprintTaken: DisabledPlace[]
-  stillGone: number
+  /**
+   * Rows with no deployment id whose parcels another place already holds. Nothing was established
+   * about them: without an identity the only way to match a legacy row is its footprint, and that
+   * match is not attempted once the parcels are taken. Reported as undecided rather than as a served
+   * scene being blocked, which is what a world redeployed and undeployed many times over accumulates
+   * and is usually nothing at all.
+   */
+  legacyUndecidable: DisabledPlace[]
+  /** Rows whose content the world no longer serves. Correct as they are; the largest bucket by far. */
+  stillGone: DisabledPlace[]
   /**
    * Scenes the world serves that no enabled or re-enabled place represents. The repair cannot create
    * these -- it only ever re-enables a row that already exists -- and the durable guards it leaves
@@ -151,6 +167,8 @@ type Stats = {
   alreadyRepresented: number
   baseSquatted: number
   footprintTaken: number
+  stillGone: number
+  legacyUndecidable: number
   servedWithoutPlace: number
   errored: number
 }
@@ -183,7 +201,7 @@ class DryRunRollback extends Error {
 // ── Args ───────────────────────────────────────────────────────────────
 
 function parseArgs(): ScriptArgs {
-  return parseScriptArgs(process.argv.slice(2))
+  return parseScriptArgs(process.argv.slice(2), ["--verbose"])
 }
 
 // ── Content server ─────────────────────────────────────────────────────
@@ -388,21 +406,19 @@ async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
  * every later deployment touching that parcel would then find two overlaps where the code expects
  * one.
  */
-async function findOccupyingPlaces(worldId: string): Promise<
-  Array<{
-    deployment_id: string | null
-    base_position: string
-    positions: string[]
-  }>
-> {
-  return PlaceModel.namedQuery<{
-    deployment_id: string | null
-    base_position: string
-    positions: string[]
-  }>(
+type OccupyingPlace = {
+  deployment_id: string | null
+  base_position: string
+  positions: string[]
+  /** As the pg parser returns it, like DisabledPlace.deployed_at. */
+  deployed_at: Date | string
+}
+
+async function findOccupyingPlaces(worldId: string): Promise<OccupyingPlace[]> {
+  return PlaceModel.namedQuery<OccupyingPlace>(
     "repair_find_occupying_places",
     SQL`
-      SELECT "deployment_id", "base_position", "positions"
+      SELECT "deployment_id", "base_position", "positions", "deployed_at"
       FROM ${table(PlaceModel)}
       WHERE "world" IS TRUE
         AND "world_id" = ${worldId}
@@ -411,6 +427,15 @@ async function findOccupyingPlaces(worldId: string): Promise<
         })
     `
   )
+}
+
+/**
+ * A stored timestamp as a number, however the driver handed it over. The gatsby pg parser renders a
+ * `timestamp` column as an ISO string by appending Z, so every value read here shares one clock --
+ * and the script refuses to run outside UTC, which is what keeps that true of values it writes.
+ */
+function asMillis(value: Date | string): number {
+  return value instanceof Date ? value.getTime() : Date.parse(value)
 }
 
 function sameFootprint(left: string[], right: string[]): boolean {
@@ -468,6 +493,7 @@ export async function repairWorld(
     const alreadyRepresented: DisabledPlace[] = []
     const baseSquatted: DisabledPlace[] = []
     const footprintTaken: DisabledPlace[] = []
+    const legacyUndecidable: DisabledPlace[] = []
     const stillGonePlaces: DisabledPlace[] = []
 
     // A scene whose place row was disabled by this bug gets a brand new row from the ingestion path
@@ -490,6 +516,33 @@ export async function repairWorld(
     )
     const takes = (place: DisabledPlace): boolean =>
       place.positions.some((position) => positionsTaken.has(position))
+
+    /**
+     * Whether a place already standing here rules this row out.
+     *
+     * A base anchors one scene and two scenes cannot hold the same parcel, so a row that collides with
+     * an occupant which is *newer* than it cannot be the live one -- the occupant is. That is the same
+     * judgement hasNewerActiveWorldDeployment makes on the deployment path, and it decides most of what
+     * would otherwise be reported as undecided: a world redeployed in place stacks older revisions at
+     * one base, and every one of them loses to the row standing there now.
+     *
+     * The reverse says nothing. If every collider is older, this row may be the live one and the
+     * standing rows stale, which is exactly the case no local record can settle.
+     */
+    const supersededByOccupant = (place: DisabledPlace): boolean => {
+      const placeAt = asMillis(place.deployed_at)
+      if (!Number.isFinite(placeAt)) return false
+      return occupying.some((occupant) => {
+        const occupantAt = asMillis(occupant.deployed_at)
+        if (!Number.isFinite(occupantAt) || occupantAt <= placeAt) return false
+        return (
+          occupant.base_position === place.base_position ||
+          (occupant.positions || []).some((position) =>
+            place.positions.includes(position)
+          )
+        )
+      })
+    }
     const reserve = (place: DisabledPlace): void => {
       basesTaken.add(place.base_position)
       place.positions.forEach((position) => positionsTaken.add(position))
@@ -539,12 +592,15 @@ export async function repairWorld(
     }
 
     for (const place of legacy) {
-      if (basesTaken.has(place.base_position)) {
-        baseSquatted.push(place)
-        continue
-      }
-      if (takes(place)) {
-        footprintTaken.push(place)
+      // No identity, and no footprint match attempted below because the parcels are already held. So
+      // whether the world still serves this row's content is simply unknown -- saying it "matches a
+      // served scene" would assert a check that never ran.
+      if (basesTaken.has(place.base_position) || takes(place)) {
+        if (supersededByOccupant(place)) {
+          stillGonePlaces.push(place)
+        } else {
+          legacyUndecidable.push(place)
+        }
         continue
       }
 
@@ -712,8 +768,19 @@ export async function repairWorld(
     // only thing lowering a watermark would have bought, and it does not need a watermark -- see
     // servedWithoutPlace below and bin/rebuildWorldPlaces.ts, which writes rows directly and never
     // consults these tables.
+    // An occupying row with no deployment id claims nothing, so a served scene it stands for would
+    // otherwise read as one no place represents. Footprint and base are the only handle a legacy row
+    // offers -- the same handle the legacy match above uses -- so a scene they fit is represented, and
+    // saying otherwise would send an operator to rebuild a world whose place is already there.
+    const legacyOccupants = occupying.filter((place) => !place.deployment_id)
     const servedWithoutPlace = served.filter(
-      (scene) => !claimed.has(scene.entityId)
+      (scene) =>
+        !claimed.has(scene.entityId) &&
+        !legacyOccupants.some(
+          (place) =>
+            place.base_position === scene.base &&
+            sameFootprint(scene.parcels, place.positions || [])
+        )
     )
 
     const repair: WorldRepair = {
@@ -724,7 +791,8 @@ export async function repairWorld(
       alreadyRepresented,
       baseSquatted,
       footprintTaken,
-      stillGone: stillGonePlaces.length,
+      legacyUndecidable,
+      stillGone: stillGonePlaces,
       servedWithoutPlace,
     }
 
@@ -742,14 +810,19 @@ export async function repairWorld(
 
 // ── Reporting ──────────────────────────────────────────────────────────
 
-function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
+function reportWorld(
+  worldId: string,
+  repair: WorldRepair,
+  dryRun: boolean,
+  verbose: boolean
+) {
   const prefix = dryRun ? "  [DRY-RUN] would" : "  "
   const reenabled =
     repair.reenabledByIdentity.length + repair.reenabledByFootprint.length
 
   if (reenabled === 0) {
     logger.log(
-      `  Nothing to re-enable (${repair.stillGone} place(s) correctly disabled)`
+      `  Nothing to re-enable (${repair.stillGone.length} correctly disabled, ${repair.legacyUndecidable.length} undecided)`
     )
   }
 
@@ -773,7 +846,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
         place.title
       )}" at ${forTerminal(
         place.base_position
-      )} sits at a served base but its stored footprint does not match that scene; rebuild this world with bin/rebuildWorldPlaces.ts`
+      )} sits at a served base, but its stored footprint is not that scene's`
     )
   }
 
@@ -783,7 +856,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
         place.base_position
       )} disabled as an opt-out: the world serves ${forTerminal(
         scene.entityId
-      )} at it with placesConfig.optOut, so re-enabling it would list a place its owner asked to hide. Recorded as opt_out rather than undeployment, so it still reserves its parcels.`
+      )} at it with placesConfig.optOut. Recorded as opt_out rather than undeployment, so it still reserves its parcels.`
     )
   }
 
@@ -791,7 +864,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  ALREADY REPRESENTED: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} is covered by a place already standing in this world -- enabled, or disabled as an opt-out -- holding the same deployment; nothing to do`
+      )} is covered by a place already standing here holding the same deployment; nothing to do`
     )
   }
 
@@ -799,7 +872,7 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} matches a served scene, but an enabled place holds that base with a deployment the world does not serve. The world still shows stale content; rebuild it with bin/rebuildWorldPlaces.ts, then re-run this.`
+      )} matches a served scene, but a place already standing here holds that base with a deployment the world does not serve`
     )
   }
 
@@ -807,19 +880,38 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
     logger.log(
       `  NEEDS REVIEW: "${forTerminal(place.title)}" at ${forTerminal(
         place.base_position
-      )} matches a served scene, but a place already standing in this world holds one of its parcels (${forTerminal(
+      )} matches a served scene, but a place already standing here holds one of its parcels (${forTerminal(
         place.positions.join(" ")
-      )}). Re-enabling it would leave two active places on one parcel; clear the stale row first, or rebuild the world with bin/rebuildWorldPlaces.ts, then re-run this.`
+      )})`
     )
+  }
+
+  if (verbose) {
+    for (const place of repair.stillGone) {
+      logger.log(
+        `  correctly disabled: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )}, deployed ${forTerminal(String(place.deployed_at))}`
+      )
+    }
+    for (const place of repair.legacyUndecidable) {
+      logger.log(
+        `  undecided: "${forTerminal(place.title)}" at ${forTerminal(
+          place.base_position
+        )}, deployed ${forTerminal(
+          String(place.deployed_at)
+        )} — no deployment id, and its parcels are held by a place standing here that is no newer than it`
+      )
+    }
   }
 
   for (const scene of repair.servedWithoutPlace) {
     logger.log(
-      `  NEEDS REBUILD: the world serves ${forTerminal(
+      `  UNREPRESENTED: the world serves ${forTerminal(
         scene.entityId
-      )} at ${forTerminal(
-        scene.base
-      )} and no place row represents it. This repair only re-enables rows that exist, and the undeployment watermarks it leaves standing will reject a redelivery of that deployment; rebuild this world with bin/rebuildWorldPlaces.ts.`
+      )} at ${forTerminal(scene.base)}, deployed ${forTerminal(
+        scene.deployedAt.toISOString()
+      )}, and no place row represents it`
     )
   }
 }
@@ -827,16 +919,21 @@ function reportWorld(worldId: string, repair: WorldRepair, dryRun: boolean) {
 // ── Main ───────────────────────────────────────────────────────────────
 
 async function main(): Promise<number> {
-  const { dryRun, limit, worldName, connectionString } = parseArgs()
+  const { dryRun, flags, limit, worldName, connectionString } = parseArgs()
+  const verbose = flags.has("--verbose")
 
   if (connectionString) {
     process.env.CONNECTION_STRING = connectionString
   }
 
-  const worldsContentServerUrl = env(
-    "WORLDS_CONTENT_SERVER_URL",
-    "https://worlds-content-server.decentraland.org"
-  ).replace(/\/+$/, "")
+  // Checked before the database is touched and before any world is read, so a misconfigured value
+  // costs one line instead of one failure per world.
+  const worldsContentServerUrl = parseContentServerUrl(
+    env(
+      "WORLDS_CONTENT_SERVER_URL",
+      "https://worlds-content-server.decentraland.org"
+    )
+  )
 
   logger.log("=".repeat(60))
   logger.log("Repair Undeployed World Places")
@@ -881,6 +978,8 @@ async function main(): Promise<number> {
     alreadyRepresented: 0,
     baseSquatted: 0,
     footprintTaken: 0,
+    stillGone: 0,
+    legacyUndecidable: 0,
     servedWithoutPlace: 0,
     errored: 0,
   }
@@ -912,22 +1011,23 @@ async function main(): Promise<number> {
           dryRun
         )
 
-        reportWorld(worldId, repair, dryRun)
+        reportWorld(worldId, repair, dryRun, verbose)
 
         stats.worlds++
         stats.reenabled +=
           repair.reenabledByIdentity.length + repair.reenabledByFootprint.length
+        stats.stillGone += repair.stillGone.length
         stats.backfilled += repair.reenabledByFootprint.length
         stats.ambiguous += repair.ambiguous.length
         stats.optedOut += repair.optedOut.length
         stats.alreadyRepresented += repair.alreadyRepresented.length
         stats.baseSquatted += repair.baseSquatted.length
         stats.footprintTaken += repair.footprintTaken.length
+        stats.legacyUndecidable += repair.legacyUndecidable.length
         stats.servedWithoutPlace += repair.servedWithoutPlace.length
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
         logger.error(
-          `  Error repairing ${forTerminal(worldId)}: ${forTerminal(message)}`
+          `  Error repairing ${forTerminal(worldId)}: ${describeError(error)}`
         )
         stats.errored++
       }
@@ -949,6 +1049,8 @@ async function main(): Promise<number> {
     logger.log(`Already represented:  ${stats.alreadyRepresented}`)
     logger.log(`Base squatted:        ${stats.baseSquatted}`)
     logger.log(`Parcel held:          ${stats.footprintTaken}`)
+    logger.log(`Legacy, undecided:    ${stats.legacyUndecidable}`)
+    logger.log(`Correctly disabled:   ${stats.stillGone}`)
     logger.log(`Served, no place row: ${stats.servedWithoutPlace}`)
     logger.log(`Errored worlds:       ${stats.errored}`)
     logger.log("=".repeat(60))
@@ -977,7 +1079,7 @@ if (require.main === module) {
       if (errored > 0) process.exit(1)
     })
     .catch((error) => {
-      logger.error("Script failed:", error)
+      logger.error(`Script failed: ${describeError(error)}`, error)
       process.exit(1)
     })
 }
