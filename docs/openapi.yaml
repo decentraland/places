@@ -1385,7 +1385,8 @@ paths:
           in: query
           description: |
             Include the list of connected user wallet addresses for each destination.
-            When enabled, adds `connected_addresses` array to each destination.
+            When enabled, adds `connected_addresses` to each destination: an array of
+            addresses, or null when comms-gatekeeper could not be reached for it.
           required: false
           schema:
             type: boolean
@@ -1533,7 +1534,9 @@ paths:
             minLength: 3
         - name: with_connected_users
           in: query
-          description: Include connected user wallet addresses for each destination
+          description: |
+            Include connected user wallet addresses for each destination.
+            Null for a destination comms-gatekeeper could not be reached for.
           required: false
           schema:
             type: boolean
@@ -2378,9 +2381,12 @@ components:
           example: "7"
         connected_addresses:
           type: array
+          nullable: true
           description: |
             List of wallet addresses currently connected to this place.
             Only included when `with_connected_users=true` query parameter is set.
+            Null when comms-gatekeeper could not be reached: an empty array means nobody
+            is connected, null means the connected users are unknown.
           items:
             type: string
             pattern: "^0x[a-fA-F0-9]{40}$"
@@ -2536,9 +2542,12 @@ components:
           example: "7"
         connected_addresses:
           type: array
+          nullable: true
           description: |
             List of wallet addresses currently connected to this world.
             Only included when `with_connected_users=true` query parameter is set.
+            Null when comms-gatekeeper could not be reached: an empty array means nobody
+            is connected, null means the connected users are unknown.
           items:
             type: string
             pattern: "^0x[a-fA-F0-9]{40}$"

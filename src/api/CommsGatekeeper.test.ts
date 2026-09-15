@@ -64,6 +64,43 @@ describe("CommsGatekeeper", () => {
     })
   })
 
+  describe("when comms-gatekeeper cannot be reached", () => {
+    let consoleErrorMock: jest.SpyInstance
+
+    beforeEach(() => {
+      consoleErrorMock = jest
+        .spyOn(console, "error")
+        .mockImplementation(() => {})
+      fetchMock.mockRejectedValue(new Error("Connection failed"))
+    })
+
+    afterEach(() => {
+      consoleErrorMock.mockRestore()
+    })
+
+    it("should report the scene participants as unknown instead of as an empty room", async () => {
+      await expect(client.getSceneParticipants("3,3")).resolves.toBeNull()
+    })
+
+    it("should report the world participants as unknown instead of as an empty room", async () => {
+      await expect(
+        client.getWorldParticipants("down-world.dcl.eth")
+      ).resolves.toBeNull()
+    })
+
+    describe("and the same room is asked for again inside the cache window", () => {
+      beforeEach(async () => {
+        await client.getSceneParticipants("4,4")
+      })
+
+      it("should reach the service again rather than serve the failure from the cache", async () => {
+        await client.getSceneParticipants("4,4")
+
+        expect(fetchMock).toHaveBeenCalledTimes(2)
+      })
+    })
+  })
+
   describe("when a scene and a world share the same identifier", () => {
     beforeEach(async () => {
       await client.getSceneParticipants("shared")

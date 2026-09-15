@@ -1,7 +1,7 @@
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { AggregateDestinationAttributes } from "./types"
-import { destinationsWithAggregates } from "./utils"
+import { ConnectedUsersMap, destinationsWithAggregates } from "./utils"
 import { WorldLiveDataProps } from "../World/types"
 
 /**
@@ -104,6 +104,86 @@ describe("destinationsWithAggregates", () => {
 
         expect(destination.user_count).toBe(0)
       })
+    })
+  })
+
+  describe("when connected users were requested", () => {
+    const worldsLiveData: WorldLiveDataProps = {
+      perWorld: [{ worldName: "spacerunner.dcl.eth", users: 3 }],
+      totalUsers: 3,
+    }
+
+    const aggregatesWithPresence = (connectedUsersMap: ConnectedUsersMap) =>
+      destinationsWithAggregates(
+        [worldDestination("SpaceRunner.dcl.eth")],
+        [],
+        {},
+        worldsLiveData,
+        {
+          withRealmsDetail: false,
+          withConnectedUsers: true,
+          connectedUsersMap,
+          withLiveEvents: false,
+        }
+      )
+
+    describe("and comms-gatekeeper listed the people in the room", () => {
+      it("should return their addresses", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", ["0xabc", "0xdef"]]])
+        )
+
+        expect(destination.connected_addresses).toEqual(["0xabc", "0xdef"])
+      })
+    })
+
+    describe("and comms-gatekeeper answered that the room is empty", () => {
+      it("should return an empty list, not null", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", []]])
+        )
+
+        expect(destination.connected_addresses).toEqual([])
+      })
+    })
+
+    describe("and comms-gatekeeper could not be reached for the destination", () => {
+      it("should return null so the room is not read as empty", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", null]])
+        )
+
+        expect(destination.connected_addresses).toBeNull()
+      })
+
+      it("should still count the users reported by live data", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", null]])
+        )
+
+        expect(destination.user_count).toBe(3)
+      })
+    })
+
+    describe("and the destination is missing from the map altogether", () => {
+      it("should return null rather than an empty list", () => {
+        const [destination] = aggregatesWithPresence(new Map())
+
+        expect(destination.connected_addresses).toBeNull()
+      })
+    })
+  })
+
+  describe("when connected users were not requested", () => {
+    it("should leave connected_addresses out of the result", () => {
+      const [destination] = destinationsWithAggregates(
+        [worldDestination("SpaceRunner.dcl.eth")],
+        [],
+        {},
+        { perWorld: [], totalUsers: 0 }
+      )
+
+      expect(destination).not.toHaveProperty("connected_addresses")
     })
   })
 })
