@@ -71,7 +71,11 @@ export async function fetchConnectedUsersForDestinations(
   // Fetch in parallel for better performance
   const fetchPromises: Promise<void>[] = []
 
-  // Fetch world participants
+  // These catches look redundant, because the client already turns an unreachable comms-gatekeeper
+  // into null rather than rejecting. They are not there for that case: they bound the blast radius.
+  // This fans out one promise per destination into a Promise.all, so a single unexpected rejection
+  // would fail the whole page rather than leaving one destination's presence unknown, and presence
+  // is an enrichment that the listing should survive without.
   for (const world of worlds) {
     fetchPromises.push(
       commsGatekeeper
