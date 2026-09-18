@@ -48,12 +48,15 @@ export default class CommsGatekeeper extends API {
    * Get the list of participant wallet addresses in a scene room.
    * @param pointer - Scene base parcel (e.g., "-7,-2"). The scene ID is resolved from the catalyst.
    * @param realmName - Realm name (default: "main")
-   * @returns List of wallet addresses connected to the room
+   * @returns List of wallet addresses connected to the room, or null when comms-gatekeeper could
+   *   not be reached. An empty list and null are different answers: nobody is in the room versus we
+   *   do not know who is. Callers that decide whether to show presence have to tell them apart, so
+   *   an outage does not render as an empty scene.
    */
   async getSceneParticipants(
     pointer: string,
     realmName = "main"
-  ): Promise<string[]> {
+  ): Promise<string[] | null> {
     const cacheKey = `scene:${pointer}:${realmName}`
     const cached = CommsGatekeeper.participantsCache.get(cacheKey)
 
@@ -92,7 +95,7 @@ export default class CommsGatekeeper extends API {
         `Error fetching scene participants for pointer ${pointer}:`,
         error
       )
-      return []
+      return null
     } finally {
       clearTimeout(timeoutId)
     }
@@ -102,9 +105,10 @@ export default class CommsGatekeeper extends API {
    * Get the list of participant wallet addresses in a world room.
    * Uses realm_name parameter which is treated as a world name when no pointer is provided.
    * @param worldName - World name (e.g., "mycoolworld.dcl.eth")
-   * @returns List of wallet addresses connected to the room
+   * @returns List of wallet addresses connected to the room, or null when comms-gatekeeper could
+   *   not be reached. See `getSceneParticipants` for why the two are kept apart.
    */
-  async getWorldParticipants(worldName: string): Promise<string[]> {
+  async getWorldParticipants(worldName: string): Promise<string[] | null> {
     const cacheKey = `world:${worldName}`
     const cached = CommsGatekeeper.participantsCache.get(cacheKey)
 
@@ -140,7 +144,7 @@ export default class CommsGatekeeper extends API {
         `Error fetching world participants for ${worldName}:`,
         error
       )
-      return []
+      return null
     } finally {
       clearTimeout(timeoutId)
     }

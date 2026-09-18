@@ -1,7 +1,12 @@
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { AggregateDestinationAttributes } from "./types"
-import { destinationsWithAggregates } from "./utils"
+import {
+  ConnectedUsersMap,
+  destinationsWithAggregates,
+  fetchConnectedUsersForDestinations,
+} from "./utils"
+import CommsGatekeeper from "../../api/CommsGatekeeper"
 import { WorldLiveDataProps } from "../World/types"
 
 /**
@@ -44,6 +49,18 @@ const worldDestination = (
   user_dislike: false,
   user_favorite: false,
   user_visits: 0,
+})
+
+/** A Genesis City destination, keyed by its base parcel rather than by a world name. */
+const placeDestination = (
+  base_position: string
+): AggregateDestinationAttributes => ({
+  ...worldDestination("unused.dcl.eth"),
+  id: base_position,
+  title: `Place ${base_position}`,
+  world_name: null,
+  world: false,
+  base_position,
 })
 
 describe("destinationsWithAggregates", () => {
@@ -104,6 +121,201 @@ describe("destinationsWithAggregates", () => {
 
         expect(destination.user_count).toBe(0)
       })
+    })
+  })
+
+  describe("when connected users were requested", () => {
+    const worldsLiveData: WorldLiveDataProps = {
+      perWorld: [{ worldName: "spacerunner.dcl.eth", users: 3 }],
+      totalUsers: 3,
+    }
+
+    const aggregatesWithPresence = (connectedUsersMap: ConnectedUsersMap) =>
+      destinationsWithAggregates(
+        [worldDestination("SpaceRunner.dcl.eth")],
+        [],
+        {},
+        worldsLiveData,
+        {
+          withRealmsDetail: false,
+          withConnectedUsers: true,
+          connectedUsersMap,
+          withLiveEvents: false,
+        }
+      )
+
+    describe("and comms-gatekeeper listed the people in the room", () => {
+      it("should return their addresses", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", ["0xabc", "0xdef"]]])
+        )
+
+        expect(destination.connected_addresses).toEqual(["0xabc", "0xdef"])
+      })
+    })
+
+    describe("and comms-gatekeeper answered that the room is empty", () => {
+      it("should return an empty list, not null", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", []]])
+        )
+
+        expect(destination.connected_addresses).toEqual([])
+      })
+    })
+
+    describe("and comms-gatekeeper could not be reached for the destination", () => {
+      it("should return null so the room is not read as empty", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", null]])
+        )
+
+        expect(destination.connected_addresses).toBeNull()
+      })
+
+      it("should still count the users reported by live data", () => {
+        const [destination] = aggregatesWithPresence(
+          new Map([["SpaceRunner.dcl.eth", null]])
+        )
+
+        expect(destination.user_count).toBe(3)
+      })
+    })
+
+    describe("and the destination is missing from the map altogether", () => {
+      it("should return null rather than an empty list", () => {
+        const [destination] = aggregatesWithPresence(new Map())
+
+        expect(destination.connected_addresses).toBeNull()
+      })
+    })
+  })
+
+  describe("when connected users were not requested", () => {
+    it("should leave connected_addresses out of the result", () => {
+      const [destination] = destinationsWithAggregates(
+        [worldDestination("SpaceRunner.dcl.eth")],
+        [],
+        {},
+        { perWorld: [], totalUsers: 0 }
+      )
+
+      expect(destination).not.toHaveProperty("connected_addresses")
+    })
+  })
+})
+
+describe("fetchConnectedUsersForDestinations", () => {
+  let getSceneParticipants: jest.SpyInstance
+  let getWorldParticipants: jest.SpyInstance
+
+  beforeEach(() => {
+    const client = CommsGatekeeper.get()
+    getSceneParticipants = jest.spyOn(client, "getSceneParticipants")
+    getWorldParticipants = jest.spyOn(client, "getWorldParticipants")
+    jest.spyOn(CommsGatekeeper, "get").mockReturnValue(client)
+  })
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  describe("when a room answers with nobody in it", () => {
+    beforeEach(() => {
+      getSceneParticipants.mockResolvedValue([])
+    })
+
+    it("should map the place to an empty list", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("1,1"),
+      ])
+
+      expect(map.get("1,1")).toEqual([])
+    })
+  })
+
+  describe("when comms-gatekeeper cannot be reached", () => {
+    beforeEach(() => {
+      getSceneParticipants.mockResolvedValue(null)
+    })
+
+    // The whole point of the null: a caller has to be able to tell "nobody is here" from "we could
+    // not find out", and an empty list reads as the first.
+    it("should map the place to null rather than an empty list", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("2,2"),
+      ])
+
+      expect(map.get("2,2")).toBeNull()
+    })
+  })
+
+  describe("when one destination fails and another does not", () => {
+    beforeEach(() => {
+      getSceneParticipants.mockResolvedValue(null)
+      getWorldParticipants.mockResolvedValue(["0xabc"])
+    })
+
+    it("should still carry the reading it could take", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("3,3"),
+        worldDestination("Some.dcl.eth"),
+      ])
+
+      expect(map.get("Some.dcl.eth")).toEqual(["0xabc"])
+    })
+
+    it("should keep the failed one as unknown", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("3,3"),
+        worldDestination("Some.dcl.eth"),
+      ])
+
+      expect(map.get("3,3")).toBeNull()
+    })
+  })
+
+  describe("when one destination rejects unexpectedly", () => {
+    beforeEach(() => {
+      getSceneParticipants.mockRejectedValue(new Error("Connection failed"))
+      getWorldParticipants.mockResolvedValue(["0xabc"])
+      jest.spyOn(console, "error").mockImplementation(() => {})
+    })
+
+    // The client does not reject today, it resolves to null. This covers the case where something
+    // upstream starts rejecting anyway: one destination must not take the whole page down with it,
+    // because presence is an enrichment the listing should survive without.
+    it("should keep the rest of the page", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("4,4"),
+        worldDestination("Other.dcl.eth"),
+      ])
+
+      expect(map.get("Other.dcl.eth")).toEqual(["0xabc"])
+    })
+
+    it("should report the failed destination as unknown", async () => {
+      const map = await fetchConnectedUsersForDestinations([
+        placeDestination("4,4"),
+      ])
+
+      expect(map.get("4,4")).toBeNull()
+    })
+  })
+
+  describe("when a world is addressed", () => {
+    beforeEach(() => {
+      getWorldParticipants.mockResolvedValue([])
+    })
+
+    // Keyed by the stored name rather than the lowercased id, because that is what the caller
+    // looks the value up by.
+    it("should ask for it by its stored name", async () => {
+      await fetchConnectedUsersForDestinations([
+        worldDestination("MiXed.dcl.eth"),
+      ])
+
+      expect(getWorldParticipants).toHaveBeenCalledWith("MiXed.dcl.eth")
     })
   })
 })

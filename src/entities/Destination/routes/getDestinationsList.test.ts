@@ -168,7 +168,7 @@ describe("getDestinationsList", () => {
     })
 
     describe("and comms-gatekeeper returns an error", () => {
-      it("should return destinations with empty connected_addresses array", async () => {
+      it("should return destinations with connected_addresses as null", async () => {
         const mockCommsInstance = {
           getSceneParticipants: jest
             .fn()
@@ -196,8 +196,9 @@ describe("getDestinationsList", () => {
           url,
         })
 
-        // Should still return data without throwing
-        expect(response.body.data[0].connected_addresses).toEqual([])
+        // Still answers instead of throwing, but reports the reading as unknown so a
+        // comms-gatekeeper outage is not served as an empty room.
+        expect(response.body.data[0].connected_addresses).toBeNull()
       })
     })
   })

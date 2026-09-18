@@ -5,7 +5,13 @@ import Events from "../../api/Events"
 import { HotScene, PlaceListOrderBy } from "../Place/types"
 import { WorldLiveDataProps } from "../World/types"
 
-export type ConnectedUsersMap = Map<string, string[]>
+/**
+ * Destination identifier to the wallet addresses connected there, or null when comms-gatekeeper
+ * could not be reached for it. Null rather than an empty array so an outage is not served as an
+ * empty room: a client deciding whether to show presence needs "we don't know" to look different
+ * from "nobody is here".
+ */
+export type ConnectedUsersMap = Map<string, string[] | null>
 /**
  * Destination identifier to the name of the live event running there, or null when there is none.
  * Null rather than absent so a lookup miss and "no event" read the same way.
@@ -46,10 +52,11 @@ export function buildRealtimeUserCounts(
 /**
  * Fetches connected users for a list of destinations from comms-gatekeeper.
  * Returns a map where keys are pointer/parcel (for places) or world_name (for worlds),
- * and values are arrays of wallet addresses.
+ * and values are arrays of wallet addresses, or null for the destinations comms-gatekeeper could
+ * not answer for.
  *
  * @param destinations - Array of destination attributes (places and/or worlds)
- * @returns Promise resolving to a map of destination identifiers to wallet addresses
+ * @returns Promise resolving to a map of destination identifiers to wallet addresses or null
  */
 export async function fetchConnectedUsersForDestinations(
   destinations: AggregateDestinationAttributes[]
@@ -64,7 +71,11 @@ export async function fetchConnectedUsersForDestinations(
   // Fetch in parallel for better performance
   const fetchPromises: Promise<void>[] = []
 
-  // Fetch world participants
+  // These catches look redundant, because the client already turns an unreachable comms-gatekeeper
+  // into null rather than rejecting. They are not there for that case: they bound the blast radius.
+  // This fans out one promise per destination into a Promise.all, so a single unexpected rejection
+  // would fail the whole page rather than leaving one destination's presence unknown, and presence
+  // is an enrichment that the listing should survive without.
   for (const world of worlds) {
     fetchPromises.push(
       commsGatekeeper
@@ -77,7 +88,7 @@ export async function fetchConnectedUsersForDestinations(
             `Error fetching participants for world ${world.world_name}:`,
             error
           )
-          connectedUsersMap.set(world.world_name!, [])
+          connectedUsersMap.set(world.world_name!, null)
         })
     )
   }
@@ -95,7 +106,7 @@ export async function fetchConnectedUsersForDestinations(
             `Error fetching participants for place ${place.base_position}:`,
             error
           )
-          connectedUsersMap.set(place.base_position, [])
+          connectedUsersMap.set(place.base_position, null)
         })
     )
   }
@@ -176,13 +187,15 @@ export function destinationsWithAggregates(
       destination.realms_detail = hotScenePlaces?.realms || []
     }
 
-    let connected_addresses: string[] | undefined
+    // undefined means the caller did not ask for presence; null means it was asked for and
+    // comms-gatekeeper could not answer.
+    let connected_addresses: string[] | null | undefined
     if (options?.withConnectedUsers && options.connectedUsersMap) {
       // Use world_name for worlds, base_position for places
       const key = destination.world
         ? destination.world_name || ""
         : destination.base_position
-      connected_addresses = options.connectedUsersMap.get(key) || []
+      connected_addresses = options.connectedUsersMap.get(key) ?? null
     }
 
     // Use connected_addresses count if available and greater than hot scenes count
@@ -209,7 +222,7 @@ export function destinationsWithAggregates(
     }
 
     const result: AggregateDestinationAttributes & {
-      connected_addresses?: string[]
+      connected_addresses?: string[] | null
       live?: boolean
       live_event_name?: string | null
     } = {
@@ -219,7 +232,9 @@ export function destinationsWithAggregates(
       user_count: finalUserCount,
     }
 
-    if (connected_addresses) {
+    // Checked against undefined, not truthiness, so an unknown reading is reported as null instead
+    // of dropping the field and reading as "presence was never requested".
+    if (connected_addresses !== undefined) {
       result.connected_addresses = connected_addresses
     }
 
