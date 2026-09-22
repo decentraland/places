@@ -70,7 +70,7 @@ The service exposes a REST API under `/api` with comprehensive documentation in 
 
 - **Places**: `/api/places`, `/api/places/:id`, `/api/places/status`, `/api/places/:id/categories`, `/api/places/:id/rating`, `/api/places/:id/ranking` (service token auth via `DATA_TEAM_AUTH_TOKEN` or `PLACES_ADMIN_AUTH_TOKEN` env vars), `/api/places/:id/highlight` (admin only) (POST `/api/places` accepts array of place IDs in body)
 - **Worlds**: `/api/worlds`, `/api/world_names`
-- **Destinations**: `/api/destinations` (GET: combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are always returned first, followed by ranking value, then by specified sort order. POST: accepts array of destination IDs in body, maximum 100 IDs per request, supports all GET query parameters for additional filtering)
+- **Destinations**: `/api/destinations` (GET: combined places + worlds with enhanced filtering including SDK version and LIKE name matching; highlighted items are returned first, followed by ranking value, then by specified sort order, except under `order_by=most_active` where the live user count outranks `highlighted` and a busy destination is listed above an empty featured one. POST: accepts array of destination IDs in body, maximum 100 IDs per request, supports all GET query parameters for additional filtering)
 - **Map**: `/api/map`, `/api/map/places` (coordinate-based queries with higher limits)
 - **Categories**: `/api/categories` (with optional `target` filter for places/worlds/all)
 - **Interactions**: `/api/places/:id/likes`, `/api/places/:id/favorites` (authentication required)
