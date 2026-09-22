@@ -97,9 +97,9 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should keep the highlighted flag above the live user count", () => {
-        expect(positionOf(orderBy, "sub.highlighted DESC")).toBeLessThan(
-          positionOf(orderBy, "sub.live_user_count DESC")
+      it("should rank the live user count above the highlighted flag", () => {
+        expect(positionOf(orderBy, "sub.live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.highlighted DESC")
         )
       })
 
@@ -137,9 +137,9 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should keep the highlighted flag above the live user count", () => {
-        expect(positionOf(orderBy, "p.highlighted DESC")).toBeLessThan(
-          positionOf(orderBy, "live_user_count DESC")
+      it("should rank the live user count above the highlighted flag", () => {
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "p.highlighted DESC")
         )
       })
 
@@ -171,9 +171,9 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should keep the highlighted flag above the live user count", () => {
-        expect(positionOf(orderBy, "w.highlighted DESC")).toBeLessThan(
-          positionOf(orderBy, "live_user_count DESC")
+      it("should rank the live user count above the highlighted flag", () => {
+        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
+          positionOf(orderBy, "w.highlighted DESC")
         )
       })
 
