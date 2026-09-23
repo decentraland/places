@@ -1,6 +1,6 @@
 import { Request } from "decentraland-gatsby/dist/entities/Route/wkc/request/Request"
 
-import { requireRankingToken } from "./auth"
+import { requireAdminTokenForCuratedRanking, requireRankingToken } from "./auth"
 
 const DATA_TEAM_TOKEN = "test-data-team-token-12345"
 const ADMIN_TOKEN = "test-admin-token-67890"
@@ -87,5 +87,75 @@ describe("requireRankingToken", () => {
     await expect(() => requireRankingToken(buildCtx(""))).rejects.toThrow(
       "Invalid Authorization"
     )
+  })
+})
+
+describe("requireAdminTokenForCuratedRanking", () => {
+  const uncurated = { highlighted: false, exclude_from_ranking: false }
+  const highlighted = { highlighted: true, exclude_from_ranking: false }
+  const excluded = { highlighted: false, exclude_from_ranking: true }
+
+  describe("when the entity is neither highlighted nor excluded", () => {
+    describe("and the data team token writes a ranking", () => {
+      it("should let the automated score through", () => {
+        expect(() =>
+          requireAdminTokenForCuratedRanking(DATA_TEAM_TOKEN, uncurated, 42)
+        ).not.toThrow()
+      })
+    })
+
+    describe("and the admin token writes a ranking", () => {
+      it("should refuse a value the nightly replace would clear", () => {
+        expect(() =>
+          requireAdminTokenForCuratedRanking(ADMIN_TOKEN, uncurated, 42)
+        ).toThrow(
+          "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
+        )
+      })
+
+      it("should accept a zero, because clearing a ranking survives the clear", () => {
+        expect(() =>
+          requireAdminTokenForCuratedRanking(ADMIN_TOKEN, uncurated, 0)
+        ).not.toThrow()
+      })
+
+      it("should accept a null for the same reason", () => {
+        expect(() =>
+          requireAdminTokenForCuratedRanking(ADMIN_TOKEN, uncurated, null)
+        ).not.toThrow()
+      })
+    })
+  })
+
+  describe("when the entity is highlighted", () => {
+    it("should refuse the data team token", () => {
+      expect(() =>
+        requireAdminTokenForCuratedRanking(DATA_TEAM_TOKEN, highlighted, 42)
+      ).toThrow(
+        "The ranking of a highlighted entity is editorial and can only be changed with the admin token"
+      )
+    })
+
+    it("should accept the admin token", () => {
+      expect(() =>
+        requireAdminTokenForCuratedRanking(ADMIN_TOKEN, highlighted, 42)
+      ).not.toThrow()
+    })
+  })
+
+  describe("when the entity is excluded from the automated ranking", () => {
+    it("should refuse the data team token", () => {
+      expect(() =>
+        requireAdminTokenForCuratedRanking(DATA_TEAM_TOKEN, excluded, 42)
+      ).toThrow(
+        "This entity is excluded from the automated ranking and its ranking can only be changed with the admin token"
+      )
+    })
+
+    it("should accept the admin token", () => {
+      expect(() =>
+        requireAdminTokenForCuratedRanking(ADMIN_TOKEN, excluded, 42)
+      ).not.toThrow()
+    })
   })
 })

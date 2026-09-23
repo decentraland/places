@@ -49,12 +49,29 @@ export function isAdminToken(token: string): boolean {
  * Either state means only the admin token may move the ranking. The admin is still
  * allowed to set one by hand, because the flag says the automated score must not rank
  * this entity, not that nobody may.
+ *
+ * The reverse also holds: on a row carrying neither flag, a hand-set ranking is refused
+ * with a 400 rather than written, because the nightly set replace would clear it within
+ * hours and the caller would never learn the value did not stick.
  */
 export function requireAdminTokenForCuratedRanking(
   token: string,
-  curation: { highlighted: boolean; exclude_from_ranking: boolean }
+  curation: { highlighted: boolean; exclude_from_ranking: boolean },
+  ranking: number | null
 ): void {
   if (!curation.highlighted && !curation.exclude_from_ranking) {
+    // An editorial ranking only survives on a curated row. The nightly set replace clears every
+    // automated ranking it does not name, and it recognises curation by these two flags alone, so
+    // a hand-set value on an unmarked row is written successfully and gone by morning. Refusing it
+    // here is the honest answer: the alternative is a 201 for a write with no effect past midnight.
+    // A zero or null still passes, since clearing a ranking survives the clear by definition.
+    if (isAdminToken(token) && ranking !== null && ranking !== 0) {
+      throw new ErrorResponse(
+        Response.BadRequest,
+        "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
+      )
+    }
+
     return
   }
 

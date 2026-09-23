@@ -45,10 +45,14 @@ export async function updateRanking(
     )
   }
 
-  requireAdminTokenForCuratedRanking(token, {
-    highlighted: place.highlighted,
-    exclude_from_ranking: place.exclude_from_ranking,
-  })
+  requireAdminTokenForCuratedRanking(
+    token,
+    {
+      highlighted: place.highlighted,
+      exclude_from_ranking: place.exclude_from_ranking,
+    },
+    body.ranking
+  )
 
   const newPlace = { ...place, ranking: body.ranking }
 

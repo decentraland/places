@@ -576,6 +576,13 @@ paths:
         browsable while the automated score leaves it alone. `PLACES_ADMIN_AUTH_TOKEN` may
         still set a ranking by hand in both cases. This keeps a scheduled scoring job from
         overwriting hand-set positions.
+
+        **A hand-set ranking needs one of those two flags.** On a place carrying neither, the
+        admin token gets a 400 instead of a write: `PUT /destinations/ranking` clears every
+        automated ranking it does not name, and it recognises curation by those flags alone, so
+        the value would be gone within hours with nothing to show it ever applied. Feature the
+        place or exclude it from the ranking first. Clearing still works either way, since
+        `ranking: 0` and `ranking: null` survive the clear by definition.
       operationId: updatePlaceRanking
       parameters:
         - name: place_id
@@ -607,6 +614,18 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PlaceResponse"
+        "400":
+          description: |
+            Invalid body, or the admin token set a non-zero ranking on a place that is neither
+            highlighted nor excluded from the automated ranking, where it would not survive the
+            next set replace.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                ok: false
+                error: "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
         "401":
           description: Unauthorized - missing or invalid token
           content:
@@ -1131,6 +1150,10 @@ paths:
         team token, which gets a 403: while a world is highlighted its ranking is the order the
         curated shelf is shown in, and a world carrying `exclude_from_ranking` must stay
         browsable while the automated score leaves it alone.
+        **A hand-set ranking needs one of those two flags.** On a world carrying neither, the
+        admin token gets a 400 instead of a write, because `PUT /destinations/ranking` would
+        clear the value within hours. Feature the world or exclude it from the ranking first.
+        Clearing still works either way: `ranking: 0` and `ranking: null` survive the clear.
       operationId: updateWorldRanking
       parameters:
         - name: world_id
@@ -1162,11 +1185,17 @@ paths:
               schema:
                 $ref: "#/components/schemas/World"
         "400":
-          description: Invalid body, for example a missing ranking field
+          description: |
+            Invalid body, for example a missing ranking field, or the admin token set a non-zero
+            ranking on a world that is neither highlighted nor excluded from the automated
+            ranking, where it would not survive the next set replace.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/Error"
+              example:
+                ok: false
+                error: "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
         "401":
           $ref: "#/components/responses/Unauthorized"
         "403":

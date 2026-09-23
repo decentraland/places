@@ -494,4 +494,59 @@ describe("updateRanking", () => {
       })
     })
   })
+
+  describe("when the admin sets a ranking on a place that is neither highlighted nor excluded", () => {
+    let request: Request
+    let url: URL
+
+    beforeEach(() => {
+      findByIdWithAggregates.mockResolvedValue(uncuratedPlace)
+      updatePlace.mockResolvedValue([] as any)
+      request = new Request("http://0.0.0.0/")
+      request.headers.set("Authorization", `Bearer ${ADMIN_TOKEN}`)
+      url = new URL("https://localhost/")
+    })
+
+    // The nightly set replace recognises curation by these two flags alone, so a hand-set value
+    // on an unmarked row is written and gone by morning. A 201 for that write is a lie.
+    it("should refuse the write and say how to make it hold", async () => {
+      await expect(() =>
+        updateRanking({
+          request,
+          params: { place_id: uncuratedPlace.id },
+          body: { ranking: 1850 },
+          url,
+        } as any)
+      ).rejects.toThrow(
+        "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
+      )
+    })
+
+    it("should not write anything", async () => {
+      await expect(() =>
+        updateRanking({
+          request,
+          params: { place_id: uncuratedPlace.id },
+          body: { ranking: 1850 },
+          url,
+        } as any)
+      ).rejects.toThrow()
+
+      expect(updatePlace).not.toHaveBeenCalled()
+    })
+
+    it("should still let the admin clear the ranking", async () => {
+      await updateRanking({
+        request,
+        params: { place_id: uncuratedPlace.id },
+        body: { ranking: null },
+        url,
+      } as any)
+
+      expect(updatePlace).toHaveBeenCalledWith(
+        expect.objectContaining({ ranking: null }),
+        ["ranking"]
+      )
+    })
+  })
 })

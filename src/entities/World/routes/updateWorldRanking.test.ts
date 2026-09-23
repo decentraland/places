@@ -106,7 +106,11 @@ describe("updateWorldRanking", () => {
     })
 
     test("should accept the places admin token", async () => {
-      findByIdWithAggregates.mockResolvedValueOnce(baseAggregateWorld)
+      // Highlighted, because a hand-set ranking only holds on a curated world.
+      findByIdWithAggregates.mockResolvedValueOnce({
+        ...baseAggregateWorld,
+        highlighted: true,
+      })
       updateRankingSpy.mockResolvedValueOnce(undefined)
 
       const response = await updateWorldRanking({
@@ -295,6 +299,52 @@ describe("updateWorldRanking", () => {
 
         expect(updateRankingSpy).toHaveBeenCalledWith(world_id, 500)
       })
+    })
+  })
+
+  describe("when the admin sets a ranking on a world that is neither highlighted nor excluded", () => {
+    beforeEach(() => {
+      findByIdWithAggregates.mockResolvedValue(baseAggregateWorld)
+      updateRankingSpy.mockResolvedValue(undefined)
+    })
+
+    // The nightly set replace recognises curation by these two flags alone, so a hand-set value
+    // on an unmarked row is written and gone by morning. A 201 for that write is a lie.
+    it("should refuse the write and say how to make it hold", async () => {
+      await expect(() =>
+        updateWorldRanking({
+          request: buildRequest(ADMIN_TOKEN),
+          params: { world_id },
+          body: { ranking: 1700 },
+          url: buildUrl(),
+        } as any)
+      ).rejects.toThrow(
+        "An editorial ranking only holds on a curated entity. Feature it or set exclude_from_ranking first, otherwise the nightly replace clears this value."
+      )
+    })
+
+    it("should not write anything", async () => {
+      await expect(() =>
+        updateWorldRanking({
+          request: buildRequest(ADMIN_TOKEN),
+          params: { world_id },
+          body: { ranking: 1700 },
+          url: buildUrl(),
+        } as any)
+      ).rejects.toThrow()
+
+      expect(updateRankingSpy).not.toHaveBeenCalled()
+    })
+
+    it("should still let the admin clear the ranking", async () => {
+      await updateWorldRanking({
+        request: buildRequest(ADMIN_TOKEN),
+        params: { world_id },
+        body: { ranking: null },
+        url: buildUrl(),
+      } as any)
+
+      expect(updateRankingSpy).toHaveBeenCalledWith(world_id, null)
     })
   })
 })

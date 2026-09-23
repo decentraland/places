@@ -48,10 +48,14 @@ export async function updateWorldRanking(
     )
   }
 
-  requireAdminTokenForCuratedRanking(token, {
-    highlighted: world.highlighted,
-    exclude_from_ranking: world.exclude_from_ranking,
-  })
+  requireAdminTokenForCuratedRanking(
+    token,
+    {
+      highlighted: world.highlighted,
+      exclude_from_ranking: world.exclude_from_ranking,
+    },
+    body.ranking
+  )
 
   const updatedWorld: AggregateWorldAttributes = {
     ...world,
