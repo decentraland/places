@@ -5,14 +5,14 @@ import {
   limit,
   offset,
 } from "decentraland-gatsby/dist/entities/Database/utils"
-import { numeric, oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
+import { oneOf } from "decentraland-gatsby/dist/entities/Schema/utils"
 
 import {
   AggregateDestinationAttributes,
   FindDestinationsWithAggregatesOptions,
 } from "./types"
 import PlaceModel from "../Place/model"
-import { HotScene, PlaceListOrderBy } from "../Place/types"
+import { PlaceListOrderBy } from "../Place/types"
 import WorldModel from "../World/model"
 
 /**
@@ -201,10 +201,13 @@ export default class DestinationModel {
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
     // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
     //
-    // That column sorts between `highlighted` and `ranking`, so live users float to the top of the
-    // featured shelf rather than over it. Editorial picks the shelf and its resting order; presence
-    // only reshuffles within it, and an empty featured entry still outranks a busy scene nobody
-    // curated. A feed where nobody is online keeps the exact order editorial set.
+    // That column sorts ahead of `highlighted`, so people decide the top of this ordering and
+    // curation decides the rest. Asking for the most active destinations and being shown empty
+    // ones first reads as the sort being broken, and a visitor picking from this list is looking
+    // for somewhere with people in it. Editorial still owns everything below: once nobody is
+    // online the order collapses back to exactly the shelf, in exactly the order it was set.
+    //
+    // This only applies to MOST_ACTIVE. Every other ordering keeps the featured shelf on top.
     const placesSelect = filterMostActive
       ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
           options.placeUserCounts
@@ -237,8 +240,8 @@ export default class DestinationModel {
       const sql = SQL`
         ${placesQuery}
         ORDER BY
-          p.highlighted DESC,
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          p.highlighted DESC,
           p.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
@@ -264,8 +267,8 @@ export default class DestinationModel {
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
-          w.highlighted DESC,
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          w.highlighted DESC,
           w.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
@@ -301,8 +304,8 @@ export default class DestinationModel {
         (${worldsQuery})
       ) sub
       ORDER BY
-        sub.highlighted DESC,
         ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
+        sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(
@@ -417,74 +420,5 @@ export default class DestinationModel {
       sql
     )
     return Number(results[0].total)
-  }
-
-  /**
-   * Find destinations ordered by most active (hot scenes + world live data)
-   */
-  static async findWithHotScenes(
-    options: FindDestinationsWithAggregatesOptions & {
-      hotScenesPositions?: string[]
-    },
-    hotScenes: HotScene[]
-  ): Promise<AggregateDestinationAttributes[]> {
-    const {
-      offset: offsetValue,
-      limit: limitValue,
-      order,
-      ...extraOptions
-    } = options
-    const destinations = await this.findWithAggregates({
-      offset: 0,
-      limit: 100,
-      order,
-      ...extraOptions,
-    })
-
-    const hotSceneDestinations = hotScenes
-      .filter(
-        (scene) =>
-          !!destinations.find(
-            (destination) =>
-              !destination.world &&
-              destination.base_position === scene.baseCoords.join(",")
-          )
-      )
-      .map((scene) => {
-        const hotSceneDestination = destinations.find(
-          (destination) =>
-            destination.base_position === scene.baseCoords.join(",")
-        )
-        return {
-          ...hotSceneDestination!,
-          user_count: scene.usersTotalCount,
-        }
-      })
-
-    // Include worlds if not filtering only_places
-    const worldDestinations = options.only_places
-      ? []
-      : destinations.filter((d) => d.world)
-
-    const allDestinations = [...hotSceneDestinations, ...worldDestinations]
-
-    allDestinations.sort((a, b) => {
-      if (a.highlighted !== b.highlighted) {
-        return a.highlighted ? -1 : 1
-      }
-      const aRanking = a.ranking ?? -Infinity
-      const bRanking = b.ranking ?? -Infinity
-      if (aRanking !== bRanking) {
-        return bRanking - aRanking
-      }
-      const aCount = a.user_count ?? 0
-      const bCount = b.user_count ?? 0
-      return order === "asc" ? aCount - bCount : bCount - aCount
-    })
-
-    const from = numeric(offsetValue || 0, { min: 0 }) ?? 0
-    const to = numeric(from + (limitValue || 100), { min: 0, max: 100 }) ?? 100
-
-    return allDestinations.slice(from, to)
   }
 }

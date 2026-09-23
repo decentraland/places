@@ -1303,6 +1303,80 @@ describe("when fetching destinations via GET /destinations", () => {
         ])
       })
 
+      describe("and a busy destination is not featured while an empty one is", () => {
+        beforeEach(async () => {
+          // 20,20 rather than the other hot scene at 10,10: that one is a road parcel, and the
+          // feed drops roads, so the place would be absent instead of merely ranked lower and
+          // every assertion below would pass on an `indexOf` of -1.
+          await seedPlace({
+            title: "Busy But Uncurated",
+            base_position: "20,20",
+            positions: ["20,20"],
+            highlighted: false,
+            ranking: 0,
+          })
+          await seedPlace({
+            title: "Curated But Empty",
+            base_position: "99,99",
+            positions: ["99,99"],
+            highlighted: true,
+            ranking: 2000,
+          })
+        })
+
+        // Asking for the most active destinations and being handed empty ones first reads as the
+        // sort being broken. Presence decides the top of this ordering, curation decides the rest.
+        it("should put the busy one first", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          const titles = response.body.data.map(
+            (d: { title: string }) => d.title
+          )
+          expect(titles).toContain("Curated But Empty")
+          expect(titles.indexOf("Busy But Uncurated")).toBeLessThan(
+            titles.indexOf("Curated But Empty")
+          )
+        })
+
+        // The shelf is not abandoned, only outranked by people. With nobody online the ordering
+        // has to collapse back to exactly what editorial set.
+        it("should put the curated one first when nobody is online", async () => {
+          ;(hotScenesModule.getHotScenes as jest.Mock).mockReturnValue([])
+
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          const titles = response.body.data.map(
+            (d: { title: string }) => d.title
+          )
+          expect(titles).toContain("Busy But Uncurated")
+          expect(titles.indexOf("Curated But Empty")).toBeLessThan(
+            titles.indexOf("Busy But Uncurated")
+          )
+        })
+
+        // Every other ordering keeps the shelf on top, so this change stays scoped to most_active.
+        it("should keep the curated one first on the default ordering", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ offset: 0, limit: 100 })
+            .expect(200)
+
+          const titles = response.body.data.map(
+            (d: { title: string }) => d.title
+          )
+          expect(titles).toContain("Busy But Uncurated")
+          expect(titles.indexOf("Curated But Empty")).toBeLessThan(
+            titles.indexOf("Busy But Uncurated")
+          )
+        })
+      })
+
       describe("and the list includes both most_active and non-most_active destinations", () => {
         it("should return most_active destinations before non-most_active ones", async () => {
           const response = await supertest(app)

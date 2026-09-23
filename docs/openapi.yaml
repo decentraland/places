@@ -1262,7 +1262,8 @@ paths:
 
         **Key Features:**
         - Combines Genesis City places and Decentraland Worlds in a single response
-        - **Highlighted destinations are always returned first**, followed by **ranking value** (descending), then by the specified order_by
+        - **Highlighted destinations are returned first**, followed by **ranking value** (descending), then by the specified order_by
+        - **Except with `order_by=most_active`**: there the current user count comes first, so a busy destination is listed before an empty highlighted one, and `highlighted` only decides the order among destinations with the same number of people. With nobody online the result is identical to the highlighted-first ordering
         - Filter places by exact coordinates (pointer)
         - Filter worlds by exact name (world_names) or LIKE matching (names)
         - Filter by SDK version with prefix matching (e.g., sdk=7 matches 7.x.x; null values treated as SDK6)
@@ -1358,7 +1359,9 @@ paths:
           description: |
             Sort destinations by:
             - `like_score`: VP-weighted like ratio (default)
-            - `most_active`: Current user count
+            - `most_active`: Current user count. This is the one ordering where the user count
+              outranks `highlighted`, so an empty featured destination is listed below a busy
+              uncurated one
             - `updated_at`: Recently updated
             - `created_at`: Newest first
           required: false
