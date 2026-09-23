@@ -51,31 +51,65 @@ export async function replaceRanking(
     )
   }
 
+  // Absent `replaces`, the scope is whatever the payload carries. That is narrower than the old
+  // behaviour, which cleared both tables regardless, and narrower is the point: a run that only
+  // built its places half must not empty the worlds.
+  const scope = new Set(
+    body.replaces ?? body.entries.map((entry) => entry.entity_type)
+  )
+
+  const outOfScope = body.entries.filter(
+    (entry) => !scope.has(entry.entity_type)
+  )
+  if (outOfScope.length > 0) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `Entries name types this run does not declare in "replaces": ${[
+        ...new Set(outOfScope.map((entry) => entry.entity_type)),
+      ].join(", ")}`
+    )
+  }
+
+  const replacesPlaces = scope.has("place")
+  const replacesWorlds = scope.has("world")
+
   const result = await withDatabaseTransaction(async () => {
     const [placeClasses, worldClasses] = await Promise.all([
       PlaceModel.classifyForRankingReplace(places.map((entry) => entry.id)),
       WorldModel.classifyForRankingReplace(worlds.map((entry) => entry.id)),
     ])
 
+    // A run whose every named id is unknown to us is not a run that ranked nothing, it is a run
+    // built against the wrong catalogue. Letting it through would clear every ranking of that type
+    // and report success, with the evidence buried in `skipped_missing`.
+    rejectWhenNothingResolved("place", places, placeClasses.missing)
+    rejectWhenNothingResolved("world", worlds, worldClasses.missing)
+
     const placeWritable = new Set(placeClasses.writable)
     const worldWritable = new Set(worldClasses.writable)
 
-    const placeCounts = await PlaceModel.applyRankingReplace(
-      places.filter((entry) => placeWritable.has(entry.id))
-    )
-    const worldCounts = await WorldModel.applyRankingReplace(
-      worlds.filter((entry) => worldWritable.has(entry.id))
-    )
+    const placeCounts = replacesPlaces
+      ? await PlaceModel.applyRankingReplace(
+          places.filter((entry) => placeWritable.has(entry.id))
+        )
+      : { applied: 0, cleared: 0 }
+    const worldCounts = replacesWorlds
+      ? await WorldModel.applyRankingReplace(
+          worlds.filter((entry) => worldWritable.has(entry.id))
+        )
+      : { applied: 0, cleared: 0 }
 
     return {
       places: {
         ...placeCounts,
+        replaced: replacesPlaces,
         skipped_curated: placeClasses.curated,
         skipped_world_backed: placeClasses.world_backed,
         skipped_missing: placeClasses.missing,
       },
       worlds: {
         ...worldCounts,
+        replaced: replacesWorlds,
         skipped_curated: worldClasses.curated,
         skipped_missing: worldClasses.missing,
       },
@@ -83,6 +117,30 @@ export async function replaceRanking(
   })
 
   return new ApiResponse(result)
+}
+
+/**
+ * Refuse a type whose every named destination is unknown to the catalogue.
+ *
+ * Some misses are ordinary: a destination disabled between the caller's export and its run. All of
+ * them missing is different in kind, and it is the shape a run built against a stale or wrong
+ * catalogue takes. Since the write half would then be empty and the clear half would still run, the
+ * request would empty the ranking of that type and answer 201.
+ *
+ * A type the caller sent nothing for is untouched here: that is the legitimate "nothing qualified
+ * today" it declares through `replaces`.
+ */
+function rejectWhenNothingResolved(
+  entityType: string,
+  sent: ReplaceRankingBody["entries"],
+  missing: string[]
+): void {
+  if (sent.length > 0 && missing.length === sent.length) {
+    throw new ErrorResponse(
+      Response.BadRequest,
+      `None of the ${sent.length} ${entityType} destinations in this request exist, so it would clear every ${entityType} ranking rather than replace it`
+    )
+  }
 }
 
 /**

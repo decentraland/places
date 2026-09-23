@@ -163,11 +163,11 @@ async function rankingOfWorld(id: string): Promise<number | null> {
   return world?.ranking ?? null
 }
 
-function replace(entries: unknown[]) {
+function replace(entries: unknown[], replaces?: string[]) {
   return supertest(app)
     .put("/api/destinations/ranking")
     .set("Authorization", `Bearer ${DATA_TEAM_TOKEN}`)
-    .send({ entries })
+    .send(replaces ? { replaces, entries } : { entries })
 }
 
 describe("when replacing the automated ranking set via PUT /destinations/ranking", () => {
@@ -271,7 +271,7 @@ describe("when replacing the automated ranking set via PUT /destinations/ranking
       await seedWorld("curatedworld.dcl.eth", { highlighted: true })
       await WorldModel.updateRanking("curatedworld.dcl.eth", 1800)
 
-      await replace([]).expect(201)
+      await replace([], ["place", "world"]).expect(201)
     })
 
     it("should leave the highlighted place's ranking untouched", async () => {
@@ -331,7 +331,7 @@ describe("when replacing the automated ranking set via PUT /destinations/ranking
     // Browse orders worlds by their own column and never reads the ranking of the places behind
     // them, so a value there is dead weight the clear should remove.
     it("should clear it when the payload omits it", async () => {
-      await replace([]).expect(201)
+      await replace([], ["place"]).expect(201)
 
       await expect(rankingOfPlace(inner.id)).resolves.toBe(0)
     })
@@ -441,14 +441,105 @@ describe("when replacing the automated ranking set via PUT /destinations/ranking
   })
 
   describe("and the payload names a destination that does not exist", () => {
-    it("should report it as missing", async () => {
+    let present: PlaceAttributes
+
+    beforeEach(async () => {
+      present = await seedPlace({ base_position: "13,13" })
+    })
+
+    it("should report it as missing alongside the ones it did resolve", async () => {
       const absent = randomUUID()
 
       const response = await replace([
+        { entity_type: "place", id: present.id, ranking: 10 },
         { entity_type: "place", id: absent, ranking: 9 },
       ]).expect(201)
 
       expect(response.body.data.places.skipped_missing).toEqual([absent])
+    })
+
+    // A run whose every id is unknown is not a run that ranked nothing, it is a run built against
+    // the wrong catalogue. It used to answer 201 having cleared every ranking of that type.
+    it("should refuse the request when none of them resolve", async () => {
+      await replace([
+        { entity_type: "place", id: randomUUID(), ranking: 9 },
+      ]).expect(400)
+    })
+
+    it("should leave the existing rankings alone when it refuses", async () => {
+      await replace([{ entity_type: "place", id: present.id, ranking: 10 }])
+      await replace([{ entity_type: "place", id: randomUUID(), ranking: 9 }])
+
+      await expect(rankingOfPlace(present.id)).resolves.toBe(10)
+    })
+  })
+
+  describe("and the payload carries only one entity type", () => {
+    let place: PlaceAttributes
+
+    beforeEach(async () => {
+      place = await seedPlace({ base_position: "14,14", ranking: 5 })
+      await seedWorld("untouched.dcl.eth")
+      await WorldModel.updateRanking("untouched.dcl.eth", 190)
+    })
+
+    // The destructive default this fixes: a run that only built its places half used to empty
+    // every world ranking, and a half-built run is indistinguishable from a legitimate one.
+    it("should leave the other type untouched", async () => {
+      await replace([
+        { entity_type: "place", id: place.id, ranking: 12 },
+      ]).expect(201)
+
+      await expect(rankingOfWorld("untouched.dcl.eth")).resolves.toBe(190)
+    })
+
+    it("should still replace the type it names", async () => {
+      await replace([
+        { entity_type: "place", id: place.id, ranking: 12 },
+      ]).expect(201)
+
+      await expect(rankingOfPlace(place.id)).resolves.toBe(12)
+    })
+
+    it("should report the untouched type as not replaced", async () => {
+      const response = await replace([
+        { entity_type: "place", id: place.id, ranking: 12 },
+      ]).expect(201)
+
+      expect(response.body.data.worlds.replaced).toBe(false)
+    })
+  })
+
+  describe("and the run declares an empty scope for a type", () => {
+    beforeEach(async () => {
+      await seedWorld("nolongerranked.dcl.eth")
+      await WorldModel.updateRanking("nolongerranked.dcl.eth", 190)
+    })
+
+    // The case the scope field exists to make expressible: nothing qualified today, clear them all.
+    it("should clear that type", async () => {
+      await replace([], ["world"]).expect(201)
+
+      await expect(rankingOfWorld("nolongerranked.dcl.eth")).resolves.toBe(0)
+    })
+
+    it("should leave a type outside the scope alone", async () => {
+      const place = await seedPlace({ base_position: "15,15", ranking: 7 })
+
+      await replace([], ["world"]).expect(201)
+
+      await expect(rankingOfPlace(place.id)).resolves.toBe(7)
+    })
+  })
+
+  describe("and an entry names a type the run does not declare", () => {
+    it("should reject the request", async () => {
+      const place = await seedPlace({ base_position: "16,16" })
+
+      await replace(
+        [{ entity_type: "place", id: place.id, ranking: 3 }],
+        ["world"]
+      ).expect(400)
     })
   })
 })

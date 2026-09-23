@@ -1674,6 +1674,22 @@ paths:
         Send each destination once. A repeated id is a broken run rather than a row to skip, so the
         whole request is rejected with a 400 before anything is written.
 
+        **`replaces` declares which tables this run may clear.** A payload carrying only places
+        cannot be told apart from a run whose world half failed to build, so the scope is declared
+        rather than inferred. Declaring it is also the only way to say "nothing qualified today":
+        `replaces: [world]` with no world entry clears every automated world ranking on purpose.
+        Omitting the field falls back to the entity types present in `entries`, which keeps an
+        existing one-type caller from emptying the other table; send it explicitly once the caller
+        can.
+
+        An entry whose `entity_type` is outside `replaces` is a 400: the run would write a ranking
+        into a table it just declared out of scope.
+
+        A type whose every named destination is unknown to the catalogue is also a 400. Some misses
+        are ordinary, a destination disabled between the export and the run, but all of them missing
+        is the shape of a run built against the wrong catalogue, and it would clear that type's
+        whole ranking and answer 201.
+
         **Authentication:**
         Accepts the value of either the `DATA_TEAM_AUTH_TOKEN` or the `PLACES_ADMIN_AUTH_TOKEN`
         environment variable in the Authorization header.
@@ -1688,6 +1704,17 @@ paths:
               required:
                 - entries
               properties:
+                replaces:
+                  type: array
+                  maxItems: 2
+                  uniqueItems: true
+                  items:
+                    type: string
+                    enum: [place, world]
+                  description: |
+                    Entity types this run replaces, and therefore the only tables that may be
+                    cleared. Omit only while migrating: it then falls back to the types present in
+                    `entries`.
                 entries:
                   type: array
                   maxItems: 5000
@@ -1716,6 +1743,9 @@ paths:
                           score is always a broken run, so it is rejected with a 400 rather than
                           written.
             example:
+              replaces:
+                - place
+                - world
               entries:
                 - entity_type: place
                   id: ac7f4d9a-4265-4614-a94e-952f1aeea6c9
@@ -1744,6 +1774,11 @@ paths:
                       places:
                         type: object
                         properties:
+                          replaced:
+                            type: boolean
+                            description: |
+                              Whether the run declared this type in scope. False means the table
+                              was left untouched, so `applied` and `cleared` are both zero.
                           applied:
                             type: integer
                           cleared:
@@ -1763,6 +1798,8 @@ paths:
                       worlds:
                         type: object
                         properties:
+                          replaced:
+                            type: boolean
                           applied:
                             type: integer
                           cleared:
@@ -1777,7 +1814,9 @@ paths:
                               type: string
         "400":
           description: |
-            The payload is malformed, or it names the same destination twice. Nothing is written.
+            The payload is malformed, it names the same destination twice, an entry names a type
+            outside `replaces`, or every destination of one type is unknown to the catalogue.
+            Nothing is written in any of these cases.
           content:
             application/json:
               schema:
