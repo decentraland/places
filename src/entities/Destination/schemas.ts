@@ -148,6 +148,18 @@ export const replaceRankingBodySchema = schema({
   additionalProperties: false,
   required: ["entries"] as const,
   properties: {
+    replaces: {
+      type: "array",
+      maxItems: 2,
+      uniqueItems: true,
+      nullable: true as any,
+      description:
+        "Entity types this run replaces, and therefore the only tables that may be cleared. Omit only while migrating: it then falls back to the types present in entries.",
+      items: {
+        type: "string",
+        enum: ["place", "world"],
+      },
+    },
     entries: {
       type: "array",
       maxItems: MAX_RANKING_ENTRIES,

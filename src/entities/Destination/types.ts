@@ -135,11 +135,25 @@ export type ReplaceRankingEntry = {
 }
 
 export type ReplaceRankingBody = {
+  /**
+   * Which entity types this run is replacing, and therefore which tables may be cleared.
+   *
+   * Without it the payload is ambiguous in a way that destroys data: a run carrying only places
+   * cannot be told apart from a run whose world half failed to build, and the endpoint used to
+   * read both as "clear every world". Declaring the scope makes the empty set expressible ("no
+   * world qualified today, clear them all") without making it the default reading of an omission.
+   *
+   * Optional while the caller is migrating: absent, it falls back to the types present in
+   * `entries`, so a one-type payload no longer touches the other table.
+   */
+  replaces?: ReplaceRankingEntry["entity_type"][]
   entries: ReplaceRankingEntry[]
 }
 
 export type ReplaceRankingResult = {
   places: {
+    /** Whether this run declared the type in scope. False means the table was left untouched. */
+    replaced: boolean
     applied: number
     cleared: number
     skipped_curated: string[]
@@ -147,6 +161,7 @@ export type ReplaceRankingResult = {
     skipped_missing: string[]
   }
   worlds: {
+    replaced: boolean
     applied: number
     cleared: number
     skipped_curated: string[]
