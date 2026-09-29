@@ -1,3 +1,5 @@
+import supertest from "supertest"
+
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { fetchWorldActiveScenesAtPositions } from "../../src/entities/CheckScenes/task/fetchWorldActiveScenes"
@@ -11,6 +13,7 @@ import {
 } from "../fixtures/deploymentEvent"
 import { createWorldScenesUndeploymentEvent } from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
+import { createTestApp } from "../setup/server"
 
 jest.mock("../../src/entities/CheckScenes/task/processEntityId")
 jest.mock("../../src/entities/CheckScenes/task/extractSceneJsonData")
@@ -118,12 +121,14 @@ async function undeployScene(options: {
 
 describe("when a world deployment conflicts with a durable watermark", () => {
   const day = 24 * 60 * 60 * 1000
+  let app: ReturnType<typeof createTestApp>
   let olderAt: number
   let replacementAt: number
   let emittedAt: number
 
   beforeAll(async () => {
     await initTestDb()
+    app = createTestApp()
   })
 
   afterAll(async () => {
@@ -141,10 +146,11 @@ describe("when a world deployment conflicts with a durable watermark", () => {
     emittedAt = replacementAt + 1000
   })
 
-  describe("and the content server still serves the deploying entity", () => {
+  describe("and the content server still serves the single scene that replaced a multi-scene world", () => {
     const worldName = "verified-replacement.dcl.eth"
     let enabledTitles: Array<string | null>
     let verifyCalls: unknown[][]
+    let listedTotal: number
 
     beforeEach(async () => {
       await deliverDeployment({
@@ -155,12 +161,32 @@ describe("when a world deployment conflicts with a durable watermark", () => {
         base: "0,0",
         parcels: ["0,0"],
       })
-      await undeployScene({
+      await deliverDeployment({
         worldName,
-        entityId: "entity-replaced",
-        base: "0,0",
-        emittedAt,
+        entityId: "entity-replaced-sibling",
+        timestamp: olderAt,
+        title: "Replaced Sibling Scene",
+        base: "0,6",
+        parcels: ["0,6"],
       })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [
+            {
+              entityId: "entity-replaced",
+              baseParcel: "0,0",
+              parcels: ["0,0"],
+            },
+            {
+              entityId: "entity-replaced-sibling",
+              baseParcel: "0,6",
+              parcels: ["0,6"],
+            },
+          ],
+          { timestamp: emittedAt }
+        )
+      )
       mockFetchScenesAtPositions.mockClear()
 
       mockFetchScenesAtPositions.mockResolvedValueOnce({
@@ -180,10 +206,19 @@ describe("when a world deployment conflicts with a durable watermark", () => {
       enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
         (place) => place.title
       )
+      listedTotal = (
+        await supertest(app).get(
+          `/api/places?names=${encodeURIComponent(worldName)}`
+        )
+      ).body.total
     })
 
     it("should admit the deployment the content server confirms", () => {
       expect(enabledTitles).toEqual(["Replacement Scene"])
+    })
+
+    it("should list the world through the public places endpoint", () => {
+      expect(listedTotal).toBe(1)
     })
 
     it("should verify the scene base against the content server exactly once", () => {

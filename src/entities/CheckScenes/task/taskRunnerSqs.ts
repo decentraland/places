@@ -1,5 +1,3 @@
-import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-
 import { applyDeploymentDecision } from "./applyDeploymentDecision"
 import { DeploymentToSqs } from "./consumer"
 import { WorldDeploymentDecision } from "./deploymentDecision"
@@ -9,7 +7,10 @@ import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
 import { getTrustedContentServerUrl, processEntityId } from "./processEntityId"
 import { resolveGenesisCityDeployment } from "./resolveGenesisCityDeployment"
-import { resolveWorldDeployment } from "./resolveWorldDeployment"
+import {
+  ResolveWorldDeploymentOptions,
+  resolveWorldDeployment,
+} from "./resolveWorldDeployment"
 import { withDatabaseTransaction } from "../../Database/model"
 import {
   notifyDisablePlaces,
@@ -97,17 +98,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
 }
 
-type ApplyWorldDeploymentOptions = {
-  contentEntityScene: ContentEntityScene
-  contentServerUrl: string
-  creator: string | null
-  deploymentId: string
-  nameOwner: string | null | undefined
-  sdk: string | null
-  worldName: string
-}
-
-async function applyWorldDeployment(options: ApplyWorldDeploymentOptions) {
+async function applyWorldDeployment(options: ResolveWorldDeploymentOptions) {
   const apply = (decision: WorldDeploymentDecision) =>
     applyDeploymentDecision({
       contentEntityScene: options.contentEntityScene,

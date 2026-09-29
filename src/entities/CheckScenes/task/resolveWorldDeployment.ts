@@ -16,7 +16,7 @@ import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPosition
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
-type ResolveWorldDeploymentOptions = {
+export type ResolveWorldDeploymentOptions = {
   contentEntityScene: ContentEntityScene
   contentServerUrl: string
   creator: string | null
