@@ -19,3 +19,11 @@ export class ContentServerConfigurationError extends Error {
     this.name = "ContentServerConfigurationError"
   }
 }
+
+/** A world deployment still asked to verify upstream after the served scenes were supplied. */
+export class WorldDeploymentUnresolvedError extends Error {
+  constructor(worldName: string) {
+    super(`World deployment for '${worldName}' could not be resolved.`)
+    this.name = "WorldDeploymentUnresolvedError"
+  }
+}

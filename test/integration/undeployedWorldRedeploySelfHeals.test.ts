@@ -2,6 +2,7 @@ import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
+import { fetchWorldActiveScenesAtPositions } from "../../src/entities/CheckScenes/task/fetchWorldActiveScenes"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
@@ -61,6 +62,10 @@ const mockProcessEntityId = processEntityId as jest.MockedFunction<
 const mockExtractSceneJsonData = extractSceneJsonData as jest.MockedFunction<
   typeof extractSceneJsonData
 >
+const mockFetchScenesAtPositions =
+  fetchWorldActiveScenesAtPositions as jest.MockedFunction<
+    typeof fetchWorldActiveScenesAtPositions
+  >
 
 async function deliverDeployment(options: {
   worldName: string
@@ -154,6 +159,10 @@ describe("when a single scene replaces a multi-scene world", () => {
         )
       )
 
+      mockFetchScenesAtPositions.mockResolvedValueOnce({
+        deploymentIds: ["entity-replacement"],
+        positions: ["0,0"],
+      })
       await deliverDeployment({
         worldName,
         entityId: "entity-replacement",

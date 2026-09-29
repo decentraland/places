@@ -1,7 +1,13 @@
+import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
+
 import { applyDeploymentDecision } from "./applyDeploymentDecision"
 import { DeploymentToSqs } from "./consumer"
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  InvalidWorldSqsMessageError,
+  WorldDeploymentUnresolvedError,
+} from "./errors"
 import { extractSceneJsonData } from "./extractSceneJsonData"
+import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
 import { getTrustedContentServerUrl, processEntityId } from "./processEntityId"
 import { resolveGenesisCityDeployment } from "./resolveGenesisCityDeployment"
@@ -56,33 +62,33 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     contentEntityScene.metadata.owner = nameOwner
   }
 
-  const processedPlaces = await withDatabaseTransaction(async () => {
-    const decision =
-      worldConfiguration && worldName
-        ? await resolveWorldDeployment({
-            contentEntityScene,
-            contentServerUrl,
-            creator,
-            deploymentId: job.entity.entityId,
-            nameOwner,
-            sdk,
-            worldName,
-          })
-        : await resolveGenesisCityDeployment({
-            contentEntityScene,
-            contentServerUrl,
-            creator,
-            deploymentId: job.entity.entityId,
-            sdk,
-          })
+  const deploymentId = job.entity.entityId
 
-    return applyDeploymentDecision({
-      contentEntityScene,
-      contentServerUrl,
-      decision,
-      deploymentId: job.entity.entityId,
-    })
-  })
+  const processedPlaces =
+    worldConfiguration && worldName
+      ? await applyWorldDeployment({
+          contentEntityScene,
+          contentServerUrl,
+          creator,
+          deploymentId,
+          nameOwner,
+          sdk,
+          worldName,
+        })
+      : await withDatabaseTransaction(async () =>
+          applyDeploymentDecision({
+            contentEntityScene,
+            contentServerUrl,
+            decision: await resolveGenesisCityDeployment({
+              contentEntityScene,
+              contentServerUrl,
+              creator,
+              deploymentId,
+              sdk,
+            }),
+            deploymentId,
+          })
+        )
 
   const { placesToProcess, placesToDisable } = processedPlaces
 
@@ -91,4 +97,48 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToDisable.length) notifyDisablePlaces(placesToDisable)
 
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
+}
+
+type ApplyWorldDeploymentOptions = {
+  contentEntityScene: ContentEntityScene
+  contentServerUrl: string
+  creator: string | null
+  deploymentId: string
+  nameOwner: string | null | undefined
+  sdk: string | null
+  worldName: string
+}
+
+async function applyWorldDeployment(options: ApplyWorldDeploymentOptions) {
+  const run = (servedUpstreamIds: string[] | undefined) =>
+    withDatabaseTransaction(async () => {
+      const decision = await resolveWorldDeployment({
+        ...options,
+        servedUpstreamIds,
+      })
+      if (decision.kind === "verify-upstream") {
+        return { status: "verify" as const, base: decision.base }
+      }
+      const processed = await applyDeploymentDecision({
+        contentEntityScene: options.contentEntityScene,
+        contentServerUrl: options.contentServerUrl,
+        decision,
+        deploymentId: options.deploymentId,
+      })
+      return { status: "done" as const, processed }
+    })
+
+  const firstPass = await run(undefined)
+  if (firstPass.status === "done") {
+    return firstPass.processed
+  }
+
+  const served = await fetchWorldActiveScenesAtPositions(options.worldName, [
+    firstPass.base,
+  ])
+  const secondPass = await run(served.deploymentIds)
+  if (secondPass.status === "verify") {
+    throw new WorldDeploymentUnresolvedError(options.worldName)
+  }
+  return secondPass.processed
 }

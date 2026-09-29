@@ -4,13 +4,17 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { WorldDeploymentDecision } from "./deploymentDecision"
-import { resolveWorldDeployment } from "./resolveWorldDeployment"
+import {
+  WorldDeploymentVerifyUpstream,
+  resolveWorldDeployment,
+} from "./resolveWorldDeployment"
 import { contentEntitySceneGenesisPlaza } from "../../../__data__/contentEntitySceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../../__data__/placeGenesisPlaza"
 import PlaceModel from "../../Place/model"
 import { DisabledReason, PlaceAttributes } from "../../Place/types"
 import WorldModel from "../../World/model"
 import { WorldAttributes } from "../../World/types"
+import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
@@ -64,6 +68,15 @@ function createWorldPlace(options: {
   }
 }
 
+function expectWorldDecision(
+  resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+): WorldDeploymentDecision {
+  if (resolution.kind === "verify-upstream") {
+    throw new Error("expected a world decision, got verify-upstream")
+  }
+  return resolution
+}
+
 describe("when resolving a world deployment", () => {
   let contentEntityScene: ContentEntityScene
   let decision: WorldDeploymentDecision
@@ -73,6 +86,7 @@ describe("when resolving a world deployment", () => {
   let input: Parameters<typeof resolveWorldDeployment>[0]
   let findActiveByWorldIdAndPositions: jest.SpyInstance
   let hasNewerActiveWorldDeployment: jest.SpyInstance
+  let hasSupersedingPositionWatermark: jest.SpyInstance
   let insertWorldIfNotExists: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
   let findSupersedingSceneUndeployment: jest.SpyInstance
@@ -142,6 +156,9 @@ describe("when resolving a world deployment", () => {
     findSupersedingSceneUndeployment = jest
       .spyOn(WorldSceneUndeploymentModel, "findSupersedingUndeployment")
       .mockResolvedValue(null)
+    hasSupersedingPositionWatermark = jest
+      .spyOn(WorldDeploymentPositionWatermarkModel, "hasSupersedingDeployment")
+      .mockResolvedValue(false)
     insertWorldIfNotExists = jest
       .spyOn(WorldModel, "insertWorldIfNotExists")
       .mockResolvedValue("example.dcl.eth")
@@ -152,18 +169,12 @@ describe("when resolving a world deployment", () => {
     jest.restoreAllMocks()
   })
 
-  describe("and a scene undeployment supersedes it by deployment identity", () => {
+  describe("and a newer real place supersedes it", () => {
     beforeEach(async () => {
       findActiveByWorldIdAndPositions.mockResolvedValueOnce([existingPlace])
-      findSupersedingSceneUndeployment.mockResolvedValueOnce({
-        world_id: "example.dcl.eth",
-        deployment_id: "deployment-current",
-        base_position: "0,0",
-        undeployed_at: new Date(),
-        base_position_rejects: false,
-      })
+      hasNewerActiveWorldDeployment.mockResolvedValueOnce(true)
 
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should avoid creating or updating a place", () => {
@@ -191,9 +202,55 @@ describe("when resolving a world deployment", () => {
     })
   })
 
+  describe("and a watermark would supersede it", () => {
+    beforeEach(() => {
+      findActiveByWorldIdAndPositions.mockResolvedValueOnce([existingPlace])
+      hasSupersedingPositionWatermark.mockResolvedValueOnce(true)
+    })
+
+    describe("and the served scenes are not yet known", () => {
+      let resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+
+      beforeEach(async () => {
+        resolution = await resolveWorldDeployment(input)
+      })
+
+      it("should ask the caller to verify against the content server", () => {
+        expect(resolution.kind).toBe("verify-upstream")
+      })
+    })
+
+    describe("and the content server no longer serves it", () => {
+      beforeEach(async () => {
+        decision = expectWorldDecision(
+          await resolveWorldDeployment({ ...input, servedUpstreamIds: [] })
+        )
+      })
+
+      it("should avoid creating or updating a place", () => {
+        expect(decision.placesToProcess).toBeNull()
+      })
+    })
+
+    describe("and the content server still serves it", () => {
+      beforeEach(async () => {
+        decision = expectWorldDecision(
+          await resolveWorldDeployment({
+            ...input,
+            servedUpstreamIds: ["deployment-current"],
+          })
+        )
+      })
+
+      it("should create the place the content server still serves", () => {
+        expect(decision.placesToProcess).not.toBeNull()
+      })
+    })
+  })
+
   describe("and it does not overlap an existing place", () => {
     beforeEach(async () => {
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should return a new place mutation", () => {
@@ -235,7 +292,7 @@ describe("when resolving a world deployment", () => {
     beforeEach(async () => {
       findActiveByWorldIdAndPositions.mockResolvedValueOnce([existingPlace])
 
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should return an update that preserves the existing place identity", () => {
@@ -269,7 +326,7 @@ describe("when resolving a world deployment", () => {
         secondExistingPlace,
       ])
 
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should return a new place mutation spanning the deployment footprint", () => {
@@ -292,7 +349,7 @@ describe("when resolving a world deployment", () => {
       contentEntityScene = createWorldScene({ optOut: true })
       input = { ...input, contentEntityScene }
 
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should return the new place disabled with the opt-out reason", () => {
@@ -315,7 +372,7 @@ describe("when resolving a world deployment", () => {
     beforeEach(async () => {
       input = { ...input, nameOwner: null }
 
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should not issue an owner update", () => {
@@ -325,7 +382,7 @@ describe("when resolving a world deployment", () => {
 
   describe("and acquiring the world lock", () => {
     beforeEach(async () => {
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should serialize decisions using the normalized world identity", () => {
@@ -335,7 +392,7 @@ describe("when resolving a world deployment", () => {
 
   describe("and checking stale state", () => {
     beforeEach(async () => {
-      decision = await resolveWorldDeployment(input)
+      decision = expectWorldDecision(await resolveWorldDeployment(input))
     })
 
     it("should check active places using the whole footprint", () => {
@@ -353,13 +410,12 @@ describe("when resolving a world deployment", () => {
       )
     })
 
-    it("should check the scene undeployment watermark by identity only", () => {
+    it("should check the scene undeployment watermark using deployment identity", () => {
       expect(findSupersedingSceneUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
         "deployment-current",
         "0,0",
-        new Date(contentEntityScene.timestamp),
-        false
+        new Date(contentEntityScene.timestamp)
       )
     })
   })

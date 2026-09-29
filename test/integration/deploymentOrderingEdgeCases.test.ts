@@ -375,11 +375,8 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       )
     })
 
-    it("should accept both distinct deployments over the retired footprint", () => {
-      expect([...enabledTitles].sort()).toEqual([
-        "Late Older Shape",
-        "Late Unrelated Shape",
-      ])
+    it("should reject only the delayed deployment overlapping the retired footprint", () => {
+      expect(enabledTitles).toEqual(["Late Unrelated Shape"])
     })
   })
 
@@ -429,11 +426,8 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       }
     })
 
-    it("should fetch the footprint and still accept the distinct delayed deployment", () => {
-      expect(state).toEqual({
-        enabledTitles: ["Older Scene Before Oversized Replacement"],
-        fetchCount: 1,
-      })
+    it("should fetch the footprint and reject the delayed overlapping deployment", () => {
+      expect(state).toEqual({ enabledTitles: [], fetchCount: 1 })
     })
   })
 
@@ -762,7 +756,6 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
 
   describe("and scene undeployments are duplicated and reordered", () => {
     let enabledCount: number
-    let recordedRowCount: number
 
     beforeEach(async () => {
       const worldName = "reordered-scene-events.dcl.eth"
@@ -797,19 +790,10 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       })
 
       enabledCount = (await PlaceModel.findEnabledWorldName(worldName)).length
-      recordedRowCount = (
-        await WorldSceneUndeploymentModel.find<WorldSceneUndeploymentAttributes>(
-          { world_id: worldName }
-        )
-      ).length
     })
 
-    it("should record one undeployment row despite duplicated and reordered events", () => {
-      expect(recordedRowCount).toBe(1)
-    })
-
-    it("should admit a deployment carrying a distinct identity", () => {
-      expect(enabledCount).toBe(1)
+    it("should stay idempotent and retain the newest event boundary", () => {
+      expect(enabledCount).toBe(0)
     })
   })
 

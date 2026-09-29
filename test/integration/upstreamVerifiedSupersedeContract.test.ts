@@ -1,13 +1,10 @@
-import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
-
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
+import { fetchWorldActiveScenesAtPositions } from "../../src/entities/CheckScenes/task/fetchWorldActiveScenes"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
-import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployment/model"
-import { WorldSceneUndeploymentAttributes } from "../../src/entities/WorldSceneUndeployment/types"
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
@@ -62,6 +59,10 @@ const mockProcessEntityId = processEntityId as jest.MockedFunction<
 const mockExtractSceneJsonData = extractSceneJsonData as jest.MockedFunction<
   typeof extractSceneJsonData
 >
+const mockFetchScenesAtPositions =
+  fetchWorldActiveScenesAtPositions as jest.MockedFunction<
+    typeof fetchWorldActiveScenesAtPositions
+  >
 
 async function deliverDeployment(options: {
   worldName: string
@@ -115,7 +116,7 @@ async function undeployScene(options: {
   )
 }
 
-describe("when a world deployment is resolved against undeployment history", () => {
+describe("when a world deployment conflicts with a durable watermark", () => {
   const day = 24 * 60 * 60 * 1000
   let olderAt: number
   let replacementAt: number
@@ -140,86 +141,133 @@ describe("when a world deployment is resolved against undeployment history", () 
     emittedAt = replacementAt + 1000
   })
 
-  describe("and a distinct-identity deployment lands on a base an undeployment already cleared", () => {
-    describe("and it legitimately replaces a different scene", () => {
-      const worldName = "contract-legit-replacement.dcl.eth"
-      let enabledTitles: Array<string | null>
+  describe("and the content server still serves the deploying entity", () => {
+    const worldName = "verified-replacement.dcl.eth"
+    let enabledTitles: Array<string | null>
 
-      beforeEach(async () => {
-        await deliverDeployment({
-          worldName,
-          entityId: "entity-replaced",
-          timestamp: olderAt,
-          title: "Replaced Scene",
-          base: "0,0",
-          parcels: ["0,0"],
-        })
-        await undeployScene({
-          worldName,
-          entityId: "entity-replaced",
-          base: "0,0",
-          emittedAt,
-        })
-        await deliverDeployment({
-          worldName,
-          entityId: "entity-replacement",
-          timestamp: replacementAt,
-          title: "Replacement Scene",
-          base: "0,0",
-          parcels: ["0,0"],
-        })
-
-        enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
-          (place) => place.title
-        )
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-replaced",
+        timestamp: olderAt,
+        title: "Replaced Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await undeployScene({
+        worldName,
+        entityId: "entity-replaced",
+        base: "0,0",
+        emittedAt,
       })
 
-      it("should admit the replacement", () => {
-        expect(enabledTitles).toEqual(["Replacement Scene"])
+      mockFetchScenesAtPositions.mockResolvedValueOnce({
+        deploymentIds: ["entity-replacement"],
+        positions: ["0,0"],
       })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-replacement",
+        timestamp: replacementAt,
+        title: "Replacement Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
     })
 
-    describe("and it is only a stale older revision of the removed scene", () => {
-      const worldName = "contract-stale-older.dcl.eth"
-      let enabledTitles: Array<string | null>
-
-      beforeEach(async () => {
-        await deliverDeployment({
-          worldName,
-          entityId: "entity-newer-revision",
-          timestamp: replacementAt,
-          title: "Newer Revision",
-          base: "0,0",
-          parcels: ["0,0"],
-        })
-        await undeployScene({
-          worldName,
-          entityId: "entity-newer-revision",
-          base: "0,0",
-          emittedAt,
-        })
-        await deliverDeployment({
-          worldName,
-          entityId: "entity-older-revision",
-          timestamp: olderAt,
-          title: "Older Revision",
-          base: "0,0",
-          parcels: ["0,0"],
-        })
-
-        enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
-          (place) => place.title
-        )
-      })
-
-      it("should admit it too, because its deploy-path inputs are identical to a replacement", () => {
-        expect(enabledTitles).toEqual(["Older Revision"])
-      })
+    it("should admit the deployment the content server confirms", () => {
+      expect(enabledTitles).toEqual(["Replacement Scene"])
     })
   })
 
-  describe("and the exact tombstoned entity is redelivered", () => {
-    const worldName = "contract-same-entity.dcl.eth"
+  describe("and the content server no longer serves the deploying entity", () => {
+    const worldName = "unverified-stale.dcl.eth"
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-newer-revision",
+        timestamp: replacementAt,
+        title: "Newer Revision",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await undeployScene({
+        worldName,
+        entityId: "entity-newer-revision",
+        base: "0,0",
+        emittedAt,
+      })
+
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-older-revision",
+        timestamp: olderAt,
+        title: "Older Revision",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should reject the stale deployment the content server no longer serves", () => {
+      expect(enabledTitles).toEqual([])
+    })
+  })
+
+  describe("and an entity-timestamped deployment watermark shadows a reordered older deployment", () => {
+    const worldName = "reordered-shadowed.dcl.eth"
+    const first = Date.now() - 3 * day
+    const second = Date.now() - 2 * day
+    const third = Date.now() - day
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-b",
+        timestamp: second,
+        title: "Scene B",
+        base: "0,0",
+        parcels: ["0,0", "0,1"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-c",
+        timestamp: third,
+        title: "Scene C",
+        base: "0,1",
+        parcels: ["0,1", "0,2"],
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-a",
+        timestamp: first,
+        title: "Scene A",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should reject the reordered older deployment the content server does not serve", () => {
+      expect(enabledTitles).toEqual(["Scene C"])
+    })
+  })
+
+  describe("and the same tombstoned entity is redelivered", () => {
+    const worldName = "redelivered-tombstone.dcl.eth"
     let enabledTitles: Array<string | null>
 
     beforeEach(async () => {
@@ -253,93 +301,6 @@ describe("when a world deployment is resolved against undeployment history", () 
 
     it("should keep the redelivered tombstoned entity disabled", () => {
       expect(enabledTitles).toEqual([])
-    })
-  })
-
-  describe("and a genuinely newer real place already covers the base", () => {
-    const worldName = "contract-newer-real-place.dcl.eth"
-    let enabledTitles: Array<string | null>
-
-    beforeEach(async () => {
-      await deliverDeployment({
-        worldName,
-        entityId: "entity-current",
-        timestamp: replacementAt,
-        title: "Current Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-      await deliverDeployment({
-        worldName,
-        entityId: "entity-late-older",
-        timestamp: olderAt,
-        title: "Late Older Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-
-      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
-        (place) => place.title
-      )
-    })
-
-    it("should let the newer real place supersede the older delivery", () => {
-      expect(enabledTitles).toEqual(["Current Scene"])
-    })
-  })
-
-  describe("and the undeployment tombstone is stamped after the replacement it clears", () => {
-    const worldName = "contract-emission-time.dcl.eth"
-    let tombstoneUndeployedAt: number
-    let replacementDeployedAt: number
-    let replacementEnabled: boolean
-
-    beforeEach(async () => {
-      await deliverDeployment({
-        worldName,
-        entityId: "entity-cleared",
-        timestamp: olderAt,
-        title: "Cleared Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-      await undeployScene({
-        worldName,
-        entityId: "entity-cleared",
-        base: "0,0",
-        emittedAt,
-      })
-      await deliverDeployment({
-        worldName,
-        entityId: "entity-admitted",
-        timestamp: replacementAt,
-        title: "Admitted Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-
-      const [tombstone] =
-        await WorldSceneUndeploymentModel.find<WorldSceneUndeploymentAttributes>(
-          { world_id: worldName, deployment_id: "entity-cleared" }
-        )
-      const [place] = await PlaceModel.namedQuery<{ deployed_at: Date }>(
-        "contract_read_replacement_deployed_at",
-        SQL`SELECT "deployed_at" FROM places WHERE "deployment_id" = ${"entity-admitted"}`
-      )
-
-      tombstoneUndeployedAt = new Date(tombstone.undeployed_at).getTime()
-      replacementDeployedAt = new Date(place.deployed_at).getTime()
-      replacementEnabled = (
-        await PlaceModel.findEnabledWorldName(worldName)
-      ).some((row) => row.deployment_id === "entity-admitted")
-    })
-
-    it("should stamp the tombstone later than the replacement it clears", () => {
-      expect(tombstoneUndeployedAt).toBeGreaterThan(replacementDeployedAt)
-    })
-
-    it("should still admit the replacement despite the newer tombstone timestamp", () => {
-      expect(replacementEnabled).toBe(true)
     })
   })
 })

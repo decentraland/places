@@ -89,33 +89,28 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
   }
 
   /**
-   * Find the undeployment that supersedes an incoming deployment. Production callers match by
-   * deployment identity alone: an incoming deployment always carries its own id, and only its own
-   * tombstone may supersede it. Returns null when the deployment is newer than every recorded
-   * undeployment that matches.
+   * Find the undeployment that supersedes an incoming deployment, matching either the exact
+   * deployment identity or the scene's base position, so an older revision of an undeployed
+   * scene cannot be recreated either. Returns null when the deployment is newer than every
+   * recorded undeployment for that scene.
    *
-   * @param matchParcelFallback - Defaults to true only to preserve the base-position fallback for
-   * callers reconciling legacy rows that carry no identity. Identity-bearing deployments pass false:
-   * a base match reconciles by parcel and would reject a new scene at a base cleared by the removal
-   * of a different one.
+   * The base match is skipped for rows recorded while a replacement already served that base: they
+   * exist to tombstone the removed deployment by identity, and matching their base would reject the
+   * replacement instead.
    */
   static async findSupersedingUndeployment(
     worldId: string,
     deploymentId: string,
     basePosition: string,
-    deployedAt: Date,
-    matchParcelFallback = true
+    deployedAt: Date
   ): Promise<WorldSceneUndeploymentAttributes | null> {
-    const supersedes = matchParcelFallback
-      ? SQL`(
-          "deployment_id" = ${deploymentId}
-          OR ("base_position" = ${basePosition} AND "base_position_rejects" IS TRUE)
-        )`
-      : SQL`"deployment_id" = ${deploymentId}`
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "world_id" = ${worldId.toLowerCase()}
-        AND ${supersedes}
+        AND (
+          "deployment_id" = ${deploymentId}
+          OR ("base_position" = ${basePosition} AND "base_position_rejects" IS TRUE)
+        )
         AND "undeployed_at" >= ${deployedAt}
       ORDER BY "undeployed_at" DESC
       LIMIT 1
