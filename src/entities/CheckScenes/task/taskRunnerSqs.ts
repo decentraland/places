@@ -1,7 +1,10 @@
 import { applyDeploymentDecision } from "./applyDeploymentDecision"
 import { DeploymentToSqs } from "./consumer"
 import { WorldDeploymentDecision } from "./deploymentDecision"
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  InvalidWorldSqsMessageError,
+  WorldDeploymentUnresolvedError,
+} from "./errors"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
@@ -9,6 +12,7 @@ import { getTrustedContentServerUrl, processEntityId } from "./processEntityId"
 import { resolveGenesisCityDeployment } from "./resolveGenesisCityDeployment"
 import {
   ResolveWorldDeploymentOptions,
+  WorldDeploymentVerification,
   resolveWorldDeployment,
 } from "./resolveWorldDeployment"
 import { withDatabaseTransaction } from "../../Database/model"
@@ -98,6 +102,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
 }
 
+const VERIFY_ATTEMPTS = 3
+
 async function applyWorldDeployment(options: ResolveWorldDeploymentOptions) {
   const apply = (decision: WorldDeploymentDecision) =>
     applyDeploymentDecision({
@@ -107,25 +113,27 @@ async function applyWorldDeployment(options: ResolveWorldDeploymentOptions) {
       deploymentId: options.deploymentId,
     })
 
-  const firstPass = await withDatabaseTransaction(async () => {
-    const decision = await resolveWorldDeployment(options)
-    return decision.kind === "verify-upstream"
-      ? { status: "verify" as const, base: decision.base }
-      : { status: "done" as const, processed: await apply(decision) }
-  })
-  if (firstPass.status === "done") {
-    return firstPass.processed
-  }
+  let verified: WorldDeploymentVerification | undefined
+  for (let attempt = 1; ; attempt++) {
+    const pass = await withDatabaseTransaction(async () => {
+      const decision = await resolveWorldDeployment({ ...options, verified })
+      return decision.kind === "verify-upstream"
+        ? { status: "verify" as const, request: decision }
+        : { status: "done" as const, processed: await apply(decision) }
+    })
+    if (pass.status === "done") {
+      return pass.processed
+    }
+    if (attempt >= VERIFY_ATTEMPTS) {
+      throw new WorldDeploymentUnresolvedError(options.worldName)
+    }
 
-  const served = await fetchWorldActiveScenesAtPositions(options.worldName, [
-    firstPass.base,
-  ])
-  return withDatabaseTransaction(async () =>
-    apply(
-      await resolveWorldDeployment({
-        ...options,
-        servedUpstreamIds: served.deploymentIds,
-      })
-    )
-  )
+    const served = await fetchWorldActiveScenesAtPositions(options.worldName, [
+      pass.request.base,
+    ])
+    verified = {
+      servedUpstreamIds: served.deploymentIds,
+      fence: pass.request.fence,
+    }
+  }
 }

@@ -23,13 +23,19 @@ export type ResolveWorldDeploymentOptions = {
   deploymentId: string
   nameOwner: string | null | undefined
   sdk: string | null
-  servedUpstreamIds?: string[]
+  verified?: WorldDeploymentVerification
   worldName: string
+}
+
+export type WorldDeploymentVerification = {
+  servedUpstreamIds: string[]
+  fence: string
 }
 
 export type WorldDeploymentVerifyUpstream = {
   kind: "verify-upstream"
   base: string
+  fence: string
 }
 
 /**
@@ -37,18 +43,13 @@ export type WorldDeploymentVerifyUpstream = {
  * task runner must apply. The caller owns the surrounding database transaction; this helper owns
  * the per-world lock and guarantees no world row is written for a superseded deployment.
  *
- * @param options.servedUpstreamIds - deployment ids the content server currently serves at the
- * scene base. Omit on the first call: a watermark match then returns `verify-upstream` so the caller
- * can fetch them outside the transaction and call again with them, which always yields a decision.
- * A newer real place or a tombstone of this deployment id supersedes without a fetch; a redelivery
- * of the active deployment skips the checks.
+ * @param options.verified - deployment ids the content server served at the scene base, and the
+ * removal fence returned with the `verify-upstream` they answer. Omit on the first call: a watermark
+ * match then returns `verify-upstream` so the caller can fetch them outside the transaction. The
+ * served ids are trusted only while the fence is unchanged; otherwise `verify-upstream` is returned
+ * again with the new fence. A newer real place or a tombstone of this deployment id supersedes
+ * without a fetch; a redelivery of the active deployment skips the checks.
  */
-export function resolveWorldDeployment(
-  options: ResolveWorldDeploymentOptions & { servedUpstreamIds: string[] }
-): Promise<WorldDeploymentDecision>
-export function resolveWorldDeployment(
-  options: ResolveWorldDeploymentOptions
-): Promise<WorldDeploymentDecision | WorldDeploymentVerifyUpstream>
 export async function resolveWorldDeployment({
   contentEntityScene,
   contentServerUrl,
@@ -56,7 +57,7 @@ export async function resolveWorldDeployment({
   deploymentId,
   nameOwner,
   sdk,
-  servedUpstreamIds,
+  verified,
   worldName,
 }: ResolveWorldDeploymentOptions): Promise<
   WorldDeploymentDecision | WorldDeploymentVerifyUpstream
@@ -130,10 +131,18 @@ export async function resolveWorldDeployment({
       hasNewerPositionWatermark
     )
     if (isSupersededByWatermark) {
-      if (servedUpstreamIds === undefined) {
-        return { kind: "verify-upstream", base: scene.base }
+      const fence = JSON.stringify([
+        worldUndeployment?.undeployed_at ?? null,
+        sceneUndeployment?.undeployed_at ?? null,
+        await WorldDeploymentPositionWatermarkModel.findAtPositions(
+          worldId,
+          positions
+        ),
+      ])
+      if (verified?.fence !== fence) {
+        return { kind: "verify-upstream", base: scene.base, fence }
       }
-      if (!servedUpstreamIds.includes(deploymentId)) {
+      if (!verified.servedUpstreamIds.includes(deploymentId)) {
         return supersededDecision
       }
     }

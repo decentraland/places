@@ -77,6 +77,15 @@ function expectWorldDecision(
   return resolution
 }
 
+function expectVerifyUpstream(
+  resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+): WorldDeploymentVerifyUpstream {
+  if (resolution.kind !== "verify-upstream") {
+    throw new Error("expected verify-upstream, got a world decision")
+  }
+  return resolution
+}
+
 describe("when resolving a world deployment", () => {
   let contentEntityScene: ContentEntityScene
   let decision: WorldDeploymentDecision
@@ -92,6 +101,7 @@ describe("when resolving a world deployment", () => {
   let findSupersedingSceneUndeployment: jest.SpyInstance
   let findSupersedingWorldUndeployment: jest.SpyInstance
   let hasSupersedingIdentity: jest.SpyInstance
+  let findWatermarksAtPositions: jest.SpyInstance
   let upsertWorld: jest.SpyInstance
 
   beforeEach(() => {
@@ -163,6 +173,9 @@ describe("when resolving a world deployment", () => {
     hasSupersedingPositionWatermark = jest
       .spyOn(WorldDeploymentPositionWatermarkModel, "hasSupersedingDeployment")
       .mockResolvedValue(false)
+    findWatermarksAtPositions = jest
+      .spyOn(WorldDeploymentPositionWatermarkModel, "findAtPositions")
+      .mockResolvedValue([])
     insertWorldIfNotExists = jest
       .spyOn(WorldModel, "insertWorldIfNotExists")
       .mockResolvedValue("example.dcl.eth")
@@ -207,9 +220,13 @@ describe("when resolving a world deployment", () => {
   })
 
   describe("and a watermark would supersede it", () => {
-    beforeEach(() => {
-      findActiveByWorldIdAndPositions.mockResolvedValueOnce([existingPlace])
-      hasSupersedingPositionWatermark.mockResolvedValueOnce(true)
+    let fence: string
+
+    beforeEach(async () => {
+      findActiveByWorldIdAndPositions.mockResolvedValue([existingPlace])
+      hasSupersedingPositionWatermark.mockResolvedValue(true)
+
+      fence = expectVerifyUpstream(await resolveWorldDeployment(input)).fence
     })
 
     describe("and the served scenes are not yet known", () => {
@@ -219,15 +236,21 @@ describe("when resolving a world deployment", () => {
         resolution = await resolveWorldDeployment(input)
       })
 
-      it("should ask the caller to verify against the content server", () => {
-        expect(resolution.kind).toBe("verify-upstream")
+      it("should ask the caller to verify the scene base against the content server", () => {
+        expect(resolution).toMatchObject({
+          kind: "verify-upstream",
+          base: "0,0",
+        })
       })
     })
 
     describe("and the content server no longer serves it", () => {
       beforeEach(async () => {
         decision = expectWorldDecision(
-          await resolveWorldDeployment({ ...input, servedUpstreamIds: [] })
+          await resolveWorldDeployment({
+            ...input,
+            verified: { servedUpstreamIds: [], fence },
+          })
         )
       })
 
@@ -241,13 +264,37 @@ describe("when resolving a world deployment", () => {
         decision = expectWorldDecision(
           await resolveWorldDeployment({
             ...input,
-            servedUpstreamIds: ["deployment-current"],
+            verified: { servedUpstreamIds: ["deployment-current"], fence },
           })
         )
       })
 
       it("should create the place the content server still serves", () => {
         expect(decision.placesToProcess).not.toBeNull()
+      })
+    })
+
+    describe("and a removal was recorded after the served scenes were read", () => {
+      let resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+
+      beforeEach(async () => {
+        findWatermarksAtPositions.mockResolvedValue([
+          {
+            world_id: "example.dcl.eth",
+            position: "0,0",
+            superseded_at: new Date("2026-08-04T12:00:00.000Z"),
+            inclusive: false,
+          },
+        ])
+
+        resolution = await resolveWorldDeployment({
+          ...input,
+          verified: { servedUpstreamIds: ["deployment-current"], fence },
+        })
+      })
+
+      it("should ask the caller to verify again instead of trusting the stale served list", () => {
+        expect(resolution).toMatchObject({ kind: "verify-upstream" })
       })
     })
   })
@@ -268,7 +315,7 @@ describe("when resolving a world deployment", () => {
     })
 
     it("should ask the caller to verify the scene base against the content server", () => {
-      expect(resolution).toEqual({ kind: "verify-upstream", base: "0,0" })
+      expect(resolution).toMatchObject({ kind: "verify-upstream", base: "0,0" })
     })
   })
 
@@ -285,7 +332,7 @@ describe("when resolving a world deployment", () => {
     })
 
     it("should ask the caller to verify the scene base against the content server", () => {
-      expect(resolution).toEqual({ kind: "verify-upstream", base: "0,0" })
+      expect(resolution).toMatchObject({ kind: "verify-upstream", base: "0,0" })
     })
   })
 
@@ -309,7 +356,10 @@ describe("when resolving a world deployment", () => {
         decision = expectWorldDecision(
           await resolveWorldDeployment({
             ...input,
-            servedUpstreamIds: ["deployment-current"],
+            verified: {
+              servedUpstreamIds: ["deployment-current"],
+              fence: "fence-read-before-the-tombstone",
+            },
           })
         )
       })

@@ -19,3 +19,13 @@ export class ContentServerConfigurationError extends Error {
     this.name = "ContentServerConfigurationError"
   }
 }
+
+/** The world's removals kept moving while its served scenes were read; the message is retried. */
+export class WorldDeploymentUnresolvedError extends Error {
+  constructor(worldName: string) {
+    super(
+      `Removals for ${worldName} kept changing while its served scenes were read`
+    )
+    this.name = "WorldDeploymentUnresolvedError"
+  }
+}

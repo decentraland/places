@@ -1,9 +1,11 @@
 import supertest from "supertest"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
+import { WorldDeploymentUnresolvedError } from "../../src/entities/CheckScenes/task/errors"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { fetchWorldActiveScenesAtPositions } from "../../src/entities/CheckScenes/task/fetchWorldActiveScenes"
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
+import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
@@ -11,7 +13,10 @@ import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
 } from "../fixtures/deploymentEvent"
-import { createWorldScenesUndeploymentEvent } from "../fixtures/undeploymentEvent"
+import {
+  createWorldScenesUndeploymentEvent,
+  createWorldUndeploymentEvent,
+} from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
 
@@ -244,6 +249,121 @@ describe("when a world deployment conflicts with a durable watermark", () => {
       it("should not ask the content server again", () => {
         expect(redeliveryCallCount).toBe(0)
       })
+    })
+  })
+
+  describe("and the world is torn down while the deploying entity's served scenes are read", () => {
+    const worldName = "torn-down-mid-verify.dcl.eth"
+    let enabledTitles: Array<string | null>
+    let verifyCallCount: number
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-cleared",
+        timestamp: olderAt,
+        title: "Cleared Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await undeployScene({
+        worldName,
+        entityId: "entity-cleared",
+        base: "0,0",
+        emittedAt,
+      })
+      mockFetchScenesAtPositions.mockClear()
+
+      mockFetchScenesAtPositions.mockImplementationOnce(async () => {
+        await handleWorldUndeployment(
+          createWorldUndeploymentEvent(worldName, {
+            timestamp: emittedAt + 1000,
+          })
+        )
+        return { deploymentIds: ["entity-arriving"], positions: ["0,0"] }
+      })
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-arriving",
+        timestamp: replacementAt,
+        title: "Arriving Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+
+      verifyCallCount = mockFetchScenesAtPositions.mock.calls.length
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should not admit the deployment from the served list the teardown made stale", () => {
+      expect(enabledTitles).toEqual([])
+    })
+
+    it("should read the served scenes again after the teardown", () => {
+      expect(verifyCallCount).toBe(2)
+    })
+  })
+
+  describe("and the world keeps being torn down while the served scenes are read", () => {
+    const worldName = "churning-world.dcl.eth"
+    let error: unknown
+    let enabledTitles: Array<string | null>
+    let verifyCallCount: number
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-cleared",
+        timestamp: olderAt,
+        title: "Cleared Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      })
+      await undeployScene({
+        worldName,
+        entityId: "entity-cleared",
+        base: "0,0",
+        emittedAt,
+      })
+      mockFetchScenesAtPositions.mockClear()
+
+      for (const offset of [1000, 2000]) {
+        mockFetchScenesAtPositions.mockImplementationOnce(async () => {
+          await handleWorldUndeployment(
+            createWorldUndeploymentEvent(worldName, {
+              timestamp: emittedAt + offset,
+            })
+          )
+          return { deploymentIds: ["entity-arriving"], positions: ["0,0"] }
+        })
+      }
+      error = await deliverDeployment({
+        worldName,
+        entityId: "entity-arriving",
+        timestamp: replacementAt,
+        title: "Arriving Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+      }).catch((reason: unknown) => reason)
+
+      verifyCallCount = mockFetchScenesAtPositions.mock.calls.length
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should give up with an error so the message is retried", () => {
+      expect(error).toBeInstanceOf(WorldDeploymentUnresolvedError)
+    })
+
+    it("should stop after the bounded number of reads", () => {
+      expect(verifyCallCount).toBe(2)
+    })
+
+    it("should not admit the deployment", () => {
+      expect(enabledTitles).toEqual([])
     })
   })
 

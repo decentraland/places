@@ -92,4 +92,26 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
     )
     return results[0]?.exists ?? false
   }
+
+  /** The watermarks recorded at the positions, ordered by position. */
+  static async findAtPositions(
+    worldId: string,
+    positions: string[]
+  ): Promise<WorldDeploymentPositionWatermarkAttributes[]> {
+    if (positions.length === 0) {
+      return []
+    }
+
+    const sql = SQL`
+      SELECT * FROM ${table(this)}
+      WHERE "world_id" = ${worldId.toLowerCase()}
+        AND "position" = ANY(${positions}::text[])
+      ORDER BY "position"
+    `
+
+    return this.namedQuery<WorldDeploymentPositionWatermarkAttributes>(
+      "find_world_deployment_position_watermarks",
+      sql
+    )
+  }
 }
