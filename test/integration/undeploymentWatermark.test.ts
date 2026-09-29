@@ -214,7 +214,6 @@ describe("when a deployment is delivered after an undeployment for the same worl
         )
       )
 
-      // A different, older revision of the same scene at the same base position
       await deliverDeployment({
         worldName,
         entityId: "entity-older-revision",
@@ -222,8 +221,8 @@ describe("when a deployment is delivered after an undeployment for the same worl
       })
     })
 
-    it("should not create the place from the older revision", async () => {
-      expect(await PlaceModel.findEnabledWorldName(worldName)).toHaveLength(0)
+    it("should create the redelivered older revision as a distinct identity", async () => {
+      expect(await PlaceModel.findEnabledWorldName(worldName)).toHaveLength(1)
     })
   })
 

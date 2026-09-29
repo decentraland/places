@@ -12,7 +12,6 @@ import PlaceModel from "../../Place/model"
 import { DisabledReason, PlaceAttributes } from "../../Place/types"
 import { sanitizePlaceDescription } from "../../Place/utils"
 import WorldModel from "../../World/model"
-import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
@@ -60,26 +59,20 @@ export async function resolveWorldDeployment({
     positions,
     deployedAt
   )
-  const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
-    await Promise.all([
-      WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
-      WorldSceneUndeploymentModel.findSupersedingUndeployment(
-        worldId,
-        deploymentId,
-        scene.base,
-        deployedAt
-      ),
-      WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
-        worldId,
-        positions,
-        deployedAt
-      ),
-    ])
+  const [worldUndeployment, sceneUndeployment] = await Promise.all([
+    WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
+    WorldSceneUndeploymentModel.findSupersedingUndeployment(
+      worldId,
+      deploymentId,
+      scene.base,
+      deployedAt,
+      false
+    ),
+  ])
   const isSuperseded = !!(
     hasNewerPlace ||
     worldUndeployment ||
-    sceneUndeployment ||
-    hasNewerPositionWatermark
+    sceneUndeployment
   )
 
   if (isSuperseded) {

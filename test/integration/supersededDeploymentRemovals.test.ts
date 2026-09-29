@@ -260,8 +260,6 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
     beforeEach(async () => {
       worldName = "superseded-before-replaced.dcl.eth"
 
-      // This deployment happened after the spanning replacement and makes that replacement stale
-      // when its message eventually arrives. It does not overlap the older scene at 0,0.
       await deliverDeployment({
         worldName,
         entityId: "entity-newer",
@@ -271,8 +269,6 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
         parcels: ["1,0"],
       })
 
-      // Upstream this deployment replaced the still-undelivered scene at 0,0, then was itself
-      // replaced at 1,0. Places avoids it, but must retain its removal boundary at 0,0.
       await deliverDeployment({
         worldName,
         entityId: "entity-superseding",
@@ -282,8 +278,6 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
         parcels: ["0,0", "1,0"],
       })
 
-      // The older deployment is delivered only now, so no active row existed when the spanning
-      // deployment was processed. Its overlapping position watermark must still reject it.
       await deliverDeployment({
         worldName,
         entityId: "entity-replaced",
@@ -297,16 +291,19 @@ describe("when a superseded world deployment replaced other scenes upstream", ()
       enabledTitles = enabled.map((place) => place.title as string)
     })
 
-    it("should not create the older scene that was absent during replacement", () => {
-      expect(enabledTitles).not.toContain("Replaced Scene")
+    it("should create the older scene as a distinct identity at the cleared parcel", () => {
+      expect(enabledTitles).toContain("Replaced Scene")
     })
 
-    it("should not create a place for the superseded deployment", () => {
+    it("should still avoid the deployment superseded by a newer real place", () => {
       expect(enabledTitles).not.toContain("Superseding Scene")
     })
 
-    it("should leave only the scene that remains deployed upstream", () => {
-      expect(enabledTitles).toEqual(["Newer Scene"])
+    it("should leave the upstream scene alongside the readmitted older scene", () => {
+      expect([...enabledTitles].sort()).toEqual([
+        "Newer Scene",
+        "Replaced Scene",
+      ])
     })
   })
 

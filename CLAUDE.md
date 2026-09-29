@@ -109,6 +109,10 @@ Means `CONNECTION_STRING` is empty/unset. `pg.Client('').host` defaults to liter
 
 `npm install` does not create `.husky/_/husky.sh`. Run `npx husky install` once after install, then commit. Never use `--no-verify` to work around it.
 
+### `npm test` runs compiled `lib/**/*.test.js` if you built first
+
+`jest.config.js` ignores only `node_modules` and `test/` — not `lib/`. Running `npm run build` (which emits `lib/`) before `npm test` makes jest also discover the compiled `.test.js` duplicates, which run without ts-jest and fail. Run tests on a clean tree, or `rm -rf lib` first. Order checks as test-before-build, or clean `lib/` between them.
+
 ### `decentraland-gatsby` usage
 
 Despite the name, this is the **backend** framework for places. The server imports:

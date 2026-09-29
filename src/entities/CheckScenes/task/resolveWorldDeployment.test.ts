@@ -11,7 +11,6 @@ import PlaceModel from "../../Place/model"
 import { DisabledReason, PlaceAttributes } from "../../Place/types"
 import WorldModel from "../../World/model"
 import { WorldAttributes } from "../../World/types"
-import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
@@ -74,7 +73,6 @@ describe("when resolving a world deployment", () => {
   let input: Parameters<typeof resolveWorldDeployment>[0]
   let findActiveByWorldIdAndPositions: jest.SpyInstance
   let hasNewerActiveWorldDeployment: jest.SpyInstance
-  let hasSupersedingPositionWatermark: jest.SpyInstance
   let insertWorldIfNotExists: jest.SpyInstance
   let lockWorldForDeployment: jest.SpyInstance
   let findSupersedingSceneUndeployment: jest.SpyInstance
@@ -144,9 +142,6 @@ describe("when resolving a world deployment", () => {
     findSupersedingSceneUndeployment = jest
       .spyOn(WorldSceneUndeploymentModel, "findSupersedingUndeployment")
       .mockResolvedValue(null)
-    hasSupersedingPositionWatermark = jest
-      .spyOn(WorldDeploymentPositionWatermarkModel, "hasSupersedingDeployment")
-      .mockResolvedValue(false)
     insertWorldIfNotExists = jest
       .spyOn(WorldModel, "insertWorldIfNotExists")
       .mockResolvedValue("example.dcl.eth")
@@ -157,10 +152,16 @@ describe("when resolving a world deployment", () => {
     jest.restoreAllMocks()
   })
 
-  describe("and a newer position watermark supersedes it", () => {
+  describe("and a scene undeployment supersedes it by deployment identity", () => {
     beforeEach(async () => {
       findActiveByWorldIdAndPositions.mockResolvedValueOnce([existingPlace])
-      hasSupersedingPositionWatermark.mockResolvedValueOnce(true)
+      findSupersedingSceneUndeployment.mockResolvedValueOnce({
+        world_id: "example.dcl.eth",
+        deployment_id: "deployment-current",
+        base_position: "0,0",
+        undeployed_at: new Date(),
+        base_position_rejects: false,
+      })
 
       decision = await resolveWorldDeployment(input)
     })
@@ -352,12 +353,13 @@ describe("when resolving a world deployment", () => {
       )
     })
 
-    it("should check the scene undeployment watermark using deployment identity", () => {
+    it("should check the scene undeployment watermark by identity only", () => {
       expect(findSupersedingSceneUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
         "deployment-current",
         "0,0",
-        new Date(contentEntityScene.timestamp)
+        new Date(contentEntityScene.timestamp),
+        false
       )
     })
   })
