@@ -91,6 +91,7 @@ describe("when resolving a world deployment", () => {
   let lockWorldForDeployment: jest.SpyInstance
   let findSupersedingSceneUndeployment: jest.SpyInstance
   let findSupersedingWorldUndeployment: jest.SpyInstance
+  let hasSupersedingIdentity: jest.SpyInstance
   let upsertWorld: jest.SpyInstance
 
   beforeEach(() => {
@@ -156,6 +157,9 @@ describe("when resolving a world deployment", () => {
     findSupersedingSceneUndeployment = jest
       .spyOn(WorldSceneUndeploymentModel, "findSupersedingUndeployment")
       .mockResolvedValue(null)
+    hasSupersedingIdentity = jest
+      .spyOn(WorldSceneUndeploymentModel, "hasSupersedingIdentity")
+      .mockResolvedValue(false)
     hasSupersedingPositionWatermark = jest
       .spyOn(WorldDeploymentPositionWatermarkModel, "hasSupersedingDeployment")
       .mockResolvedValue(false)
@@ -244,6 +248,94 @@ describe("when resolving a world deployment", () => {
 
       it("should create the place the content server still serves", () => {
         expect(decision.placesToProcess).not.toBeNull()
+      })
+    })
+  })
+
+  describe("and a scene undeployment would supersede it by base", () => {
+    let resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+
+    beforeEach(async () => {
+      findSupersedingSceneUndeployment.mockResolvedValueOnce({
+        world_id: "example.dcl.eth",
+        deployment_id: "deployment-other",
+        base_position: "0,0",
+        undeployed_at: new Date(),
+        base_position_rejects: true,
+      })
+
+      resolution = await resolveWorldDeployment(input)
+    })
+
+    it("should ask the caller to verify the scene base against the content server", () => {
+      expect(resolution).toEqual({ kind: "verify-upstream", base: "0,0" })
+    })
+  })
+
+  describe("and a world undeployment would supersede it", () => {
+    let resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+
+    beforeEach(async () => {
+      findSupersedingWorldUndeployment.mockResolvedValueOnce({
+        world_id: "example.dcl.eth",
+        undeployed_at: new Date(),
+      })
+
+      resolution = await resolveWorldDeployment(input)
+    })
+
+    it("should ask the caller to verify the scene base against the content server", () => {
+      expect(resolution).toEqual({ kind: "verify-upstream", base: "0,0" })
+    })
+  })
+
+  describe("and this deployment id was tombstoned", () => {
+    beforeEach(() => {
+      hasSupersedingIdentity.mockResolvedValueOnce(true)
+    })
+
+    describe("and the served scenes are not yet known", () => {
+      beforeEach(async () => {
+        decision = expectWorldDecision(await resolveWorldDeployment(input))
+      })
+
+      it("should reject it without asking to verify upstream", () => {
+        expect(decision.placesToProcess).toBeNull()
+      })
+    })
+
+    describe("and a stale served list still names it", () => {
+      beforeEach(async () => {
+        decision = expectWorldDecision(
+          await resolveWorldDeployment({
+            ...input,
+            servedUpstreamIds: ["deployment-current"],
+          })
+        )
+      })
+
+      it("should still reject it", () => {
+        expect(decision.placesToProcess).toBeNull()
+      })
+    })
+  })
+
+  describe("and the deployment is already the active place", () => {
+    let resolution: WorldDeploymentDecision | WorldDeploymentVerifyUpstream
+
+    beforeEach(async () => {
+      findActiveByWorldIdAndPositions.mockResolvedValueOnce([
+        { ...existingPlace, deployment_id: "deployment-current" },
+      ])
+      hasSupersedingPositionWatermark.mockResolvedValueOnce(true)
+
+      resolution = await resolveWorldDeployment(input)
+    })
+
+    it("should update the place without asking to verify upstream", () => {
+      expect(resolution).toMatchObject({
+        kind: "world",
+        placesToProcess: { update: { deployment_id: "deployment-current" } },
       })
     })
   })

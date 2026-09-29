@@ -37,10 +37,18 @@ export type WorldDeploymentVerifyUpstream = {
  * task runner must apply. The caller owns the surrounding database transaction; this helper owns
  * the per-world lock and guarantees no world row is written for a superseded deployment.
  *
- * @param servedUpstreamIds - deployment ids the content server currently serves at the scene base.
- * Omit on the first call: a watermark match then returns `verify-upstream` so the caller can fetch
- * them outside the transaction and call again. A newer real place supersedes without a fetch.
+ * @param options.servedUpstreamIds - deployment ids the content server currently serves at the
+ * scene base. Omit on the first call: a watermark match then returns `verify-upstream` so the caller
+ * can fetch them outside the transaction and call again with them, which always yields a decision.
+ * A newer real place or a tombstone of this deployment id supersedes without a fetch; a redelivery
+ * of the active deployment skips the checks.
  */
+export function resolveWorldDeployment(
+  options: ResolveWorldDeploymentOptions & { servedUpstreamIds: string[] }
+): Promise<WorldDeploymentDecision>
+export function resolveWorldDeployment(
+  options: ResolveWorldDeploymentOptions
+): Promise<WorldDeploymentDecision | WorldDeploymentVerifyUpstream>
 export async function resolveWorldDeployment({
   contentEntityScene,
   contentServerUrl,
@@ -73,21 +81,30 @@ export async function resolveWorldDeployment({
     positions,
     deployedAt
   )
-  const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
-    await Promise.all([
-      WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
-      WorldSceneUndeploymentModel.findSupersedingUndeployment(
-        worldId,
-        deploymentId,
-        scene.base,
-        deployedAt
-      ),
-      WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
-        worldId,
-        positions,
-        deployedAt
-      ),
-    ])
+  const [
+    worldUndeployment,
+    sceneUndeployment,
+    hasNewerPositionWatermark,
+    isTombstonedByIdentity,
+  ] = await Promise.all([
+    WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
+    WorldSceneUndeploymentModel.findSupersedingUndeployment(
+      worldId,
+      deploymentId,
+      scene.base,
+      deployedAt
+    ),
+    WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+      worldId,
+      positions,
+      deployedAt
+    ),
+    WorldSceneUndeploymentModel.hasSupersedingIdentity(
+      worldId,
+      deploymentId,
+      deployedAt
+    ),
+  ])
   const supersededDecision: WorldDeploymentDecision = {
     kind: "world",
     placesToProcess: null,
@@ -98,22 +115,27 @@ export async function resolveWorldDeployment({
     },
     positionWatermark,
   }
-
-  if (hasNewerPlace) {
-    return supersededDecision
-  }
-
-  const supersededByWatermark = !!(
-    worldUndeployment ||
-    sceneUndeployment ||
-    hasNewerPositionWatermark
+  const isAlreadyActive = overlappingPlaces.some(
+    (place) => place.deployment_id === deploymentId
   )
-  if (supersededByWatermark) {
-    if (servedUpstreamIds === undefined) {
-      return { kind: "verify-upstream", base: scene.base }
-    }
-    if (!servedUpstreamIds.includes(deploymentId)) {
+
+  if (!isAlreadyActive) {
+    if (hasNewerPlace || isTombstonedByIdentity) {
       return supersededDecision
+    }
+
+    const isSupersededByWatermark = !!(
+      worldUndeployment ||
+      sceneUndeployment ||
+      hasNewerPositionWatermark
+    )
+    if (isSupersededByWatermark) {
+      if (servedUpstreamIds === undefined) {
+        return { kind: "verify-upstream", base: scene.base }
+      }
+      if (!servedUpstreamIds.includes(deploymentId)) {
+        return supersededDecision
+      }
     }
   }
 

@@ -144,6 +144,7 @@ describe("when a world deployment conflicts with a durable watermark", () => {
   describe("and the content server still serves the deploying entity", () => {
     const worldName = "verified-replacement.dcl.eth"
     let enabledTitles: Array<string | null>
+    let verifyCalls: unknown[][]
 
     beforeEach(async () => {
       await deliverDeployment({
@@ -160,6 +161,7 @@ describe("when a world deployment conflicts with a durable watermark", () => {
         base: "0,0",
         emittedAt,
       })
+      mockFetchScenesAtPositions.mockClear()
 
       mockFetchScenesAtPositions.mockResolvedValueOnce({
         deploymentIds: ["entity-replacement"],
@@ -174,6 +176,7 @@ describe("when a world deployment conflicts with a durable watermark", () => {
         parcels: ["0,0"],
       })
 
+      verifyCalls = [...mockFetchScenesAtPositions.mock.calls]
       enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
         (place) => place.title
       )
@@ -181,6 +184,31 @@ describe("when a world deployment conflicts with a durable watermark", () => {
 
     it("should admit the deployment the content server confirms", () => {
       expect(enabledTitles).toEqual(["Replacement Scene"])
+    })
+
+    it("should verify the scene base against the content server exactly once", () => {
+      expect(verifyCalls).toEqual([[worldName, ["0,0"]]])
+    })
+
+    describe("and the admitted deployment is redelivered", () => {
+      let redeliveryCallCount: number
+
+      beforeEach(async () => {
+        mockFetchScenesAtPositions.mockClear()
+        await deliverDeployment({
+          worldName,
+          entityId: "entity-replacement",
+          timestamp: replacementAt,
+          title: "Replacement Scene",
+          base: "0,0",
+          parcels: ["0,0"],
+        })
+        redeliveryCallCount = mockFetchScenesAtPositions.mock.calls.length
+      })
+
+      it("should not ask the content server again", () => {
+        expect(redeliveryCallCount).toBe(0)
+      })
     })
   })
 

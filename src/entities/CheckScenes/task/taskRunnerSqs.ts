@@ -2,10 +2,8 @@ import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.
 
 import { applyDeploymentDecision } from "./applyDeploymentDecision"
 import { DeploymentToSqs } from "./consumer"
-import {
-  InvalidWorldSqsMessageError,
-  WorldDeploymentUnresolvedError,
-} from "./errors"
+import { WorldDeploymentDecision } from "./deploymentDecision"
+import { InvalidWorldSqsMessageError } from "./errors"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
@@ -110,25 +108,20 @@ type ApplyWorldDeploymentOptions = {
 }
 
 async function applyWorldDeployment(options: ApplyWorldDeploymentOptions) {
-  const run = (servedUpstreamIds: string[] | undefined) =>
-    withDatabaseTransaction(async () => {
-      const decision = await resolveWorldDeployment({
-        ...options,
-        servedUpstreamIds,
-      })
-      if (decision.kind === "verify-upstream") {
-        return { status: "verify" as const, base: decision.base }
-      }
-      const processed = await applyDeploymentDecision({
-        contentEntityScene: options.contentEntityScene,
-        contentServerUrl: options.contentServerUrl,
-        decision,
-        deploymentId: options.deploymentId,
-      })
-      return { status: "done" as const, processed }
+  const apply = (decision: WorldDeploymentDecision) =>
+    applyDeploymentDecision({
+      contentEntityScene: options.contentEntityScene,
+      contentServerUrl: options.contentServerUrl,
+      decision,
+      deploymentId: options.deploymentId,
     })
 
-  const firstPass = await run(undefined)
+  const firstPass = await withDatabaseTransaction(async () => {
+    const decision = await resolveWorldDeployment(options)
+    return decision.kind === "verify-upstream"
+      ? { status: "verify" as const, base: decision.base }
+      : { status: "done" as const, processed: await apply(decision) }
+  })
   if (firstPass.status === "done") {
     return firstPass.processed
   }
@@ -136,9 +129,12 @@ async function applyWorldDeployment(options: ApplyWorldDeploymentOptions) {
   const served = await fetchWorldActiveScenesAtPositions(options.worldName, [
     firstPass.base,
   ])
-  const secondPass = await run(served.deploymentIds)
-  if (secondPass.status === "verify") {
-    throw new WorldDeploymentUnresolvedError(options.worldName)
-  }
-  return secondPass.processed
+  return withDatabaseTransaction(async () =>
+    apply(
+      await resolveWorldDeployment({
+        ...options,
+        servedUpstreamIds: served.deploymentIds,
+      })
+    )
+  )
 }

@@ -122,12 +122,23 @@ async function undeployScene(options: {
   )
 }
 
+type Step = "stale" | "served" | "undeploy"
+
+const servedScenes = { deploymentIds: ["entity-served"], positions: ["0,0"] }
+const noScenes = { deploymentIds: [], positions: [] }
+
 describe("when the same world events arrive in any order", () => {
-  const worldName = "order-independent.dcl.eth"
   const day = 24 * 60 * 60 * 1000
-  let deployStale: () => Promise<void>
-  let deployServed: () => Promise<void>
-  let undeployStale: () => Promise<void>
+  const orderings: Step[][] = [
+    ["stale", "served", "undeploy"],
+    ["stale", "undeploy", "served"],
+    ["served", "stale", "undeploy"],
+    ["served", "undeploy", "stale"],
+    ["undeploy", "stale", "served"],
+    ["undeploy", "served", "stale"],
+  ]
+  let steps: Record<Step, () => Promise<void>>
+  let isServedPublished: boolean
 
   beforeAll(async () => {
     await initTestDb()
@@ -142,73 +153,88 @@ describe("when the same world events arrive in any order", () => {
     jest.clearAllMocks()
   })
 
-  beforeEach(() => {
+  function prepareSteps(worldName: string): void {
     const stale = Date.now() - 3 * day
     const served = Date.now() - 2 * day
     const emitted = Date.now() - day
 
-    mockFetchScenes.mockResolvedValue({
-      deploymentIds: ["entity-served"],
-      positions: ["0,0"],
-    })
-    mockFetchScenesAtPositions.mockResolvedValue({
-      deploymentIds: ["entity-served"],
-      positions: ["0,0"],
+    steps = {
+      stale: () =>
+        deliverDeployment({
+          worldName,
+          entityId: "entity-stale",
+          timestamp: stale,
+          title: "Stale Scene",
+          base: "0,0",
+          parcels: ["0,0"],
+        }),
+      served: async () => {
+        isServedPublished = true
+        await deliverDeployment({
+          worldName,
+          entityId: "entity-served",
+          timestamp: served,
+          title: "Served Scene",
+          base: "0,0",
+          parcels: ["0,0"],
+        })
+      },
+      undeploy: () =>
+        undeployScene({
+          worldName,
+          entityId: "entity-stale",
+          base: "0,0",
+          emittedAt: emitted,
+        }),
+    }
+  }
+
+  async function runSteps(
+    worldName: string,
+    order: Step[]
+  ): Promise<Array<string | null>> {
+    for (const step of order) {
+      await steps[step]()
+    }
+    return (await PlaceModel.findEnabledWorldName(worldName)).map(
+      (place) => place.title
+    )
+  }
+
+  describe("and the content server already serves the replacement", () => {
+    const worldName = "order-settled.dcl.eth"
+
+    beforeEach(() => {
+      prepareSteps(worldName)
+      mockFetchScenes.mockResolvedValue(servedScenes)
+      mockFetchScenesAtPositions.mockResolvedValue(servedScenes)
     })
 
-    deployStale = () =>
-      deliverDeployment({
-        worldName,
-        entityId: "entity-stale",
-        timestamp: stale,
-        title: "Stale Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-    deployServed = () =>
-      deliverDeployment({
-        worldName,
-        entityId: "entity-served",
-        timestamp: served,
-        title: "Served Scene",
-        base: "0,0",
-        parcels: ["0,0"],
-      })
-    undeployStale = () =>
-      undeployScene({
-        worldName,
-        entityId: "entity-stale",
-        base: "0,0",
-        emittedAt: emitted,
-      })
+    it.each(orderings)(
+      "should converge to the served scene for order [%s, %s, %s]",
+      async (...order) => {
+        expect(await runSteps(worldName, order)).toEqual(["Served Scene"])
+      }
+    )
   })
 
-  const orderings: Array<Array<"stale" | "served" | "undeploy">> = [
-    ["stale", "served", "undeploy"],
-    ["stale", "undeploy", "served"],
-    ["served", "stale", "undeploy"],
-    ["served", "undeploy", "stale"],
-    ["undeploy", "stale", "served"],
-    ["undeploy", "served", "stale"],
-  ]
+  describe("and the replacement is published upstream only when its own event arrives", () => {
+    const worldName = "order-published-on-arrival.dcl.eth"
 
-  it.each(orderings)(
-    "should converge to the served scene for order [%s, %s, %s]",
-    async (...steps) => {
-      const run = {
-        stale: deployStale,
-        served: deployServed,
-        undeploy: undeployStale,
+    beforeEach(() => {
+      prepareSteps(worldName)
+      isServedPublished = false
+      const currentScenes = async () =>
+        isServedPublished ? servedScenes : noScenes
+      mockFetchScenes.mockImplementation(currentScenes)
+      mockFetchScenesAtPositions.mockImplementation(currentScenes)
+    })
+
+    it.each(orderings)(
+      "should converge to the served scene for order [%s, %s, %s]",
+      async (...order) => {
+        expect(await runSteps(worldName, order)).toEqual(["Served Scene"])
       }
-      for (const step of steps) {
-        await run[step]()
-      }
-
-      const enabledTitles = (
-        await PlaceModel.findEnabledWorldName(worldName)
-      ).map((place) => place.title)
-
-      expect(enabledTitles).toEqual(["Served Scene"])
-    }
-  )
+    )
+  })
 })
