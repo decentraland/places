@@ -136,11 +136,13 @@ async function isRejected(
       worldName,
       deploymentId,
       basePosition,
+      at,
       at
     ),
     WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
       worldName,
       [basePosition],
+      at,
       at
     ),
   ])
@@ -295,14 +297,17 @@ describe("when repairing places an undeployment disabled", () => {
     } | null
 
     beforeEach(async () => {
-      await WorldSceneUndeploymentModel.recordScenes(worldName, [
-        {
-          entityId: "entity-removed",
-          baseParcel: "0,0",
-          undeployedAt: new Date(eventAt),
-          basePositionRejects: true,
-        },
-      ])
+      await WorldSceneUndeploymentModel.recordRemovals(
+        worldName,
+        [
+          {
+            entityId: "entity-removed",
+            baseParcel: "0,0",
+            basePositionRejects: true,
+          },
+        ],
+        new Date(eventAt)
+      )
 
       repair = await repairWorld(
         worldName,
@@ -351,15 +356,13 @@ describe("when repairing places an undeployment disabled", () => {
       await WorldDeploymentPositionWatermarkModel.recordPositions(
         worldName,
         ["0,0"],
-        new Date(servedAt),
-        false
+        new Date(servedAt)
       )
-      // an undeployment records them inclusive and later: this one does reject the served scene
-      await WorldDeploymentPositionWatermarkModel.recordPositions(
+      // an undeployment records a later removal: this one does reject the served scene
+      await WorldDeploymentPositionWatermarkModel.recordRemovals(
         worldName,
         ["5,5"],
-        new Date(eventAt),
-        true
+        new Date(eventAt)
       )
 
       await repairWorld(
@@ -390,12 +393,14 @@ describe("when repairing places an undeployment disabled", () => {
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
           ["0,0", "5,5"],
+          new Date(servedAt),
           new Date(servedAt)
         )
       rejectsOlder =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
           ["5,5"],
+          new Date(removedAt),
           new Date(removedAt)
         )
     })
@@ -534,14 +539,17 @@ describe("when repairing places an undeployment disabled", () => {
     beforeEach(async () => {
       // this tombstone cannot reject the served scene, so it must keep guarding its base against
       // the older revisions it was recorded for
-      await WorldSceneUndeploymentModel.recordScenes(worldName, [
-        {
-          entityId: "entity-older",
-          baseParcel: "0,0",
-          undeployedAt: new Date(removedAt),
-          basePositionRejects: true,
-        },
-      ])
+      await WorldSceneUndeploymentModel.recordRemovals(
+        worldName,
+        [
+          {
+            entityId: "entity-older",
+            baseParcel: "0,0",
+            basePositionRejects: true,
+          },
+        ],
+        new Date(removedAt)
+      )
 
       await repairWorld(
         worldName,

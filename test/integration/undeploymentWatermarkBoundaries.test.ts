@@ -337,23 +337,29 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
     olderTimestamp = Date.now() - 2 * DAY
     newerTimestamp = Date.now() - DAY
 
-    await WorldSceneUndeploymentModel.recordScenes(worldName, [
-      {
-        entityId: "entity-conflict",
-        baseParcel: "5,5",
-        undeployedAt: new Date(newerTimestamp),
-        basePositionRejects: true,
-      },
-    ])
+    await WorldSceneUndeploymentModel.recordRemovals(
+      worldName,
+      [
+        {
+          entityId: "entity-conflict",
+          baseParcel: "5,5",
+          basePositionRejects: true,
+        },
+      ],
+      new Date(newerTimestamp)
+    )
     // Same deployment id, older event, disagreeing base position
-    await WorldSceneUndeploymentModel.recordScenes(worldName, [
-      {
-        entityId: "entity-conflict",
-        baseParcel: "0,0",
-        undeployedAt: new Date(olderTimestamp),
-        basePositionRejects: true,
-      },
-    ])
+    await WorldSceneUndeploymentModel.recordRemovals(
+      worldName,
+      [
+        {
+          entityId: "entity-conflict",
+          baseParcel: "0,0",
+          basePositionRejects: true,
+        },
+      ],
+      new Date(olderTimestamp)
+    )
   })
 
   it("should keep superseding deployments at the base position of the newest event", async () => {
@@ -362,6 +368,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
         worldName,
         "unrelated-deployment",
         "5,5",
+        new Date(olderTimestamp),
         new Date(olderTimestamp)
       )
 
@@ -374,6 +381,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
         worldName,
         "unrelated-deployment",
         "0,0",
+        new Date(olderTimestamp),
         new Date(olderTimestamp)
       )
 

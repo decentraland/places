@@ -6,8 +6,6 @@ import { handleWorldUndeployment } from "./handleWorldUndeployment"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import WorldModel from "../../World/model"
-import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
-import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
 jest.mock("./fetchWorldActiveScenes")
@@ -23,8 +21,6 @@ describe("when handling a world undeployment event", () => {
     revisions: Array<{ id: string; deployment_id: string | null }>
     positions: string[]
   }
-  let recordPositions: jest.SpyInstance
-  let recordScenes: jest.SpyInstance
   let recordWatermark: jest.SpyInstance
   let calls: string[]
   let event: WorldUndeploymentEvent
@@ -45,11 +41,6 @@ describe("when handling a world undeployment event", () => {
       .mockImplementation(async () => {
         calls.push("watermark")
       })
-    recordScenes = jest
-      .spyOn(WorldSceneUndeploymentModel, "recordScenes")
-      .mockImplementation(async () => {
-        calls.push("scene-watermark")
-      })
     snapshot = { revisions: [], positions: [] }
     findWorldPlaceSnapshot = jest
       .spyOn(PlaceModel, "findWorldPlaceSnapshot")
@@ -57,11 +48,6 @@ describe("when handling a world undeployment event", () => {
     findEnabledWorldPlaceRevisions = jest
       .spyOn(PlaceModel, "findEnabledWorldPlaceRevisions")
       .mockImplementation(async () => snapshot.revisions)
-    recordPositions = jest
-      .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
-      .mockImplementation(async () => {
-        calls.push("position-watermark")
-      })
     disableByWorldId = jest
       .spyOn(PlaceModel, "disableByWorldId")
       .mockImplementation(async () => {
@@ -116,25 +102,14 @@ describe("when handling a world undeployment event", () => {
     expect(calls).toEqual(["lock", "watermark", "disable"])
   })
 
-  it("should not sweep parcels when the world was torn down, since the world watermark covers it", async () => {
-    await handleWorldUndeployment(event)
-
-    expect(recordPositions).not.toHaveBeenCalled()
-  })
-
   describe("and the world still serves scenes after the undeployment", () => {
-    let survivingDeployedAt: Date
     let removedPlace: PlaceAttributes
 
     beforeEach(() => {
-      survivingDeployedAt = new Date(Date.parse("2026-08-03T11:59:00.000Z"))
       removedPlace = {
         id: "place-removed",
         deployment_id: "deployment-removed",
         base_position: "1,1",
-        // decentraland-gatsby's pg parser hands timestamp columns back as ISO strings, so the
-        // fixture uses one even though PlaceAttributes types it as a Date
-        deployed_at: survivingDeployedAt.toISOString(),
       } as unknown as PlaceAttributes
       fetchWorldActiveScenesMock.mockResolvedValue({
         deploymentIds: ["deployment-surviving"],
@@ -157,83 +132,13 @@ describe("when handling a world undeployment event", () => {
       )
     })
 
-    it("should not record a full-world watermark that would reject the surviving deployment", async () => {
+    it("should still record the full-world watermark, which only retires deployments emitted before it", async () => {
       await handleWorldUndeployment(event)
 
-      expect(recordWatermark).not.toHaveBeenCalled()
-    })
-
-    it("should watermark the parcels the world held that nothing serves now", async () => {
-      findWorldPlaceSnapshot.mockResolvedValue({
-        revisions: snapshot.revisions,
-        positions: ["1,1", "0,0", "2,2"],
-      })
-
-      await handleWorldUndeployment(event)
-
-      expect(recordPositions).toHaveBeenCalledWith(
+      expect(recordWatermark).toHaveBeenCalledWith(
         "example.dcl.eth",
-        ["1,1", "2,2"],
-        new Date(event.timestamp),
-        true
+        event.timestamp
       )
-    })
-
-    it("should let a base nothing serves keep rejecting", async () => {
-      await handleWorldUndeployment(event)
-
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        expect.objectContaining({ basePositionRejects: true }),
-      ])
-    })
-
-    describe("and a survivor occupies the removed place's base", () => {
-      beforeEach(() => {
-        removedPlace.base_position = "0,0"
-      })
-
-      it("should record an identity tombstone that cannot reject that base", async () => {
-        await handleWorldUndeployment(event)
-
-        expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-          expect.objectContaining({
-            entityId: "deployment-removed",
-            basePositionRejects: false,
-          }),
-        ])
-      })
-    })
-
-    it("should record a scene watermark for every removed place", async () => {
-      await handleWorldUndeployment(event)
-
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-removed",
-          baseParcel: "1,1",
-          undeployedAt: survivingDeployedAt.toISOString(),
-          basePositionRejects: true,
-        },
-      ])
-    })
-
-    describe("and a removed place predates deployment ids", () => {
-      beforeEach(() => {
-        removedPlace.deployment_id = null
-      })
-
-      it("should key its watermark on the local place id", async () => {
-        await handleWorldUndeployment(event)
-
-        expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-          {
-            entityId: "legacy-place:place-removed",
-            baseParcel: "1,1",
-            undeployedAt: survivingDeployedAt.toISOString(),
-            basePositionRejects: true,
-          },
-        ])
-      })
     })
   })
 

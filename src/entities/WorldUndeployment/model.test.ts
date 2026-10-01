@@ -47,7 +47,7 @@ describe("when looking for a world undeployment that supersedes a deployment", (
     )
   })
 
-  it("should only match undeployments at or after the deployment timestamp", () => {
+  it("should only match undeployments emitted at or after the deployment", () => {
     const [, sql] = namedQuery.mock.calls[0]
 
     expect(sql.text.replace(/\s+/g, " ")).toContain(`"undeployed_at" >= $`)

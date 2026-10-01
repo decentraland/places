@@ -613,12 +613,14 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
           worldName,
           "entity-scene-rollback",
           "0,0",
+          new Date(deployedAt),
           new Date(deployedAt)
         )
       const positionWatermarkExists =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
           ["0,0"],
+          new Date(deployedAt),
           new Date(deployedAt)
         )
       state = {

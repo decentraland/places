@@ -64,6 +64,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
             contentServerUrl,
             creator,
             deploymentId: job.entity.entityId,
+            emittedAt: deploymentEmittedAt(job, contentEntityScene.timestamp),
             nameOwner,
             sdk,
             worldName,
@@ -91,4 +92,21 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToDisable.length) notifyDisablePlaces(placesToDisable)
 
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
+}
+
+/**
+ * The worlds content server stamps a deployment event after committing it, on the same clock as its
+ * removal events. Messages without that stamp fall back to the entity timestamp, and a stamp before
+ * the entity was signed cannot be an emission time.
+ */
+function deploymentEmittedAt(
+  job: DeploymentToSqs,
+  entityTimestamp: number
+): Date {
+  const { timestamp } = job as { timestamp?: unknown }
+  return new Date(
+    typeof timestamp === "number" && Number.isFinite(timestamp)
+      ? Math.max(timestamp, entityTimestamp)
+      : entityTimestamp
+  )
 }
