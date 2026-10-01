@@ -2,11 +2,12 @@
  * Repairs world scene places that an undeployment event disabled while the worlds content server
  * was still serving their scene.
  *
- * An undeployment event is stamped with the moment the removal was emitted, which is always later
- * than the entity timestamp of the deployment that caused it. Guards comparing the two therefore
- * treated a replacement as older than the removal of what it replaced and disabled it, and the
- * durable watermarks recorded with that same emission timestamp then rejected every later delivery
- * of the surviving deployment, so the place could not recover on its own.
+ * An undeployment event is stamped with the moment the removal was emitted, which is later than the
+ * entity timestamp of a replacement signed before it. Guards comparing the two therefore treated
+ * such a replacement as older than the removal and disabled it. The durable watermarks recorded with
+ * that emission timestamp used to reject every later delivery of the surviving deployment too; they
+ * now sit on the removal clock and are compared against the deployment event's emission time, so a
+ * fresh delivery (for example through the worlds content server's /reprocess-ab) is admitted.
  *
  * For each affected world this script:
  * 1. Reads the scenes the world serves now, which is the only authority on what survived
@@ -19,16 +20,14 @@
  * evidence they changed their mind -- but those are re-recorded as opt-outs, which is the only disabled
  * state that still reserves a row's parcels against the next deployment over them.
  *
- * It writes nothing else. In particular it never relaxes a durable undeployment guard, even one it
- * can prove is now too aggressive -- a tombstone naming a deployment the world still serves, or a
- * watermark stamped with the emission time of the removal instead of the entity timestamp.
+ * It writes nothing else. In particular it never relaxes a durable undeployment guard, even a
+ * tombstone naming a deployment the world still serves.
  *
  * That restraint is the point. Those guards are the only record of a removal that Places never held a
  * row for: an out-of-order deployment rejected on arrival leaves nothing behind, so nothing local
  * distinguishes it from a deployment Places has simply not seen yet. Relax the guard and a redelivery
  * of that deployment passes every check and recreates content the world does not serve, which is this
- * incident inverted and less visible. Leaving it costs only the ability to re-ingest content authored
- * before the incident, and every row this repair fixes is already correct without that.
+ * incident inverted and less visible. Every row this repair fixes is already correct without that.
  *
  * Reconstructing the missing tombstones needs an authority on what was removed. The worlds content
  * server has one -- it marks removed scenes status='UNDEPLOYED' and keeps the row until a garbage
@@ -691,15 +690,12 @@ export async function repairWorld(
       }
     }
 
-    // Every durable guard this world carries is left exactly as it stands, including the ones that
-    // are now demonstrably too aggressive: a tombstone naming a deployment the world still serves,
-    // and watermarks stamped with the emission time of the removal.
+    // Every durable guard this world carries is left exactly as it stands, including a tombstone
+    // naming a deployment the world still serves.
     //
-    // They are wrong, but they are wrong in the safe direction. All three tables have one reader,
-    // resolveWorldDeployment, and it reads them only to reject an incoming deployment -- none of them
-    // can hold a place row disabled. So an over-aggressive guard costs nothing except the ability to
-    // re-ingest content authored before the incident, and the rows this repair fixes are already
-    // correct without that.
+    // That is wrong in the safe direction. All three tables have one reader, resolveWorldDeployment,
+    // and it reads them only to reject an incoming deployment -- none of them can hold a place row
+    // disabled -- and the rows this repair fixes are already correct without relaxing them.
     //
     // Relaxing one, on the other hand, cannot be done safely. A full-world or position watermark is
     // the only record of a removal that Places never held a row for -- an out-of-order deployment

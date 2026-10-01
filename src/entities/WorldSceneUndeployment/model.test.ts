@@ -203,9 +203,15 @@ describe("when looking for a scene tombstone that supersedes a deployment", () =
     sqlValues = sql.values
   })
 
-  it("should match the deployment identity against its entity timestamp on either stamp", () => {
+  it("should match the deployment identity against a removal emitted at or after the deployment", () => {
     expect(sqlText).toMatch(
-      /"deployment_id" = \$\d+ AND GREATEST\("undeployed_at", "removed_at"\) >= \$\d+/
+      /"deployment_id" = \$\d+ AND \( "removed_at" >= \$\d+ OR/
+    )
+  })
+
+  it("should also match the deployment identity against its entity timestamp on either stamp", () => {
+    expect(sqlText).toMatch(
+      /OR GREATEST\("undeployed_at", "removed_at"\) >= \$\d+ \)/
     )
   })
 

@@ -280,6 +280,53 @@ describe("when removals are compared against deployments on the worlds content s
     })
   })
 
+  describe("and a deployment signed by a clock running ahead was emitted before its world was deleted", () => {
+    let skewed: Deployment
+
+    beforeEach(async () => {
+      worldName = "skewed-clock-teardown.dcl.eth"
+      // WCS accepts entity timestamps up to 15 minutes in the future
+      skewed = {
+        entityId: "entity-skewed",
+        title: "Skewed Scene",
+        parcels: ["0,0"],
+        signedAt: removedAt + 10 * minute,
+        emittedAt: removedAt - minute,
+      }
+      await handleWorldUndeployment(
+        createWorldUndeploymentEvent(worldName, { timestamp: removedAt })
+      )
+      await deliverDeployment(worldName, skewed)
+      titles = await enabledTitles(worldName)
+    })
+
+    it("should keep the deleted world's scene out", () => {
+      expect(titles).toEqual([])
+    })
+  })
+
+  describe("and a scene signed by a clock running ahead is delivered after its undeployment", () => {
+    let skewed: Deployment
+
+    beforeEach(async () => {
+      worldName = "skewed-clock-scene.dcl.eth"
+      skewed = {
+        entityId: "entity-skewed",
+        title: "Skewed Scene",
+        parcels: ["0,0"],
+        signedAt: removedAt + 10 * minute,
+        emittedAt: removedAt - minute,
+      }
+      await undeployScenes(worldName, [skewed], removedAt)
+      await deliverDeployment(worldName, skewed)
+      titles = await enabledTitles(worldName)
+    })
+
+    it("should keep the undeployed scene out", () => {
+      expect(titles).toEqual([])
+    })
+  })
+
   describe("and older deployments arrive after newer ones replaced them", () => {
     beforeEach(async () => {
       worldName = "reordered-deployments.dcl.eth"

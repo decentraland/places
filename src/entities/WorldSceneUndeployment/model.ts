@@ -98,9 +98,10 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    * an older revision at its base can be recreated.
    *
    * Each stamp is compared on its own clock: a replacement against the deployment's entity
-   * timestamp, a removal against the moment the deployment was emitted. The identity match takes
-   * either stamp against the entity timestamp, since every writer stamps at or after the removed
-   * deployment's own entity timestamp.
+   * timestamp, a removal against the moment the deployment was emitted. The identity match also
+   * takes either stamp against the entity timestamp, since every writer stamps at or after the
+   * removed deployment's own entity timestamp; rows migrated from before the removal clock carry
+   * entity timestamps in `removed_at`.
    *
    * The base match is skipped for rows recorded while a replacement already served that base: they
    * exist to tombstone the removed deployment by identity, and matching their base would reject the
@@ -119,7 +120,10 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
         AND (
           (
             "deployment_id" = ${deploymentId}
-            AND GREATEST("undeployed_at", "removed_at") >= ${deployedAt}
+            AND (
+              "removed_at" >= ${emittedAt}
+              OR GREATEST("undeployed_at", "removed_at") >= ${deployedAt}
+            )
           )
           OR (
             "base_position" = ${basePosition}

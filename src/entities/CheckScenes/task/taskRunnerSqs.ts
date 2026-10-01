@@ -96,8 +96,8 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
 
 /**
  * The worlds content server stamps a deployment event after committing it, on the same clock as its
- * removal events. Messages without that stamp fall back to the entity timestamp, and a stamp before
- * the entity was signed cannot be an emission time.
+ * removal events, so the stamp is used as is: the entity timestamp is the client's clock and may run
+ * up to 15 minutes ahead of it. Messages without that stamp fall back to the entity timestamp.
  */
 function deploymentEmittedAt(
   job: DeploymentToSqs,
@@ -106,7 +106,7 @@ function deploymentEmittedAt(
   const { timestamp } = job as { timestamp?: unknown }
   return new Date(
     typeof timestamp === "number" && Number.isFinite(timestamp)
-      ? Math.max(timestamp, entityTimestamp)
+      ? timestamp
       : entityTimestamp
   )
 }
