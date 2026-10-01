@@ -1552,6 +1552,7 @@ describe("taskRunnerSqs integration", () => {
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
           ["50,50", "50,51"],
+          new Date(olderTimestamp),
           new Date(olderTimestamp)
         )
       replacementTombstone =
@@ -1559,6 +1560,7 @@ describe("taskRunnerSqs integration", () => {
           worldName,
           "entity-rollback-a",
           "50,50",
+          new Date(olderTimestamp),
           new Date(olderTimestamp)
         )
     })

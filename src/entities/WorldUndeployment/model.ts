@@ -32,17 +32,19 @@ export default class WorldUndeploymentModel extends Model<WorldUndeploymentAttri
   }
 
   /**
-   * Find the world undeployment that supersedes a deployment, if any. Returns null when the
-   * deployment is newer than the last undeployment, or when the world was never undeployed.
+   * Find the world undeployment that supersedes a deployment, if any. Both sides are stamped by the
+   * worlds content server when it emits the event, so a deployment emitted after the undeployment is
+   * kept however long before it the entity was signed. Returns null when the world was never
+   * undeployed or the deployment was emitted later.
    */
   static async findSupersedingUndeployment(
     worldId: string,
-    deployedAt: Date
+    emittedAt: Date
   ): Promise<WorldUndeploymentAttributes | null> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "world_id" = ${worldId.toLowerCase()}
-        AND "undeployed_at" >= ${deployedAt}
+        AND "undeployed_at" >= ${emittedAt}
     `
 
     const results = await this.namedQuery<WorldUndeploymentAttributes>(

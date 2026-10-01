@@ -21,6 +21,8 @@ type ResolveWorldDeploymentOptions = {
   contentServerUrl: string
   creator: string | null
   deploymentId: string
+  /** When the worlds content server emitted the deployment; compared against removals. */
+  emittedAt: Date
   nameOwner: string | null | undefined
   sdk: string | null
   worldName: string
@@ -36,6 +38,7 @@ export async function resolveWorldDeployment({
   contentServerUrl,
   creator,
   deploymentId,
+  emittedAt,
   nameOwner,
   sdk,
   worldName,
@@ -62,17 +65,19 @@ export async function resolveWorldDeployment({
   )
   const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
     await Promise.all([
-      WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
+      WorldUndeploymentModel.findSupersedingUndeployment(worldId, emittedAt),
       WorldSceneUndeploymentModel.findSupersedingUndeployment(
         worldId,
         deploymentId,
         scene.base,
-        deployedAt
+        deployedAt,
+        emittedAt
       ),
       WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
         worldId,
         positions,
-        deployedAt
+        deployedAt,
+        emittedAt
       ),
     ])
   const isSuperseded = !!(

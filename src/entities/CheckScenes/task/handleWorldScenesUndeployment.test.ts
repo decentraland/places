@@ -24,8 +24,8 @@ describe("when handling a world scenes undeployment event", () => {
   let findEnabledWorldPlaceRevisions: jest.SpyInstance
   let snapshot: Array<{ id: string; deployment_id: string | null }>
   let lockWorldForDeployment: jest.SpyInstance
-  let recordPositions: jest.SpyInstance
-  let recordScenes: jest.SpyInstance
+  let recordRemovedPositions: jest.SpyInstance
+  let recordRemovedScenes: jest.SpyInstance
   let calls: string[]
   let event: WorldScenesUndeploymentEvent
 
@@ -36,7 +36,6 @@ describe("when handling a world scenes undeployment event", () => {
         entityId: scene.entityId,
         baseParcel: scene.baseParcel,
         parcels: scene.parcels ?? [scene.baseParcel],
-        deployedAt: null,
       }))
     )
     fetchWorldActiveScenesMock.mockResolvedValue({
@@ -52,13 +51,13 @@ describe("when handling a world scenes undeployment event", () => {
       .mockImplementation(async () => {
         calls.push("lock")
       })
-    recordScenes = jest
-      .spyOn(WorldSceneUndeploymentModel, "recordScenes")
+    recordRemovedScenes = jest
+      .spyOn(WorldSceneUndeploymentModel, "recordRemovals")
       .mockImplementation(async () => {
         calls.push("watermark")
       })
-    recordPositions = jest
-      .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
+    recordRemovedPositions = jest
+      .spyOn(WorldDeploymentPositionWatermarkModel, "recordRemovals")
       .mockImplementation(async () => {
         calls.push("position-watermark")
       })
@@ -109,33 +108,34 @@ describe("when handling a world scenes undeployment event", () => {
     expect(lockWorldForDeployment).toHaveBeenCalledWith("example.dcl.eth")
   })
 
-  it("should record every undeployed scene with the event timestamp", async () => {
+  it("should tombstone every undeployed scene at the moment the removal was emitted", async () => {
     await handleWorldScenesUndeployment(event)
 
-    expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-      {
-        entityId: "deployment-a",
-        baseParcel: "1,1",
-        undeployedAt: new Date(event.timestamp),
-        basePositionRejects: true,
-      },
-      {
-        entityId: "deployment-b",
-        baseParcel: "2,2",
-        undeployedAt: new Date(event.timestamp),
-        basePositionRejects: true,
-      },
-    ])
+    expect(recordRemovedScenes).toHaveBeenCalledWith(
+      "example.dcl.eth",
+      [
+        {
+          entityId: "deployment-a",
+          baseParcel: "1,1",
+          basePositionRejects: true,
+        },
+        {
+          entityId: "deployment-b",
+          baseParcel: "2,2",
+          basePositionRejects: true,
+        },
+      ],
+      new Date(event.timestamp)
+    )
   })
 
-  it("should record every cleared position with the event timestamp", async () => {
+  it("should record every cleared position as a removal at the moment it was emitted", async () => {
     await handleWorldScenesUndeployment(event)
 
-    expect(recordPositions).toHaveBeenCalledWith(
+    expect(recordRemovedPositions).toHaveBeenCalledWith(
       "example.dcl.eth",
       ["1,1", "2,2"],
-      new Date(event.timestamp),
-      true
+      new Date(event.timestamp)
     )
   })
 
@@ -176,65 +176,17 @@ describe("when handling a world scenes undeployment event", () => {
     it("should leave the served scene out of the watermark", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-a",
-          baseParcel: "1,1",
-          undeployedAt: new Date(event.timestamp),
-          basePositionRejects: true,
-        },
-      ])
-    })
-  })
-
-  describe("and the immutable entity supplied the removed content's timestamp", () => {
-    let removedDeployedAt: number
-
-    beforeEach(() => {
-      removedDeployedAt = Date.parse("2026-07-30T10:00:00.000Z")
-      resolveFootprintsMock.mockImplementation(async (scenes) =>
-        scenes.map((scene) => ({
-          entityId: scene.entityId,
-          baseParcel: scene.baseParcel,
-          parcels: scene.parcels ?? [scene.baseParcel],
-          deployedAt: removedDeployedAt,
-        }))
+      expect(recordRemovedScenes).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        [
+          {
+            entityId: "deployment-a",
+            baseParcel: "1,1",
+            basePositionRejects: true,
+          },
+        ],
+        new Date(event.timestamp)
       )
-    })
-
-    it("should bound the watermark by it instead of the emission time", async () => {
-      await handleWorldScenesUndeployment(event)
-
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        expect.objectContaining({
-          undeployedAt: new Date(removedDeployedAt),
-        }),
-        expect.objectContaining({
-          undeployedAt: new Date(removedDeployedAt),
-        }),
-      ])
-    })
-
-    describe("and that timestamp is somehow later than the removal", () => {
-      beforeEach(() => {
-        resolveFootprintsMock.mockImplementation(async (scenes) =>
-          scenes.map((scene) => ({
-            entityId: scene.entityId,
-            baseParcel: scene.baseParcel,
-            parcels: scene.parcels ?? [scene.baseParcel],
-            deployedAt: event.timestamp + 60_000,
-          }))
-        )
-      })
-
-      it("should clamp it to the removal, since content cannot be removed first", async () => {
-        await handleWorldScenesUndeployment(event)
-
-        expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-          expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
-          expect.objectContaining({ undeployedAt: new Date(event.timestamp) }),
-        ])
-      })
     })
   })
 
@@ -249,25 +201,33 @@ describe("when handling a world scenes undeployment event", () => {
     it("should still tombstone that deployment by identity", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        expect.objectContaining({ entityId: "deployment-a" }),
-        expect.objectContaining({ entityId: "deployment-b" }),
-      ])
+      expect(recordRemovedScenes).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        [
+          expect.objectContaining({ entityId: "deployment-a" }),
+          expect.objectContaining({ entityId: "deployment-b" }),
+        ],
+        new Date(event.timestamp)
+      )
     })
 
     it("should not let that base reject, since a deployment serves it", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        expect.objectContaining({
-          baseParcel: "1,1",
-          basePositionRejects: false,
-        }),
-        expect.objectContaining({
-          baseParcel: "2,2",
-          basePositionRejects: true,
-        }),
-      ])
+      expect(recordRemovedScenes).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        [
+          expect.objectContaining({
+            baseParcel: "1,1",
+            basePositionRejects: false,
+          }),
+          expect.objectContaining({
+            baseParcel: "2,2",
+            basePositionRejects: true,
+          }),
+        ],
+        new Date(event.timestamp)
+      )
     })
 
     it("should still disable the place for that scene", async () => {
@@ -297,11 +257,10 @@ describe("when handling a world scenes undeployment event", () => {
     it("should not watermark the position the surviving scene occupies", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordPositions).toHaveBeenCalledWith(
+      expect(recordRemovedPositions).toHaveBeenCalledWith(
         "example.dcl.eth",
         ["1,1"],
-        new Date(event.timestamp),
-        true
+        new Date(event.timestamp)
       )
     })
   })
@@ -323,7 +282,7 @@ describe("when handling a world scenes undeployment event", () => {
     it("should not record any watermark", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordScenes).not.toHaveBeenCalled()
+      expect(recordRemovedScenes).not.toHaveBeenCalled()
     })
   })
 
@@ -358,14 +317,17 @@ describe("when handling a world scenes undeployment event", () => {
     it("should record one watermark for the repeated scene", async () => {
       await handleWorldScenesUndeployment(event)
 
-      expect(recordScenes).toHaveBeenCalledWith("example.dcl.eth", [
-        {
-          entityId: "deployment-a",
-          baseParcel: "1,1",
-          undeployedAt: new Date(event.timestamp),
-          basePositionRejects: true,
-        },
-      ])
+      expect(recordRemovedScenes).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        [
+          {
+            entityId: "deployment-a",
+            baseParcel: "1,1",
+            basePositionRejects: true,
+          },
+        ],
+        new Date(event.timestamp)
+      )
     })
   })
 

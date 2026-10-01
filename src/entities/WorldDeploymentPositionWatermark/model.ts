@@ -10,58 +10,75 @@ import { Model } from "../Database/model"
  * but it still retired every older scene overlapping its footprint upstream. Keeping only the
  * newest deployment timestamp per position captures that removal without retaining one record
  * for every deployment or requiring the replaced scenes to have reached Places first.
+ *
+ * Removal events clear positions too, on a different clock: the worlds content server stamps them
+ * when it emits them, so they are kept apart in `removed_at`.
  */
 export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDeploymentPositionWatermarkAttributes> {
   static tableName = "world_deployment_position_watermarks"
 
   /**
-   * Record the positions covered by a committed deployment, keeping the newest timestamp for
-   * each position. PostgreSQL expands one array parameter so large scenes do not generate one
+   * Record the positions covered by a committed deployment, keeping the newest entity timestamp
+   * for each position. PostgreSQL expands one array parameter so large scenes do not generate one
    * bind parameter per parcel.
    */
   static async recordPositions(
     worldId: string,
     positions: string[],
-    deployedAt: Date,
-    inclusive = false
+    deployedAt: Date
+  ): Promise<void> {
+    await this.recordWatermarks(worldId, positions, "superseded_at", deployedAt)
+  }
+
+  /**
+   * Record the positions a removal cleared, keeping the newest moment the worlds content server
+   * emitted a removal for each. Compared against a deployment's emission time, never its entity
+   * timestamp, which the client sets up to the deployment TTL before the deployment commits.
+   */
+  static async recordRemovals(
+    worldId: string,
+    positions: string[],
+    removedAt: Date
+  ): Promise<void> {
+    await this.recordWatermarks(worldId, positions, "removed_at", removedAt)
+  }
+
+  private static async recordWatermarks(
+    worldId: string,
+    positions: string[],
+    clock: "superseded_at" | "removed_at",
+    stampedAt: Date
   ): Promise<void> {
     if (positions.length === 0) {
       return
     }
 
+    const watermarks = table(this)
+    const column = SQL.raw(`"${clock}"`)
+
     const sql = SQL`
-      INSERT INTO ${table(
-        this
-      )} ("world_id", "position", "superseded_at", "inclusive")
-      SELECT ${worldId.toLowerCase()}, incoming."position", ${deployedAt}, ${inclusive}
+      INSERT INTO ${watermarks} ("world_id", "position", ${column})
+      SELECT ${worldId.toLowerCase()}, incoming."position", ${stampedAt}::timestamp
       FROM (
         SELECT DISTINCT unnest(${positions}::text[]) AS "position"
       ) AS incoming
       ON CONFLICT ("world_id", "position") DO UPDATE
-      SET "inclusive" = CASE
-            WHEN EXCLUDED."superseded_at" > ${table(this)}."superseded_at"
-            THEN EXCLUDED."inclusive"
-            WHEN EXCLUDED."superseded_at" = ${table(this)}."superseded_at"
-            THEN ${table(this)}."inclusive" OR EXCLUDED."inclusive"
-            ELSE ${table(this)}."inclusive"
-          END,
-          "superseded_at" = GREATEST(${table(
-            this
-          )}."superseded_at", EXCLUDED."superseded_at")
+      SET ${column} = GREATEST(${watermarks}.${column}, EXCLUDED.${column})
     `
 
-    await this.namedQuery("record_world_deployment_position_watermarks", sql)
+    await this.namedQuery(`record_world_position_watermarks_${clock}`, sql)
   }
 
   /**
-   * Return whether a strictly newer deployment has already covered any incoming position.
-   * Equal deployment timestamps keep the existing deployment ordering semantics and are not
-   * considered superseding.
+   * Return whether a deployment or a removal has already retired any incoming position: a
+   * strictly newer deployment by entity timestamp, or a removal emitted at or after this
+   * deployment. Ties go to the removal, matching the other removal watermarks.
    */
   static async hasSupersedingDeployment(
     worldId: string,
     positions: string[],
-    deployedAt: Date
+    deployedAt: Date,
+    emittedAt: Date
   ): Promise<boolean> {
     if (positions.length === 0) {
       return false
@@ -78,10 +95,7 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
         WHERE watermark."world_id" = ${worldId.toLowerCase()}
           AND (
             watermark."superseded_at" > ${deployedAt}
-            OR (
-              watermark."superseded_at" = ${deployedAt}
-              AND watermark."inclusive" IS TRUE
-            )
+            OR watermark."removed_at" >= ${emittedAt}
           )
       ) AS "exists"
     `

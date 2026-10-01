@@ -72,6 +72,7 @@ describe("when resolving a world deployment", () => {
   let secondExistingPlace: PlaceAttributes
   let world: WorldAttributes
   let input: Parameters<typeof resolveWorldDeployment>[0]
+  let emittedAt: Date
   let findActiveByWorldIdAndPositions: jest.SpyInstance
   let hasNewerActiveWorldDeployment: jest.SpyInstance
   let hasSupersedingPositionWatermark: jest.SpyInstance
@@ -119,11 +120,13 @@ describe("when resolving a world deployment", () => {
       created_at: new Date("2026-08-03T12:00:00.000Z"),
       updated_at: new Date("2026-08-03T12:00:00.000Z"),
     }
+    emittedAt = new Date(contentEntityScene.timestamp + 90_000)
     input = {
       contentEntityScene,
       contentServerUrl: "https://worlds-content-server.decentraland.org",
       creator: "0xcreator",
       deploymentId: "deployment-current",
+      emittedAt,
       nameOwner: "0xowner",
       sdk: "7",
       worldName: "Example.DCL.ETH",
@@ -345,19 +348,29 @@ describe("when resolving a world deployment", () => {
       )
     })
 
-    it("should check the world undeployment watermark", () => {
+    it("should check the world undeployment watermark against the emission time", () => {
       expect(findSupersedingWorldUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
-        new Date(contentEntityScene.timestamp)
+        emittedAt
       )
     })
 
-    it("should check the scene undeployment watermark using deployment identity", () => {
+    it("should check the scene undeployment watermark using deployment identity on both clocks", () => {
       expect(findSupersedingSceneUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
         "deployment-current",
         "0,0",
-        new Date(contentEntityScene.timestamp)
+        new Date(contentEntityScene.timestamp),
+        emittedAt
+      )
+    })
+
+    it("should check the position watermarks on both clocks", () => {
+      expect(hasSupersedingPositionWatermark).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        ["0,0"],
+        new Date(contentEntityScene.timestamp),
+        emittedAt
       )
     })
   })

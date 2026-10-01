@@ -13,11 +13,6 @@ const PARCEL_PATTERN = /^(?:0|-?[1-9][0-9]*),(?:0|-?[1-9][0-9]*)$/
 
 export type ResolvedUndeployedScene = UndeployedScene & {
   parcels: string[]
-  /**
-   * The undeployed entity's own deployment timestamp, when the immutable entity was fetched.
-   * Null for events that carry their footprint inline, which is the case the fetch avoids.
-   */
-  deployedAt: number | null
 }
 
 function validateFootprint(
@@ -51,7 +46,6 @@ async function resolveScene(
         scene.baseParcel,
         scene.parcels
       ),
-      deployedAt: null,
     }
   }
 
@@ -69,7 +63,6 @@ async function resolveScene(
       scene.baseParcel,
       entity.pointers
     ),
-    deployedAt: entity.timestamp,
   }
 }
 

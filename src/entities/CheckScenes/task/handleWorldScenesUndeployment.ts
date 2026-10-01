@@ -58,12 +58,12 @@ function summarizeBasePositions(basePositions: string[]): string {
  * also retires the older revisions that removed content had replaced upstream, by footprint and by
  * base position, because those revisions are gone even when their own removal never reached Places.
  *
- * Those wider matches cannot be bounded by the event's timestamp: it marks when the removal was
- * emitted, which is always after the entity timestamp of the deployment that caused it, so a
- * replacement looks older than the removal of what it replaced and sits at the same base and
- * parcels. The scenes the world still serves are therefore read from the content server and left
- * alone -- in the place rows, in the base parcels the scene watermark claims, and in the parcels the
- * position watermark clears.
+ * Those wider matches are bounded by the event's timestamp, which the worlds content server stamps
+ * when it emits the removal, and deployments are compared against the moment they were emitted on
+ * the same clock. The place rows only carry entity timestamps, though, and a replacement signed
+ * before the removal sits at the same base and parcels. The scenes the world still serves are
+ * therefore read from the content server and left alone -- in the place rows, in the base parcels
+ * the scene watermark claims, and in the parcels the position watermark clears.
  */
 export async function handleWorldScenesUndeployment(
   event: WorldScenesUndeploymentEvent
@@ -154,14 +154,14 @@ export async function handleWorldScenesUndeployment(
       // recreate a scene that is gone. Base-parcel rejection is a separate question: a row whose
       // base something still serves would reject the deployment serving it, so that row records
       // identity only and leaves the base to the live place row and to its own eventual removal.
-      await WorldSceneUndeploymentModel.recordScenes(
+      await WorldSceneUndeploymentModel.recordRemovals(
         worldName,
         undeployedScenes.map((scene) => ({
           entityId: scene.entityId,
           baseParcel: scene.baseParcel,
-          undeployedAt: undeployedAt(scene, event.timestamp),
           basePositionRejects: !livePositions.has(scene.baseParcel),
-        }))
+        })),
+        new Date(event.timestamp)
       )
       await recordClearedPositions(
         worldName,
@@ -206,30 +206,12 @@ export async function handleWorldScenesUndeployment(
 }
 
 /**
- * When the removed content's own deployment timestamp is known, bound the watermark by it rather
- * than by the removal: the emission time retires every revision the base ever held, which is more
- * than the removal proves. The immutable entity supplies it whenever the footprint had to be
- * fetched. Content cannot be removed before it was deployed, so a timestamp past the event is not
- * the removed content's and is clamped away.
- */
-function undeployedAt(
-  scene: ResolvedUndeployedScene,
-  eventTimestamp: number
-): Date {
-  if (scene.deployedAt === null || scene.deployedAt > eventTimestamp) {
-    return new Date(eventTimestamp)
-  }
-  return new Date(scene.deployedAt)
-}
-
-/**
  * Watermark the parcels the undeployment cleared, as of the moment it was emitted.
  *
  * Parcels a surviving scene occupies are left out, and the upstream lookup covers at least these
- * parcels, so every parcel that remains has nothing serving it. The emission time is therefore both
- * safe and the strongest bound available: no surviving deployment can be rejected by it, and it
- * retires every revision the cleared parcels ever held rather than only those older than the last
- * one Places happened to see.
+ * parcels, so every parcel that remains has nothing serving it. The watermark retires every
+ * deployment emitted at those parcels before the removal, rather than only those older than the
+ * last one Places happened to see.
  */
 async function recordClearedPositions(
   worldName: string,
@@ -245,10 +227,9 @@ async function recordClearedPositions(
     ),
   ]
 
-  await WorldDeploymentPositionWatermarkModel.recordPositions(
+  await WorldDeploymentPositionWatermarkModel.recordRemovals(
     worldName,
     cleared,
-    new Date(eventTimestamp),
-    true
+    new Date(eventTimestamp)
   )
 }
