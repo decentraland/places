@@ -1,20 +1,11 @@
 import { applyDeploymentDecision } from "./applyDeploymentDecision"
 import { DeploymentToSqs } from "./consumer"
-import { WorldDeploymentDecision } from "./deploymentDecision"
-import {
-  InvalidWorldSqsMessageError,
-  WorldDeploymentUnresolvedError,
-} from "./errors"
+import { InvalidWorldSqsMessageError } from "./errors"
 import { extractSceneJsonData } from "./extractSceneJsonData"
-import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
 import { getTrustedContentServerUrl, processEntityId } from "./processEntityId"
 import { resolveGenesisCityDeployment } from "./resolveGenesisCityDeployment"
-import {
-  ResolveWorldDeploymentOptions,
-  WorldDeploymentVerification,
-  resolveWorldDeployment,
-} from "./resolveWorldDeployment"
+import { resolveWorldDeployment } from "./resolveWorldDeployment"
 import { withDatabaseTransaction } from "../../Database/model"
 import {
   notifyDisablePlaces,
@@ -65,33 +56,33 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
     contentEntityScene.metadata.owner = nameOwner
   }
 
-  const deploymentId = job.entity.entityId
-
-  const processedPlaces =
-    worldConfiguration && worldName
-      ? await applyWorldDeployment({
-          contentEntityScene,
-          contentServerUrl,
-          creator,
-          deploymentId,
-          nameOwner,
-          sdk,
-          worldName,
-        })
-      : await withDatabaseTransaction(async () =>
-          applyDeploymentDecision({
+  const processedPlaces = await withDatabaseTransaction(async () => {
+    const decision =
+      worldConfiguration && worldName
+        ? await resolveWorldDeployment({
             contentEntityScene,
             contentServerUrl,
-            decision: await resolveGenesisCityDeployment({
-              contentEntityScene,
-              contentServerUrl,
-              creator,
-              deploymentId,
-              sdk,
-            }),
-            deploymentId,
+            creator,
+            deploymentId: job.entity.entityId,
+            nameOwner,
+            sdk,
+            worldName,
           })
-        )
+        : await resolveGenesisCityDeployment({
+            contentEntityScene,
+            contentServerUrl,
+            creator,
+            deploymentId: job.entity.entityId,
+            sdk,
+          })
+
+    return applyDeploymentDecision({
+      contentEntityScene,
+      contentServerUrl,
+      decision,
+      deploymentId: job.entity.entityId,
+    })
+  })
 
   const { placesToProcess, placesToDisable } = processedPlaces
 
@@ -100,40 +91,4 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (placesToDisable.length) notifyDisablePlaces(placesToDisable)
 
   void Promise.resolve(updateGenesisCityManifest()).catch(() => undefined)
-}
-
-const VERIFY_ATTEMPTS = 3
-
-async function applyWorldDeployment(options: ResolveWorldDeploymentOptions) {
-  const apply = (decision: WorldDeploymentDecision) =>
-    applyDeploymentDecision({
-      contentEntityScene: options.contentEntityScene,
-      contentServerUrl: options.contentServerUrl,
-      decision,
-      deploymentId: options.deploymentId,
-    })
-
-  let verified: WorldDeploymentVerification | undefined
-  for (let attempt = 1; ; attempt++) {
-    const pass = await withDatabaseTransaction(async () => {
-      const decision = await resolveWorldDeployment({ ...options, verified })
-      return decision.kind === "verify-upstream"
-        ? { status: "verify" as const, request: decision }
-        : { status: "done" as const, processed: await apply(decision) }
-    })
-    if (pass.status === "done") {
-      return pass.processed
-    }
-    if (attempt >= VERIFY_ATTEMPTS) {
-      throw new WorldDeploymentUnresolvedError(options.worldName)
-    }
-
-    const served = await fetchWorldActiveScenesAtPositions(options.worldName, [
-      pass.request.base,
-    ])
-    verified = {
-      servedUpstreamIds: served.deploymentIds,
-      fence: pass.request.fence,
-    }
-  }
 }

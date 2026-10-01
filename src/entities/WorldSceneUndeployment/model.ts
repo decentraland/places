@@ -122,26 +122,4 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
     )
     return results[0] || null
   }
-
-  /** Whether this exact deployment was tombstoned at or after it was deployed. */
-  static async hasSupersedingIdentity(
-    worldId: string,
-    deploymentId: string,
-    deployedAt: Date
-  ): Promise<boolean> {
-    const sql = SQL`
-      SELECT EXISTS (
-        SELECT 1 FROM ${table(this)}
-        WHERE "world_id" = ${worldId.toLowerCase()}
-          AND "deployment_id" = ${deploymentId}
-          AND "undeployed_at" >= ${deployedAt}
-      ) AS "exists"
-    `
-
-    const results = await this.namedQuery<{ exists: boolean }>(
-      "has_superseding_identity_undeployment",
-      sql
-    )
-    return results[0]?.exists ?? false
-  }
 }

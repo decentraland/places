@@ -16,39 +16,20 @@ import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPosition
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
-export type ResolveWorldDeploymentOptions = {
+type ResolveWorldDeploymentOptions = {
   contentEntityScene: ContentEntityScene
   contentServerUrl: string
   creator: string | null
   deploymentId: string
   nameOwner: string | null | undefined
   sdk: string | null
-  verified?: WorldDeploymentVerification
   worldName: string
-}
-
-export type WorldDeploymentVerification = {
-  servedUpstreamIds: string[]
-  fence: string
-}
-
-export type WorldDeploymentVerifyUpstream = {
-  kind: "verify-upstream"
-  base: string
-  fence: string
 }
 
 /**
  * Resolve a world deployment into the place mutation and durable replacement intents that the
  * task runner must apply. The caller owns the surrounding database transaction; this helper owns
  * the per-world lock and guarantees no world row is written for a superseded deployment.
- *
- * @param options.verified - deployment ids the content server served at the scene base, and the
- * removal fence returned with the `verify-upstream` they answer. Omit on the first call: a watermark
- * match then returns `verify-upstream` so the caller can fetch them outside the transaction. The
- * served ids are trusted only while the fence is unchanged; otherwise `verify-upstream` is returned
- * again with the new fence. A newer real place or a tombstone of this deployment id supersedes
- * without a fetch; a redelivery of the active deployment skips the checks.
  */
 export async function resolveWorldDeployment({
   contentEntityScene,
@@ -57,11 +38,8 @@ export async function resolveWorldDeployment({
   deploymentId,
   nameOwner,
   sdk,
-  verified,
   worldName,
-}: ResolveWorldDeploymentOptions): Promise<
-  WorldDeploymentDecision | WorldDeploymentVerifyUpstream
-> {
+}: ResolveWorldDeploymentOptions): Promise<WorldDeploymentDecision> {
   const scene = contentEntityScene.metadata.scene
   if (!scene) {
     throw new InvalidSceneBaseError(undefined)
@@ -82,69 +60,40 @@ export async function resolveWorldDeployment({
     positions,
     deployedAt
   )
-  const [
-    worldUndeployment,
-    sceneUndeployment,
-    hasNewerPositionWatermark,
-    isTombstonedByIdentity,
-  ] = await Promise.all([
-    WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
-    WorldSceneUndeploymentModel.findSupersedingUndeployment(
-      worldId,
-      deploymentId,
-      scene.base,
-      deployedAt
-    ),
-    WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
-      worldId,
-      positions,
-      deployedAt
-    ),
-    WorldSceneUndeploymentModel.hasSupersedingIdentity(
-      worldId,
-      deploymentId,
-      deployedAt
-    ),
-  ])
-  const supersededDecision: WorldDeploymentDecision = {
-    kind: "world",
-    placesToProcess: null,
-    replacement: {
-      candidates: overlappingPlaces,
-      includesTimestampTies: false,
-      updatedPlace: null,
-    },
-    positionWatermark,
-  }
-  const isAlreadyActive = overlappingPlaces.some(
-    (place) => place.deployment_id === deploymentId
+  const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
+    await Promise.all([
+      WorldUndeploymentModel.findSupersedingUndeployment(worldId, deployedAt),
+      WorldSceneUndeploymentModel.findSupersedingUndeployment(
+        worldId,
+        deploymentId,
+        scene.base,
+        deployedAt
+      ),
+      WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
+        worldId,
+        positions,
+        deployedAt
+      ),
+    ])
+  const isSuperseded = !!(
+    hasNewerPlace ||
+    worldUndeployment ||
+    sceneUndeployment ||
+    hasNewerPositionWatermark
   )
 
-  if (!isAlreadyActive) {
-    if (hasNewerPlace || isTombstonedByIdentity) {
-      return supersededDecision
-    }
-
-    const isSupersededByWatermark = !!(
-      worldUndeployment ||
-      sceneUndeployment ||
-      hasNewerPositionWatermark
-    )
-    if (isSupersededByWatermark) {
-      const fence = JSON.stringify([
-        worldUndeployment?.undeployed_at ?? null,
-        sceneUndeployment?.undeployed_at ?? null,
-        await WorldDeploymentPositionWatermarkModel.findAtPositions(
-          worldId,
-          positions
-        ),
-      ])
-      if (verified?.fence !== fence) {
-        return { kind: "verify-upstream", base: scene.base, fence }
-      }
-      if (!verified.servedUpstreamIds.includes(deploymentId)) {
-        return supersededDecision
-      }
+  if (isSuperseded) {
+    // The deployment contributes no place, but its upstream replacement effect still applies to
+    // strictly older overlaps and its complete footprint must become a durable watermark.
+    return {
+      kind: "world",
+      placesToProcess: null,
+      replacement: {
+        candidates: overlappingPlaces,
+        includesTimestampTies: false,
+        updatedPlace: null,
+      },
+      positionWatermark,
     }
   }
 
