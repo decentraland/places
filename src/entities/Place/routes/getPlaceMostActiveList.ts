@@ -28,7 +28,6 @@ export const getPlaceMostActiveList = Router.memo(
       only_excluded_from_ranking: ctx.url.searchParams.get(
         "only_excluded_from_ranking"
       ),
-      include_opted_out: ctx.url.searchParams.get("include_opted_out"),
       order_by: PlaceListOrderBy.MOST_ACTIVE,
       order:
         oneOf(ctx.url.searchParams.get("order"), ["asc", "desc"]) || "desc",
@@ -63,7 +62,6 @@ export const getPlaceMostActiveList = Router.memo(
       only_favorites: !!bool(query.only_favorites),
       only_highlighted: !!bool(query.only_highlighted),
       only_excluded_from_ranking: !!bool(query.only_excluded_from_ranking),
-      include_opted_out: !!bool(query.include_opted_out),
       positions: query.positions,
       hotScenesPositions: hotScenesPositions,
       order_by: PlaceListOrderBy.MOST_ACTIVE,

@@ -142,7 +142,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const worldFilter = opts?.worldFilter ?? "conditional"
     return SQL`
         ${
-          options.include_opted_out
+          this.includesOptedOut(options)
             ? SQL`(${a}."disabled" is false OR ${a}."disabled_reason" = 'opt_out')`
             : SQL`${a}."disabled" is false`
         }
@@ -221,6 +221,17 @@ export default class PlaceModel extends Model<PlaceAttributes> {
           )
         )}
     `
+  }
+
+  /**
+   * Opted-out world scenes are only exposed to callers resolving a specific world's scene, never
+   * to listings: without `names` the flag is ignored.
+   */
+  static includesOptedOut(options: {
+    include_opted_out?: boolean
+    names?: string[]
+  }): boolean {
+    return !!options.include_opted_out && !!options.names?.length
   }
 
   /**
@@ -608,6 +619,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ORDER BY
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${conditional(
+        // Rows backfilled as opt_out may be stale scenes overlapping the live one; resolvers read
+        // the first row, so it must be the live, newest deployment.
+        this.includesOptedOut(options),
+        SQL`p."disabled" ASC, p."deployed_at" DESC NULLS LAST, `
+      )}
       ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
