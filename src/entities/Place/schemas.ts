@@ -50,6 +50,13 @@ export const getPlaceListQuerySchema = schema({
         "True to show only entries the automated ranking is not allowed to touch",
       nullable: true as any,
     },
+    include_opted_out: {
+      type: "string",
+      format: "boolean",
+      description:
+        "True to also return world places whose owner opted out of being listed",
+      nullable: true as any,
+    },
     order_by: {
       type: "string",
       description: "Order places by",

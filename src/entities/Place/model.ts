@@ -128,6 +128,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       positions?: string[]
       only_highlighted?: boolean
       only_excluded_from_ranking?: boolean
+      include_opted_out?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string
@@ -140,7 +141,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const a = SQL.raw(alias)
     const worldFilter = opts?.worldFilter ?? "conditional"
     return SQL`
-        ${a}."disabled" is false
+        ${
+          this.includesOptedOut(options)
+            ? SQL`(${a}."disabled" is false OR ${a}."disabled_reason" = 'opt_out')`
+            : SQL`${a}."disabled" is false`
+        }
         ${conditional(worldFilter === "always", SQL`AND ${a}.world is false`)}
         ${conditional(
           worldFilter === "conditional" &&
@@ -219,6 +224,17 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
+   * Opted-out world scenes are only exposed to callers resolving a specific world's scene, never
+   * to listings: without `names` the flag is ignored.
+   */
+  static includesOptedOut(options: {
+    include_opted_out?: boolean
+    names?: string[]
+  }): boolean {
+    return !!options.include_opted_out && !!options.names?.length
+  }
+
+  /**
    * Build a places sub-query (CTE + SELECT + FROM + JOINs + rank + WHERE).
    * Does NOT include ORDER BY/LIMIT/OFFSET -- callers append those.
    *
@@ -240,6 +256,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       positions?: string[]
       only_highlighted?: boolean
       only_excluded_from_ranking?: boolean
+      include_opted_out?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string
@@ -537,11 +554,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<
     Pick<
       PlaceAttributes,
-      "id" | "disabled" | "world" | "world_name" | "base_position"
+      | "id"
+      | "disabled"
+      | "disabled_reason"
+      | "world"
+      | "world_name"
+      | "base_position"
     >[]
   > {
     const sql = SQL`
-      SELECT p.id, p."disabled", p."world", p."world_name", p."base_position"
+      SELECT p.id, p."disabled", p."disabled_reason", p."world", p."world_name", p."base_position"
       FROM ${table(this)} p
       WHERE "p"."id" IN ${values(placeIds)}
     `
@@ -597,6 +619,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       ORDER BY
       ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
       ${conditional(!!options.search, SQL`rank DESC, `)}
+      ${conditional(
+        // Rows backfilled as opt_out may be stale scenes overlapping the live one; resolvers read
+        // the first row, so it must be the live, newest deployment.
+        this.includesOptedOut(options),
+        SQL`p."disabled" ASC, p."deployed_at" DESC NULLS LAST, `
+      )}
       ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
@@ -615,6 +643,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_favorites"
       | "positions"
       | "only_highlighted"
+      | "include_opted_out"
       | "search"
       | "categories"
       | "owner"

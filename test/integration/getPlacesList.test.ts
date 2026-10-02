@@ -5,7 +5,8 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import supertest from "supertest"
 
 import PlaceModel from "../../src/entities/Place/model"
-import { PlaceAttributes } from "../../src/entities/Place/types"
+import { DisabledReason, PlaceAttributes } from "../../src/entities/Place/types"
+import WorldModel from "../../src/entities/World/model"
 import * as hotScenesModule from "../../src/modules/hotScenes"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
@@ -126,6 +127,48 @@ async function seedPlace(
   }
 
   return place
+}
+
+const LANTERN_WORLD = "lantern.dcl.eth"
+
+async function seedLanternWorld(): Promise<void> {
+  await WorldModel.insertWorldIfNotExists({
+    world_name: LANTERN_WORLD,
+    title: "Lantern",
+    description: "A world for testing opt out",
+    show_in_places: false,
+    single_player: false,
+    skybox_time: null,
+    is_private: false,
+  })
+}
+
+async function seedLanternScene(scene: {
+  title: string
+  position: string
+  disabled_reason: DisabledReason | null
+  highlighted?: boolean
+  like_score?: number
+  deployed_at?: Date
+}): Promise<PlaceAttributes> {
+  return seedPlace({
+    title: scene.title,
+    base_position: scene.position,
+    positions: [scene.position],
+    world: true,
+    world_name: LANTERN_WORLD,
+    world_id: LANTERN_WORLD,
+    disabled: scene.disabled_reason !== null,
+    disabled_at: scene.disabled_reason !== null ? new Date() : null,
+    disabled_reason: scene.disabled_reason,
+    highlighted: scene.highlighted ?? false,
+    like_score: scene.like_score ?? null,
+    deployed_at: scene.deployed_at ?? new Date(),
+  })
+}
+
+function titles(response: supertest.Response): string[] {
+  return response.body.data.map((p: { title: string }) => p.title)
 }
 
 describe("when fetching places via GET /api/places", () => {
@@ -324,5 +367,159 @@ describe("when fetching places via GET /api/places", () => {
         ).toEqual(["Gathering Hall"])
       }
     )
+  })
+
+  describe("and the world has scenes disabled for every reason", () => {
+    let response: supertest.Response
+
+    beforeEach(async () => {
+      await seedLanternWorld()
+      await seedLanternScene({
+        title: "Opted Out Scene",
+        position: "0,0",
+        disabled_reason: DisabledReason.OPT_OUT,
+        highlighted: true,
+      })
+      await seedLanternScene({
+        title: "Moderated Scene",
+        position: "5,5",
+        disabled_reason: DisabledReason.MODERATION,
+      })
+      await seedLanternScene({
+        title: "Undeployed Scene",
+        position: "6,6",
+        disabled_reason: DisabledReason.UNDEPLOYMENT,
+      })
+      await seedLanternScene({
+        title: "Overwritten Scene",
+        position: "7,7",
+        disabled_reason: DisabledReason.OVERWRITTEN,
+      })
+    })
+
+    describe("and include_opted_out is true with the world name and positions", () => {
+      beforeEach(async () => {
+        response = await supertest(app)
+          .get("/api/places")
+          .query({
+            names: LANTERN_WORLD,
+            positions: ["0,0", "5,5", "6,6", "7,7"],
+            include_opted_out: "true",
+          })
+      })
+
+      it("should return only the opted-out scene", () => {
+        expect(response.status).toBe(200)
+        expect(titles(response)).toEqual(["Opted Out Scene"])
+      })
+
+      it("should count only the opted-out scene", () => {
+        expect(response.body.total).toBe(1)
+      })
+    })
+
+    describe("and include_opted_out is true with only the world name", () => {
+      beforeEach(async () => {
+        response = await supertest(app)
+          .get("/api/places")
+          .query({ names: LANTERN_WORLD, include_opted_out: "true" })
+      })
+
+      it("should return only the opted-out scene", () => {
+        expect(titles(response)).toEqual(["Opted Out Scene"])
+      })
+    })
+
+    describe("and include_opted_out is true without a world name", () => {
+      beforeEach(async () => {
+        response = await supertest(app)
+          .get("/api/places")
+          .query({ only_highlighted: "true", include_opted_out: "true" })
+      })
+
+      it("should not list the opted-out scene", () => {
+        expect(response.status).toBe(200)
+        expect(response.body.data).toEqual([])
+        expect(response.body.total).toBe(0)
+      })
+    })
+
+    describe("and include_opted_out is not asked for", () => {
+      beforeEach(async () => {
+        response = await supertest(app)
+          .get("/api/places")
+          .query({ names: LANTERN_WORLD, positions: ["0,0", "5,5"] })
+      })
+
+      it("should return no scenes", () => {
+        expect(response.status).toBe(200)
+        expect(response.body.data).toEqual([])
+        expect(response.body.total).toBe(0)
+      })
+    })
+  })
+
+  describe("and a stale opt_out scene overlaps a live scene of the same world", () => {
+    let response: supertest.Response
+
+    beforeEach(async () => {
+      await seedLanternWorld()
+      // The March 2026 backfill tagged superseded world scenes as opt_out; one that kept a
+      // better like score than its replacement would win the default ordering.
+      await seedLanternScene({
+        title: "Stale Scene",
+        position: "0,0",
+        disabled_reason: DisabledReason.OPT_OUT,
+        like_score: 0.9,
+        deployed_at: new Date("2026-01-01T00:00:00Z"),
+      })
+      await seedLanternScene({
+        title: "Live Scene",
+        position: "0,0",
+        disabled_reason: null,
+        like_score: 0.1,
+        deployed_at: new Date("2025-06-01T00:00:00Z"),
+      })
+      response = await supertest(app).get("/api/places").query({
+        names: LANTERN_WORLD,
+        positions: "0,0",
+        include_opted_out: "true",
+      })
+    })
+
+    it("should return the live scene first", () => {
+      expect(titles(response)).toEqual(["Live Scene", "Stale Scene"])
+    })
+  })
+
+  describe("and two opt_out scenes of the same world overlap", () => {
+    let response: supertest.Response
+
+    beforeEach(async () => {
+      await seedLanternWorld()
+      await seedLanternScene({
+        title: "Older Scene",
+        position: "0,0",
+        disabled_reason: DisabledReason.OPT_OUT,
+        like_score: 0.9,
+        deployed_at: new Date("2026-01-01T00:00:00Z"),
+      })
+      await seedLanternScene({
+        title: "Newer Scene",
+        position: "0,0",
+        disabled_reason: DisabledReason.OPT_OUT,
+        like_score: 0.1,
+        deployed_at: new Date("2026-06-01T00:00:00Z"),
+      })
+      response = await supertest(app).get("/api/places").query({
+        names: LANTERN_WORLD,
+        positions: "0,0",
+        include_opted_out: "true",
+      })
+    })
+
+    it("should return the newest deployment first", () => {
+      expect(titles(response)).toEqual(["Newer Scene", "Older Scene"])
+    })
   })
 })

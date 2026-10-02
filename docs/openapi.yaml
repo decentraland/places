@@ -195,6 +195,18 @@ paths:
             type: boolean
             default: false
           example: false
+        - name: include_opted_out
+          in: query
+          description: |
+            Also return world places whose owner opted out of being listed
+            (`disabled_reason: opt_out`). Meant for services that resolve a scene's place ID,
+            not for discovery: only honoured together with `names`, and results are then ordered
+            live first, newest deployment first. Places disabled for any other reason stay hidden.
+          required: false
+          schema:
+            type: boolean
+            default: false
+          example: false
         - name: order_by
           in: query
           description: |
@@ -2387,6 +2399,14 @@ components:
           type: boolean
           description: True if place is disabled (not shown publicly)
           example: false
+        disabled_reason:
+          type: string
+          nullable: true
+          enum: [opt_out, undeployment, overwritten, moderation, null]
+          description: |
+            Why the place is disabled. `opt_out` means the world owner chose not to be listed;
+            the scene is still live. Only returned disabled by `GET /places` with `include_opted_out`.
+          example: null
         disabled_at:
           type: string
           format: date-time
@@ -2698,6 +2718,14 @@ components:
           type: boolean
           description: True if place is not publicly visible
           example: false
+        disabled_reason:
+          type: string
+          nullable: true
+          enum: [opt_out, undeployment, overwritten, moderation, null]
+          description: |
+            Why the place is disabled. `opt_out` means the world owner chose not to be listed;
+            the scene is still live.
+          example: null
         world:
           type: boolean
           description: True if this is a world, false if Genesis City place
