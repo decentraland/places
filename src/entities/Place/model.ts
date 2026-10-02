@@ -128,6 +128,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       positions?: string[]
       only_highlighted?: boolean
       only_excluded_from_ranking?: boolean
+      include_opted_out?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string
@@ -140,7 +141,11 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const a = SQL.raw(alias)
     const worldFilter = opts?.worldFilter ?? "conditional"
     return SQL`
-        ${a}."disabled" is false
+        ${
+          options.include_opted_out
+            ? SQL`(${a}."disabled" is false OR ${a}."disabled_reason" = 'opt_out')`
+            : SQL`${a}."disabled" is false`
+        }
         ${conditional(worldFilter === "always", SQL`AND ${a}.world is false`)}
         ${conditional(
           worldFilter === "conditional" &&
@@ -240,6 +245,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       positions?: string[]
       only_highlighted?: boolean
       only_excluded_from_ranking?: boolean
+      include_opted_out?: boolean
       owner?: string
       operatedPositions?: string[]
       creator_address?: string
@@ -537,11 +543,16 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   ): Promise<
     Pick<
       PlaceAttributes,
-      "id" | "disabled" | "world" | "world_name" | "base_position"
+      | "id"
+      | "disabled"
+      | "disabled_reason"
+      | "world"
+      | "world_name"
+      | "base_position"
     >[]
   > {
     const sql = SQL`
-      SELECT p.id, p."disabled", p."world", p."world_name", p."base_position"
+      SELECT p.id, p."disabled", p."disabled_reason", p."world", p."world_name", p."base_position"
       FROM ${table(this)} p
       WHERE "p"."id" IN ${values(placeIds)}
     `
@@ -615,6 +626,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       | "only_favorites"
       | "positions"
       | "only_highlighted"
+      | "include_opted_out"
       | "search"
       | "categories"
       | "owner"

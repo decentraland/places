@@ -27,7 +27,7 @@ export type AggregateCoordinatePlaceAttributes = Pick<
 // creator and `only_excluded_from_ranking` answers an editorial question about the feed.
 export type GetAllPlaceListQuery = Omit<
   GetPlaceListQuery,
-  "owner" | "only_excluded_from_ranking"
+  "owner" | "only_excluded_from_ranking" | "include_opted_out"
 > & {
   names: string[]
 }

@@ -5,7 +5,8 @@ import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.
 import supertest from "supertest"
 
 import PlaceModel from "../../src/entities/Place/model"
-import { PlaceAttributes } from "../../src/entities/Place/types"
+import { DisabledReason, PlaceAttributes } from "../../src/entities/Place/types"
+import WorldModel from "../../src/entities/World/model"
 import * as hotScenesModule from "../../src/modules/hotScenes"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
 import { createTestApp } from "../setup/server"
@@ -324,5 +325,76 @@ describe("when fetching places via GET /api/places", () => {
         ).toEqual(["Gathering Hall"])
       }
     )
+  })
+
+  describe("and the world has an opted-out scene and a moderated scene", () => {
+    let query: Record<string, string | string[]>
+    let response: supertest.Response
+
+    beforeEach(async () => {
+      await WorldModel.insertWorldIfNotExists({
+        world_name: "lantern.dcl.eth",
+        title: "Lantern",
+        description: "A world for testing opt out",
+        show_in_places: false,
+        single_player: false,
+        skybox_time: null,
+        is_private: false,
+      })
+      await seedPlace({
+        title: "Opted Out Scene",
+        base_position: "0,0",
+        positions: ["0,0"],
+        world: true,
+        world_name: "lantern.dcl.eth",
+        world_id: "lantern.dcl.eth",
+        disabled: true,
+        disabled_at: new Date(),
+        disabled_reason: DisabledReason.OPT_OUT,
+      })
+      await seedPlace({
+        title: "Moderated Scene",
+        base_position: "5,5",
+        positions: ["5,5"],
+        world: true,
+        world_name: "lantern.dcl.eth",
+        world_id: "lantern.dcl.eth",
+        disabled: true,
+        disabled_at: new Date(),
+        disabled_reason: DisabledReason.MODERATION,
+      })
+      query = { names: "lantern.dcl.eth", positions: ["0,0", "5,5"] }
+    })
+
+    describe("and include_opted_out is true", () => {
+      beforeEach(async () => {
+        response = await supertest(app)
+          .get("/api/places")
+          .query({ ...query, include_opted_out: "true" })
+      })
+
+      it("should return only the opted-out scene", () => {
+        expect(response.status).toBe(200)
+        expect(
+          response.body.data.map((p: { title: string }) => p.title)
+        ).toEqual(["Opted Out Scene"])
+      })
+
+      it("should count only the opted-out scene", () => {
+        expect(response.body.total).toBe(1)
+      })
+    })
+
+    describe("and include_opted_out is not asked for", () => {
+      beforeEach(async () => {
+        response = await supertest(app).get("/api/places").query(query)
+      })
+
+      it("should return no scenes", () => {
+        expect(response.status).toBe(200)
+        expect(response.body.data).toEqual([])
+        expect(response.body.total).toBe(0)
+      })
+    })
   })
 })
