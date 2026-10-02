@@ -427,6 +427,57 @@ Logs SQS messages for scene/world processing queue. Used for debugging and repla
 
 ---
 
+## View: place_scene_resolution
+
+Read-only view that resolves a scene's `place_id` from its realm and parcel. It exists so trusted
+internal services (currently `world-storage-service`) can look up the storage partition key over the
+VPC without the public HTTP API — including for **opted-out** scenes, which the public list hides.
+
+**This view is a cross-service contract.** An external consumer depends on its name and columns, so it
+must be preserved across future schema migrations: never drop or rename it or its columns without
+coordinating the consumer. It is created by migration `1790697600000_create-place-scene-resolution-view`.
+
+### Columns
+
+| Column     | Type        | Nullable | Description                                                 |
+| ---------- | ----------- | -------- | ----------------------------------------------------------- |
+| place_id   | UUID        | NO       | The place's id (the storage partition key)                  |
+| world      | BOOLEAN     | NO       | TRUE for a World scene, FALSE for a Genesis City scene      |
+| world_name | TEXT        | YES      | Lowercased world name for World rows; NULL for Genesis rows |
+| position   | VARCHAR(15) | NO       | One occupied parcel of the scene (one row per parcel)       |
+
+### Querying (consumer contract)
+
+- **Worlds**: `WHERE world IS TRUE AND world_name = lower(<realm>) AND position = <parcel>`. `world_name` is
+  stored lowercased, so the consumer must lowercase the realm before matching or it silently gets no rows.
+- **Genesis**: `WHERE world IS FALSE AND position = <parcel>`.
+- A `(realm, parcel)` may match more than one row if two active scenes overlap a parcel (the same
+  ambiguity the array-overlap model query has); the consumer takes the first (`LIMIT 1`).
+
+### Source and semantics
+
+- **Worlds branch** (`world IS TRUE`): mirrors `PlaceModel.findActiveByWorldIdAndPositions` — one row per
+  entry of `places.positions`, keyed by `lower(world_name)`. Row filter
+  `disabled IS FALSE OR disabled_reason = 'opt_out'` — active scenes plus opted-out scenes.
+  `opt_out` is a world-only state (set by the world deployment path), so it appears on this branch only.
+- **Genesis branch** (`world IS FALSE`): mirrors `PlaceModel.findEnabledByPositions` — joins
+  `place_positions` to map each occupied parcel to the place's `base_position`, filtered on
+  `disabled IS FALSE`. Genesis scenes are never opted out.
+- In both branches `undeployment`, `overwritten` and `moderation` rows are excluded. The view is created
+  `WITH (security_barrier = true)` so a consumer predicate cannot observe excluded rows through function
+  side effects; equality operators remain leakproof, so the consumer's keyed lookups still push down.
+
+### Privacy
+
+- The projection carries only the id and resolution keys — never title, owner, description or image.
+- The migration runs `REVOKE ALL ON place_scene_resolution FROM PUBLIC`, so the view is default-deny
+  regardless of schema defaults; infra then grants `SELECT` on this view only to the read-only role.
+  Because the view runs against its base tables with the view owner's privileges, that role can read the
+  view but **cannot** read `places` or `place_positions` directly.
+- The public `GET /api/places` is unchanged and still excludes opted-out scenes.
+
+---
+
 ## Migration Management
 
 Database migrations are managed using `node-pg-migrate` and stored in `src/migrations/`.

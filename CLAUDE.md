@@ -161,6 +161,7 @@ OpenAPI 3.1 spec lives in `docs/openapi.yaml`. Operation IDs follow `{serviceNam
 ## Conventions
 
 - **Migrations:** `node-pg-migrate` with TS files under `src/migrations/`. Never edit a shipped migration; add a new one.
+- **`place_scene_resolution` view (external contract):** a read-only view (migration `1790697600000`) that `world-storage-service` reads over the VPC to resolve `place_id` for a realm+parcel, including opted-out scenes. It is a cross-service contract — preserve its name/columns across future migrations, keep the projection metadata-free, and keep the public `GET /api/places` filter unchanged. See [database-schemas.md](docs/database-schemas.md#view-place_scene_resolution).
 - **Routes:** declared with `decentraland-gatsby` `routes((router) => { ... })` factory; per-entity. Compose them in `src/server.ts`.
 - **Tests:** Jest. Unit tests live next to source (`*.test.ts`). Integration tests live in `test/integration/` and require Postgres + LocalStack.
 - **Models:** `decentraland-server` Model class wrapping pg client. SQL helpers in `decentraland-gatsby/dist/entities/Database/utils/sql`.
