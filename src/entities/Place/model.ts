@@ -617,14 +617,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
     const sql = SQL`
       ${subQuery}
       ORDER BY
-      ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
-      ${conditional(!!options.search, SQL`rank DESC, `)}
       ${conditional(
         // Rows backfilled as opt_out may be stale scenes overlapping the live one; resolvers read
-        // the first row, so it must be the live, newest deployment.
+        // the first row, so it must be the live, newest deployment whatever else is asked for.
         this.includesOptedOut(options),
         SQL`p."disabled" ASC, p."deployed_at" DESC NULLS LAST, `
       )}
+      ${conditional(filterMostActivePlaces, SQL`is_most_active_place DESC, `)}
+      ${conditional(!!options.search, SQL`rank DESC, `)}
       ${order}
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}

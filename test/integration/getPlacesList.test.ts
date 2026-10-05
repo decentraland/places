@@ -492,6 +492,39 @@ describe("when fetching places via GET /api/places", () => {
     })
   })
 
+  describe("and a stale opt_out scene ranks higher in a search than the live scene", () => {
+    let response: supertest.Response
+
+    beforeEach(async () => {
+      await seedLanternWorld()
+      await seedLanternScene({
+        title: "Lantern Lantern Lantern",
+        position: "0,0",
+        disabled_reason: DisabledReason.OPT_OUT,
+        deployed_at: new Date("2026-01-01T00:00:00Z"),
+      })
+      await seedLanternScene({
+        title: "Lantern Hall",
+        position: "0,0",
+        disabled_reason: null,
+        deployed_at: new Date("2025-06-01T00:00:00Z"),
+      })
+      response = await supertest(app).get("/api/places").query({
+        names: LANTERN_WORLD,
+        positions: "0,0",
+        search: "lantern",
+        include_opted_out: "true",
+      })
+    })
+
+    it("should return the live scene first", () => {
+      expect(titles(response)).toEqual([
+        "Lantern Hall",
+        "Lantern Lantern Lantern",
+      ])
+    })
+  })
+
   describe("and two opt_out scenes of the same world overlap", () => {
     let response: supertest.Response
 
