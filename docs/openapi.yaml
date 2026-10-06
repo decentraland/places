@@ -202,6 +202,8 @@ paths:
             (`disabled_reason: opt_out`). Meant for services that resolve a scene's place ID,
             not for discovery: only honoured together with `names`, and results are then ordered
             live first, newest deployment first. Places disabled for any other reason stay hidden.
+            Opting out hides a world from listings; it does not make it private. Place IDs are
+            public identifiers, never authorization secrets.
           required: false
           schema:
             type: boolean

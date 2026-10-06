@@ -226,6 +226,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   /**
    * Opted-out world scenes are only exposed to callers resolving a specific world's scene, never
    * to listings: without `names` the flag is ignored.
+   *
+   * Opting out means "not listed", not "private". A place ID is a public identifier, not a secret:
+   * it is already returned by ID lookups and to scene visitors (comms-gatekeeper's scene admin
+   * list), and no consumer may treat holding one as authorization.
    */
   static includesOptedOut(options: {
     include_opted_out?: boolean
