@@ -1,10 +1,11 @@
-import { parseScriptArgs } from "./scriptArgs"
+import { parseContentServerUrl, parseScriptArgs } from "./scriptArgs"
 
 describe("when parsing the arguments of a destructive world script", () => {
   describe("and no argument is given", () => {
     it("should preview rather than write, so a bare invocation cannot change production", () => {
       expect(parseScriptArgs([])).toEqual({
         dryRun: true,
+        flags: new Set(),
         limit: null,
         worldName: null,
         connectionString: null,
@@ -119,6 +120,86 @@ describe("when parsing the arguments of a destructive world script", () => {
     it("should refuse rather than treat it as absent", () => {
       expect(() => parseScriptArgs(["--limit"])).toThrow(
         "--limit requires a value"
+      )
+    })
+  })
+})
+
+describe("when reading the configured content server URL", () => {
+  describe("and it is a plain https URL", () => {
+    it("should take it", () => {
+      expect(
+        parseContentServerUrl("https://worlds-content-server.decentraland.org")
+      ).toBe("https://worlds-content-server.decentraland.org")
+    })
+  })
+
+  describe("and it has a trailing slash", () => {
+    it("should strip it, since every path is appended to it", () => {
+      expect(
+        parseContentServerUrl(
+          "https://worlds-content-server.decentraland.zone/"
+        )
+      ).toBe("https://worlds-content-server.decentraland.zone")
+    })
+  })
+
+  describe("and it carries a second scheme", () => {
+    it("should refuse, rather than resolve a host called http once per world", () => {
+      expect(() =>
+        parseContentServerUrl(
+          "https://http://worlds-content-server.decentraland.zone"
+        )
+      ).toThrow("resolves to host 'http'")
+    })
+  })
+
+  describe("and it has no scheme at all", () => {
+    it("should refuse", () => {
+      expect(() =>
+        parseContentServerUrl("worlds-content-server.decentraland.zone")
+      ).toThrow("is not a URL")
+    })
+  })
+
+  describe("and it points somewhere that is not http", () => {
+    it("should refuse", () => {
+      expect(() => parseContentServerUrl("file:///etc/passwd")).toThrow(
+        "only http and https"
+      )
+    })
+  })
+
+  describe("and it is a local stub", () => {
+    it("should allow it, since that is how these scripts are rehearsed", () => {
+      expect(parseContentServerUrl("http://localhost:4597")).toBe(
+        "http://localhost:4597"
+      )
+    })
+  })
+})
+
+describe("when a script declares an extra flag", () => {
+  describe("and the flag is given to a script that declared it", () => {
+    it("should record it", () => {
+      expect(
+        parseScriptArgs(["--verbose"], ["--verbose"]).flags.has("--verbose")
+      ).toBe(true)
+    })
+  })
+
+  describe("and the flag is given to a script that did not declare it", () => {
+    it("should refuse, rather than accept a flag it would ignore", () => {
+      expect(() => parseScriptArgs(["--verbose"])).toThrow(
+        "Unrecognized option: --verbose"
+      )
+    })
+  })
+
+  describe("and the flag is not given", () => {
+    it("should not record it", () => {
+      expect(parseScriptArgs([], ["--verbose"]).flags.has("--verbose")).toBe(
+        false
       )
     })
   })
