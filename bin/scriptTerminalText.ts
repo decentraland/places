@@ -49,3 +49,30 @@ export function forTerminal(value: string | null | undefined): string {
     ? `${stripped.slice(0, MAX_LENGTH)}…`
     : stripped
 }
+
+/**
+ * An error as an operator needs to read it, including why it happened.
+ *
+ * Node's fetch reports every network failure as the bare string "fetch failed" and puts the reason --
+ * DNS, refused connection, TLS -- on `cause`. Printing only `message` turned thirteen different
+ * diagnoses into thirteen identical lines, so the chain is walked and each link sanitized: a cause can
+ * carry a hostname or a response body from upstream.
+ */
+export function describeError(error: unknown): string {
+  const parts: string[] = []
+  let current: unknown = error
+
+  for (let depth = 0; current && depth < 5; depth++) {
+    const message =
+      current instanceof Error
+        ? current.message
+        : typeof current === "string"
+        ? current
+        : String(current)
+    if (message) parts.push(forTerminal(message))
+    current =
+      current instanceof Error && "cause" in current ? current.cause : undefined
+  }
+
+  return parts.length > 0 ? parts.join(" — caused by: ") : "(no detail)"
+}
