@@ -191,6 +191,105 @@ describe("findWithAggregates", () => {
     })
   })
 
+  describe("when ordering by updated_at", () => {
+    beforeEach(() => {
+      options.order_by = PlaceListOrderBy.UPDATED_AT
+    })
+
+    describe("and neither only_places nor only_worlds is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank updated_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.highlighted DESC")
+        )
+      })
+
+      it("should rank updated_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.ranking DESC")
+        )
+      })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+      })
+    })
+
+    describe("and only_places is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        options.only_places = true
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank updated_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "p.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "p.highlighted DESC")
+        )
+      })
+
+      it("should rank updated_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "p.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "p.ranking DESC")
+        )
+      })
+    })
+
+    describe("and only_worlds is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        options.only_worlds = true
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(worldsNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank updated_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "w.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.highlighted DESC")
+        )
+      })
+
+      it("should rank updated_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "w.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.ranking DESC")
+        )
+      })
+    })
+  })
+
+  describe("when ordering by created_at", () => {
+    let orderBy: string
+
+    beforeEach(async () => {
+      options.order_by = PlaceListOrderBy.CREATED_AT
+      await DestinationModel.findWithAggregates(options)
+      orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+    })
+
+    it("should rank created_at above the highlighted flag", () => {
+      expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+        positionOf(orderBy, "sub.highlighted DESC")
+      )
+    })
+
+    it("should rank created_at above the curation ranking", () => {
+      expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+        positionOf(orderBy, "sub.ranking DESC")
+      )
+    })
+  })
+
   describe("when ordering by like score", () => {
     let orderBy: string
 

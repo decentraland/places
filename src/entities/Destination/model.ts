@@ -197,6 +197,14 @@ export default class DestinationModel {
 
     const filterMostActive = options.order_by === PlaceListOrderBy.MOST_ACTIVE
 
+    // Same reasoning as MOST_ACTIVE below, applied to UPDATED_AT/CREATED_AT: a caller asking for
+    // what is new or recently redeployed wants that to win over the featured shelf too, not just
+    // break a tie underneath it. Unlike MOST_ACTIVE this needs no extra SELECT column — `orderBy`
+    // already resolves to `updated_at`/`created_at`, both already selected above.
+    const filterRecency =
+      options.order_by === PlaceListOrderBy.UPDATED_AT ||
+      options.order_by === PlaceListOrderBy.CREATED_AT
+
     // When ordering by MOST_ACTIVE, expose a `live_user_count` column built from the realtime
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
     // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
@@ -207,7 +215,9 @@ export default class DestinationModel {
     // for somewhere with people in it. Editorial still owns everything below: once nobody is
     // online the order collapses back to exactly the shelf, in exactly the order it was set.
     //
-    // This only applies to MOST_ACTIVE. Every other ordering keeps the featured shelf on top.
+    // This only applies to MOST_ACTIVE; UPDATED_AT/CREATED_AT get the same override via
+    // `filterRecency` above, without a `live_user_count`-style extra column. LIKE_SCORE_BEST
+    // is the only ordering left that keeps the featured shelf on top.
     const placesSelect = filterMostActive
       ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
           options.placeUserCounts
@@ -241,12 +251,18 @@ export default class DestinationModel {
         ${placesQuery}
         ORDER BY
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(
+            filterRecency,
+            SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+          )}
           p.highlighted DESC,
           p.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
-          ${SQL.raw(
-            `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC, p.id ASC`
+          ${conditional(
+            !filterRecency,
+            SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
           )}
+          p."deployed_at" DESC, p.id ASC
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
       `
@@ -268,12 +284,18 @@ export default class DestinationModel {
         ${worldsQuery}
         ORDER BY
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(
+            filterRecency,
+            SQL.raw(`w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+          )}
           w.highlighted DESC,
           w.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
-          ${SQL.raw(
-            `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC, w.id ASC`
+          ${conditional(
+            !filterRecency,
+            SQL.raw(`w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
           )}
+          w.updated_at DESC, w.id ASC
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
       `
@@ -305,12 +327,18 @@ export default class DestinationModel {
       ) sub
       ORDER BY
         ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
+        ${conditional(
+          filterRecency,
+          SQL.raw(`sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+        )}
         sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
-        ${SQL.raw(
-          `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC, sub.id ASC`
+        ${conditional(
+          !filterRecency,
+          SQL.raw(`sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
         )}
+        sub.updated_at DESC, sub.id ASC
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `
