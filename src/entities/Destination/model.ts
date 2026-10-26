@@ -197,13 +197,27 @@ export default class DestinationModel {
 
     const filterMostActive = options.order_by === PlaceListOrderBy.MOST_ACTIVE
 
-    // Same reasoning as MOST_ACTIVE below, applied to UPDATED_AT/CREATED_AT: a caller asking for
-    // what is new or recently redeployed wants that to win over the featured shelf too, not just
-    // break a tie underneath it. Unlike MOST_ACTIVE this needs no extra SELECT column — `orderBy`
-    // already resolves to `updated_at`/`created_at`, both already selected above.
+    // Same reasoning as MOST_ACTIVE below, applied to CREATED_AT: a caller asking for what is new
+    // wants that to win over the featured shelf too, not just break a tie underneath it. Unlike
+    // MOST_ACTIVE this needs no extra SELECT column — `orderBy` already resolves to `created_at`,
+    // already selected above. Derived from the resolved `orderBy`/`orderDirection`, not the raw
+    // `options.order_by`/`options.order`, so this can't drift from what actually lands in the SQL
+    // if the `oneOf` allowlist above ever changes.
+    //
+    // UPDATED_AT deliberately does NOT get this override, even though it is accepted right next
+    // to CREATED_AT below: the daily ranking rebuild stamps `updated_at = now()` on every row in
+    // the eligible (non-highlighted, non-excluded) population on every run, whether or not its
+    // ranking actually changed (see `PlaceModel`/`WorldModel.applyRankingReplace`, and
+    // `replaceRanking.ts`'s "rebuilds its eligible set from scratch every run"). Promoting that
+    // column here would tie most of the catalog together, and the id tiebreak at the bottom of
+    // each ORDER BY would decide the effective top of the feed instead of real recency.
+    //
+    // `order=asc` is excluded too: unlike MOST_ACTIVE (DESC-only in practice — nobody asks for
+    // the least active destination), "oldest first" has no "surface what people want" case that
+    // justifies outranking curation, and would otherwise put the bottom of the catalog above the
+    // featured shelf on a public, unauthenticated endpoint.
     const filterRecency =
-      options.order_by === PlaceListOrderBy.UPDATED_AT ||
-      options.order_by === PlaceListOrderBy.CREATED_AT
+      orderBy === PlaceListOrderBy.CREATED_AT && orderDirection === "desc"
 
     // When ordering by MOST_ACTIVE, expose a `live_user_count` column built from the realtime
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
@@ -215,9 +229,12 @@ export default class DestinationModel {
     // for somewhere with people in it. Editorial still owns everything below: once nobody is
     // online the order collapses back to exactly the shelf, in exactly the order it was set.
     //
-    // This only applies to MOST_ACTIVE; UPDATED_AT/CREATED_AT get the same override via
-    // `filterRecency` above, without a `live_user_count`-style extra column. LIKE_SCORE_BEST
-    // is the only ordering left that keeps the featured shelf on top.
+    // This only applies to MOST_ACTIVE; CREATED_AT (descending only) gets the same override via
+    // `filterRecency` above, without a `live_user_count`-style extra column. A search query keeps
+    // the same trade-off this already makes for MOST_ACTIVE: `rank DESC` (full-text relevance)
+    // sits below both overrides, so `search=foo&order_by=created_at` ranks by recency and ignores
+    // the text match quality. UPDATED_AT and LIKE_SCORE_BEST are the orderings left that keep the
+    // featured shelf on top.
     const placesSelect = filterMostActive
       ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
           options.placeUserCounts
