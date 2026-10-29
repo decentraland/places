@@ -241,6 +241,12 @@ describe("findWithAggregates", () => {
       })
 
       it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+        // This second assertion was already true before this PR (the UNION branch's fixed tail
+        // has always ended in `updated_at DESC, id ASC`) — kept to pin the full tail shape, not
+        // to prove anything new.
         expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
           positionOf(orderBy, "sub.id ASC")
         )
@@ -303,20 +309,41 @@ describe("findWithAggregates", () => {
       it("should order by created_at exactly once", () => {
         expect(orderBy.split("w.created_at DESC").length - 1).toBe(1)
       })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "w.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.id ASC")
+        )
+      })
     })
 
     describe("and order=asc is requested", () => {
-      let orderBy: string
-
-      beforeEach(async () => {
+      it("should NOT promote created_at above the shelf on the union", async () => {
         options.order = "asc"
         await DestinationModel.findWithAggregates(options)
-        orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
-      })
-
-      it("should NOT promote created_at above the shelf — only desc does", () => {
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
         expect(orderBy).toContain(
           "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST"
+        )
+      })
+
+      it("should NOT promote created_at above the shelf on only_places", async () => {
+        options.order = "asc"
+        options.only_places = true
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY p.highlighted DESC, p.ranking DESC NULLS LAST"
+        )
+      })
+
+      it("should NOT promote created_at above the shelf on only_worlds", async () => {
+        options.order = "asc"
+        options.only_worlds = true
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(worldsNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY w.highlighted DESC, w.ranking DESC NULLS LAST"
         )
       })
     })
