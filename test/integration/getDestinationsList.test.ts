@@ -1377,6 +1377,75 @@ describe("when fetching destinations via GET /destinations", () => {
         })
       })
 
+      describe("and an uncurated destination has fewer than three people", () => {
+        beforeEach(async () => {
+          ;(hotScenesModule.getHotScenes as jest.Mock).mockReturnValue([
+            {
+              id: "hot-scene-dev-testing",
+              name: "Dev Testing Hot Scene",
+              baseCoords: [30, 30],
+              usersTotalCount: 2,
+              parcels: [[30, 30]],
+              realms: [],
+            },
+          ])
+          await seedPlace({
+            title: "Creator Testing A Deploy",
+            base_position: "30,30",
+            positions: ["30,30"],
+            highlighted: false,
+            ranking: 0,
+          })
+          await seedPlace({
+            title: "Curated But Empty",
+            base_position: "99,99",
+            positions: ["99,99"],
+            highlighted: true,
+            ranking: 2000,
+          })
+          await seedPlace({
+            title: "Uncurated And Empty",
+            base_position: "98,98",
+            positions: ["98,98"],
+            highlighted: false,
+            ranking: 1000,
+          })
+        })
+
+        // One or two people is usually the creator testing a deploy, not a crowd.
+        it("should keep it below the featured one", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          const titles = response.body.data.map(
+            (d: { title: string }) => d.title
+          )
+          expect(titles).toContain("Creator Testing A Deploy")
+          expect(titles).toContain("Curated But Empty")
+          expect(titles.indexOf("Curated But Empty")).toBeLessThan(
+            titles.indexOf("Creator Testing A Deploy")
+          )
+        })
+
+        it("should still rank it above the empty uncurated ones", async () => {
+          const response = await supertest(app)
+            .get("/api/destinations")
+            .query({ order_by: "most_active", offset: 0, limit: 100 })
+            .expect(200)
+
+          const titles = response.body.data.map(
+            (d: { title: string }) => d.title
+          )
+          expect(titles).toContain("Creator Testing A Deploy")
+          expect(titles).toContain("Uncurated And Empty")
+          expect(titles.indexOf("Creator Testing A Deploy")).toBeLessThan(
+            titles.indexOf("Uncurated And Empty")
+          )
+        })
+      })
+
       describe("and the list includes both most_active and non-most_active destinations", () => {
         it("should return most_active destinations before non-most_active ones", async () => {
           const response = await supertest(app)
