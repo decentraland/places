@@ -12,7 +12,7 @@ export type UpdateUserLikeParams = {
 }
 
 export type UpdateUserLikeBody = {
-  like: boolean
+  like?: boolean | null
 }
 
 export type UpdateUserLikeResponse = {
