@@ -5,7 +5,12 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
+import env from "decentraland-gatsby/dist/utils/env"
 
+import {
+  MIGRATION_OPERATION_HEADER,
+  executeMigrationFavorite,
+} from "./migration"
 import UserFavoriteModel from "./model"
 import {
   updateUserFavoriteBodySchema,
@@ -39,6 +44,24 @@ export async function updateFavorites(
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
+
+  // Explicit pilot opt-in. The source transaction is also the durable dispatch
+  // record; a gateway response or background task is never its commit proof.
+  const operationId = ctx.request.headers.get(MIGRATION_OPERATION_HEADER)
+  if (operationId !== null) {
+    if (env("MIGRATION_CAPTURE_ENABLED") !== "true") {
+      throw new ErrorResponse(503, "Migration command capture is disabled")
+    }
+    return new ApiResponse(
+      await executeMigrationFavorite({
+        operationId,
+        user: userAuth.address.toLowerCase(),
+        entityId: params.entity_id,
+        favorite: body.favorites,
+        userActivity: await fetchScore(userAuth.address),
+      })
+    )
+  }
 
   const now = new Date()
   const entity = await findEntityByIdWithAggregates(params.entity_id, {
