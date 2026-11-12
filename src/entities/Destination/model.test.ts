@@ -191,6 +191,164 @@ describe("findWithAggregates", () => {
     })
   })
 
+  describe("when ordering by updated_at", () => {
+    // UPDATED_AT is deliberately NOT promoted above the shelf: the daily ranking rebuild stamps
+    // `updated_at = now()` on the whole eligible population on every run (see
+    // PlaceModel/WorldModel.applyRankingReplace), so most of the catalog ties on it. Promoting it
+    // would make the id tiebreak decide the effective top of the feed instead of real recency.
+    // This block is a regression guard: behavior here must stay byte-identical to LIKE_SCORE_BEST.
+    beforeEach(() => {
+      options.order_by = PlaceListOrderBy.UPDATED_AT
+    })
+
+    it("should keep curation at the top of the order, same as like score", () => {
+      return DestinationModel.findWithAggregates(options).then(() => {
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST"
+        )
+      })
+    })
+  })
+
+  describe("when ordering by created_at", () => {
+    beforeEach(() => {
+      options.order_by = PlaceListOrderBy.CREATED_AT
+    })
+
+    describe("and neither only_places nor only_worlds is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank created_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.highlighted DESC")
+        )
+      })
+
+      it("should rank created_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.ranking DESC")
+        )
+      })
+
+      it("should order by created_at exactly once", () => {
+        expect(orderBy.split("sub.created_at DESC").length - 1).toBe(1)
+      })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+        // This second assertion was already true before this PR (the UNION branch's fixed tail
+        // has always ended in `updated_at DESC, id ASC`) — kept to pin the full tail shape, not
+        // to prove anything new.
+        expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.id ASC")
+        )
+      })
+    })
+
+    describe("and only_places is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        options.only_places = true
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank created_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "p.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "p.highlighted DESC")
+        )
+      })
+
+      it("should rank created_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "p.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "p.ranking DESC")
+        )
+      })
+
+      it("should order by created_at exactly once", () => {
+        expect(orderBy.split("p.created_at DESC").length - 1).toBe(1)
+      })
+
+      it("should break the last tie on deployed_at then the row id", () => {
+        expect(positionOf(orderBy, 'p."deployed_at" DESC')).toBeLessThan(
+          positionOf(orderBy, "p.id ASC")
+        )
+      })
+    })
+
+    describe("and only_worlds is set", () => {
+      let orderBy: string
+
+      beforeEach(async () => {
+        options.only_worlds = true
+        await DestinationModel.findWithAggregates(options)
+        orderBy = orderByOf(worldsNamedQuery.mock.calls[0][1].text)
+      })
+
+      it("should rank created_at above the highlighted flag", () => {
+        expect(positionOf(orderBy, "w.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.highlighted DESC")
+        )
+      })
+
+      it("should rank created_at above the curation ranking", () => {
+        expect(positionOf(orderBy, "w.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.ranking DESC")
+        )
+      })
+
+      it("should order by created_at exactly once", () => {
+        expect(orderBy.split("w.created_at DESC").length - 1).toBe(1)
+      })
+
+      it("should break the last tie on the row id so the sort is total", () => {
+        expect(positionOf(orderBy, "w.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "w.id ASC")
+        )
+      })
+    })
+
+    describe("and order=asc is requested", () => {
+      it("should NOT promote created_at above the shelf on the union", async () => {
+        options.order = "asc"
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST"
+        )
+      })
+
+      it("should NOT promote created_at above the shelf on only_places", async () => {
+        options.order = "asc"
+        options.only_places = true
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY p.highlighted DESC, p.ranking DESC NULLS LAST"
+        )
+      })
+
+      it("should NOT promote created_at above the shelf on only_worlds", async () => {
+        options.order = "asc"
+        options.only_worlds = true
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(worldsNamedQuery.mock.calls[0][1].text)
+        expect(orderBy).toContain(
+          "ORDER BY w.highlighted DESC, w.ranking DESC NULLS LAST"
+        )
+      })
+    })
+  })
+
   describe("when ordering by like score", () => {
     let orderBy: string
 
