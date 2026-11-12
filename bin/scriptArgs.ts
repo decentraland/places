@@ -9,6 +9,12 @@
 export type ScriptArgs = {
   /** True unless --apply was given. Writing requires saying so. */
   dryRun: boolean
+  /**
+   * Every flag that was given, for the extras a caller declared. A script asks about its own flags
+   * through this; flags it did not declare are refused by the parser, so accepting one and ignoring it
+   * is not a state a script can reach.
+   */
+  flags: Set<string>
   limit: number | null
   worldName: string | null
   connectionString: string | null
@@ -24,7 +30,15 @@ const KNOWN = [
 
 const TAKES_VALUE = ["--limit", "--world-name", "--connection-string"]
 
-export function parseScriptArgs(args: string[]): ScriptArgs {
+/**
+ * @param extraFlags value-less flags this particular script understands. Kept per script rather than
+ *   in KNOWN so a flag only one of them acts on cannot be silently accepted by the other.
+ */
+export function parseScriptArgs(
+  args: string[],
+  extraFlags: string[] = []
+): ScriptArgs {
+  const known = [...KNOWN, ...extraFlags]
   const flags = new Set<string>()
   const values = new Map<string, string>()
 
@@ -39,7 +53,7 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
         `Unexpected argument: ${arg}. Options take their value after the flag, as --world-name ${arg}`
       )
     }
-    if (!KNOWN.includes(arg)) {
+    if (!known.includes(arg)) {
       throw new Error(`Unrecognized option: ${arg}`)
     }
     if (flags.has(arg)) {
@@ -77,8 +91,49 @@ export function parseScriptArgs(args: string[]): ScriptArgs {
 
   return {
     dryRun: !apply,
+    flags,
     limit,
     worldName: values.get("--world-name") ?? null,
     connectionString: values.get("--connection-string") ?? null,
   }
+}
+
+/**
+ * Validate the configured content server base URL.
+ *
+ * `new URL()` alone is not enough: it accepts "https://http://host" happily, reading the host as
+ * "http" and the rest as a path, which is what a doubled scheme in the environment produces. That got
+ * as far as a DNS lookup for a host called "http", once per world, reported only as "fetch failed" --
+ * so the check is here, before any world is touched, and it names what is wrong.
+ */
+export function parseContentServerUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "")
+
+  let url: URL
+  try {
+    url = new URL(trimmed)
+  } catch {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' is not a URL. It needs a scheme and a host, as https://worlds-content-server.decentraland.org`
+    )
+  }
+
+  if (url.protocol !== "https:" && url.protocol !== "http:") {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' has scheme '${url.protocol}'; only http and https are content servers`
+    )
+  }
+
+  // A hostname with no dot that is not localhost is the signature of a second scheme inside the value:
+  // "https://http://host" parses with hostname "http".
+  if (
+    !url.hostname ||
+    (url.hostname !== "localhost" && !url.hostname.includes("."))
+  ) {
+    throw new Error(
+      `WORLDS_CONTENT_SERVER_URL '${trimmed}' resolves to host '${url.hostname}', which is not a hostname. Check for a repeated scheme, as in https://http://example.org`
+    )
+  }
+
+  return trimmed
 }
