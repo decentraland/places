@@ -1,10 +1,12 @@
 import { Logger } from "decentraland-gatsby/dist/entities/Development/logger"
 import { Task } from "decentraland-gatsby/dist/entities/Task"
+import env from "decentraland-gatsby/dist/utils/env"
 import { diff } from "radash"
 
 import { getPois } from "../../../modules/pois"
 import { DecentralandCategories } from "../../Category/types"
 import PlaceModel from "../../Place/model"
+import { applyCapturedPoiMembership } from "../migration"
 import PlaceCategories from "../model"
 
 export const checkPoisForCategoryUpdate = new Task({
@@ -16,7 +18,10 @@ export const checkPoisForCategoryUpdate = new Task({
   },
 })
 
-const processNewPois = async (pois: string[], logger: Logger) => {
+export const processNewPois = async (
+  pois: string[],
+  logger: Pick<Logger, "log">
+): Promise<void> => {
   logger.log("> Processing new PoIs")
   const categorizedPlaces = await PlaceModel.findEnabledByCategory(
     DecentralandCategories.POI
@@ -40,6 +45,17 @@ const processNewPois = async (pois: string[], logger: Logger) => {
   ).map((placeId) => [placeId, DecentralandCategories.POI])
 
   logger.log(`> Processing new PoIs > to be removed ${toBeRemoved.length}`)
+
+  if (env("MIGRATION_POI_CAPTURE_ENABLED") === "true") {
+    for (const removableId of toBeRemoved) {
+      await applyCapturedPoiMembership(removableId, false)
+    }
+    for (const [placeId] of toBeAdded) {
+      await applyCapturedPoiMembership(placeId, true)
+    }
+    logger.log("> Processing new PoIs > captured successfully")
+    return
+  }
 
   // TODO: review, reduce queries?
   for (const removableId of toBeRemoved) {
