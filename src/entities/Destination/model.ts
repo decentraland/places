@@ -48,6 +48,25 @@ const WORLDS_DESTINATION_SELECT = SQL`
   lp.contact_email, lp.creator_address, lp.sdk, w.ranking,
   0 as user_visits`
 
+/**
+ * Fewest connected users a destination needs to be listed above the featured shelf under
+ * MOST_ACTIVE. One or two people is usually the creator testing a deploy, not a crowd, and it was
+ * pushing curated destinations down the feed.
+ */
+const MOST_ACTIVE_MIN_USERS = 3
+
+/**
+ * Leading ORDER BY terms for MOST_ACTIVE. Destinations with at least MOST_ACTIVE_MIN_USERS people
+ * sort first, busiest first, whether featured or not. Below them come the featured ones, and then
+ * everything else, still ordered by how many people are in it. `column` is the qualified
+ * `live_user_count` reference of the branch, a constant, never user input.
+ */
+function mostActiveOrder(column: string): SQLStatement {
+  return SQL.raw(
+    `CASE WHEN ${column} >= ${MOST_ACTIVE_MIN_USERS} THEN ${column} ELSE 0 END DESC, `
+  )
+}
+
 /** Fallback when there is no realtime data: every destination ranks as 0 active users. */
 const ZERO_LIVE_USER_COUNT = SQL`, 0::int as live_user_count`
 
@@ -201,11 +220,12 @@ export default class DestinationModel {
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
     // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
     //
-    // That column sorts ahead of `highlighted`, so people decide the top of this ordering and
-    // curation decides the rest. Asking for the most active destinations and being shown empty
-    // ones first reads as the sort being broken, and a visitor picking from this list is looking
-    // for somewhere with people in it. Editorial still owns everything below: once nobody is
-    // online the order collapses back to exactly the shelf, in exactly the order it was set.
+    // A destination with at least MOST_ACTIVE_MIN_USERS people sorts ahead of `highlighted`, so
+    // crowds decide the top of this ordering and curation decides the rest. Asking for the most
+    // active destinations and being shown empty ones first reads as the sort being broken, while
+    // one or two people is usually the creator testing a deploy and must not outrank the shelf.
+    // Below the shelf the count still orders the rest. Once nobody reaches the threshold the
+    // order starts with exactly the shelf, in exactly the order it was set.
     //
     // This only applies to MOST_ACTIVE. Every other ordering keeps the featured shelf on top.
     const placesSelect = filterMostActive
@@ -240,8 +260,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${placesQuery}
         ORDER BY
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(filterMostActive, mostActiveOrder("live_user_count"))}
           p.highlighted DESC,
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           p.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
@@ -267,8 +288,9 @@ export default class DestinationModel {
       const sql = SQL`
         ${worldsQuery}
         ORDER BY
-          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(filterMostActive, mostActiveOrder("live_user_count"))}
           w.highlighted DESC,
+          ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
           w.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
           ${SQL.raw(
@@ -304,8 +326,9 @@ export default class DestinationModel {
         (${worldsQuery})
       ) sub
       ORDER BY
-        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
+        ${conditional(filterMostActive, mostActiveOrder("sub.live_user_count"))}
         sub.highlighted DESC,
+        ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
         sub.ranking DESC NULLS LAST,
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
         ${SQL.raw(

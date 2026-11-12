@@ -97,9 +97,18 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should rank the live user count above the highlighted flag", () => {
-        expect(positionOf(orderBy, "sub.live_user_count DESC")).toBeLessThan(
-          positionOf(orderBy, "sub.highlighted DESC")
+      it("should rank destinations with at least three people above the highlighted flag", () => {
+        expect(
+          positionOf(
+            orderBy,
+            "CASE WHEN sub.live_user_count >= 3 THEN sub.live_user_count ELSE 0 END DESC"
+          )
+        ).toBeLessThan(positionOf(orderBy, "sub.highlighted DESC"))
+      })
+
+      it("should rank the highlighted flag above destinations with fewer than three people", () => {
+        expect(positionOf(orderBy, "sub.highlighted DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.live_user_count DESC")
         )
       })
 
@@ -137,9 +146,18 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should rank the live user count above the highlighted flag", () => {
-        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
-          positionOf(orderBy, "p.highlighted DESC")
+      it("should rank destinations with at least three people above the highlighted flag", () => {
+        expect(
+          positionOf(
+            orderBy,
+            "CASE WHEN live_user_count >= 3 THEN live_user_count ELSE 0 END DESC"
+          )
+        ).toBeLessThan(positionOf(orderBy, "p.highlighted DESC"))
+      })
+
+      it("should rank the highlighted flag above destinations with fewer than three people", () => {
+        expect(positionOf(orderBy, "p.highlighted DESC")).toBeLessThan(
+          positionOf(orderBy, "live_user_count DESC")
         )
       })
 
@@ -171,9 +189,18 @@ describe("findWithAggregates", () => {
         )
       })
 
-      it("should rank the live user count above the highlighted flag", () => {
-        expect(positionOf(orderBy, "live_user_count DESC")).toBeLessThan(
-          positionOf(orderBy, "w.highlighted DESC")
+      it("should rank destinations with at least three people above the highlighted flag", () => {
+        expect(
+          positionOf(
+            orderBy,
+            "CASE WHEN live_user_count >= 3 THEN live_user_count ELSE 0 END DESC"
+          )
+        ).toBeLessThan(positionOf(orderBy, "w.highlighted DESC"))
+      })
+
+      it("should rank the highlighted flag above destinations with fewer than three people", () => {
+        expect(positionOf(orderBy, "w.highlighted DESC")).toBeLessThan(
+          positionOf(orderBy, "live_user_count DESC")
         )
       })
 
