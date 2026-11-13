@@ -30,6 +30,7 @@ import WorldSceneUndeploymentModel from "../../src/entities/WorldSceneUndeployme
 import {
   createWorldContentEntityScene,
   createWorldDeploymentMessage,
+  createWorldDeploymentMessageForScene,
 } from "../fixtures/deploymentEvent"
 import { createWorldUndeploymentEvent } from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
@@ -455,17 +456,6 @@ describe("taskRunnerSqs integration", () => {
     entityId?: string
     timestamp?: number
   }): Promise<void> {
-    const job: DeploymentToSqs = createWorldDeploymentMessage(
-      options.entityId
-        ? {
-            entity: {
-              ...createWorldDeploymentMessage().entity,
-              entityId: options.entityId,
-            },
-          }
-        : {}
-    )
-
     const scene = createWorldContentEntityScene({
       worldName: options.worldName,
       title: options.title ?? "Ember Workshop",
@@ -478,6 +468,11 @@ describe("taskRunnerSqs integration", () => {
       scene.timestamp = options.timestamp
     }
 
+    const job = await createWorldDeploymentMessageForScene(
+      scene,
+      options.entityId
+    )
+
     mockProcessEntityId.mockResolvedValueOnce(scene)
     mockExtractSceneJsonData.mockResolvedValueOnce({
       creator: "0x1234567890abcdef1234567890abcdef12345678",
@@ -486,6 +481,69 @@ describe("taskRunnerSqs integration", () => {
 
     await taskRunnerSqs(job)
   }
+
+  describe("when the same immutable world entity is accepted again after undeployment", () => {
+    let worldName: string
+    let scene: ContentEntityScene
+    let job: DeploymentToSqs & { timestamp: number }
+    let originalPlaceId: string | undefined
+    let allPlaces: PlaceAttributes[]
+
+    beforeEach(async () => {
+      worldName = "same-entity-reactivation.dcl.eth"
+      scene = createWorldContentEntityScene({
+        worldName,
+        title: "Unchanged Scene",
+      })
+      scene.timestamp = Date.parse("2026-11-01T00:00:00Z")
+      job = {
+        ...(await createWorldDeploymentMessageForScene(scene)),
+        timestamp: scene.timestamp,
+      }
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(job)
+      originalPlaceId = (
+        await PlaceModel.findByWorldIdAndBasePosition(worldName, "0,0")
+      )?.id
+      await PlaceModel.updatePlace(
+        { id: originalPlaceId, world: true, highlighted: true },
+        ["highlighted"]
+      )
+      await handleWorldUndeployment(
+        createWorldUndeploymentEvent(worldName, {
+          timestamp: scene.timestamp + 1000,
+        })
+      )
+      job.timestamp = scene.timestamp + 2000
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(job)
+      mockProcessEntityId.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      await taskRunnerSqs(job)
+      allPlaces = await PlaceModel.findByWorldId(worldName)
+    })
+
+    it("should restore one identity across reactivation and duplicate delivery", () => {
+      expect(
+        allPlaces.map((place) => ({
+          id: place.id,
+          disabled: place.disabled,
+          highlighted: place.highlighted,
+        }))
+      ).toEqual([{ id: originalPlaceId, disabled: false, highlighted: true }])
+    })
+  })
 
   describe("when a world scene is deployed and then an undeployment event is received", () => {
     let worldName: string
@@ -508,7 +566,7 @@ describe("taskRunnerSqs integration", () => {
       expect(place!.disabled_reason).toBe(DisabledReason.UNDEPLOYMENT)
     })
 
-    describe("and the world scene is redeployed", () => {
+    describe("and different scene content is redeployed", () => {
       let originalPlaceId: string
 
       beforeEach(async () => {
