@@ -7,6 +7,7 @@ import {
 } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
 import { InvalidSceneBaseError } from "./errors"
+import { createPlaceIdentity } from "./placeIdentity"
 import getContentRating, {
   isDowngradingRating,
   isUpgradingRating,
@@ -161,7 +162,7 @@ function inheritedCuration(
 
 export function createPlaceFromContentEntityScene(
   contentEntityScene: ContentEntityScene,
-  data: Partial<Omit<PlaceAttributes, "id">> = {},
+  data: Partial<PlaceAttributes> = {},
   options: {
     url?: string
     creator?: string | null
@@ -215,7 +216,9 @@ export function createPlaceFromContentEntityScene(
   }
 
   const placeParsed: PlaceAttributes = {
-    id: randomUUID(),
+    id:
+      data.id ??
+      createPlaceIdentity(options.deploymentId, options.worldId ?? worldName),
     likes: 0,
     dislikes: 0,
     favorites: 0,
