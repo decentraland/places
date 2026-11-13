@@ -79,7 +79,11 @@ export async function applyDeploymentDecision({
   let placesToProcess = decision.placesToProcess
 
   if (placesToProcess?.new) {
-    await PlaceModel.insertPlace(placesToProcess.new, placesInsertAttributes)
+    await PlaceModel.insertPlace(
+      placesToProcess.new,
+      placesInsertAttributes,
+      true
+    )
     await Promise.all([
       decision.kind === "genesis-city" &&
         PlacePositionModel.syncBasePosition(placesToProcess.new),

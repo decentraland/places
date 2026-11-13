@@ -71,6 +71,7 @@ function removedUpstream(
   )`
 }
 
+import { PlaceIdentityConflictError } from "./errors"
 import {
   AggregatePlaceAttributes,
   DisabledReason,
@@ -79,6 +80,7 @@ import {
   PlaceAttributes,
   PlaceListOrderBy,
 } from "./types"
+import { createPlaceIdentity } from "../CheckScenes/task/placeIdentity"
 import { Model } from "../Database/model"
 import {
   type AggregateCoordinatePlaceAttributes,
@@ -905,12 +907,60 @@ export default class PlaceModel extends Model<PlaceAttributes> {
 
   static async insertPlace(
     place: Partial<PlaceAttributes>,
-    attributes: Array<keyof PlaceAttributes>
+    attributes: Array<keyof PlaceAttributes>,
+    reactivateIdentity = false
   ) {
-    const keys = unique([...attributes, "id"])
+    if (
+      reactivateIdentity &&
+      place.id !==
+        createPlaceIdentity(
+          place.deployment_id,
+          place.world ? place.world_id ?? place.world_name ?? null : null
+        )
+    ) {
+      throw new PlaceIdentityConflictError(place.id)
+    }
+    const inputKeys: Array<keyof PlaceAttributes> = [...attributes, "id"]
+    const keys = unique(inputKeys)
+    const retained = [
+      "id",
+      "created_at",
+      "likes",
+      "dislikes",
+      "favorites",
+      "like_rate",
+      "like_score",
+      "highlighted",
+      "highlighted_image",
+      "ranking",
+      "exclude_from_ranking",
+    ]
+    const updates = keys.filter((key) => !retained.includes(key))
     const sql = SQL`INSERT INTO ${table(this)} ${columns(keys)}
-              VALUES ${objectValues(keys, [place])}`
-    return this.namedQuery("insert_place", sql)
+              VALUES ${objectValues(keys, [place])}
+              ${conditional(
+                reactivateIdentity,
+                SQL`
+                ON CONFLICT (id) DO UPDATE SET ${setColumns(updates, place)}
+                WHERE places.world = EXCLUDED.world
+                  AND places.world_id IS NOT DISTINCT FROM EXCLUDED.world_id
+                  AND lower(places.world_name) IS NOT DISTINCT FROM lower(EXCLUDED.world_name)
+                  AND (
+                    (places.disabled IS TRUE AND places.disabled_reason IN ('undeployment', 'overwritten'))
+                    OR ((places.disabled IS FALSE OR places.disabled_reason = 'opt_out')
+                      AND places.deployment_id = EXCLUDED.deployment_id
+                      AND places.positions @> EXCLUDED.positions
+                      AND places.positions <@ EXCLUDED.positions
+                      AND places.base_position = EXCLUDED.base_position)
+                  )
+                RETURNING id
+              `
+              )}`
+    const result = await this.namedQuery("insert_place", sql)
+    if (reactivateIdentity && result.length === 0) {
+      throw new PlaceIdentityConflictError(place.id)
+    }
+    return result
   }
 
   private static buildUpdatePlaceQuery(
