@@ -5,7 +5,9 @@ import ErrorResponse from "decentraland-gatsby/dist/entities/Route/wkc/response/
 import Response from "decentraland-gatsby/dist/entities/Route/wkc/response/Response"
 import routes from "decentraland-gatsby/dist/entities/Route/wkc/routes"
 import Router from "decentraland-gatsby/dist/entities/Route/wkc/routes/Router"
+import env from "decentraland-gatsby/dist/utils/env"
 
+import { MIGRATION_OPERATION_HEADER, executeMigrationLike } from "./migration"
 import { updateUserLikeBodySchema, updateUserLikeParamsSchema } from "./schema"
 import {
   UpdateUserLikeBody,
@@ -41,6 +43,25 @@ export async function updateLike(
   const params = await validateGetPlaceParams(ctx.params)
   const body = await validateGetPlaceBody(ctx.body)
   const userAuth = await withAuth(ctx)
+
+  const operationId = ctx.request.headers.get(MIGRATION_OPERATION_HEADER)
+  if (operationId !== null) {
+    if (env("MIGRATION_CAPTURE_ENABLED") !== "true") {
+      throw new ErrorResponse(503, "Migration command capture is disabled")
+    }
+    // The legacy Places endpoint treats an omitted vote as true. Preserve that
+    // contract; null means withdraw rather than dislike.
+    const like = body.like === undefined ? true : body.like
+    return new ApiResponse(
+      await executeMigrationLike({
+        operationId,
+        user: userAuth.address.toLowerCase(),
+        entityId: params.entity_id,
+        like,
+        userActivity: like === null ? 0 : await fetchScore(userAuth.address),
+      })
+    )
+  }
 
   const entity = await findEntityByIdWithAggregates(params.entity_id, {
     user: userAuth.address,
