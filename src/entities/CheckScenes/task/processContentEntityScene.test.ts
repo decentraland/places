@@ -100,11 +100,14 @@ describe("when asserting that the scene base is authorized", () => {
 describe("createPlaceFromContentEntityScene", () => {
   test("should accept a contentEntityScene and return a formatted place", async () => {
     const contentEntityDeployment = createPlaceFromContentEntityScene(
-      contentEntitySceneGenesisPlaza
+      contentEntitySceneGenesisPlaza,
+      {},
+      { deploymentId: "bafy-test-scene" }
     )
     expect(contentEntityDeployment).toEqual({
       ...placeGenesisPlaza,
       id: contentEntityDeployment.id,
+      deployment_id: "bafy-test-scene",
       updated_at: contentEntityDeployment.updated_at,
       created_at: contentEntityDeployment.created_at,
       textsearch: expect.any(SQLStatement),
@@ -127,7 +130,11 @@ describe("createPlaceFromContentEntityScene", () => {
           },
         },
       } as ContentEntityScene
-      result = createPlaceFromContentEntityScene(contentEntityScene)
+      result = createPlaceFromContentEntityScene(
+        contentEntityScene,
+        {},
+        { deploymentId: "bafy-test-scene" }
+      )
     })
 
     it("should strip the markup so it cannot be rendered as a live tag", () => {
@@ -147,7 +154,8 @@ describe("createPlaceFromContentEntityScene", () => {
             disabled: false,
             disabled_at: new Date("2025-01-01"),
             disabled_reason: DisabledReason.OPT_OUT,
-          }
+          },
+          { deploymentId: "bafy-test-scene" }
         )
       })
 
@@ -168,7 +176,8 @@ describe("createPlaceFromContentEntityScene", () => {
         {
           disabled: true,
           disabled_reason: DisabledReason.OPT_OUT,
-        }
+        },
+        { deploymentId: "bafy-test-scene" }
       )
     })
 
@@ -192,7 +201,8 @@ describe("createPlaceFromContentEntityScene", () => {
         {
           ...placeGenesisPlaza,
           updated_at: existingUpdatedAt,
-        }
+        },
+        { deploymentId: "bafy-test-scene" }
       )
     })
 
@@ -226,11 +236,16 @@ describe("processContentEntityScene", () => {
   test("should return an object with new place and no disabled places", async () => {
     const processEntitySceneResult = processContentEntityScene(
       contentEntitySceneGenesisPlaza,
-      []
+      [],
+      { deploymentId: "bafy-test-scene" }
     )
     expect(processEntitySceneResult).toEqual({
       new: {
-        ...createPlaceFromContentEntityScene(contentEntitySceneGenesisPlaza),
+        ...createPlaceFromContentEntityScene(
+          contentEntitySceneGenesisPlaza,
+          {},
+          { deploymentId: "bafy-test-scene" }
+        ),
         id: processEntitySceneResult!.new!.id,
         created_at: processEntitySceneResult!.new!.created_at,
         updated_at: processEntitySceneResult!.new!.updated_at,
@@ -248,14 +263,16 @@ describe("processContentEntityScene", () => {
           ...placeGenesisPlazaWithAggregatedAttributes,
           deployed_at: new Date("2020-01-01"),
         },
-      ]
+      ],
+      { deploymentId: "bafy-test-scene" }
     )
 
     expect(processEntitySceneResult).toEqual({
       update: {
         ...createPlaceFromContentEntityScene(
           contentEntitySceneGenesisPlaza,
-          placeGenesisPlazaWithAggregatedAttributes
+          placeGenesisPlazaWithAggregatedAttributes,
+          { deploymentId: "bafy-test-scene" }
         ),
         created_at: processEntitySceneResult!.update!.created_at,
         updated_at: processEntitySceneResult!.update!.updated_at,
@@ -268,13 +285,16 @@ describe("processContentEntityScene", () => {
   test("should return an object with new place and disabled places", async () => {
     const processEntitySceneResult = processContentEntityScene(
       contentEntitySceneMusicFestivalStage,
-      [placeGenesisPlazaWithAggregatedAttributes]
+      [placeGenesisPlazaWithAggregatedAttributes],
+      { deploymentId: "bafy-test-scene" }
     )
 
     expect(processEntitySceneResult).toEqual({
       new: {
         ...createPlaceFromContentEntityScene(
-          contentEntitySceneMusicFestivalStage
+          contentEntitySceneMusicFestivalStage,
+          {},
+          { deploymentId: "bafy-test-scene" }
         ),
         id: processEntitySceneResult!.new!.id,
         created_at: processEntitySceneResult!.new!.created_at,
@@ -292,17 +312,22 @@ describe("processContentEntityScene", () => {
         placeGenesisPlazaWithAggregatedAttributes,
         {
           ...createPlaceFromContentEntityScene(
-            contentEntitySceneMusicFestivalStage
+            contentEntitySceneMusicFestivalStage,
+            {},
+            { deploymentId: "bafy-test-scene" }
           ),
           deployed_at: new Date("2020-01-01"),
         },
-      ]
+      ],
+      { deploymentId: "bafy-test-scene" }
     )
 
     expect(processEntitySceneResult).toEqual({
       update: {
         ...createPlaceFromContentEntityScene(
-          contentEntitySceneMusicFestivalStage
+          contentEntitySceneMusicFestivalStage,
+          {},
+          { deploymentId: "bafy-test-scene" }
         ),
         id: processEntitySceneResult!.update!.id,
         created_at: processEntitySceneResult!.update!.created_at,
@@ -320,11 +345,14 @@ describe("processContentEntityScene", () => {
         placeGenesisPlazaWithAggregatedAttributes,
         {
           ...createPlaceFromContentEntityScene(
-            contentEntitySceneMusicFestivalStage
+            contentEntitySceneMusicFestivalStage,
+            {},
+            { deploymentId: "bafy-test-scene" }
           ),
           deployed_at: new Date(),
         },
-      ]
+      ],
+      { deploymentId: "bafy-test-scene" }
     )
 
     expect(processEntitySceneResult).toBeNull()
@@ -339,7 +367,9 @@ describe("when a redeployment lands on a new place row", () => {
     creator = "0x4f7fe261619141ffa63fefee35bba886581292f4"
     curatedPredecessor = {
       ...(createPlaceFromContentEntityScene(
-        contentEntitySceneGenesisPlaza
+        contentEntitySceneGenesisPlaza,
+        {},
+        { deploymentId: "bafy-test-scene" }
       ) as PlaceAttributes),
       highlighted: true,
       highlighted_image: "/images/places/banner.jpg",
@@ -356,7 +386,7 @@ describe("when a redeployment lands on a new place row", () => {
       result = processContentEntityScene(
         contentEntitySceneMusicFestivalStage,
         [curatedPredecessor],
-        { creator }
+        { deploymentId: "bafy-test-scene", creator }
       )
     })
 
@@ -391,7 +421,7 @@ describe("when a redeployment lands on a new place row", () => {
             exclude_from_ranking: true,
           },
         ],
-        { creator }
+        { deploymentId: "bafy-test-scene", creator }
       )
     })
 
@@ -407,7 +437,10 @@ describe("when a redeployment lands on a new place row", () => {
       result = processContentEntityScene(
         contentEntitySceneMusicFestivalStage,
         [curatedPredecessor],
-        { creator: "0x0000000000000000000000000000000000000001" }
+        {
+          deploymentId: "bafy-test-scene",
+          creator: "0x0000000000000000000000000000000000000001",
+        }
       )
     })
 
@@ -430,7 +463,7 @@ describe("when a redeployment lands on a new place row", () => {
           curatedPredecessor,
           { ...curatedPredecessor, id: "6f1f6a8e-2b47-4f0e-9b3a-6c9d0f2e8a11" },
         ],
-        { creator }
+        { deploymentId: "bafy-test-scene", creator }
       )
     })
 
@@ -447,13 +480,134 @@ describe("when a redeployment lands on a new place row", () => {
     let result: ProcessEntitySceneResult | null
 
     beforeEach(() => {
-      result = processContentEntityScene(contentEntitySceneMusicFestivalStage, [
-        curatedPredecessor,
-      ])
+      result = processContentEntityScene(
+        contentEntitySceneMusicFestivalStage,
+        [curatedPredecessor],
+        { deploymentId: "bafy-test-scene" }
+      )
     })
 
     it("should not promote the new place into the highlighted shelf", () => {
       expect(result!.new!.highlighted).toBe(false)
     })
+  })
+})
+
+describe("when assigning deployment identities", () => {
+  let scene: ContentEntityScene
+  let places: PlaceAttributes[]
+  let result: ProcessEntitySceneResult | null
+
+  beforeEach(() => {
+    scene = {
+      ...contentEntitySceneGenesisPlaza,
+      pointers: ["0,0", "1,0"],
+      timestamp: Date.parse("2026-11-01T00:00:00Z"),
+      metadata: {
+        ...contentEntitySceneGenesisPlaza.metadata,
+        scene: { base: "0,0", parcels: ["0,0", "1,0"] },
+      },
+    }
+    places = []
+  })
+
+  describe("and no prior place matches", () => {
+    beforeEach(() => {
+      result = processContentEntityScene(scene, places, {
+        deploymentId: "bafybeigdyrzt",
+      })
+    })
+    it("should create the shared deterministic Genesis identity", () => {
+      expect(result?.new?.id).toBe("3324b698-ff23-5516-93b7-95f3e6f8e0d5")
+    })
+  })
+
+  describe("and an existing legacy place has the same base", () => {
+    beforeEach(() => {
+      places = [
+        {
+          ...placeGenesisPlaza,
+          id: "dcb1c433-2847-446f-a989-4df5c3c39103",
+          base_position: "0,0",
+          positions: ["0,0"],
+          deployed_at: new Date("2026-01-01"),
+        },
+      ]
+      result = processContentEntityScene(scene, places, {
+        deploymentId: "bafybeigdyrzt",
+      })
+    })
+    it("should preserve its UUID across deployment changes", () => {
+      expect(result?.update?.id).toBe(places[0].id)
+    })
+  })
+
+  describe("and a legacy place has the same footprint but another base", () => {
+    beforeEach(() => {
+      places = [
+        {
+          ...placeGenesisPlaza,
+          id: "dcb1c433-2847-446f-a989-4df5c3c39103",
+          base_position: "1,0",
+          positions: ["1,0", "0,0"],
+          deployed_at: new Date("2026-01-01"),
+        },
+      ]
+      result = processContentEntityScene(scene, places, {
+        deploymentId: "bafybeigdyrzt",
+      })
+    })
+    it("should preserve its UUID after the base moves", () => {
+      expect(result?.update?.id).toBe(places[0].id)
+    })
+  })
+
+  describe("and a replacement changes both base and footprint", () => {
+    beforeEach(() => {
+      places = [
+        {
+          ...placeGenesisPlaza,
+          id: "dcb1c433-2847-446f-a989-4df5c3c39103",
+          base_position: "1,0",
+          positions: ["1,0"],
+          deployed_at: new Date("2026-01-01"),
+        },
+      ]
+      result = processContentEntityScene(scene, places, {
+        deploymentId: "bafybeigdyrzt",
+      })
+    })
+    it("should create the deterministic replacement UUID and retire the predecessor", () => {
+      expect({ id: result?.new?.id, disabled: result?.disabled }).toEqual({
+        id: "3324b698-ff23-5516-93b7-95f3e6f8e0d5",
+        disabled: places,
+      })
+    })
+  })
+})
+
+describe("when multiple legacy places match a Genesis base", () => {
+  let scene: ContentEntityScene
+  let candidates: PlaceAttributes[]
+  beforeEach(() => {
+    scene = contentEntitySceneGenesisPlaza
+    candidates = [
+      {
+        ...placeGenesisPlaza,
+        id: "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        deployed_at: new Date("2020-01-01"),
+      },
+      {
+        ...placeGenesisPlaza,
+        id: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        deployed_at: new Date("2020-01-01"),
+      },
+    ]
+  })
+  it("should preserve the same smallest UUID regardless of database row order", () => {
+    expect([
+      processContentEntityScene(scene, candidates)?.update?.id,
+      processContentEntityScene(scene, [...candidates].reverse())?.update?.id,
+    ]).toEqual([candidates[1].id, candidates[1].id])
   })
 })

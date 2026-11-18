@@ -1,3 +1,4 @@
+import { hashV1 } from "@dcl/hashing"
 import { AuthLinkType } from "@dcl/schemas/dist/misc/auth-chain"
 import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import {
@@ -26,6 +27,21 @@ export function createWorldDeploymentMessage(
     },
     contentServerUrls: ["https://worlds-content-server.decentraland.org"],
     ...overrides,
+  }
+}
+
+/** Bind mocked content to the immutable entity ID its serialized bytes actually produce. */
+export async function createWorldDeploymentMessageForScene(
+  scene: ContentEntityScene,
+  entityId?: string
+): Promise<DeploymentToSqs> {
+  const message = createWorldDeploymentMessage()
+  return {
+    ...message,
+    entity: {
+      ...message.entity,
+      entityId: entityId ?? (await hashV1(Buffer.from(JSON.stringify(scene)))),
+    },
   }
 }
 

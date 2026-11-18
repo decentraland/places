@@ -1,0 +1,22 @@
+[
+  {
+    "world": null,
+    "entity": "bafybeigdyrzt",
+    "id": "3324b698-ff23-5516-93b7-95f3e6f8e0d5"
+  },
+  {
+    "world": "Example.DCL.ETH",
+    "entity": "bafybeigdyrzt",
+    "id": "df3cba09-79de-5546-b2ef-0864639faca3"
+  },
+  {
+    "world": "other.dcl.eth",
+    "entity": "bafybeigdyrzt",
+    "id": "ef1d4266-591a-5b89-8c09-72d1cbf91a8b"
+  },
+  {
+    "world": null,
+    "entity": "QmCaseSensitiveEntity",
+    "id": "702b920f-5bef-5962-9184-3dcd17e87544"
+  }
+]

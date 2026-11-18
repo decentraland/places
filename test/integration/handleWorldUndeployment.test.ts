@@ -1,6 +1,5 @@
 import supertest from "supertest"
 
-import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
 import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
@@ -9,7 +8,7 @@ import PlaceModel from "../../src/entities/Place/model"
 import { DisabledReason } from "../../src/entities/Place/types"
 import {
   createWorldContentEntityScene,
-  createWorldDeploymentMessage,
+  createWorldDeploymentMessageForScene,
 } from "../fixtures/deploymentEvent"
 import { createWorldUndeploymentEvent } from "../fixtures/undeploymentEvent"
 import { cleanTables, closeTestDb, initTestDb } from "../setup/db"
@@ -80,14 +79,14 @@ async function deployWorldScene(options: {
   base?: string
   parcels?: string[]
 }): Promise<void> {
-  const job: DeploymentToSqs = createWorldDeploymentMessage()
-
   const scene = createWorldContentEntityScene({
     worldName: options.worldName,
     title: options.title ?? "Harbor Loft",
     base: options.base ?? "0,0",
     parcels: options.parcels ?? ["0,0"],
   })
+
+  const job = await createWorldDeploymentMessageForScene(scene)
 
   mockProcessEntityId.mockResolvedValueOnce(scene)
   mockExtractSceneJsonData.mockResolvedValueOnce({

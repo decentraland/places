@@ -190,7 +190,10 @@ export function findSamePlace(
     return null
   }
 
-  const sameBasePosition = places.find(
+  const orderedPlaces = [...places].sort((left, right) =>
+    left.id < right.id ? -1 : left.id > right.id ? 1 : 0
+  )
+  const sameBasePosition = orderedPlaces.find(
     (place) => place.base_position === contentEntityScene.metadata.scene!.base
   )
 
@@ -198,7 +201,7 @@ export function findSamePlace(
     return sameBasePosition
   }
 
-  const samePosition = places.find((place) =>
+  const samePosition = orderedPlaces.find((place) =>
     areSamePositions(contentEntityScene.pointers, place.positions)
   )
 

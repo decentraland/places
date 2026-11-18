@@ -27,6 +27,7 @@
     "@types/line-reader": "^0.0.34",
     "@types/node": "^18.19.64",
     "@types/supertest": "^6.0.3",
+    "@types/uuid": "^8.3.4",
     "@types/validator": "^13.7.5",
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
