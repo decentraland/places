@@ -192,20 +192,17 @@ describe("findWithAggregates", () => {
   })
 
   describe("when ordering by updated_at", () => {
-    // UPDATED_AT is deliberately NOT promoted above the shelf: the daily ranking rebuild stamps
-    // `updated_at = now()` on the whole eligible population on every run (see
-    // PlaceModel/WorldModel.applyRankingReplace), so most of the catalog ties on it. Promoting it
-    // would make the id tiebreak decide the effective top of the feed instead of real recency.
-    // This block is a regression guard: behavior here must stay byte-identical to LIKE_SCORE_BEST.
+    // Not promoted above the shelf: the daily ranking rebuild stamps `updated_at` on the whole
+    // ranked population, so it carries no per-row recency.
     beforeEach(() => {
       options.order_by = PlaceListOrderBy.UPDATED_AT
     })
 
-    it("should keep curation at the top of the order, same as like score", () => {
+    it("should keep curation at the top and sort by updated_at below it", () => {
       return DestinationModel.findWithAggregates(options).then(() => {
         const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
-        expect(orderBy).toContain(
-          "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST"
+        expect(orderBy.split(" LIMIT ")[0].trim()).toBe(
+          "ORDER BY sub.highlighted DESC, sub.ranking DESC NULLS LAST, sub.updated_at DESC NULLS LAST, sub.updated_at DESC, sub.id ASC"
         )
       })
     })
@@ -244,11 +241,19 @@ describe("findWithAggregates", () => {
         expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
           positionOf(orderBy, "sub.id ASC")
         )
-        // This second assertion was already true before this PR (the UNION branch's fixed tail
-        // has always ended in `updated_at DESC, id ASC`) — kept to pin the full tail shape, not
-        // to prove anything new.
         expect(positionOf(orderBy, "sub.updated_at DESC")).toBeLessThan(
           positionOf(orderBy, "sub.id ASC")
+        )
+      })
+    })
+
+    describe("and search is set", () => {
+      it("should rank created_at above the search relevance", async () => {
+        options.search = "plaza"
+        await DestinationModel.findWithAggregates(options)
+        const orderBy = orderByOf(placesNamedQuery.mock.calls[0][1].text)
+        expect(positionOf(orderBy, "sub.created_at DESC")).toBeLessThan(
+          positionOf(orderBy, "sub.rank DESC")
         )
       })
     })
