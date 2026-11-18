@@ -197,6 +197,13 @@ export default class DestinationModel {
 
     const filterMostActive = options.order_by === PlaceListOrderBy.MOST_ACTIVE
 
+    // CREATED_AT descending outranks the featured shelf, like MOST_ACTIVE below: a caller asking
+    // for what is new wants it above curation. Not ascending, which would lift the oldest rows over
+    // the shelf, and not UPDATED_AT: the daily ranking rebuild stamps it on the whole ranked
+    // population, so it carries no per-row recency.
+    const filterRecency =
+      orderBy === PlaceListOrderBy.CREATED_AT && orderDirection === "desc"
+
     // When ordering by MOST_ACTIVE, expose a `live_user_count` column built from the realtime
     // counts so the query can ORDER BY the actual connected users — places (hot scenes) and
     // worlds (world live data) alike, instead of a hot-scenes-only boolean. See #7344.
@@ -207,7 +214,8 @@ export default class DestinationModel {
     // for somewhere with people in it. Editorial still owns everything below: once nobody is
     // online the order collapses back to exactly the shelf, in exactly the order it was set.
     //
-    // This only applies to MOST_ACTIVE. Every other ordering keeps the featured shelf on top.
+    // Only MOST_ACTIVE and `filterRecency` outrank the shelf; every other ordering keeps it on top.
+    // Under both, a search's `rank DESC` sits below the override.
     const placesSelect = filterMostActive
       ? SQL`${PLACES_DESTINATION_SELECT}${placesLiveUserCountSelect(
           options.placeUserCounts
@@ -241,12 +249,18 @@ export default class DestinationModel {
         ${placesQuery}
         ORDER BY
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(
+            filterRecency,
+            SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+          )}
           p.highlighted DESC,
           p.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
-          ${SQL.raw(
-            `p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, p."deployed_at" DESC, p.id ASC`
+          ${conditional(
+            !filterRecency,
+            SQL.raw(`p.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
           )}
+          p."deployed_at" DESC, p.id ASC
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
       `
@@ -268,12 +282,18 @@ export default class DestinationModel {
         ${worldsQuery}
         ORDER BY
           ${conditional(filterMostActive, SQL`live_user_count DESC, `)}
+          ${conditional(
+            filterRecency,
+            SQL.raw(`w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+          )}
           w.highlighted DESC,
           w.ranking DESC NULLS LAST,
           ${conditional(!!options.search, SQL`rank DESC, `)}
-          ${SQL.raw(
-            `w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, w.updated_at DESC, w.id ASC`
+          ${conditional(
+            !filterRecency,
+            SQL.raw(`w.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
           )}
+          w.updated_at DESC, w.id ASC
         ${limit(options.limit, { max: 100 })}
         ${offset(options.offset)}
       `
@@ -305,12 +325,18 @@ export default class DestinationModel {
       ) sub
       ORDER BY
         ${conditional(filterMostActive, SQL`sub.live_user_count DESC, `)}
+        ${conditional(
+          filterRecency,
+          SQL.raw(`sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
+        )}
         sub.highlighted DESC,
         sub.ranking DESC NULLS LAST,
         ${conditional(!!options.search, SQL`sub.rank DESC, `)}
-        ${SQL.raw(
-          `sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, sub.updated_at DESC, sub.id ASC`
+        ${conditional(
+          !filterRecency,
+          SQL.raw(`sub.${orderBy} ${orderDirection.toUpperCase()} NULLS LAST, `)
         )}
+        sub.updated_at DESC, sub.id ASC
       ${limit(options.limit, { max: 100 })}
       ${offset(options.offset)}
     `

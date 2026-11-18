@@ -286,6 +286,103 @@ describe("when fetching destinations via GET /destinations", () => {
     })
   })
 
+  describe("and a newer destination is not featured while an older one is", () => {
+    beforeEach(async () => {
+      await seedPlace({
+        title: "New But Uncurated",
+        base_position: "20,20",
+        positions: ["20,20"],
+        highlighted: false,
+        ranking: 0,
+        created_at: new Date("2025-06-01"),
+      })
+      await seedPlace({
+        title: "Curated But Old",
+        base_position: "99,99",
+        positions: ["99,99"],
+        highlighted: true,
+        ranking: 2000,
+        created_at: new Date("2023-06-01"),
+      })
+      // Older than the featured one, so `order=asc` would list it first if the override applied.
+      await seedPlace({
+        title: "Oldest But Uncurated",
+        base_position: "104,104",
+        positions: ["104,104"],
+        highlighted: false,
+        ranking: 0,
+        created_at: new Date("2022-01-01"),
+      })
+    })
+
+    it("should return the newer one first when order_by is created_at", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ order_by: "created_at", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].title).toBe("New But Uncurated")
+    })
+
+    it("should keep the featured one first when order is asc", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ order_by: "created_at", order: "asc", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].title).toBe("Curated But Old")
+    })
+  })
+
+  describe("and a newer world is not featured while older destinations are", () => {
+    beforeEach(async () => {
+      await seedWorldWithOptions("fresh.dcl.eth", {
+        title: "New Uncurated World",
+        highlighted: false,
+        ranking: 0,
+        created_at: new Date("2025-06-01"),
+      })
+      await seedWorldPlace("fresh.dcl.eth", { creator_address: CREATOR_A })
+      await seedWorldWithOptions("curated.dcl.eth", {
+        title: "Curated Old World",
+        highlighted: true,
+        ranking: 2000,
+        created_at: new Date("2023-06-01"),
+      })
+      await seedWorldPlace("curated.dcl.eth", { creator_address: CREATOR_B })
+      await seedPlace({
+        title: "Curated Old Place",
+        base_position: "99,99",
+        positions: ["99,99"],
+        highlighted: true,
+        ranking: 2000,
+        created_at: new Date("2023-06-01"),
+      })
+    })
+
+    it("should return the newer world first when only_worlds is set", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ only_worlds: "true", order_by: "created_at", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].id).toBe("fresh.dcl.eth")
+    })
+
+    it("should return the newer world above the featured place", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ order_by: "created_at", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].id).toBe("fresh.dcl.eth")
+    })
+  })
+
   describe("and both places and worlds exist", () => {
     let placeGenesis: PlaceAttributes
     let placeMuseum: PlaceAttributes
