@@ -304,6 +304,15 @@ describe("when fetching destinations via GET /destinations", () => {
         ranking: 2000,
         created_at: new Date("2023-06-01"),
       })
+      // Older than the featured one, so `order=asc` would list it first if the override applied.
+      await seedPlace({
+        title: "Oldest But Uncurated",
+        base_position: "104,104",
+        positions: ["104,104"],
+        highlighted: false,
+        ranking: 0,
+        created_at: new Date("2022-01-01"),
+      })
     })
 
     it("should return the newer one first when order_by is created_at", async () => {
