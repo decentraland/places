@@ -1537,6 +1537,11 @@ paths:
 
         **Note:** Results are returned in the same order as requested IDs when available.
         All query parameters from the GET endpoint are supported for additional filtering.
+
+        **Sorting** follows the same rules as GET: highlighted destinations first, then ranking value,
+        then `order_by`, except with `order_by=most_active` (user count first) and with
+        `order_by=created_at` when `order` is omitted or `desc`, which returns the newest destinations
+        first, above highlighted ones.
       operationId: getDestinationsByIds
       parameters:
         - name: offset

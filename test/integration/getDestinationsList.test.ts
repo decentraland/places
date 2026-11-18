@@ -286,6 +286,47 @@ describe("when fetching destinations via GET /destinations", () => {
     })
   })
 
+  describe("and a newer destination is not featured while an older one is", () => {
+    beforeEach(async () => {
+      await seedPlace({
+        title: "New But Uncurated",
+        base_position: "20,20",
+        positions: ["20,20"],
+        highlighted: false,
+        ranking: 0,
+        created_at: new Date("2025-06-01"),
+      })
+      await seedPlace({
+        title: "Curated But Old",
+        base_position: "99,99",
+        positions: ["99,99"],
+        highlighted: true,
+        ranking: 2000,
+        created_at: new Date("2023-06-01"),
+      })
+    })
+
+    it("should return the newer one first when order_by is created_at", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ order_by: "created_at", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].title).toBe("New But Uncurated")
+    })
+
+    it("should keep the featured one first when order is asc", async () => {
+      const response = await supertest(app)
+        .get("/api/destinations")
+        .query({ order_by: "created_at", order: "asc", limit: 1 })
+        .expect(200)
+
+      expect(response.body.data).toHaveLength(1)
+      expect(response.body.data[0].title).toBe("Curated But Old")
+    })
+  })
+
   describe("and both places and worlds exist", () => {
     let placeGenesis: PlaceAttributes
     let placeMuseum: PlaceAttributes
