@@ -1,16 +1,21 @@
 import { Events } from "@dcl/schemas"
 import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { fetchWorldActiveScenes } from "./fetchWorldActiveScenes"
 import { handleWorldUndeployment } from "./handleWorldUndeployment"
+import { resolveWorldEventSource } from "./worldEventSource"
 import PlaceModel from "../../Place/model"
 import { PlaceAttributes } from "../../Place/types"
 import WorldModel from "../../World/model"
+import { WorldContentSource } from "../../World/types"
 import WorldUndeploymentModel from "../../WorldUndeployment/model"
 
 jest.mock("./fetchWorldActiveScenes")
+jest.mock("./worldEventSource")
 
 const fetchWorldActiveScenesMock = jest.mocked(fetchWorldActiveScenes)
+const resolveWorldEventSourceMock = jest.mocked(resolveWorldEventSource)
 
 describe("when handling a world undeployment event", () => {
   let disableByWorldId: jest.SpyInstance
@@ -24,9 +29,15 @@ describe("when handling a world undeployment event", () => {
   let recordWatermark: jest.SpyInstance
   let calls: string[]
   let event: WorldUndeploymentEvent
+  let source: WorldContentSource
 
   beforeEach(() => {
     calls = []
+    source = {
+      url: "https://worlds-content-server.decentraland.org",
+      isDefault: true,
+    }
+    resolveWorldEventSourceMock.mockReturnValue(source)
     fetchWorldActiveScenesMock.mockResolvedValue({
       deploymentIds: [],
       positions: [],
@@ -75,6 +86,7 @@ describe("when handling a world undeployment event", () => {
 
     expect(disableByWorldId).toHaveBeenCalledWith(
       "example.dcl.eth",
+      source,
       event.timestamp,
       [],
       []
@@ -92,6 +104,7 @@ describe("when handling a world undeployment event", () => {
 
     expect(recordWatermark).toHaveBeenCalledWith(
       "example.dcl.eth",
+      source.url,
       event.timestamp
     )
   })
@@ -126,6 +139,7 @@ describe("when handling a world undeployment event", () => {
 
       expect(disableByWorldId).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source,
         event.timestamp,
         ["deployment-surviving"],
         ["0,0"]
@@ -137,6 +151,7 @@ describe("when handling a world undeployment event", () => {
 
       expect(recordWatermark).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         event.timestamp
       )
     })
@@ -203,6 +218,69 @@ describe("when handling a world undeployment event", () => {
     it("should not disable any place record", async () => {
       await expect(handleWorldUndeployment(event)).rejects.toThrow()
 
+      expect(disableByWorldId).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("and the event names another worlds server", () => {
+    beforeEach(async () => {
+      source = { url: "https://worlds.example.org", isDefault: false }
+      resolveWorldEventSourceMock.mockReturnValue(source)
+      await handleWorldUndeployment(event, "https://worlds.example.org")
+    })
+
+    it("should resolve the source from the message attribute", () => {
+      expect(resolveWorldEventSourceMock).toHaveBeenCalledWith(
+        "https://worlds.example.org"
+      )
+    })
+
+    it("should ask only that server what the world still serves", () => {
+      expect(fetchWorldActiveScenesMock).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        "https://worlds.example.org"
+      )
+    })
+
+    it("should only disable the places deployed to that server", () => {
+      expect(disableByWorldId).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        source,
+        event.timestamp,
+        [],
+        []
+      )
+    })
+
+    it("should record the watermark for that server only", () => {
+      expect(recordWatermark).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        "https://worlds.example.org",
+        event.timestamp
+      )
+    })
+  })
+
+  describe("and the event names a worlds server that is not allowlisted", () => {
+    let error: InvalidWorldSqsMessageError
+
+    beforeEach(() => {
+      error = new InvalidWorldSqsMessageError("untrusted")
+      resolveWorldEventSourceMock.mockImplementation(() => {
+        throw error
+      })
+    })
+
+    it("should reject the event as invalid so it is discarded", async () => {
+      await expect(
+        handleWorldUndeployment(event, "https://evil.example.com")
+      ).rejects.toBe(error)
+    })
+
+    it("should not disable any place record", async () => {
+      await handleWorldUndeployment(event, "https://evil.example.com").catch(
+        () => undefined
+      )
       expect(disableByWorldId).not.toHaveBeenCalled()
     })
   })

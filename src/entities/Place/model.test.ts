@@ -5,6 +5,7 @@ import { hotSceneGenesisPlaza } from "../../__data__/hotSceneGenesisPlaza"
 import { placeGenesisPlaza } from "../../__data__/placeGenesisPlaza"
 import { placeGenesisPlazaWithAggregatedAttributes } from "../../__data__/placeGenesisPlazaWithAggregatedAttributes"
 import { worldPlaceParalax } from "../../__data__/world"
+import { WorldContentSource } from "../World/types"
 
 const placesAttributes: Array<keyof PlaceAttributes> = [
   "title",
@@ -995,12 +996,14 @@ describe("when updating a place outside a deployment", () => {
 })
 
 describe("when disabling world scenes by deployment identity", () => {
+  let source: WorldContentSource
   let eventTimestamp: number
   let liveDeploymentIds: string[]
   let livePositions: string[]
   let snapshot: Array<{ id: string; deployment_id: string | null }>
 
   beforeEach(() => {
+    source = { url: "https://worlds.example.org", isDefault: false }
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
     liveDeploymentIds = ["deployment-live"]
     livePositions = ["9,9"]
@@ -1013,6 +1016,7 @@ describe("when disabling world scenes by deployment identity", () => {
   it("should match current revisions by deployment id or base and guard legacy base matches", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "Example.DCL.ETH",
+      source,
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
@@ -1035,6 +1039,7 @@ describe("when disabling world scenes by deployment identity", () => {
   it("should judge a row that has a deployment id against the served deployments", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "example.dcl.eth",
+      source,
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
@@ -1056,6 +1061,7 @@ describe("when disabling world scenes by deployment identity", () => {
   it("should judge a legacy row against the parcels the served scenes cover", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "example.dcl.eth",
+      source,
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
@@ -1075,6 +1081,7 @@ describe("when disabling world scenes by deployment identity", () => {
   it("should only reach rows the survivor snapshot could speak about", async () => {
     await PlaceModel.disableByWorldIdAndDeployments(
       "example.dcl.eth",
+      source,
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
@@ -1106,6 +1113,7 @@ describe("when disabling world scenes by deployment identity", () => {
 
     const result = await PlaceModel.disableByWorldIdAndDeployments(
       "example.dcl.eth",
+      source,
       ["deployment-a"],
       ["1,1"],
       ["1,1", "2,1"],
@@ -1120,12 +1128,14 @@ describe("when disabling world scenes by deployment identity", () => {
 })
 
 describe("when disabling the places of an undeployed world", () => {
+  let source: WorldContentSource
   let eventTimestamp: number
   let liveDeploymentIds: string[]
   let livePositions: string[]
   let snapshot: Array<{ id: string; deployment_id: string | null }>
 
   beforeEach(() => {
+    source = { url: "https://worlds.example.org", isDefault: false }
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
     liveDeploymentIds = ["deployment-live"]
     livePositions = ["9,9"]
@@ -1138,6 +1148,7 @@ describe("when disabling the places of an undeployed world", () => {
   it("should spare the scenes the content server still serves", async () => {
     await PlaceModel.disableByWorldId(
       "Example.DCL.ETH",
+      source,
       eventTimestamp,
       liveDeploymentIds,
       livePositions
@@ -1156,6 +1167,7 @@ describe("when disabling the places of an undeployed world", () => {
   it("should bind the served deployments to the identity branch, not the footprint branch", async () => {
     await PlaceModel.disableByWorldId(
       "example.dcl.eth",
+      source,
       eventTimestamp,
       liveDeploymentIds,
       livePositions
@@ -1173,6 +1185,7 @@ describe("when disabling the places of an undeployed world", () => {
   it("should normalize the world id", async () => {
     await PlaceModel.disableByWorldId(
       "Example.DCL.ETH",
+      source,
       eventTimestamp,
       liveDeploymentIds,
       livePositions
@@ -1188,11 +1201,104 @@ describe("when disabling the places of an undeployed world", () => {
     expect(
       await PlaceModel.disableByWorldId(
         "example.dcl.eth",
+        source,
         eventTimestamp,
         liveDeploymentIds,
         livePositions
       )
     ).toEqual([{ id: "place-a" }])
+  })
+})
+
+describe("when scoping world place removals to a worlds server", () => {
+  let source: WorldContentSource
+
+  beforeEach(() => {
+    namedQuery.mockResolvedValue([])
+  })
+
+  describe("and the server is not the configured one", () => {
+    beforeEach(async () => {
+      source = { url: "https://worlds.example.org", isDefault: false }
+      await PlaceModel.disableByWorldId("example.dcl.eth", source, 0, [], [])
+    })
+
+    it("should only reach places deployed to that server", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+      const scope = sql.text
+        .replace(/\s+/g, " ")
+        .match(/AND target\."content_server_url" = \$(\d+) AND/)
+      expect(sql.values[Number(scope![1]) - 1]).toBe(source.url)
+    })
+
+    it("should leave places without a recorded server alone", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+      expect(sql.text).not.toContain(`"content_server_url" IS NULL`)
+    })
+  })
+
+  describe("and the server is the configured one", () => {
+    beforeEach(async () => {
+      source = {
+        url: "https://worlds-content-server.decentraland.org",
+        isDefault: true,
+      }
+      await PlaceModel.disableByWorldIdAndDeployments(
+        "example.dcl.eth",
+        source,
+        ["deployment-a"],
+        ["1,1"],
+        ["1,1"],
+        0,
+        [],
+        [],
+        []
+      )
+    })
+
+    it("should also reach places recorded before servers were stored", () => {
+      const [, sql] = namedQuery.mock.calls[0]
+      expect(sql.text.replace(/\s+/g, " ")).toContain(
+        `(target."content_server_url" = $4 OR target."content_server_url" IS NULL)`
+      )
+    })
+  })
+})
+
+describe("when checking which worlds server holds a world's newest scene", () => {
+  let source: WorldContentSource
+  let result: boolean
+
+  beforeEach(() => {
+    source = { url: "https://worlds.example.org", isDefault: false }
+  })
+
+  describe("and the world has no enabled scene", () => {
+    beforeEach(async () => {
+      namedQuery.mockResolvedValueOnce([])
+      result = await PlaceModel.isNewestWorldSceneFrom(
+        "example.dcl.eth",
+        source
+      )
+    })
+
+    it("should accept the server", () => {
+      expect(result).toBe(true)
+    })
+  })
+
+  describe("and the newest scene is on another server", () => {
+    beforeEach(async () => {
+      namedQuery.mockResolvedValueOnce([{ from_source: false }])
+      result = await PlaceModel.isNewestWorldSceneFrom(
+        "example.dcl.eth",
+        source
+      )
+    })
+
+    it("should reject the server", () => {
+      expect(result).toBe(false)
+    })
   })
 })
 

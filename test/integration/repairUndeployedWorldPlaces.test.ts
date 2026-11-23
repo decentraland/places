@@ -131,9 +131,14 @@ async function isRejected(
 ): Promise<boolean> {
   const at = new Date(deployedAt)
   const [world, scene, positions] = await Promise.all([
-    WorldUndeploymentModel.findSupersedingUndeployment(worldName, at),
+    WorldUndeploymentModel.findSupersedingUndeployment(
+      worldName,
+      "https://worlds-content-server.decentraland.org",
+      at
+    ),
     WorldSceneUndeploymentModel.findSupersedingUndeployment(
       worldName,
+      "https://worlds-content-server.decentraland.org",
       deploymentId,
       basePosition,
       at,
@@ -141,6 +146,7 @@ async function isRejected(
     ),
     WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
       worldName,
+      "https://worlds-content-server.decentraland.org",
       [basePosition],
       at,
       at
@@ -299,6 +305,7 @@ describe("when repairing places an undeployment disabled", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordRemovals(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         [
           {
             entityId: "entity-removed",
@@ -355,12 +362,14 @@ describe("when repairing places an undeployment disabled", () => {
       // itself, so the repair must leave it alone
       await WorldDeploymentPositionWatermarkModel.recordPositions(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         ["0,0"],
         new Date(servedAt)
       )
       // an undeployment records a later removal: this one does reject the served scene
       await WorldDeploymentPositionWatermarkModel.recordRemovals(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         ["5,5"],
         new Date(eventAt)
       )
@@ -392,6 +401,7 @@ describe("when repairing places an undeployment disabled", () => {
       rejectsSurvivor =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           ["0,0", "5,5"],
           new Date(servedAt),
           new Date(servedAt)
@@ -399,6 +409,7 @@ describe("when repairing places an undeployment disabled", () => {
       rejectsOlder =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           ["5,5"],
           new Date(removedAt),
           new Date(removedAt)
@@ -423,7 +434,11 @@ describe("when repairing places an undeployment disabled", () => {
     let remaining: number
 
     beforeEach(async () => {
-      await WorldUndeploymentModel.recordWatermark(worldName, removedAt)
+      await WorldUndeploymentModel.recordWatermark(
+        worldName,
+        "https://worlds-content-server.decentraland.org",
+        removedAt
+      )
 
       await repairWorld(
         worldName,
@@ -456,7 +471,11 @@ describe("when repairing places an undeployment disabled", () => {
     let rejectsOlder: boolean
 
     beforeEach(async () => {
-      await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
+      await WorldUndeploymentModel.recordWatermark(
+        worldName,
+        "https://worlds-content-server.decentraland.org",
+        eventAt
+      )
 
       await repairWorld(
         worldName,
@@ -478,11 +497,13 @@ describe("when repairing places an undeployment disabled", () => {
       rejectsSurvivor =
         !!(await WorldUndeploymentModel.findSupersedingUndeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           new Date(servedAt)
         ))
       rejectsOlder =
         !!(await WorldUndeploymentModel.findSupersedingUndeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           new Date(removedAt)
         ))
     })
@@ -506,7 +527,11 @@ describe("when repairing places an undeployment disabled", () => {
 
     beforeEach(async () => {
       // rejection is `undeployed_at >= deployedAt`, so an exact tie still rejects that scene
-      await WorldUndeploymentModel.recordWatermark(worldName, servedAt)
+      await WorldUndeploymentModel.recordWatermark(
+        worldName,
+        "https://worlds-content-server.decentraland.org",
+        servedAt
+      )
 
       await repairWorld(
         worldName,
@@ -541,6 +566,7 @@ describe("when repairing places an undeployment disabled", () => {
       // the older revisions it was recorded for
       await WorldSceneUndeploymentModel.recordRemovals(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         [
           {
             entityId: "entity-older",
@@ -1440,7 +1466,11 @@ describe("when repairing places an undeployment disabled", () => {
       await handleWorldUndeployment(
         createWorldUndeploymentEvent(worldName, { timestamp: eventAt })
       )
-      await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
+      await WorldUndeploymentModel.recordWatermark(
+        worldName,
+        "https://worlds-content-server.decentraland.org",
+        eventAt
+      )
 
       // the world is serving the older scene again, which the scalar rejects
       await repairWorld(
@@ -1514,7 +1544,11 @@ describe("when repairing places an undeployment disabled", () => {
       await handleWorldUndeployment(
         createWorldUndeploymentEvent(worldName, { timestamp: eventAt })
       )
-      await WorldUndeploymentModel.recordWatermark(worldName, eventAt)
+      await WorldUndeploymentModel.recordWatermark(
+        worldName,
+        "https://worlds-content-server.decentraland.org",
+        eventAt
+      )
 
       // entity-unrowed was deployed at 5,5 before the teardown removed it, but its delivery was late:
       // the watermark rejected it on arrival, so Places holds no row and no tombstone naming it

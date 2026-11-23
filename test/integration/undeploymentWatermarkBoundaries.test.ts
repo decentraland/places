@@ -339,6 +339,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
 
     await WorldSceneUndeploymentModel.recordRemovals(
       worldName,
+      "https://worlds-content-server.decentraland.org",
       [
         {
           entityId: "entity-conflict",
@@ -351,6 +352,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
     // Same deployment id, older event, disagreeing base position
     await WorldSceneUndeploymentModel.recordRemovals(
       worldName,
+      "https://worlds-content-server.decentraland.org",
       [
         {
           entityId: "entity-conflict",
@@ -366,6 +368,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
     const superseding =
       await WorldSceneUndeploymentModel.findSupersedingUndeployment(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         "unrelated-deployment",
         "5,5",
         new Date(olderTimestamp),
@@ -379,6 +382,7 @@ describe("when a delayed scene undeployment repeats a recorded deployment id", (
     const superseding =
       await WorldSceneUndeploymentModel.findSupersedingUndeployment(
         worldName,
+        "https://worlds-content-server.decentraland.org",
         "unrelated-deployment",
         "0,0",
         new Date(olderTimestamp),

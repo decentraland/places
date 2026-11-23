@@ -483,6 +483,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       highlighted_image: world.highlighted_image ?? null,
       ranking: world.ranking ?? 0,
       settings_version: world.settings_version ?? null,
+      settings_source: world.settings_source ?? null,
       likes: world.likes ?? 0,
       dislikes: world.dislikes ?? 0,
       favorites: world.favorites ?? 0,
@@ -602,7 +603,9 @@ export default class WorldModel extends Model<WorldAttributes> {
    * Upsert world settings mirrored from worlds-content-server.
    *
    * With a `settings_version`, the update applies only when the incoming version is not older than
-   * the stored one, so reordered or redelivered settings events cannot overwrite newer data.
+   * the stored one, so reordered or redelivered settings events cannot overwrite newer data. Each
+   * worlds server counts versions on its own, so they are only compared within one
+   * `settings_source`; a write from another server replaces them.
    * Without one — a source that predates the versioned contract — it applies only while the row has
    * never stored a version, so a mid-rollout unversioned write cannot clobber a row that another
    * worker has already moved into the versioned contract.
@@ -616,6 +619,7 @@ export default class WorldModel extends Model<WorldAttributes> {
     world: Partial<WorldAttributes> & {
       world_name: string
       settings_version?: number
+      settings_source?: string
     }
   ): Promise<WorldAttributes | null> {
     const worldData = this.buildWorldData(world)
@@ -632,6 +636,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       "skybox_time",
       "is_private",
       "settings_version",
+      "settings_source",
     ]
 
     // Only explicitly provided fields update on conflict, so omitted settings never
@@ -673,6 +678,9 @@ export default class WorldModel extends Model<WorldAttributes> {
       world.settings_version === undefined
         ? SQL`WHERE ${table(this)}."settings_version" IS NULL`
         : SQL`WHERE ${table(this)}."settings_version" IS NULL
+        OR ${table(
+          this
+        )}."settings_source" IS DISTINCT FROM EXCLUDED."settings_source"
         OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"`
     const sql = SQL`
       INSERT INTO ${table(this)} ${columns(insertFields)}

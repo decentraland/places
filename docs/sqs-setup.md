@@ -60,6 +60,12 @@ The message to be received from the SQS must have the following format:
 }
 ```
 
+World removal and settings events (`world_undeployment`, `world_scenes_undeployment`,
+`world_settings_changed`) are re-read from the worlds server named by the `sourceContentServerUrl`
+message attribute. Without it they come from `WORLDS_CONTENT_SERVER_URL`. A value whose host is not
+in `ALLOWED_CONTENT_SERVER_HOSTS` discards the message. Removals only affect the world scenes
+deployed to that server, and settings only apply while that server holds the world's newest scene.
+
 ## Sending Messages
 
 Send a message using awslocal:

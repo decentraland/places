@@ -24,10 +24,17 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
    */
   static async recordPositions(
     worldId: string,
+    contentServerUrl: string,
     positions: string[],
     deployedAt: Date
   ): Promise<void> {
-    await this.recordWatermarks(worldId, positions, "superseded_at", deployedAt)
+    await this.recordWatermarks(
+      worldId,
+      contentServerUrl,
+      positions,
+      "superseded_at",
+      deployedAt
+    )
   }
 
   /**
@@ -37,14 +44,22 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
    */
   static async recordRemovals(
     worldId: string,
+    contentServerUrl: string,
     positions: string[],
     removedAt: Date
   ): Promise<void> {
-    await this.recordWatermarks(worldId, positions, "removed_at", removedAt)
+    await this.recordWatermarks(
+      worldId,
+      contentServerUrl,
+      positions,
+      "removed_at",
+      removedAt
+    )
   }
 
   private static async recordWatermarks(
     worldId: string,
+    contentServerUrl: string,
     positions: string[],
     clock: "superseded_at" | "removed_at",
     stampedAt: Date
@@ -57,12 +72,12 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
     const column = SQL.raw(`"${clock}"`)
 
     const sql = SQL`
-      INSERT INTO ${watermarks} ("world_id", "position", ${column})
-      SELECT ${worldId.toLowerCase()}, incoming."position", ${stampedAt}::timestamp
+      INSERT INTO ${watermarks} ("world_id", "content_server_url", "position", ${column})
+      SELECT ${worldId.toLowerCase()}, ${contentServerUrl}::text, incoming."position", ${stampedAt}::timestamp
       FROM (
         SELECT DISTINCT unnest(${positions}::text[]) AS "position"
       ) AS incoming
-      ON CONFLICT ("world_id", "position") DO UPDATE
+      ON CONFLICT ("world_id", "position", "content_server_url") DO UPDATE
       SET ${column} = GREATEST(${watermarks}.${column}, EXCLUDED.${column})
     `
 
@@ -73,9 +88,13 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
    * Return whether a deployment or a removal has already retired any incoming position: a
    * strictly newer deployment by entity timestamp, or a removal emitted at or after this
    * deployment. Ties go to the removal, matching the other removal watermarks.
+   *
+   * A removal only counts against deployments to the server that emitted it; a newer deployment
+   * counts whichever server it was made to, since the last deployment of a world name wins.
    */
   static async hasSupersedingDeployment(
     worldId: string,
+    contentServerUrl: string,
     positions: string[],
     deployedAt: Date,
     emittedAt: Date
@@ -95,7 +114,10 @@ export default class WorldDeploymentPositionWatermarkModel extends Model<WorldDe
         WHERE watermark."world_id" = ${worldId.toLowerCase()}
           AND (
             watermark."superseded_at" > ${deployedAt}
-            OR watermark."removed_at" >= ${emittedAt}
+            OR (
+              watermark."content_server_url" = ${contentServerUrl}
+              AND watermark."removed_at" >= ${emittedAt}
+            )
           )
       ) AS "exists"
     `

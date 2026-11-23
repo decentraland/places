@@ -208,6 +208,33 @@ describe("handleWorldSettingsChanged integration", () => {
       })
     })
 
+    describe("and another worlds server sends a lower version of its own", () => {
+      beforeEach(async () => {
+        mockSettingsResponse({
+          title: "Other Server Title",
+          settings_version: 1,
+        })
+        const otherEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          otherEvent,
+          WORLDS_URL,
+          `${ALLOWED_HOSTS},worlds.example.org`,
+          "https://worlds.example.org"
+        )
+      })
+
+      it("should apply it, since versions only order writes from one server", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Other Server Title")
+      })
+    })
+
     describe("and the fetched description contains client-rendered markup", () => {
       beforeEach(async () => {
         mockSettingsResponse({

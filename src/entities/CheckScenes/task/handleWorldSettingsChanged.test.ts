@@ -2,7 +2,9 @@ import { Events } from "@dcl/schemas"
 import { WorldSettingsChangedEvent } from "@dcl/schemas/dist/platform/events/world"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
+import { InvalidWorldSqsMessageError } from "./errors"
 import { handleWorldSettingsChanged } from "./handleWorldSettingsChanged"
+import PlaceModel from "../../Place/model"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
 import WorldModel from "../../World/model"
 import { WorldAttributes } from "../../World/types"
@@ -22,6 +24,7 @@ describe("when handling a world settings changed event", () => {
   let findByWorldName: jest.SpyInstance
   let upsertWorld: jest.SpyInstance
   let upsertWorldSettings: jest.SpyInstance
+  let isNewestWorldSceneFrom: jest.SpyInstance
   let storedWorld: WorldAttributes
 
   beforeEach(() => {
@@ -49,6 +52,9 @@ describe("when handling a world settings changed event", () => {
     upsertWorldSettings = jest
       .spyOn(WorldModel, "upsertWorldSettings")
       .mockResolvedValue(storedWorld)
+    isNewestWorldSceneFrom = jest
+      .spyOn(PlaceModel, "isNewestWorldSceneFrom")
+      .mockResolvedValue(true)
   })
 
   afterEach(() => {
@@ -134,6 +140,7 @@ describe("when handling a world settings changed event", () => {
         skybox_time: 12,
         is_private: undefined,
         settings_version: 7,
+        settings_source: WORLDS_URL,
       })
     })
 
@@ -426,6 +433,7 @@ describe("when handling a world settings changed event", () => {
         skybox_time: undefined,
         is_private: undefined,
         settings_version: 7,
+        settings_source: WORLDS_URL,
       })
     })
   })
@@ -724,6 +732,99 @@ describe("when handling a world settings changed event", () => {
       await expect(
         handleWorldSettingsChanged(event, WORLDS_URL, "other-host.example.com")
       ).rejects.toThrow("not an allowed content server host")
+    })
+  })
+
+  describe("when the event names its source worlds server", () => {
+    let sourceUrl: string
+    let allowedHosts: string
+
+    beforeEach(() => {
+      sourceUrl = "https://worlds.example.org/"
+      allowedHosts = `${ALLOWED_HOSTS},worlds.example.org`
+      fetchMock.mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            title: "From the source",
+            thumbnail_hash: "bafkreithumb",
+            settings_version: 2,
+          }),
+          { status: 200 }
+        )
+      )
+    })
+
+    describe("and its host is allowlisted", () => {
+      beforeEach(async () => {
+        await handleWorldSettingsChanged(
+          event,
+          WORLDS_URL,
+          allowedHosts,
+          sourceUrl
+        )
+      })
+
+      it("should read the settings from that server", () => {
+        expect(fetchMock).toHaveBeenCalledWith(
+          "https://worlds.example.org/world/example.dcl.eth/settings",
+          expect.anything()
+        )
+      })
+
+      it("should point the thumbnail at that server", () => {
+        expect(upsertWorldSettings).toHaveBeenCalledWith(
+          expect.objectContaining({
+            image: "https://worlds.example.org/contents/bafkreithumb",
+          })
+        )
+      })
+
+      it("should store the settings as coming from that server", () => {
+        expect(upsertWorldSettings).toHaveBeenCalledWith(
+          expect.objectContaining({
+            settings_version: 2,
+            settings_source: "https://worlds.example.org",
+          })
+        )
+      })
+    })
+
+    describe("and its host is not allowlisted", () => {
+      let result: Promise<void>
+
+      beforeEach(() => {
+        result = handleWorldSettingsChanged(
+          event,
+          WORLDS_URL,
+          ALLOWED_HOSTS,
+          sourceUrl
+        )
+      })
+
+      it("should reject the event as invalid so it is discarded", async () => {
+        await expect(result).rejects.toThrow(InvalidWorldSqsMessageError)
+      })
+
+      it("should not fall back to the configured server", async () => {
+        await result.catch(() => undefined)
+        expect(fetchMock).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the world's newest scene is on another server", () => {
+      beforeEach(async () => {
+        isNewestWorldSceneFrom.mockResolvedValueOnce(false)
+        await handleWorldSettingsChanged(
+          event,
+          WORLDS_URL,
+          allowedHosts,
+          sourceUrl
+        )
+      })
+
+      it("should leave the stored settings alone", () => {
+        expect(upsertWorldSettings).not.toHaveBeenCalled()
+      })
     })
   })
 })

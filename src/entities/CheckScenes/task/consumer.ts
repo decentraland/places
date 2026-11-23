@@ -93,6 +93,29 @@ export function parseWorldSqsMessage(value: unknown): WorldSqsMessage | null {
   return null
 }
 
+/** SNS message attributes the world handlers read, delivered raw as SQS message attributes. */
+export type WorldSqsMessageAttributes = {
+  /** Base URL of the worlds server that published the event; absent for the configured one. */
+  sourceContentServerUrl?: string
+}
+
+export type WorldSqsTaskRunner = (
+  job: WorldSqsMessage,
+  attributes: WorldSqsMessageAttributes
+) => Promise<unknown>
+
+/**
+ * Read the attributes the handlers use. A source attribute without a string value is passed on as
+ * an empty string, so it is rejected as untrusted instead of being read as absent.
+ */
+export function readWorldSqsMessageAttributes(
+  sqsMessage: AWS.SQS.Message
+): WorldSqsMessageAttributes {
+  const source = sqsMessage.MessageAttributes?.sourceContentServerUrl
+  if (!source) return {}
+  return { sourceContentServerUrl: source.StringValue ?? "" }
+}
+
 export interface TaskQueueMessage {
   id: string
 }
@@ -175,7 +198,7 @@ export class SQSConsumer {
 
   private async processMessage(
     sqsMessage: AWS.SQS.Message,
-    taskRunner: (job: WorldSqsMessage) => Promise<unknown>
+    taskRunner: WorldSqsTaskRunner
   ): Promise<MessageProcessingOutcome> {
     const message: TaskQueueMessage = { id: sqsMessage.MessageId || "" }
     const loggerExtended = logger.extend({
@@ -201,7 +224,10 @@ export class SQSConsumer {
 
     try {
       loggerExtended.log(`Processing job`)
-      const result = await taskRunner(body)
+      const result = await taskRunner(
+        body,
+        readWorldSqsMessageAttributes(sqsMessage)
+      )
       loggerExtended.log(`Processed job`)
       return { kind: "processed", taskResult: { result, message } }
     } catch (error: unknown) {
@@ -246,7 +272,7 @@ export class SQSConsumer {
     }
   }
 
-  async consume(taskRunner: (job: WorldSqsMessage) => Promise<unknown>) {
+  async consume(taskRunner: WorldSqsTaskRunner) {
     try {
       const response = await this.sqs.receiveMessage(this.params).promise()
       const finalReturn: TaskExecutionResult[] = []

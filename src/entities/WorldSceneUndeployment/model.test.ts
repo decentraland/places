@@ -18,6 +18,7 @@ describe("when recording scenes a removal event named", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordRemovals(
         "example.dcl.eth",
+        "https://worlds-content-server.decentraland.org",
         [],
         removedAt
       )
@@ -35,6 +36,7 @@ describe("when recording scenes a removal event named", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordRemovals(
         "Example.DCL.ETH",
+        "https://worlds-content-server.decentraland.org",
         [
           {
             entityId: "deployment-a",
@@ -98,6 +100,7 @@ describe("when recording scenes a removal event named", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordRemovals(
         "example.dcl.eth",
+        "https://worlds-content-server.decentraland.org",
         [
           {
             entityId: "deployment-a",
@@ -129,6 +132,7 @@ describe("when recording scenes a removal event named", () => {
     beforeEach(async () => {
       await WorldSceneUndeploymentModel.recordRemovals(
         "example.dcl.eth",
+        "https://worlds-content-server.decentraland.org",
         Array.from({ length: 5_000 }, (_, index) => ({
           entityId: `deployment-${index}`,
           baseParcel: `${index},0`,
@@ -141,7 +145,7 @@ describe("when recording scenes a removal event named", () => {
     })
 
     it("should keep the bind parameter count constant", () => {
-      expect(bindValues).toHaveLength(5)
+      expect(bindValues).toHaveLength(6)
     })
   })
 })
@@ -155,6 +159,7 @@ describe("when recording scenes a deployment replaced", () => {
     replacedAt = new Date(Date.parse("2026-08-03T12:00:00.000Z"))
     await WorldSceneUndeploymentModel.recordReplacements(
       "example.dcl.eth",
+      "https://worlds-content-server.decentraland.org",
       [{ entityId: "deployment-a", baseParcel: "1,1" }],
       replacedAt
     )
@@ -193,6 +198,7 @@ describe("when looking for a scene tombstone that supersedes a deployment", () =
     emittedAt = new Date("2026-08-03T12:01:30.000Z")
     await WorldSceneUndeploymentModel.findSupersedingUndeployment(
       "example.dcl.eth",
+      "https://worlds-content-server.decentraland.org",
       "deployment-a",
       "1,1",
       deployedAt,
@@ -203,15 +209,21 @@ describe("when looking for a scene tombstone that supersedes a deployment", () =
     sqlValues = sql.values
   })
 
-  it("should match the deployment identity against a removal emitted at or after the deployment", () => {
+  it("should match the deployment identity against a replacement on the entity clock from any server", () => {
     expect(sqlText).toMatch(
-      /"deployment_id" = \$\d+ AND \( "removed_at" >= \$\d+ OR/
+      /"deployment_id" = \$\d+ AND \( "undeployed_at" >= \$\d+ OR/
     )
   })
 
-  it("should also match the deployment identity against its entity timestamp on either stamp", () => {
+  it("should match the deployment identity against a removal from the same server on either clock", () => {
     expect(sqlText).toMatch(
-      /OR GREATEST\("undeployed_at", "removed_at"\) >= \$\d+ \)/
+      /\( "content_server_url" = \$\d+ AND \("removed_at" >= \$\d+ OR "removed_at" >= \$\d+\) \)/
+    )
+  })
+
+  it("should scope removals to the server the deployment was made to", () => {
+    expect(sqlValues).toContain(
+      "https://worlds-content-server.decentraland.org"
     )
   })
 
@@ -221,9 +233,9 @@ describe("when looking for a scene tombstone that supersedes a deployment", () =
     )
   })
 
-  it("should compare each base stamp on its own clock", () => {
+  it("should compare each base stamp on its own clock, scoping removals to the server", () => {
     expect(sqlText).toMatch(
-      /\("undeployed_at" >= \$\d+ OR "removed_at" >= \$\d+\)/
+      /\( "undeployed_at" >= \$\d+ OR \("content_server_url" = \$\d+ AND "removed_at" >= \$\d+\) \)/
     )
   })
 

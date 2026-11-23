@@ -231,6 +231,8 @@ export function createPlaceFromContentEntityScene(
     world_id: options.worldId || null,
     ...data,
     deployment_id: options.deploymentId || null,
+    // Set on every revision, so a scene redeployed to another worlds server moves with it
+    content_server_url: options.worldId ? options.url || null : null,
     title: title ? title.slice(0, 50) : "Untitled",
     // Strip markup from the creator-authored description before storing so
     // TMP tags like `<link="decentraland://…">` / `smb://` / `file://`

@@ -7,6 +7,7 @@ import {
   ResolvedUndeployedScene,
   resolveWorldSceneUndeploymentFootprints,
 } from "./resolveWorldSceneUndeploymentFootprints"
+import { resolveWorldEventSource } from "./worldEventSource"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
@@ -64,9 +65,13 @@ function summarizeBasePositions(basePositions: string[]): string {
  * before the removal sits at the same base and parcels. The scenes the world still serves are
  * therefore read from the content server and left alone -- in the place rows, in the base parcels
  * the scene watermark claims, and in the parcels the position watermark clears.
+ *
+ * Several worlds servers may serve the same world name, so the event only retires what was
+ * deployed to the server that emitted it, and only that server is asked what it still serves.
  */
 export async function handleWorldScenesUndeployment(
-  event: WorldScenesUndeploymentEvent
+  event: WorldScenesUndeploymentEvent,
+  sourceContentServerUrl?: string
 ): Promise<void> {
   const worldName = event.metadata.worldName
 
@@ -83,15 +88,19 @@ export async function handleWorldScenesUndeployment(
   }
 
   const uniqueScenes = deduplicateScenes(scenes)
+  // Resolved before the handler's error reporting: an untrusted source is discarded, not retried
+  const source = resolveWorldEventSource(sourceContentServerUrl)
   const loggerExtended = logger.extend({
     worldName,
+    source: source.url,
     sceneCount: uniqueScenes.length,
     eventType: "WorldScenesUndeploymentEvent",
   })
 
   try {
     const resolvedScenes = await resolveWorldSceneUndeploymentFootprints(
-      uniqueScenes
+      uniqueScenes,
+      source.url
     )
 
     // Only the parcels this event claims to have cleared can hold a place row it would disable, so
@@ -101,10 +110,14 @@ export async function handleWorldScenesUndeployment(
     ]
     // Read before the lookup so the snapshot covers everything the survivor set cannot: a place
     // committed for this world while the lookup ran or while the per-world lock was contended.
-    const snapshot = await PlaceModel.findEnabledWorldPlaceRevisions(worldName)
+    const snapshot = await PlaceModel.findEnabledWorldPlaceRevisions(
+      worldName,
+      source
+    )
     const activeScenes = await fetchWorldActiveScenesAtPositions(
       worldName,
-      clearedPositions
+      clearedPositions,
+      source.url
     )
 
     const liveDeploymentIds = new Set(activeScenes.deploymentIds)
@@ -156,6 +169,7 @@ export async function handleWorldScenesUndeployment(
       // identity only and leaves the base to the live place row and to its own eventual removal.
       await WorldSceneUndeploymentModel.recordRemovals(
         worldName,
+        source.url,
         undeployedScenes.map((scene) => ({
           entityId: scene.entityId,
           baseParcel: scene.baseParcel,
@@ -165,6 +179,7 @@ export async function handleWorldScenesUndeployment(
       )
       await recordClearedPositions(
         worldName,
+        source.url,
         undeployedScenes,
         livePositions,
         event.timestamp
@@ -172,6 +187,7 @@ export async function handleWorldScenesUndeployment(
 
       return PlaceModel.disableByWorldIdAndDeployments(
         worldName,
+        source,
         deploymentIds,
         basePositions,
         positions,
@@ -215,6 +231,7 @@ export async function handleWorldScenesUndeployment(
  */
 async function recordClearedPositions(
   worldName: string,
+  contentServerUrl: string,
   undeployedScenes: ResolvedUndeployedScene[],
   livePositions: Set<string>,
   eventTimestamp: number
@@ -229,6 +246,7 @@ async function recordClearedPositions(
 
   await WorldDeploymentPositionWatermarkModel.recordRemovals(
     worldName,
+    contentServerUrl,
     cleared,
     new Date(eventTimestamp)
   )

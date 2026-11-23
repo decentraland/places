@@ -22,6 +22,7 @@ describe("when recording world deployment position watermarks", () => {
     beforeEach(async () => {
       await WorldDeploymentPositionWatermarkModel.recordPositions(
         "example.dcl.eth",
+        "https://worlds-content-server.decentraland.org",
         [],
         deployedAt
       )
@@ -39,6 +40,7 @@ describe("when recording world deployment position watermarks", () => {
     beforeEach(async () => {
       await WorldDeploymentPositionWatermarkModel.recordPositions(
         "Example.DCL.ETH",
+        "https://worlds-content-server.decentraland.org",
         ["0,0", "1,0", "1,0"],
         deployedAt
       )
@@ -80,6 +82,7 @@ describe("when recording the positions a removal cleared", () => {
     removedAt = new Date("2026-08-03T12:00:00.000Z")
     await WorldDeploymentPositionWatermarkModel.recordRemovals(
       "example.dcl.eth",
+      "https://worlds-content-server.decentraland.org",
       ["0,0"],
       removedAt
     )
@@ -118,6 +121,7 @@ describe("when looking for a deployment that supersedes incoming positions", () 
       result =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           "example.dcl.eth",
+          "https://worlds-content-server.decentraland.org",
           [],
           deployedAt,
           emittedAt
@@ -143,6 +147,7 @@ describe("when looking for a deployment that supersedes incoming positions", () 
       result =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           "Example.DCL.ETH",
+          "https://worlds-content-server.decentraland.org",
           ["0,0", "1,0"],
           deployedAt,
           emittedAt

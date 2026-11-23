@@ -28,6 +28,7 @@ export const REBUILD_PLACE_ATTRIBUTES: Array<keyof PlaceAttributes> = [
   "world_name",
   "world_id",
   "deployment_id",
+  "content_server_url",
   "textsearch",
   "creator_address",
   "sdk",

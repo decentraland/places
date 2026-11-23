@@ -26,6 +26,16 @@ export type WorldAttributes = BaseEntityAttributes & {
   exclude_from_ranking: boolean
   /** worlds-content-server settings version last applied; orders mirrored writes. */
   settings_version: number | null
+  /** Worlds server whose settings were last applied; versions are only ordered within one server. */
+  settings_source: string | null
+}
+
+/** The worlds server an event or a world place came from. */
+export type WorldContentSource = {
+  /** Normalized base URL of the server. */
+  url: string
+  /** Whether it is the configured worlds content server, which rows predating sources belong to. */
+  isDefault: boolean
 }
 
 export type UpdateWorldHighlightBody = {

@@ -2440,6 +2440,12 @@ components:
           nullable: true
           readOnly: true
           description: Immutable content entity identifier for this indexed deployment. Null only for legacy rows awaiting reconciliation.
+        content_server_url:
+          type: string
+          nullable: true
+          readOnly: true
+          description: Worlds server the world scene was deployed to. Null for Genesis City places and for world places indexed before it was recorded, which belong to the default worlds content server.
+          example: "https://worlds-content-server.decentraland.org"
         user_like:
           type: boolean
           description: True if authenticated user liked this place

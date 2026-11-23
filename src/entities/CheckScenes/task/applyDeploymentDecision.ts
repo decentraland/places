@@ -35,6 +35,7 @@ const placesAttributes: Array<keyof PlaceAttributes> = [
   "world_name",
   "world_id",
   "deployment_id",
+  "content_server_url",
   "textsearch",
   "creator_address",
   "sdk",
@@ -129,6 +130,7 @@ export async function applyDeploymentDecision({
       if (decision.kind === "world" && decision.replacement.updatedPlace) {
         await recordReplacementRemovals(
           decision.positionWatermark.worldId,
+          contentServerUrl,
           [decision.replacement.updatedPlace],
           contentEntityScene.timestamp
         )
@@ -160,6 +162,7 @@ export async function applyDeploymentDecision({
     if (placesToDisable.length > 0) {
       await recordReplacementRemovals(
         decision.positionWatermark.worldId,
+        contentServerUrl,
         placesToDisable,
         contentEntityScene.timestamp
       )
@@ -174,6 +177,7 @@ export async function applyDeploymentDecision({
   if (decision.kind === "world") {
     await WorldDeploymentPositionWatermarkModel.recordPositions(
       decision.positionWatermark.worldId,
+      contentServerUrl,
       decision.positionWatermark.positions,
       decision.positionWatermark.deployedAt
     )
@@ -235,6 +239,7 @@ async function recordDisabledPlaces({
 
 async function recordReplacementRemovals(
   worldId: string,
+  contentServerUrl: string,
   replacedPlaces: PlaceAttributes[],
   replacedAt: number
 ): Promise<void> {
@@ -242,6 +247,7 @@ async function recordReplacementRemovals(
   // what it superseded rather than anything older than the moment Places noticed.
   await WorldSceneUndeploymentModel.recordReplacements(
     worldId,
+    contentServerUrl,
     replacedPlaces.map((place) => ({
       // Legacy rows predate deployment ids. Their stable local id gives the watermark a unique
       // key while base-position matching still protects older deployments for that scene.

@@ -11,18 +11,21 @@ export default class WorldUndeploymentModel extends Model<WorldUndeploymentAttri
   static tableName = "world_undeployments"
 
   /**
-   * Record that a world was undeployed, keeping the newest event timestamp.
+   * Record that a world was undeployed from a worlds server, keeping the newest event timestamp.
    */
   static async recordWatermark(
     worldId: string,
+    contentServerUrl: string,
     eventTimestamp: number
   ): Promise<void> {
     const normalizedWorldId = worldId.toLowerCase()
     const undeployedAt = new Date(eventTimestamp)
     const sql = SQL`
-      INSERT INTO ${table(this)} ("world_id", "undeployed_at")
-      VALUES (${normalizedWorldId}, ${undeployedAt})
-      ON CONFLICT ("world_id") DO UPDATE
+      INSERT INTO ${table(
+        this
+      )} ("world_id", "content_server_url", "undeployed_at")
+      VALUES (${normalizedWorldId}, ${contentServerUrl}, ${undeployedAt})
+      ON CONFLICT ("world_id", "content_server_url") DO UPDATE
       SET "undeployed_at" = GREATEST(${table(
         this
       )}."undeployed_at", EXCLUDED."undeployed_at")
@@ -34,16 +37,19 @@ export default class WorldUndeploymentModel extends Model<WorldUndeploymentAttri
   /**
    * Find the world undeployment that supersedes a deployment, if any. Both sides are stamped by the
    * worlds content server when it emits the event, so a deployment emitted after the undeployment is
-   * kept however long before it the entity was signed. Returns null when the world was never
-   * undeployed or the deployment was emitted later.
+   * kept however long before it the entity was signed. Only an undeployment from the server the
+   * deployment was made to counts: another server may still serve the same world name. Returns
+   * null when the world was never undeployed there or the deployment was emitted later.
    */
   static async findSupersedingUndeployment(
     worldId: string,
+    contentServerUrl: string,
     emittedAt: Date
   ): Promise<WorldUndeploymentAttributes | null> {
     const sql = SQL`
       SELECT * FROM ${table(this)}
       WHERE "world_id" = ${worldId.toLowerCase()}
+        AND "content_server_url" = ${contentServerUrl}
         AND "undeployed_at" >= ${emittedAt}
     `
 
