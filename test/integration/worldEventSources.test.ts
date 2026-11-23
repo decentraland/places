@@ -317,4 +317,92 @@ describe("when a world name is served by several worlds servers", () => {
       })
     })
   })
+
+  describe("and the other server deploys a newer scene over the configured server's scene", () => {
+    beforeEach(async () => {
+      await deliverDeployment(worldName, {
+        entityId: "entity-other-over",
+        title: "Other Over Scene",
+        parcels: ["0,0"],
+        server: OTHER_URL,
+        emittedAt: deployedAt + 2000,
+      })
+    })
+
+    describe("and the configured server undeploys the world", () => {
+      beforeEach(async () => {
+        await handleWorldUndeployment(
+          createWorldUndeploymentEvent(worldName, {
+            timestamp: deployedAt + 10 * minute,
+          })
+        )
+        titles = await enabledTitles(worldName)
+      })
+
+      it("should keep the replacement, which now belongs to the other server", () => {
+        expect(titles).toEqual(["Other Over Scene", "Other Scene"])
+      })
+    })
+
+    describe("and the other server undeploys the world", () => {
+      beforeEach(async () => {
+        await handleWorldUndeployment(
+          createWorldUndeploymentEvent(worldName, {
+            timestamp: deployedAt + 10 * minute,
+          }),
+          OTHER_URL
+        )
+        titles = await enabledTitles(worldName)
+      })
+
+      it("should remove every scene it deployed", () => {
+        expect(titles).toEqual([])
+      })
+    })
+  })
+
+  describe("and its newest scene is a configured server place that predates recording its server", () => {
+    let fetchMock: jest.SpyInstance
+    let title: string | null | undefined
+
+    beforeEach(async () => {
+      await deliverDeployment(worldName, {
+        entityId: "entity-configured-newest",
+        title: "Newest Configured Scene",
+        parcels: ["7,7"],
+        server: WORLDS_URL,
+        emittedAt: deployedAt + 3000,
+      })
+      await PlaceModel.namedQuery(
+        "test_clear_place_source",
+        SQL`UPDATE places SET content_server_url = NULL WHERE deployment_id = ${"entity-configured-newest"}`
+      )
+      fetchMock = jest
+        .spyOn(global, "fetch")
+        .mockResolvedValue(
+          new Response(
+            JSON.stringify({ title: "Changed Title", settings_version: 1 }),
+            { status: 200 }
+          )
+        )
+      await handleWorldSettingsChanged(
+        createWorldSettingsChangedEvent({
+          key: worldName,
+          metadata: { worldName },
+        }),
+        undefined,
+        undefined,
+        OTHER_URL
+      )
+      title = (await WorldModel.findByWorldName(worldName))?.title
+    })
+
+    afterEach(() => {
+      fetchMock.mockRestore()
+    })
+
+    it("should skip the other server's settings", () => {
+      expect(title).not.toBe("Changed Title")
+    })
+  })
 })

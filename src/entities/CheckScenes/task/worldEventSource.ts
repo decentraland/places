@@ -7,13 +7,8 @@ import {
 import { WorldContentSource } from "../../World/types"
 
 /**
- * Resolve the worlds server a world event came from.
- *
- * Several worlds servers publish the same events and only deployment bodies name their server, so
- * the publisher sets it in the `sourceContentServerUrl` message attribute. Without the attribute
- * the event is from the configured worlds content server. A present attribute must name an
- * allowlisted host; otherwise the event is rejected as invalid rather than attributed to the
- * configured server, whose scenes it does not describe.
+ * The worlds server named by the `sourceContentServerUrl` attribute, else the configured one. A
+ * non-allowlisted attribute is invalid rather than attributed to the configured server.
  */
 export function resolveWorldEventSource(
   sourceContentServerUrl: string | undefined,
