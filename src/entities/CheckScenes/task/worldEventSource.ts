@@ -3,7 +3,9 @@ import env from "decentraland-gatsby/dist/utils/env"
 import {
   getTrustedContentServerUrl,
   getTrustedWorldsContentServerUrl,
+  normalizeContentServerUrl,
 } from "./contentServerUrl"
+import { PlaceAttributes } from "../../Place/types"
 import { WorldContentSource } from "../../World/types"
 
 /**
@@ -31,4 +33,27 @@ export function resolveWorldEventSource(
     allowedContentServerHosts
   )
   return { url, isDefault: url === defaultUrl }
+}
+
+/** The configured worlds content server, for offline tools that only ever read from it. */
+export function configuredWorldSource(
+  worldsContentServerUrl = env(
+    "WORLDS_CONTENT_SERVER_URL",
+    "https://worlds-content-server.decentraland.org"
+  )
+): WorldContentSource {
+  return {
+    url: normalizeContentServerUrl(new URL(worldsContentServerUrl)),
+    isDefault: true,
+  }
+}
+
+/** Whether a place was deployed to the given server; rows without one belong to the configured server. */
+export function isPlaceFromSource(
+  place: Pick<PlaceAttributes, "content_server_url">,
+  source: WorldContentSource
+): boolean {
+  return place.content_server_url === null
+    ? source.isDefault
+    : place.content_server_url === source.url
 }

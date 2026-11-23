@@ -15,6 +15,9 @@
  * the same world and let the older of the two win. Stopping the consumer is what makes that
  * impossible; narrowing it to a lock held across each world's whole body is follow-up work.
  *
+ * The orphan sweep only judges places deployed to WORLDS_CONTENT_SERVER_URL (or recorded before
+ * places stored a server); another worlds server's places are never disabled by it.
+ *
  * Usage:
  *   DOTENV_CONFIG_PATH=.env.development ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
  *   DOTENV_CONFIG_PATH=.env.production ts-node -r dotenv/config bin/rebuildWorldPlaces.ts [options]
@@ -36,7 +39,6 @@ import { randomUUID } from "crypto"
 import database from "decentraland-gatsby/dist/entities/Database/database"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
-import env from "decentraland-gatsby/dist/utils/env"
 
 import {
   REBUILD_PLACE_ATTRIBUTES,
@@ -53,6 +55,10 @@ import {
   createPlaceFromContentEntityScene,
 } from "../src/entities/CheckScenes/task/processContentEntityScene"
 import {
+  configuredWorldSource,
+  isPlaceFromSource,
+} from "../src/entities/CheckScenes/task/worldEventSource"
+import {
   fetchNameOwner,
   findNewDeployedPlace,
 } from "../src/entities/CheckScenes/utils"
@@ -62,6 +68,7 @@ import { DisabledReason, PlaceAttributes } from "../src/entities/Place/types"
 import PlaceCategories from "../src/entities/PlaceCategories/model"
 import PlaceContentRatingModel from "../src/entities/PlaceContentRating/model"
 import WorldModel from "../src/entities/World/model"
+import { WorldContentSource } from "../src/entities/World/types"
 import { drainResponse } from "../src/utils/fetch"
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -771,9 +778,13 @@ async function processWorldScene(
  * in both readings can still be a different revision by the time the sweep runs.
  */
 export async function readPlaceRevisions(
-  worldId: string
+  worldId: string,
+  source: WorldContentSource = configuredWorldSource()
 ): Promise<Map<string, string>> {
-  const places = await PlaceModel.findByWorldId(worldId)
+  // Only this server's places can be judged by its listing; the sweep never sees the others.
+  const places = (await PlaceModel.findByWorldId(worldId)).filter((place) =>
+    isPlaceFromSource(place, source)
+  )
   return new Map(places.map((place) => [place.id, revisionOf(place)]))
 }
 
@@ -801,7 +812,8 @@ export async function rebuildWorld(options: {
   // the same moment. knownPlaceIds is then accumulated from that listing, well before the
   // sweep takes its lock, so anything committed in between must not be judged by it.
   const worldId = worldName.toLowerCase()
-  const placeRevisions = await readPlaceRevisions(worldId)
+  const source = configuredWorldSource(worldsContentServerUrl)
+  const placeRevisions = await readPlaceRevisions(worldId, source)
 
   const scenes = await fetchWorldScenes(worldsContentServerUrl, worldName)
   logger.log(`  Found ${scenes.length} scene(s)`)
@@ -845,7 +857,7 @@ export async function rebuildWorld(options: {
   // orphan; and a world that answered with no scenes at all is indistinguishable from a name
   // that no longer resolves, which would take every place with it.
   const activePlaces = (await PlaceModel.findByWorldId(worldId)).filter(
-    (place) => !place.disabled
+    (place) => !place.disabled && isPlaceFromSource(place, source)
   )
 
   if (unaccountedScenes > 0) {
@@ -932,10 +944,7 @@ async function main(): Promise<number> {
     process.env.CONNECTION_STRING = connectionString
   }
 
-  const worldsContentServerUrl = env(
-    "WORLDS_CONTENT_SERVER_URL",
-    "https://worlds-content-server.decentraland.org"
-  ).replace(/\/+$/, "")
+  const worldsContentServerUrl = configuredWorldSource().url
 
   logger.log("=".repeat(60))
   logger.log("Rebuild World Places Script")

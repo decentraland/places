@@ -48,6 +48,9 @@
  * world whose listing cannot be read within the deadline is failed and skipped, releasing the lock,
  * rather than blocking that world's deployments.
  *
+ * Only places deployed to WORLDS_CONTENT_SERVER_URL (or recorded before places stored a server) are
+ * judged; another worlds server's places are left untouched, since this listing says nothing about them.
+ *
  * Must run with TZ=UTC. Backfilling a legacy row writes the served entity's timestamp into
  * places.deployed_at, node-postgres renders a Date in the process timezone, and `timestamp` columns
  * carry no offset -- so a run from any other zone stores a value shifted by that offset, and every
@@ -71,16 +74,21 @@
  */
 
 import database from "decentraland-gatsby/dist/entities/Database/database"
-import { SQL, table } from "decentraland-gatsby/dist/entities/Database/utils"
+import {
+  SQL,
+  SQLStatement,
+  table,
+} from "decentraland-gatsby/dist/entities/Database/utils"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
-import env from "decentraland-gatsby/dist/utils/env"
 
 import { ScriptArgs, parseScriptArgs } from "./scriptArgs"
 import { forTerminal } from "./scriptTerminalText"
+import { configuredWorldSource } from "../src/entities/CheckScenes/task/worldEventSource"
 import { withDatabaseTransaction } from "../src/entities/Database/model"
 import PlaceModel from "../src/entities/Place/model"
 import { DisabledReason } from "../src/entities/Place/types"
 import WorldModel from "../src/entities/World/model"
+import { WorldContentSource } from "../src/entities/World/types"
 import { drainResponse } from "../src/utils/fetch"
 
 // ── Types ──────────────────────────────────────────────────────────────
@@ -340,9 +348,17 @@ async function readScenePages(
 
 // ── Queries ────────────────────────────────────────────────────────────
 
+/** Places deployed to the server the repair reads from; another server's places are not judged by it. */
+function fromSource(source: WorldContentSource): SQLStatement {
+  return source.isDefault
+    ? SQL`("content_server_url" = ${source.url} OR "content_server_url" IS NULL)`
+    : SQL`"content_server_url" = ${source.url}`
+}
+
 export async function findAffectedWorlds(
   worldName: string | null,
-  limit: number | null
+  limit: number | null,
+  source: WorldContentSource = configuredWorldSource()
 ): Promise<string[]> {
   const rows = await PlaceModel.namedQuery<{ world_id: string }>(
     "repair_find_affected_worlds",
@@ -353,6 +369,7 @@ export async function findAffectedWorlds(
         AND "disabled" IS TRUE
         AND "disabled_reason" = ${DisabledReason.UNDEPLOYMENT}
         AND "world_id" IS NOT NULL
+        AND ${fromSource(source)}
         ${worldName ? SQL`AND "world_id" = ${worldName.toLowerCase()}` : SQL``}
       ORDER BY "world_id"
       ${limit ? SQL`LIMIT ${limit}` : SQL``}
@@ -361,7 +378,10 @@ export async function findAffectedWorlds(
   return rows.map((row) => row.world_id)
 }
 
-async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
+async function findDisabledPlaces(
+  worldId: string,
+  source: WorldContentSource
+): Promise<DisabledPlace[]> {
   return PlaceModel.namedQuery<DisabledPlace>(
     "repair_find_disabled_places",
     SQL`
@@ -371,6 +391,7 @@ async function findDisabledPlaces(worldId: string): Promise<DisabledPlace[]> {
         AND "world_id" = ${worldId}
         AND "disabled" IS TRUE
         AND "disabled_reason" = ${DisabledReason.UNDEPLOYMENT}
+        AND ${fromSource(source)}
     `
   )
 }
@@ -431,7 +452,8 @@ function sameFootprint(left: string[], right: string[]): boolean {
 export async function repairWorld(
   rawWorldId: string,
   fetchServed: () => Promise<ServedScene[]>,
-  dryRun: boolean
+  dryRun: boolean,
+  source: WorldContentSource = configuredWorldSource()
 ): Promise<WorldRepair> {
   // world_id is stored lower-cased. This is exported, so a mixed-case argument would otherwise match
   // nothing at all and report a clean world.
@@ -454,7 +476,7 @@ export async function repairWorld(
 
     const served = await fetchServed()
     const now = new Date()
-    const places = await findDisabledPlaces(worldId)
+    const places = await findDisabledPlaces(worldId, source)
     const servedById = new Map(served.map((scene) => [scene.entityId, scene]))
 
     const reenabledByIdentity: DisabledPlace[] = []
@@ -829,10 +851,8 @@ async function main(): Promise<number> {
     process.env.CONNECTION_STRING = connectionString
   }
 
-  const worldsContentServerUrl = env(
-    "WORLDS_CONTENT_SERVER_URL",
-    "https://worlds-content-server.decentraland.org"
-  ).replace(/\/+$/, "")
+  const source = configuredWorldSource()
+  const worldsContentServerUrl = source.url
 
   logger.log("=".repeat(60))
   logger.log("Repair Undeployed World Places")
@@ -882,7 +902,7 @@ async function main(): Promise<number> {
   }
 
   try {
-    const worlds = await findAffectedWorlds(worldName, limit)
+    const worlds = await findAffectedWorlds(worldName, limit, source)
     logger.log(
       `Found ${worlds.length} world(s) with undeployment-disabled places`
     )
@@ -905,7 +925,8 @@ async function main(): Promise<number> {
             logger.log(`  Content server serves ${served.length} scene(s)`)
             return served
           },
-          dryRun
+          dryRun,
+          source
         )
 
         reportWorld(worldId, repair, dryRun)

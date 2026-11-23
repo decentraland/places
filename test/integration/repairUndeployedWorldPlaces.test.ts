@@ -3,6 +3,7 @@ import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
 import {
   ServedScene,
   WorldRepair,
+  findAffectedWorlds,
   repairWorld,
 } from "../../bin/repairUndeployedWorldPlaces"
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
@@ -79,6 +80,7 @@ async function deliverDeployment(options: {
   title: string
   base: string
   parcels: string[]
+  server?: string
 }): Promise<void> {
   const scene = createWorldContentEntityScene({
     worldName: options.worldName,
@@ -94,7 +96,9 @@ async function deliverDeployment(options: {
     runtimeVersion: null,
   })
 
-  const message = createWorldDeploymentMessage()
+  const message = createWorldDeploymentMessage(
+    options.server ? { contentServerUrls: [options.server] } : {}
+  )
   const job: DeploymentToSqs = {
     ...message,
     entity: { ...message.entity, entityId: options.entityId },
@@ -242,6 +246,63 @@ describe("when repairing places an undeployment disabled", () => {
 
     it("should report it as re-enabled by identity", () => {
       expect(repair.reenabledByIdentity).toHaveLength(1)
+    })
+  })
+
+  describe("and the disabled place was deployed to another worlds server", () => {
+    const worldName = "repair-other-server.dcl.eth"
+    const otherServer = "https://worlds.example.org"
+    let repair: WorldRepair
+    let place: { disabled: boolean } | null
+    let affectedWorlds: string[]
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-other-server",
+        timestamp: servedAt,
+        title: "Other Server Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+        server: otherServer,
+      })
+      await handleWorldScenesUndeployment(
+        createWorldScenesUndeploymentEvent(
+          worldName,
+          [{ entityId: "entity-other-server", baseParcel: "0,0" }],
+          { timestamp: eventAt }
+        ),
+        otherServer
+      )
+
+      affectedWorlds = await findAffectedWorlds(worldName, null)
+      repair = await repairWorld(
+        worldName,
+        async () => [
+          servedScene({
+            entityId: "entity-other-server",
+            base: "0,0",
+            deployedAt: servedAt,
+          }),
+        ],
+        false
+      )
+      place = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-other-server"}`
+      ).then((rows) => rows[0] ?? null)
+    })
+
+    it("should not list the world as affected", () => {
+      expect(affectedWorlds).toEqual([])
+    })
+
+    it("should leave the place disabled, since the configured server's listing says nothing about it", () => {
+      expect(place).toEqual({ disabled: true })
+    })
+
+    it("should not report it as re-enabled", () => {
+      expect(repair.reenabledByIdentity).toHaveLength(0)
     })
   })
 

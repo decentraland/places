@@ -69,6 +69,7 @@ async function deliverDeployment(options: {
   title: string
   base: string
   parcels: string[]
+  server?: string
 }): Promise<void> {
   const scene = createWorldContentEntityScene({
     worldName: options.worldName,
@@ -84,7 +85,9 @@ async function deliverDeployment(options: {
     runtimeVersion: null,
   })
 
-  const message = createWorldDeploymentMessage()
+  const message = createWorldDeploymentMessage(
+    options.server ? { contentServerUrls: [options.server] } : {}
+  )
   const job: DeploymentToSqs = {
     ...message,
     entity: { ...message.entity, entityId: options.entityId },
@@ -161,6 +164,42 @@ describe("when sweeping orphan places for a world", () => {
 
     it("should disable it", () => {
       expect(enabledTitles).toEqual([])
+    })
+  })
+
+  describe("and the place was deployed to another worlds server", () => {
+    const worldName = "sweep-other-server.dcl.eth"
+    let enabledTitles: Array<string | null>
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-other-server",
+        timestamp: firstDeployedAt,
+        title: "Other Server Scene",
+        base: "0,0",
+        parcels: ["0,0"],
+        server: "https://worlds.example.org",
+      })
+
+      const placeRevisions = await readPlaceRevisions(worldName)
+
+      await disableOrphanPlaces({
+        worldName,
+        worldId: worldName,
+        knownPlaceIds: new Set(),
+        placeRevisions,
+        dryRun: false,
+        stats: emptyStats(),
+      })
+
+      enabledTitles = (await PlaceModel.findEnabledWorldName(worldName)).map(
+        (place) => place.title
+      )
+    })
+
+    it("should leave it enabled", () => {
+      expect(enabledTitles).toEqual(["Other Server Scene"])
     })
   })
 
@@ -438,6 +477,46 @@ describe("when deciding whether a world's places can be judged complete", () => 
 
     it("should leave the newer place enabled", () => {
       expect(stillEnabled).toBe(true)
+    })
+  })
+
+  describe("and the world also holds a place deployed to another worlds server", () => {
+    const worldName = "rebuild-other-server.dcl.eth"
+    let result: Awaited<ReturnType<typeof rebuildWorld>>
+    let otherEnabled: boolean
+
+    beforeEach(async () => {
+      await deliverDeployment({
+        worldName,
+        entityId: "entity-other-server",
+        timestamp: newerLocalAt,
+        title: "Other Server Scene",
+        base: "5,5",
+        parcels: ["5,5"],
+        server: "https://worlds.example.org",
+      })
+      fetchMock.mockResolvedValueOnce(
+        listing(worldName, "entity-served", olderServedAt)
+      )
+
+      result = await rebuildWorld({
+        worldName,
+        worldsContentServerUrl: BASE,
+        dryRun: false,
+        stats: emptyStats(),
+      })
+      otherEnabled = await PlaceModel.namedQuery<{ disabled: boolean }>(
+        "read_place",
+        SQL`SELECT "disabled" FROM places WHERE "deployment_id" = ${"entity-other-server"}`
+      ).then((rows) => rows[0]?.disabled === false)
+    })
+
+    it("should sweep the configured server's places", () => {
+      expect(result.sweptOrphans).toBe(true)
+    })
+
+    it("should leave the other server's place enabled", () => {
+      expect(otherEnabled).toBe(true)
     })
   })
 
