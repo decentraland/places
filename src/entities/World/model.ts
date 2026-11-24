@@ -209,6 +209,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       , null::timestamptz as disabled_at
       , COALESCE(w.image, lp.image) as image
       , lp.contact_name
+      , lp.creator_address
       , '0,0' as base_position
       , true as world
       , 0 as user_visits
@@ -291,6 +292,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       , null::timestamptz as disabled_at
       , COALESCE(w.image, lp.image) as image
       , lp.contact_name
+      , lp.creator_address
       , '0,0' as base_position
       ${conditional(
         !!options.user,
@@ -312,7 +314,7 @@ export default class WorldModel extends Model<WorldAttributes> {
       , lp.deployed_at
       FROM ${table(this)} w
       LEFT JOIN LATERAL (
-        SELECT p.image, p.contact_name, p.deployed_at
+        SELECT p.image, p.contact_name, p.creator_address, p.deployed_at
         FROM places p
         WHERE p.world_id = w.id AND p.disabled IS FALSE
         ORDER BY p.deployed_at DESC
