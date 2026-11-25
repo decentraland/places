@@ -112,6 +112,7 @@ describe("when resolving a world deployment", () => {
       exclude_from_ranking: false,
       ranking: 0,
       settings_version: null,
+      settings_source: null,
       likes: 0,
       dislikes: 0,
       favorites: 0,
@@ -351,6 +352,7 @@ describe("when resolving a world deployment", () => {
     it("should check the world undeployment watermark against the emission time", () => {
       expect(findSupersedingWorldUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
+        input.contentServerUrl,
         emittedAt
       )
     })
@@ -358,6 +360,7 @@ describe("when resolving a world deployment", () => {
     it("should check the scene undeployment watermark using deployment identity on both clocks", () => {
       expect(findSupersedingSceneUndeployment).toHaveBeenCalledWith(
         "example.dcl.eth",
+        input.contentServerUrl,
         "deployment-current",
         "0,0",
         new Date(contentEntityScene.timestamp),
@@ -368,6 +371,7 @@ describe("when resolving a world deployment", () => {
     it("should check the position watermarks on both clocks", () => {
       expect(hasSupersedingPositionWatermark).toHaveBeenCalledWith(
         "example.dcl.eth",
+        input.contentServerUrl,
         ["0,0"],
         new Date(contentEntityScene.timestamp),
         emittedAt

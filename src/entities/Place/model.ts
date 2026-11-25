@@ -51,6 +51,16 @@ function withinSnapshot(
 }
 
 /**
+ * Match the world places deployed to the given worlds server. Rows recorded before places stored
+ * a server belong to the configured worlds content server.
+ */
+function fromSource(source: WorldContentSource): SQLStatement {
+  return source.isDefault
+    ? SQL`(target."content_server_url" = ${source.url} OR target."content_server_url" IS NULL)`
+    : SQL`target."content_server_url" = ${source.url}`
+}
+
+/**
  * Match only the places the content server no longer serves, so an undeployment cannot disable a
  * scene that survived it.
  *
@@ -98,6 +108,7 @@ import {
 } from "../shared/entityInteractions"
 import UserFavoriteModel from "../UserFavorite/model"
 import UserLikesModel from "../UserLikes/model"
+import { WorldContentSource } from "../World/types"
 
 // Re-export for backwards compatibility
 export { MIN_USER_ACTIVITY }
@@ -408,17 +419,19 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * situ. Unrelated writes such as likes or favourites leave both values untouched.
    */
   static async findEnabledWorldPlaceRevisions(
-    worldId: string
+    worldId: string,
+    source: WorldContentSource
   ): Promise<Array<{ id: string; deployment_id: string | null }>> {
     return this.namedQuery<{ id: string; deployment_id: string | null }>(
       "find_enabled_world_place_revisions",
-      // Matches what the disabling statements consider eligible, which is world_id alone: a reader
-      // narrower than the statement it guards would spare whatever it failed to see.
+      // Matches what the disabling statements consider eligible, which is world_id and source: a
+      // reader narrower than the statement it guards would spare whatever it failed to see.
       SQL`
         SELECT "id", "deployment_id"
-        FROM ${table(this)}
-        WHERE "world_id" = ${worldId.toLowerCase()}
-          AND "disabled" IS FALSE
+        FROM ${table(this)} target
+        WHERE target."world_id" = ${worldId.toLowerCase()}
+          AND target."disabled" IS FALSE
+          AND ${fromSource(source)}
       `
     )
   }
@@ -432,7 +445,10 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * parcels because they are exactly the ones a disabling statement skips and so cannot tombstone by
    * identity.
    */
-  static async findWorldPlaceSnapshot(worldId: string): Promise<{
+  static async findWorldPlaceSnapshot(
+    worldId: string,
+    source: WorldContentSource
+  ): Promise<{
     revisions: Array<{ id: string; deployment_id: string | null }>
     positions: string[]
   }> {
@@ -445,8 +461,9 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       "find_world_place_snapshot",
       SQL`
         SELECT "id", "deployment_id", "disabled", "positions"
-        FROM ${table(this)}
-        WHERE "world_id" = ${worldId.toLowerCase()}
+        FROM ${table(this)} target
+        WHERE target."world_id" = ${worldId.toLowerCase()}
+          AND ${fromSource(source)}
       `
     )
 
@@ -456,6 +473,29 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         .map(({ id, deployment_id }) => ({ id, deployment_id })),
       positions: [...new Set(rows.flatMap((row) => row.positions))],
     }
+  }
+
+  /**
+   * Whether the world's newest enabled scene was deployed to the given worlds server; null when the
+   * world has no enabled scene. Names deployed to several servers follow the last deployment, and so
+   * do their settings.
+   */
+  static async isNewestWorldSceneFrom(
+    worldId: string,
+    source: WorldContentSource
+  ): Promise<boolean | null> {
+    const rows = await this.namedQuery<{ from_source: boolean }>(
+      "is_newest_world_scene_from",
+      SQL`
+        SELECT ${fromSource(source)} AS "from_source"
+        FROM ${table(this)} target
+        WHERE target."world_id" = ${worldId.toLowerCase()}
+          AND target."disabled" IS FALSE
+        ORDER BY target."deployed_at" DESC
+        LIMIT 1
+      `
+    )
+    return rows.length === 0 ? null : rows[0].from_source === true
   }
 
   /**
@@ -761,9 +801,13 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    * Ties go to the undeployment, matching the watermark predicates in WorldUndeploymentModel and
    * WorldSceneUndeploymentModel, so an equally timestamped deployment reaches the same state
    * whichever order it arrives in.
+   *
+   * Only the places deployed to the worlds server that emitted the event are eligible: another
+   * server may still serve the same world name.
    */
   static async disableByWorldId(
     worldId: string,
+    source: WorldContentSource,
     eventTimestamp: number,
     liveDeploymentIds: string[],
     livePositions: string[]
@@ -775,6 +819,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE target."world_id" = ${normalizedWorldId}
+        AND ${fromSource(source)}
         AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND ${removedUpstream(liveDeploymentIds, livePositions)}
@@ -797,9 +842,12 @@ export default class PlaceModel extends Model<PlaceAttributes> {
    *
    * Ties go to the undeployment, matching the watermark predicates, so an equally timestamped
    * deployment reaches the same state whichever order it arrives in.
+   *
+   * Only the places deployed to the worlds server that emitted the event are eligible.
    */
   static async disableByWorldIdAndDeployments(
     worldId: string,
+    source: WorldContentSource,
     deploymentIds: string[],
     basePositions: string[],
     positions: string[],
@@ -815,6 +863,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
       UPDATE ${table(this)} target
       SET "disabled" = TRUE, "disabled_at" = ${now}, "updated_at" = ${now}, "disabled_reason" = 'undeployment'
       WHERE target."world_id" = ${normalizedWorldId}
+        AND ${fromSource(source)}
         AND target."deployed_at" <= ${eventDate}
         AND target."disabled" IS FALSE
         AND ${removedUpstream(liveDeploymentIds, livePositions)}

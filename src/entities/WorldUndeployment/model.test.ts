@@ -14,6 +14,7 @@ describe("when recording a world undeployment watermark", () => {
     eventTimestamp = Date.parse("2026-08-03T12:00:00.000Z")
     await WorldUndeploymentModel.recordWatermark(
       "Example.DCL.ETH",
+      "https://worlds-content-server.decentraland.org",
       eventTimestamp
     )
   })
@@ -22,7 +23,7 @@ describe("when recording a world undeployment watermark", () => {
     const [, sql] = namedQuery.mock.calls[0]
 
     expect(sql.text.replace(/\s+/g, " ")).toContain(
-      `ON CONFLICT ("world_id") DO UPDATE SET "undeployed_at" = GREATEST(`
+      `ON CONFLICT ("world_id", "content_server_url") DO UPDATE SET "undeployed_at" = GREATEST(`
     )
   })
 
@@ -43,6 +44,7 @@ describe("when looking for a world undeployment that supersedes a deployment", (
   beforeEach(async () => {
     await WorldUndeploymentModel.findSupersedingUndeployment(
       "example.dcl.eth",
+      "https://worlds-content-server.decentraland.org",
       new Date("2026-08-03T12:00:00.000Z")
     )
   })

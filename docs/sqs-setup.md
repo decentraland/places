@@ -60,6 +60,21 @@ The message to be received from the SQS must have the following format:
 }
 ```
 
+World events may carry a `sourceContentServerUrl` message attribute naming the worlds server that
+emitted them, as a bare `https` origin (no path, port, query or userinfo). Without it the event
+belongs to `WORLDS_CONTENT_SERVER_URL`, and so does an attribute equal to that origin. Any other
+origin must have its host in `ALLOWED_WORLDS_CONTENT_SERVER_HOSTS` (comma-separated, exact match;
+empty accepts only the configured server), otherwise the message is discarded.
+
+- Removal and settings events (`world_undeployment`, `world_scenes_undeployment`,
+  `world_settings_changed`) are re-read from that server. Removals only affect the world scenes
+  deployed to it. Settings apply while it holds the world's newest scene; a world with no scene
+  only takes settings from the server that last wrote them or from the configured one.
+- For a deployment the attribute is authoritative: the first `contentServerUrls` entry must share
+  its origin and the entity must be a world scene, otherwise the message is discarded.
+
+Delivery is at least once and every handler is idempotent.
+
 ## Sending Messages
 
 Send a message using awslocal:

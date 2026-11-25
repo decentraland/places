@@ -3,13 +3,11 @@ import logger from "decentraland-gatsby/dist/entities/Development/logger"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import {
-  ContentServerConfigurationError,
-  InvalidWorldSqsMessageError,
-} from "./errors"
-import { getTrustedContentServerUrl } from "./processEntityId"
+import { getTrustedWorldsContentServerUrl } from "./contentServerUrl"
+import { resolveWorldEventSource } from "./worldEventSource"
 import { drainResponse } from "../../../utils/fetch"
 import { isUpgradingRating } from "../../../utils/rating/contentRating"
+import PlaceModel from "../../Place/model"
 import { sanitizeImageUrl, sanitizePlaceDescription } from "../../Place/utils"
 import {
   notifyDowngradeRating,
@@ -36,30 +34,6 @@ type WorldSettingsResponse = {
   thumbnail_hash?: string
   access_type?: string
   settings_version?: number
-}
-
-/**
- * The settings source URL comes from WORLDS_CONTENT_SERVER_URL, not from the message, so an
- * untrusted or malformed URL is a deployment misconfiguration: surface it as such so the consumer
- * retries the message instead of discarding it as deterministically invalid.
- */
-function getTrustedSettingsSourceUrl(
-  worldsContentServerUrl: string,
-  allowedContentServerHosts: string
-): string {
-  try {
-    return getTrustedContentServerUrl(
-      { contentServerUrls: [worldsContentServerUrl] },
-      allowedContentServerHosts
-    )
-  } catch (error) {
-    if (error instanceof InvalidWorldSqsMessageError) {
-      throw new ContentServerConfigurationError(
-        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
-      )
-    }
-    throw error
-  }
 }
 
 /** Fetch the authoritative world settings; null when the world is unknown to the source. */
@@ -153,6 +127,10 @@ function carriesFetchedValues(settings: WorldSettingsResponse): boolean {
  * The payload's accessType is used only against a source that predates the versioned contract, where
  * it is the sole visibility signal available; a versioned response always wins over it.
  *
+ * Settings are read from the worlds server that emitted the event. A world name deployed to several
+ * servers follows its newest scene, so another server's settings are skipped for it, and versions
+ * only order writes from one server: a write from another server replaces them.
+ *
  * Note: Content creators cannot downgrade ratings - only moderators can.
  * If a downgrade is attempted, the original rating is preserved and
  * moderators are notified.
@@ -163,7 +141,11 @@ export async function handleWorldSettingsChanged(
     "WORLDS_CONTENT_SERVER_URL",
     "https://worlds-content-server.decentraland.org"
   ),
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+  allowedWorldsContentServerHosts = env(
+    "ALLOWED_WORLDS_CONTENT_SERVER_HOSTS",
+    ""
+  ),
+  sourceContentServerUrl?: string
 ): Promise<void> {
   const { worldName } = event.metadata
 
@@ -172,18 +154,47 @@ export async function handleWorldSettingsChanged(
     return
   }
 
+  // Resolved before the handler's error reporting: an untrusted source is discarded, not retried
+  const source = resolveWorldEventSource(
+    sourceContentServerUrl,
+    worldsContentServerUrl,
+    allowedWorldsContentServerHosts
+  )
+  const contentServerUrl = source.url
+  const configuredSource = getTrustedWorldsContentServerUrl(
+    worldsContentServerUrl
+  )
   const loggerExtended = logger.extend({
     worldName,
+    source: contentServerUrl,
     eventType: "WorldSettingsChangedEvent",
   })
 
   try {
     loggerExtended.log(`Processing settings change for world: ${worldName}`)
 
-    const contentServerUrl = getTrustedSettingsSourceUrl(
-      worldsContentServerUrl,
-      allowedContentServerHosts
+    const newestSceneFromSource = await PlaceModel.isNewestWorldSceneFrom(
+      worldName,
+      source
     )
+    if (newestSceneFromSource === false) {
+      loggerExtended.log(
+        `Skipped settings for ${worldName}: its newest scene is on another worlds server`
+      )
+      return
+    }
+    // Without an enabled scene only the server that last wrote the settings, or the configured
+    // one, may write them; a stored null is the configured server.
+    if (newestSceneFromSource === null && !source.isDefault) {
+      const storedWorld = await WorldModel.findByWorldName(worldName)
+      if (storedWorld?.settings_source !== contentServerUrl) {
+        loggerExtended.log(
+          `Skipped settings for ${worldName}: it has no scene and its settings come from another worlds server`
+        )
+        return
+      }
+    }
+
     const settings = await fetchWorldSettings(contentServerUrl, worldName)
     if (!settings) {
       loggerExtended.log(
@@ -249,14 +260,18 @@ export async function handleWorldSettingsChanged(
         return
       }
 
-      appliedWorld = await WorldModel.upsertWorldSettings({
-        ...worldUpdate,
-        // Under the versioned contract visibility comes from the fetch, never from the payload: the
-        // payload has no ordering relationship with settings_version, so a redelivered older access
-        // event would otherwise pass the guard and re-apply stale visibility.
-        is_private: toIsPrivate(settings.access_type),
-        settings_version: settings.settings_version,
-      })
+      appliedWorld = await WorldModel.upsertWorldSettings(
+        {
+          ...worldUpdate,
+          // Under the versioned contract visibility comes from the fetch, never from the payload: the
+          // payload has no ordering relationship with settings_version, so a redelivered older access
+          // event would otherwise pass the guard and re-apply stale visibility.
+          is_private: toIsPrivate(settings.access_type),
+          settings_version: settings.settings_version,
+          settings_source: contentServerUrl,
+        },
+        configuredSource
+      )
       if (!appliedWorld) {
         loggerExtended.log(
           `Skipped settings older than the ones already applied for: ${worldName}`
@@ -278,12 +293,15 @@ export async function handleWorldSettingsChanged(
       // stored a version. A mixed fleet mid-rollout serves both shapes, so another worker may have
       // moved this row into the versioned contract already; the write itself enforces that, since a
       // prior read could go stale before it lands.
-      appliedWorld = await WorldModel.upsertWorldSettings({
-        ...worldUpdate,
-        is_private: toIsPrivate(
-          settings.access_type ?? event.metadata.accessType
-        ),
-      })
+      appliedWorld = await WorldModel.upsertWorldSettings(
+        {
+          ...worldUpdate,
+          is_private: toIsPrivate(
+            settings.access_type ?? event.metadata.accessType
+          ),
+        },
+        configuredSource
+      )
       if (!appliedWorld) {
         loggerExtended.log(
           `Skipped an unversioned settings response for a world already under the versioned contract: ${worldName}`

@@ -4,17 +4,11 @@ import { EntityType } from "@dcl/schemas/dist/platform/entity"
 import { ContentEntityScene } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 import env from "decentraland-gatsby/dist/utils/env"
 
-import {
-  ContentServerConfigurationError,
-  InvalidWorldSqsMessageError,
-} from "./errors"
+import { getTrustedContentServerUrl } from "./contentServerUrl"
+import { InvalidWorldSqsMessageError } from "./errors"
 import { drainResponse } from "../../../utils/fetch"
 
 import type { DeploymentToSqs } from "./consumer"
-
-type ContentServerSource = {
-  contentServerUrls?: string[]
-}
 
 const CONTENT_SERVER_FETCH_TIMEOUT_MS = 15_000
 
@@ -44,75 +38,6 @@ function isContentEntityScene(value: unknown): value is ContentEntityScene {
   )
 }
 
-export function getTrustedContentServerUrl(
-  job: ContentServerSource,
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
-): string {
-  const contentServerUrls = job.contentServerUrls
-  if (!contentServerUrls?.length)
-    throw new InvalidWorldSqsMessageError("contentServerUrls is required")
-
-  const allowedHosts = new Set(
-    allowedContentServerHosts
-      .split(",")
-      .map((host) => host.trim().toLowerCase())
-      .filter(Boolean)
-  )
-  if (allowedHosts.size === 0) {
-    throw new ContentServerConfigurationError(
-      "ALLOWED_CONTENT_SERVER_HOSTS is not configured"
-    )
-  }
-
-  for (const rawUrl of contentServerUrls) {
-    let url: URL
-    try {
-      url = new URL(rawUrl)
-    } catch {
-      continue
-    }
-    if (
-      url.protocol !== "https:" ||
-      url.username ||
-      url.password ||
-      !allowedHosts.has(url.hostname.toLowerCase())
-    ) {
-      continue
-    }
-    url.hash = ""
-    url.search = ""
-    return url.toString().replace(/\/+$/, "")
-  }
-
-  throw new InvalidWorldSqsMessageError(
-    "contentServerUrls does not contain a trusted host"
-  )
-}
-
-/**
- * Validate the configured Worlds Content Server URL. It comes from the environment rather than from
- * a message, so an untrusted or malformed value is a deployment misconfiguration: surface it as one
- * so callers retry their input instead of discarding it as deterministically invalid.
- */
-export function getTrustedWorldsContentServerUrl(
-  worldsContentServerUrl: string,
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
-): string {
-  try {
-    return getTrustedContentServerUrl(
-      { contentServerUrls: [worldsContentServerUrl] },
-      allowedContentServerHosts
-    )
-  } catch (error) {
-    if (error instanceof InvalidWorldSqsMessageError) {
-      throw new ContentServerConfigurationError(
-        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
-      )
-    }
-    throw error
-  }
-}
-
 export async function processEntityId(
   job: DeploymentToSqs,
   allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
@@ -135,7 +60,10 @@ export async function fetchContentEntity(
 ): Promise<ContentEntityScene | null> {
   const response = await fetch(
     `${contentServerUrl}/contents/${encodeURIComponent(entityId)}`,
-    { signal: AbortSignal.timeout(CONTENT_SERVER_FETCH_TIMEOUT_MS) }
+    {
+      redirect: "error",
+      signal: AbortSignal.timeout(CONTENT_SERVER_FETCH_TIMEOUT_MS),
+    }
   )
   if (!response.ok) {
     await drainResponse(response)

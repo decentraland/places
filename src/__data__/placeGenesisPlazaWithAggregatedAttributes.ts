@@ -5,6 +5,7 @@ import { AggregatePlaceAttributes } from "../entities/Place/types"
 export const placeGenesisPlazaWithAggregatedAttributes: AggregatePlaceAttributes =
   {
     deployment_id: null,
+    content_server_url: null,
     id: "214d5f61-4049-4109-b811-690813b1f7f0",
     title: "Genesis Plaza",
     description:

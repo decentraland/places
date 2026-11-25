@@ -611,6 +611,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       const watermark =
         await WorldSceneUndeploymentModel.findSupersedingUndeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           "entity-scene-rollback",
           "0,0",
           new Date(deployedAt),
@@ -619,6 +620,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       const positionWatermarkExists =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           ["0,0"],
           new Date(deployedAt),
           new Date(deployedAt)
@@ -680,6 +682,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       const watermark =
         await WorldUndeploymentModel.findSupersedingUndeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           new Date(deployedAt)
         )
       state = {
@@ -1028,6 +1031,7 @@ describe("when deployments and undeployments arrive in adversarial orders", () =
       const firstLegacyPlace: PlaceAttributes = {
         ...firstPlace,
         deployment_id: null,
+        content_server_url: null,
       }
       await PlaceModel.updatePlace(firstLegacyPlace, ["deployment_id"])
       await PlaceModel.createOne({

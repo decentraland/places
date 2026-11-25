@@ -80,6 +80,7 @@ export function createPlaceFromEntityScene(
     updated_at: now,
     deployed_at: now,
     deployment_id: null,
+    content_server_url: null,
     world: false,
     world_name: null,
     world_id: null,

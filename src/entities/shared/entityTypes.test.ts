@@ -29,6 +29,7 @@ const baseWorldAttributes: WorldAttributes = {
   exclude_from_ranking: false,
   ranking: null,
   settings_version: null,
+  settings_source: null,
 }
 
 const aggregateWorldAttributes: AggregateWorldAttributes = {
@@ -45,6 +46,7 @@ const aggregateWorldAttributes: AggregateWorldAttributes = {
 
 const aggregatePlaceAttributes: AggregatePlaceAttributes = {
   deployment_id: null,
+  content_server_url: null,
   id: "place-uuid",
   world_name: null,
   title: "Genesis Plaza",

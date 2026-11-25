@@ -284,7 +284,60 @@ describe("when consuming scene messages", () => {
     it("should pass the validated body to the task", async () => {
       await consumer.consume(taskRunner)
 
-      expect(taskRunner).toHaveBeenCalledWith(sqsMessage)
+      expect(taskRunner).toHaveBeenCalledWith(sqsMessage, {})
+    })
+  })
+
+  describe("and the message names its source worlds server", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "valid",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify(sqsMessage),
+            MessageAttributes: {
+              sourceContentServerUrl: {
+                DataType: "String",
+                StringValue: "https://worlds.example.org",
+              },
+            },
+          },
+        ],
+      })
+    })
+
+    it("should pass the source to the task", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(taskRunner).toHaveBeenCalledWith(sqsMessage, {
+        sourceContentServerUrl: "https://worlds.example.org",
+      })
+    })
+  })
+
+  describe("and the source attribute carries no string value", () => {
+    beforeEach(() => {
+      receivePromise.mockResolvedValue({
+        Messages: [
+          {
+            MessageId: "valid",
+            ReceiptHandle: "receipt",
+            Body: JSON.stringify(sqsMessage),
+            MessageAttributes: {
+              sourceContentServerUrl: { DataType: "Binary" },
+            },
+          },
+        ],
+      })
+    })
+
+    it("should pass an empty source so it is rejected rather than read as absent", async () => {
+      await consumer.consume(taskRunner)
+
+      expect(taskRunner).toHaveBeenCalledWith(sqsMessage, {
+        sourceContentServerUrl: "",
+      })
     })
   })
 

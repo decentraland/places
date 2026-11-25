@@ -65,9 +65,14 @@ export async function resolveWorldDeployment({
   )
   const [worldUndeployment, sceneUndeployment, hasNewerPositionWatermark] =
     await Promise.all([
-      WorldUndeploymentModel.findSupersedingUndeployment(worldId, emittedAt),
+      WorldUndeploymentModel.findSupersedingUndeployment(
+        worldId,
+        contentServerUrl,
+        emittedAt
+      ),
       WorldSceneUndeploymentModel.findSupersedingUndeployment(
         worldId,
+        contentServerUrl,
         deploymentId,
         scene.base,
         deployedAt,
@@ -75,6 +80,7 @@ export async function resolveWorldDeployment({
       ),
       WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
         worldId,
+        contentServerUrl,
         positions,
         deployedAt,
         emittedAt

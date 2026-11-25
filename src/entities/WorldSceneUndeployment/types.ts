@@ -1,5 +1,7 @@
 export type WorldSceneUndeploymentAttributes = {
   world_id: string
+  /** Worlds server the recording event came from; removals only reject its own deployments. */
+  content_server_url: string
   deployment_id: string
   base_position: string
   /** Entity timestamp of the deployment that replaced this one. */

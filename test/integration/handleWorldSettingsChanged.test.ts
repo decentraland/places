@@ -1,3 +1,5 @@
+import database from "decentraland-gatsby/dist/entities/Database/database"
+import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
 import supertest from "supertest"
 
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
@@ -35,7 +37,7 @@ const app = createTestApp()
 // The handler treats the event as a trigger and fetches the authoritative settings from
 // worlds-content-server, so each scenario stubs the GET /world/:name/settings response.
 const WORLDS_URL = "https://worlds-content-server.decentraland.org"
-const ALLOWED_HOSTS = "worlds-content-server.decentraland.org"
+const ALLOWED_WORLDS_HOSTS = "worlds.example.org"
 
 describe("handleWorldSettingsChanged integration", () => {
   let fetchMock: jest.SpyInstance
@@ -79,7 +81,7 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "newworld.dcl.eth",
         metadata: { worldName: "newworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should create the world queryable via API with the fetched settings", async () => {
@@ -104,7 +106,7 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "ghostworld.dcl.eth",
         metadata: { worldName: "ghostworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should not create any world record", async () => {
@@ -126,7 +128,11 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "existingworld.dcl.eth",
         metadata: { worldName: "existingworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(initialEvent, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(
+        initialEvent,
+        WORLDS_URL,
+        ALLOWED_WORLDS_HOSTS
+      )
     })
 
     describe("and the fetched settings carry a newer version", () => {
@@ -142,7 +148,11 @@ describe("handleWorldSettingsChanged integration", () => {
           key: "existingworld.dcl.eth",
           metadata: { worldName: "existingworld.dcl.eth" },
         })
-        await handleWorldSettingsChanged(updateEvent, WORLDS_URL, ALLOWED_HOSTS)
+        await handleWorldSettingsChanged(
+          updateEvent,
+          WORLDS_URL,
+          ALLOWED_WORLDS_HOSTS
+        )
       })
 
       it("should update the world settings", async () => {
@@ -170,7 +180,7 @@ describe("handleWorldSettingsChanged integration", () => {
             metadata: { worldName: "existingworld.dcl.eth" },
           }),
           WORLDS_URL,
-          ALLOWED_HOSTS
+          ALLOWED_WORLDS_HOSTS
         )
       })
 
@@ -195,7 +205,11 @@ describe("handleWorldSettingsChanged integration", () => {
           key: "existingworld.dcl.eth",
           metadata: { worldName: "existingworld.dcl.eth" },
         })
-        await handleWorldSettingsChanged(staleEvent, WORLDS_URL, ALLOWED_HOSTS)
+        await handleWorldSettingsChanged(
+          staleEvent,
+          WORLDS_URL,
+          ALLOWED_WORLDS_HOSTS
+        )
       })
 
       it("should keep the settings that were already applied", async () => {
@@ -205,6 +219,62 @@ describe("handleWorldSettingsChanged integration", () => {
 
         expect(response.body.data.title).toBe("Original Title")
         expect(response.body.data.description).toBe("Original Description")
+      })
+    })
+
+    describe("and another worlds server sends settings while the world has no scene", () => {
+      beforeEach(async () => {
+        mockSettingsResponse({
+          title: "Other Server Title",
+          settings_version: 5,
+        })
+        const otherEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          otherEvent,
+          WORLDS_URL,
+          ALLOWED_WORLDS_HOSTS,
+          "https://worlds.example.org"
+        )
+      })
+
+      it("should keep the configured server's settings", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Original Title")
+      })
+    })
+
+    describe("and the stored settings predate recording their server", () => {
+      beforeEach(async () => {
+        await database.query(
+          SQL`UPDATE worlds SET "settings_source" = NULL WHERE "id" = 'existingworld.dcl.eth'`
+        )
+        mockSettingsResponse({
+          title: "Stale Title",
+          settings_version: 1,
+        })
+        const staleEvent = createWorldSettingsChangedEvent({
+          key: "existingworld.dcl.eth",
+          metadata: { worldName: "existingworld.dcl.eth" },
+        })
+        await handleWorldSettingsChanged(
+          staleEvent,
+          WORLDS_URL,
+          ALLOWED_WORLDS_HOSTS
+        )
+      })
+
+      it("should still reject an older version from the configured server", async () => {
+        const response = await supertest(app)
+          .get("/api/worlds/existingworld.dcl.eth")
+          .expect(200)
+
+        expect(response.body.data.title).toBe("Original Title")
       })
     })
 
@@ -219,7 +289,11 @@ describe("handleWorldSettingsChanged integration", () => {
           key: "existingworld.dcl.eth",
           metadata: { worldName: "existingworld.dcl.eth" },
         })
-        await handleWorldSettingsChanged(markupEvent, WORLDS_URL, ALLOWED_HOSTS)
+        await handleWorldSettingsChanged(
+          markupEvent,
+          WORLDS_URL,
+          ALLOWED_WORLDS_HOSTS
+        )
       })
 
       it("should strip the unsafe link and keep the safe one", async () => {
@@ -246,7 +320,7 @@ describe("handleWorldSettingsChanged integration", () => {
         await handleWorldSettingsChanged(
           upgradeEvent,
           WORLDS_URL,
-          ALLOWED_HOSTS
+          ALLOWED_WORLDS_HOSTS
         )
       })
 
@@ -272,7 +346,7 @@ describe("handleWorldSettingsChanged integration", () => {
         await handleWorldSettingsChanged(
           downgradeEvent,
           WORLDS_URL,
-          ALLOWED_HOSTS
+          ALLOWED_WORLDS_HOSTS
         )
       })
 
@@ -308,7 +382,7 @@ describe("handleWorldSettingsChanged integration", () => {
         await handleWorldSettingsChanged(
           noRatingEvent,
           WORLDS_URL,
-          ALLOWED_HOSTS
+          ALLOWED_WORLDS_HOSTS
         )
       })
 
@@ -337,7 +411,11 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "imageworld.dcl.eth",
         metadata: { worldName: "imageworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(createEvent, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(
+        createEvent,
+        WORLDS_URL,
+        ALLOWED_WORLDS_HOSTS
+      )
 
       mockSettingsResponse({
         title: "Image World Updated",
@@ -347,7 +425,11 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "imageworld.dcl.eth",
         metadata: { worldName: "imageworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(updateEvent, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(
+        updateEvent,
+        WORLDS_URL,
+        ALLOWED_WORLDS_HOSTS
+      )
     })
 
     it("should preserve the existing image instead of clearing it", async () => {
@@ -372,7 +454,7 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "xssworld.dcl.eth",
         metadata: { worldName: "xssworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should never store raw markup-breakout characters in the world image", async () => {
@@ -390,7 +472,7 @@ describe("handleWorldSettingsChanged integration", () => {
     beforeEach(async () => {
       event = createWorldSettingsChangedEvent()
       delete (event.metadata as Partial<typeof event.metadata>).worldName
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should not fetch any settings", () => {
@@ -410,7 +492,7 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "privateworld.dcl.eth",
         metadata: { worldName: "privateworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should create the world with is_private set to true", async () => {
@@ -434,7 +516,7 @@ describe("handleWorldSettingsChanged integration", () => {
         key: "publicworld.dcl.eth",
         metadata: { worldName: "publicworld.dcl.eth" },
       })
-      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
+      await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_WORLDS_HOSTS)
     })
 
     it("should create the world with is_private set to false", async () => {
@@ -460,7 +542,7 @@ describe("handleWorldSettingsChanged integration", () => {
           metadata: { worldName: "stayprivate.dcl.eth" },
         }),
         WORLDS_URL,
-        ALLOWED_HOSTS
+        ALLOWED_WORLDS_HOSTS
       )
 
       // A later settings-only change: the source still reports the same access type
@@ -475,7 +557,7 @@ describe("handleWorldSettingsChanged integration", () => {
           metadata: { worldName: "stayprivate.dcl.eth" },
         }),
         WORLDS_URL,
-        ALLOWED_HOSTS
+        ALLOWED_WORLDS_HOSTS
       )
     })
 
@@ -513,7 +595,7 @@ describe("handleWorldSettingsChanged integration", () => {
           },
         }),
         WORLDS_URL,
-        ALLOWED_HOSTS
+        ALLOWED_WORLDS_HOSTS
       )
 
       // Made unrestricted: the access change moves the version forward on the source
@@ -531,7 +613,7 @@ describe("handleWorldSettingsChanged integration", () => {
           },
         }),
         WORLDS_URL,
-        ALLOWED_HOSTS
+        ALLOWED_WORLDS_HOSTS
       )
 
       // SQS redelivers the older restricted event; the fetch returns the current state
@@ -549,7 +631,7 @@ describe("handleWorldSettingsChanged integration", () => {
           },
         }),
         WORLDS_URL,
-        ALLOWED_HOSTS
+        ALLOWED_WORLDS_HOSTS
       )
     })
 

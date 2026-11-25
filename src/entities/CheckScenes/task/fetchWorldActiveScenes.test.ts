@@ -5,7 +5,6 @@ import {
 } from "./fetchWorldActiveScenes"
 
 const CONTENT_SERVER_URL = "https://worlds-content-server.decentraland.org"
-const ALLOWED_HOSTS = "worlds-content-server.decentraland.org"
 
 describe("when reading the scenes a world currently serves", () => {
   let fetchMock: jest.SpyInstance
@@ -35,8 +34,7 @@ describe("when reading the scenes a world currently serves", () => {
 
       active = await fetchWorldActiveScenes(
         "example.dcl.eth",
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -66,8 +64,7 @@ describe("when reading the scenes a world currently serves", () => {
 
       active = await fetchWorldActiveScenes(
         "example.dcl.eth",
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -85,8 +82,7 @@ describe("when reading the scenes a world currently serves", () => {
 
       await fetchWorldActiveScenes(
         "name with spaces.dcl.eth",
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -111,11 +107,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw so the caller retries instead of treating the world as empty", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Unable to fetch the active scenes of example.dcl.eth: 503 Service Unavailable"
       )
@@ -132,11 +124,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than assume the world serves nothing", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth does not contain a scene list"
       )
@@ -165,8 +153,7 @@ describe("when reading the scenes a world currently serves", () => {
 
       active = await fetchWorldActiveScenes(
         "example.dcl.eth",
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -212,11 +199,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than return a set the shifted window skipped", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes for example.dcl.eth changed while being read: 150 scenes, then 130"
       )
@@ -245,11 +228,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than return a set missing the skipped scene", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth repeated 1 of 101 scenes"
       )
@@ -268,11 +247,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than trust an unprovable read", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth does not report how many scenes it has"
       )
@@ -289,11 +264,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than read it as a world that serves nothing", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth does not report how many scenes it has"
       )
@@ -313,11 +284,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw rather than spare only the scenes it saw", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth served 1 of 4 scenes"
       )
@@ -334,11 +301,7 @@ describe("when reading the scenes a world currently serves", () => {
 
     it("should throw because that scene could not be excluded by identity", async () => {
       await expect(
-        fetchWorldActiveScenes(
-          "example.dcl.eth",
-          CONTENT_SERVER_URL,
-          ALLOWED_HOSTS
-        )
+        fetchWorldActiveScenes("example.dcl.eth", CONTENT_SERVER_URL)
       ).rejects.toThrow(
         "Active scenes response for example.dcl.eth contains a scene without a deployment id"
       )
@@ -362,8 +325,7 @@ describe("when reading the scenes a world currently serves", () => {
 
       active = await fetchWorldActiveScenes(
         "example.dcl.eth",
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -376,13 +338,12 @@ describe("when reading the scenes a world currently serves", () => {
     })
   })
 
-  describe("and the configured content server is not an allowed host", () => {
+  describe("and the content server is not a bare origin", () => {
     it("should report it as a deployment misconfiguration", async () => {
       await expect(
         fetchWorldActiveScenes(
           "example.dcl.eth",
-          "https://untrusted.example",
-          ALLOWED_HOSTS
+          "https://worlds-content-server.decentraland.org/worlds"
         )
       ).rejects.toBeInstanceOf(ContentServerConfigurationError)
     })
@@ -415,8 +376,7 @@ describe("when reading the scenes a world serves at given parcels", () => {
       active = await fetchWorldActiveScenesAtPositions(
         "example.dcl.eth",
         ["0,0", "0,1"],
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -461,8 +421,7 @@ describe("when reading the scenes a world serves at given parcels", () => {
       active = await fetchWorldActiveScenesAtPositions(
         "example.dcl.eth",
         [],
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 
@@ -488,8 +447,7 @@ describe("when reading the scenes a world serves at given parcels", () => {
       await fetchWorldActiveScenesAtPositions(
         "example.dcl.eth",
         positions,
-        CONTENT_SERVER_URL,
-        ALLOWED_HOSTS
+        CONTENT_SERVER_URL
       )
     })
 

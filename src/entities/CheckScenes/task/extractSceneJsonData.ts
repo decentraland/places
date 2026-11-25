@@ -33,7 +33,7 @@ export async function extractSceneJsonData(
     }`
 
     // Fetch the scene.json file
-    const response = await fetch(contentUrl)
+    const response = await fetch(contentUrl, { redirect: "error" })
 
     if (!response.ok) {
       await drainResponse(response)

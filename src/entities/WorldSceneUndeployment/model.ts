@@ -17,11 +17,13 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    */
   static async recordReplacements(
     worldId: string,
+    contentServerUrl: string,
     scenes: UndeployedScene[],
     replacedAt: Date
   ): Promise<void> {
     await this.recordTombstones(
       worldId,
+      contentServerUrl,
       scenes.map((scene) => ({ ...scene, basePositionRejects: true })),
       "undeployed_at",
       replacedAt
@@ -39,10 +41,17 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    */
   static async recordRemovals(
     worldId: string,
+    contentServerUrl: string,
     scenes: Array<UndeployedScene & { basePositionRejects: boolean }>,
     removedAt: Date
   ): Promise<void> {
-    await this.recordTombstones(worldId, scenes, "removed_at", removedAt)
+    await this.recordTombstones(
+      worldId,
+      contentServerUrl,
+      scenes,
+      "removed_at",
+      removedAt
+    )
   }
 
   /**
@@ -53,6 +62,7 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    */
   private static async recordTombstones(
     worldId: string,
+    contentServerUrl: string,
     scenes: Array<UndeployedScene & { basePositionRejects: boolean }>,
     clock: "undeployed_at" | "removed_at",
     stampedAt: Date
@@ -73,14 +83,14 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
     const column = SQL.raw(`"${clock}"`)
 
     const sql = SQL`
-      INSERT INTO ${tombstones} ("world_id", "deployment_id", "base_position", "base_position_rejects", ${column})
-      SELECT ${worldId.toLowerCase()}, incoming."deployment_id", incoming."base_position", incoming."base_position_rejects", ${stampedAt}::timestamp
+      INSERT INTO ${tombstones} ("world_id", "content_server_url", "deployment_id", "base_position", "base_position_rejects", ${column})
+      SELECT ${worldId.toLowerCase()}, ${contentServerUrl}::text, incoming."deployment_id", incoming."base_position", incoming."base_position_rejects", ${stampedAt}::timestamp
       FROM unnest(
         ${deploymentIds}::text[],
         ${basePositions}::text[],
         ${basePositionRejects}::boolean[]
       ) AS incoming("deployment_id", "base_position", "base_position_rejects")
-      ON CONFLICT ("world_id", "deployment_id") DO UPDATE
+      ON CONFLICT ("world_id", "deployment_id", "content_server_url") DO UPDATE
       SET "base_position" = CASE
             WHEN ${tombstones}.${column} IS NULL OR EXCLUDED.${column} >= ${tombstones}.${column}
             THEN EXCLUDED."base_position"
@@ -106,9 +116,14 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
    * The base match is skipped for rows recorded while a replacement already served that base: they
    * exist to tombstone the removed deployment by identity, and matching their base would reject the
    * replacement instead.
+   *
+   * Removals only count against deployments to the server that emitted them, since another server
+   * may still serve the scene. Replacements count whichever server they were deployed to: the last
+   * deployment of a world name wins.
    */
   static async findSupersedingUndeployment(
     worldId: string,
+    contentServerUrl: string,
     deploymentId: string,
     basePosition: string,
     deployedAt: Date,
@@ -121,14 +136,20 @@ export default class WorldSceneUndeploymentModel extends Model<WorldSceneUndeplo
           (
             "deployment_id" = ${deploymentId}
             AND (
-              "removed_at" >= ${emittedAt}
-              OR GREATEST("undeployed_at", "removed_at") >= ${deployedAt}
+              "undeployed_at" >= ${deployedAt}
+              OR (
+                "content_server_url" = ${contentServerUrl}
+                AND ("removed_at" >= ${emittedAt} OR "removed_at" >= ${deployedAt})
+              )
             )
           )
           OR (
             "base_position" = ${basePosition}
             AND "base_position_rejects" IS TRUE
-            AND ("undeployed_at" >= ${deployedAt} OR "removed_at" >= ${emittedAt})
+            AND (
+              "undeployed_at" >= ${deployedAt}
+              OR ("content_server_url" = ${contentServerUrl} AND "removed_at" >= ${emittedAt})
+            )
           )
         )
       LIMIT 1

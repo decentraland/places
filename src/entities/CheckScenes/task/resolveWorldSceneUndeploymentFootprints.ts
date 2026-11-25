@@ -1,11 +1,9 @@
 import { WorldScenesUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import env from "decentraland-gatsby/dist/utils/env"
 
+import { getTrustedWorldsContentServerUrl } from "./contentServerUrl"
 import { InvalidWorldSqsMessageError } from "./errors"
-import {
-  fetchContentEntity,
-  getTrustedWorldsContentServerUrl,
-} from "./processEntityId"
+import { fetchContentEntity } from "./processEntityId"
 import { UndeployedScene } from "../../WorldSceneUndeployment/types"
 
 const FOOTPRINT_FETCH_CONCURRENCY = 10
@@ -76,15 +74,11 @@ export async function resolveWorldSceneUndeploymentFootprints(
   worldsContentServerUrl = env(
     "WORLDS_CONTENT_SERVER_URL",
     "https://worlds-content-server.decentraland.org"
-  ),
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+  )
 ): Promise<ResolvedUndeployedScene[]> {
   const needsFetch = scenes.some((scene) => !scene.parcels?.length)
   const contentServerUrl = needsFetch
-    ? getTrustedWorldsContentServerUrl(
-        worldsContentServerUrl,
-        allowedContentServerHosts
-      )
+    ? getTrustedWorldsContentServerUrl(worldsContentServerUrl)
     : ""
   const resolved: ResolvedUndeployedScene[] = []
   for (

@@ -49,7 +49,7 @@ describe("when processing an entity id", () => {
 
       expect(fetchMock).toHaveBeenCalledWith(
         `https://peer.decentraland.org/content/contents/${job.entity.entityId}`,
-        { signal: expect.any(AbortSignal) }
+        { redirect: "error", signal: expect.any(AbortSignal) }
       )
     })
 
@@ -93,7 +93,7 @@ describe("when processing an entity id", () => {
 
       expect(fetchMock).toHaveBeenCalledWith(
         `https://peer.decentraland.org/content/contents/${job.entity.entityId}`,
-        { signal: expect.any(AbortSignal) }
+        { redirect: "error", signal: expect.any(AbortSignal) }
       )
     })
   })

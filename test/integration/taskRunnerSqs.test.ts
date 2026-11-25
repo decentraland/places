@@ -1262,6 +1262,7 @@ describe("taskRunnerSqs integration", () => {
           {
             ...storedPlace,
             deployment_id: null,
+            content_server_url: null,
             deployed_at: new Date(olderTimestamp - 1000),
           },
         ])
@@ -1523,10 +1524,17 @@ describe("taskRunnerSqs integration", () => {
         )
       recordPositionsSpy = jest
         .spyOn(WorldDeploymentPositionWatermarkModel, "recordPositions")
-        .mockImplementationOnce(async (worldId, positions, deployedAt) => {
-          await recordPositions(worldId, positions, deployedAt)
-          throw new Error("failure after position watermark")
-        })
+        .mockImplementationOnce(
+          async (worldId, contentServerUrl, positions, deployedAt) => {
+            await recordPositions(
+              worldId,
+              contentServerUrl,
+              positions,
+              deployedAt
+            )
+            throw new Error("failure after position watermark")
+          }
+        )
 
       taskError = await deployWorldScene({
         worldName,
@@ -1551,6 +1559,7 @@ describe("taskRunnerSqs integration", () => {
       positionWatermarkPersisted =
         await WorldDeploymentPositionWatermarkModel.hasSupersedingDeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           ["50,50", "50,51"],
           new Date(olderTimestamp),
           new Date(olderTimestamp)
@@ -1558,6 +1567,7 @@ describe("taskRunnerSqs integration", () => {
       replacementTombstone =
         await WorldSceneUndeploymentModel.findSupersedingUndeployment(
           worldName,
+          "https://worlds-content-server.decentraland.org",
           "entity-rollback-a",
           "50,50",
           new Date(olderTimestamp),
@@ -1645,11 +1655,13 @@ describe("taskRunnerSqs integration", () => {
           {
             ...storedPlace,
             deployment_id: null,
+            content_server_url: null,
             deployed_at: new Date(olderTimestamp - 1000),
           },
           {
             ...neighbourPlace,
             deployment_id: null,
+            content_server_url: null,
             deployed_at: new Date(olderTimestamp - 1000),
           },
         ])

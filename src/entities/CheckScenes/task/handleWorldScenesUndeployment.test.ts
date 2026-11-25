@@ -4,13 +4,16 @@ import { InvalidWorldSqsMessageError } from "./errors"
 import { fetchWorldActiveScenesAtPositions } from "./fetchWorldActiveScenes"
 import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
 import { resolveWorldSceneUndeploymentFootprints } from "./resolveWorldSceneUndeploymentFootprints"
+import { resolveWorldEventSource } from "./worldEventSource"
 import PlaceModel from "../../Place/model"
 import WorldModel from "../../World/model"
+import { WorldContentSource } from "../../World/types"
 import WorldDeploymentPositionWatermarkModel from "../../WorldDeploymentPositionWatermark/model"
 import WorldSceneUndeploymentModel from "../../WorldSceneUndeployment/model"
 
 jest.mock("./resolveWorldSceneUndeploymentFootprints")
 jest.mock("./fetchWorldActiveScenes")
+jest.mock("./worldEventSource")
 
 const resolveFootprintsMock = jest.mocked(
   resolveWorldSceneUndeploymentFootprints
@@ -18,6 +21,7 @@ const resolveFootprintsMock = jest.mocked(
 const fetchWorldActiveScenesMock = jest.mocked(
   fetchWorldActiveScenesAtPositions
 )
+const resolveWorldEventSourceMock = jest.mocked(resolveWorldEventSource)
 
 describe("when handling a world scenes undeployment event", () => {
   let disableByWorldIdAndDeployments: jest.SpyInstance
@@ -28,9 +32,15 @@ describe("when handling a world scenes undeployment event", () => {
   let recordRemovedScenes: jest.SpyInstance
   let calls: string[]
   let event: WorldScenesUndeploymentEvent
+  let source: WorldContentSource
 
   beforeEach(() => {
     calls = []
+    source = {
+      url: "https://worlds-content-server.decentraland.org",
+      isDefault: true,
+    }
+    resolveWorldEventSourceMock.mockReturnValue(source)
     resolveFootprintsMock.mockImplementation(async (scenes) =>
       scenes.map((scene) => ({
         entityId: scene.entityId,
@@ -92,6 +102,7 @@ describe("when handling a world scenes undeployment event", () => {
 
     expect(disableByWorldIdAndDeployments).toHaveBeenCalledWith(
       "example.dcl.eth",
+      source,
       ["deployment-a", "deployment-b"],
       ["1,1", "2,2"],
       ["1,1", "2,2"],
@@ -113,6 +124,7 @@ describe("when handling a world scenes undeployment event", () => {
 
     expect(recordRemovedScenes).toHaveBeenCalledWith(
       "example.dcl.eth",
+      source.url,
       [
         {
           entityId: "deployment-a",
@@ -134,6 +146,7 @@ describe("when handling a world scenes undeployment event", () => {
 
     expect(recordRemovedPositions).toHaveBeenCalledWith(
       "example.dcl.eth",
+      source.url,
       ["1,1", "2,2"],
       new Date(event.timestamp)
     )
@@ -163,6 +176,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(disableByWorldIdAndDeployments).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source,
         ["deployment-a"],
         ["1,1"],
         ["1,1"],
@@ -178,6 +192,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(recordRemovedScenes).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         [
           {
             entityId: "deployment-a",
@@ -203,6 +218,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(recordRemovedScenes).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         [
           expect.objectContaining({ entityId: "deployment-a" }),
           expect.objectContaining({ entityId: "deployment-b" }),
@@ -216,6 +232,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(recordRemovedScenes).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         [
           expect.objectContaining({
             baseParcel: "1,1",
@@ -235,6 +252,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(disableByWorldIdAndDeployments).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source,
         ["deployment-a", "deployment-b"],
         ["1,1", "2,2"],
         ["1,1", "2,2"],
@@ -259,6 +277,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(recordRemovedPositions).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         ["1,1"],
         new Date(event.timestamp)
       )
@@ -319,6 +338,7 @@ describe("when handling a world scenes undeployment event", () => {
 
       expect(recordRemovedScenes).toHaveBeenCalledWith(
         "example.dcl.eth",
+        source.url,
         [
           {
             entityId: "deployment-a",
@@ -342,6 +362,45 @@ describe("when handling a world scenes undeployment event", () => {
     it("should reject the event as deterministically invalid", async () => {
       await expect(handleWorldScenesUndeployment(event)).rejects.toBeInstanceOf(
         InvalidWorldSqsMessageError
+      )
+    })
+  })
+
+  describe("and the event names another worlds server", () => {
+    beforeEach(async () => {
+      source = { url: "https://worlds.example.org", isDefault: false }
+      resolveWorldEventSourceMock.mockReturnValue(source)
+      await handleWorldScenesUndeployment(event, "https://worlds.example.org")
+    })
+
+    it("should ask only that server what it still serves at the cleared parcels", () => {
+      expect(fetchWorldActiveScenesMock).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        ["1,1", "2,2"],
+        "https://worlds.example.org"
+      )
+    })
+
+    it("should only disable the places deployed to that server", () => {
+      expect(disableByWorldIdAndDeployments).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        source,
+        ["deployment-a", "deployment-b"],
+        ["1,1", "2,2"],
+        ["1,1", "2,2"],
+        event.timestamp,
+        [],
+        [],
+        snapshot
+      )
+    })
+
+    it("should record the cleared positions for that server only", () => {
+      expect(recordRemovedPositions).toHaveBeenCalledWith(
+        "example.dcl.eth",
+        "https://worlds.example.org",
+        ["1,1", "2,2"],
+        new Date(event.timestamp)
       )
     })
   })

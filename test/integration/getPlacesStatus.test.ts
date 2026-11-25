@@ -99,6 +99,7 @@ function createPlaceAttributes(
     world_id: null,
     deployed_at: new Date(),
     deployment_id: null,
+    content_server_url: null,
     textsearch: null,
     creator_address: null,
     sdk: null,

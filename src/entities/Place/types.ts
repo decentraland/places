@@ -60,6 +60,12 @@ export type PlaceAttributes = BaseEntityAttributes & {
   world_id: string | null
   /** Immutable Catalyst or Worlds Content Server entity identifier for this deployment. */
   deployment_id: string | null
+  /**
+   * Worlds server a world scene was deployed to; removals from one server only touch its own
+   * scenes. Null for Genesis City and for world rows predating it, which belong to the configured
+   * worlds content server.
+   */
+  content_server_url: string | null
   deployed_at: Date
   textsearch: SQLStatement | string | null | undefined
   creator_address: string | null

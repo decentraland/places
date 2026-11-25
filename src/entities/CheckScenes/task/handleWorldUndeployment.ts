@@ -2,6 +2,7 @@ import { WorldUndeploymentEvent } from "@dcl/schemas/dist/platform/events/world"
 import logger from "decentraland-gatsby/dist/entities/Development/logger"
 
 import { fetchWorldActiveScenes } from "./fetchWorldActiveScenes"
+import { resolveWorldEventSource } from "./worldEventSource"
 import { withDatabaseTransaction } from "../../Database/model"
 import PlaceModel from "../../Place/model"
 import { notifyError } from "../../Slack/utils"
@@ -41,9 +42,14 @@ function sameRevisions(
  * The place rows only carry entity timestamps, though, so a scene deployed after the removal but
  * signed before it would look older than the event. What the world still serves is therefore read
  * from the content server and left enabled.
+ *
+ * Several worlds servers may serve the same world name, so the event only retires what was
+ * deployed to the server that emitted it, and only that server is asked what the world still
+ * serves.
  */
 export async function handleWorldUndeployment(
-  event: WorldUndeploymentEvent
+  event: WorldUndeploymentEvent,
+  sourceContentServerUrl?: string
 ): Promise<void> {
   const worldName = event.metadata.worldName
 
@@ -52,8 +58,11 @@ export async function handleWorldUndeployment(
     return
   }
 
+  // Resolved before the handler's error reporting: an untrusted source is discarded, not retried
+  const source = resolveWorldEventSource(sourceContentServerUrl)
   const loggerExtended = logger.extend({
     worldName,
+    source: source.url,
     eventType: "WorldUndeploymentEvent",
   })
 
@@ -62,8 +71,11 @@ export async function handleWorldUndeployment(
 
     for (let attempt = 1; ; attempt++) {
       // Read before the survivor set so both describe the same moment.
-      const snapshot = await PlaceModel.findWorldPlaceSnapshot(worldName)
-      const activeScenes = await fetchWorldActiveScenes(worldName)
+      const snapshot = await PlaceModel.findWorldPlaceSnapshot(
+        worldName,
+        source
+      )
+      const activeScenes = await fetchWorldActiveScenes(worldName, source.url)
       const isTornDown = activeScenes.deploymentIds.length === 0
 
       // Same lock the deployment path takes, so an in-flight deployment for this world cannot
@@ -79,7 +91,7 @@ export async function handleWorldUndeployment(
         // two cheap statements and a listing, and the window is the lock wait.
         if (
           !sameRevisions(
-            await PlaceModel.findEnabledWorldPlaceRevisions(worldName),
+            await PlaceModel.findEnabledWorldPlaceRevisions(worldName, source),
             snapshot.revisions
           )
         ) {
@@ -88,10 +100,15 @@ export async function handleWorldUndeployment(
 
         // Durable watermark: a deployment delivered later but emitted before this event must not
         // recreate the world, and disabling rows alone leaves no record once the lock is released
-        await WorldUndeploymentModel.recordWatermark(worldName, event.timestamp)
+        await WorldUndeploymentModel.recordWatermark(
+          worldName,
+          source.url,
+          event.timestamp
+        )
 
         const disabled = await PlaceModel.disableByWorldId(
           worldName,
+          source,
           event.timestamp,
           activeScenes.deploymentIds,
           activeScenes.positions
