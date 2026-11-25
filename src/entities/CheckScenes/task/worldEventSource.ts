@@ -1,3 +1,6 @@
+import client, {
+  registerMetric,
+} from "decentraland-gatsby/dist/entities/Prometheus/metrics"
 import env from "decentraland-gatsby/dist/utils/env"
 
 import {
@@ -7,6 +10,24 @@ import {
 import { InvalidWorldSqsMessageError } from "./errors"
 import { PlaceAttributes } from "../../Place/types"
 import { WorldContentSource } from "../../World/types"
+
+const rejectedWorldSources = new client.Counter({
+  name: "places_world_event_source_rejected_total",
+  help: "World events dropped because of their source content server",
+  labelNames: ["reason"],
+  registers: [],
+})
+registerMetric(rejectedWorldSources)
+
+type RejectionReason =
+  | "invalid_source"
+  | "source_not_allowed"
+  | "source_mismatch"
+
+function reject(reason: RejectionReason, message: string): never {
+  rejectedWorldSources.inc({ reason })
+  throw new InvalidWorldSqsMessageError(message)
+}
 
 /**
  * The worlds server named by the `sourceContentServerUrl` attribute, else the configured one.
@@ -33,14 +54,16 @@ export function resolveWorldEventSource(
   }
 
   let parsed: URL
+  let url: string
   try {
     parsed = new URL(sourceContentServerUrl)
+    url = normalizeContentServerUrl(parsed)
   } catch {
-    throw new InvalidWorldSqsMessageError(
-      `sourceContentServerUrl '${sourceContentServerUrl}' is not a URL`
+    return reject(
+      "invalid_source",
+      `sourceContentServerUrl '${sourceContentServerUrl}' is not a bare https origin`
     )
   }
-  const url = normalizeContentServerUrl(parsed)
   if (url === defaultUrl) {
     return { url, isDefault: true }
   }
@@ -52,7 +75,8 @@ export function resolveWorldEventSource(
       .filter(Boolean)
   )
   if (!allowedHosts.has(parsed.hostname)) {
-    throw new InvalidWorldSqsMessageError(
+    reject(
+      "source_not_allowed",
       `sourceContentServerUrl '${url}' is not an allowed worlds content server`
     )
   }
@@ -81,7 +105,8 @@ export function resolveWorldDeploymentSource(
     origin = null
   }
   if (origin !== source.url) {
-    throw new InvalidWorldSqsMessageError(
+    reject(
+      "source_mismatch",
       `contentServerUrls[0] does not belong to the source ${source.url}`
     )
   }

@@ -1,3 +1,5 @@
+import { gatsbyRegister } from "decentraland-gatsby/dist/entities/Prometheus/metrics"
+
 import {
   ContentServerConfigurationError,
   InvalidWorldSqsMessageError,
@@ -7,6 +9,14 @@ import {
   resolveWorldEventSource,
 } from "./worldEventSource"
 import { WorldContentSource } from "../../World/types"
+
+async function rejectedCount(reason: string): Promise<number> {
+  const metric = gatsbyRegister.getSingleMetric(
+    "places_world_event_source_rejected_total"
+  )
+  const values = (await metric?.get())?.values ?? []
+  return values.find((value) => value.labels.reason === reason)?.value ?? 0
+}
 
 describe("when resolving the worlds server a world event came from", () => {
   let worldsContentServerUrl: string
@@ -134,6 +144,23 @@ describe("when resolving the worlds server a world event came from", () => {
 
     it("should reject the event as invalid instead of falling back to the configured server", () => {
       expect(resolve).toThrow(InvalidWorldSqsMessageError)
+    })
+
+    describe("and the rejection is counted", () => {
+      let before: number
+
+      beforeEach(async () => {
+        before = await rejectedCount("source_not_allowed")
+        try {
+          resolve()
+        } catch {
+          // Rejected as expected
+        }
+      })
+
+      it("should increment the rejection metric for that reason", async () => {
+        expect(await rejectedCount("source_not_allowed")).toBe(before + 1)
+      })
     })
   })
 
