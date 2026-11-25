@@ -8,7 +8,10 @@ import {
 } from "../../bin/rebuildWorldPlaces"
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
-import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
+import {
+  fetchContentEntity,
+  processEntityId,
+} from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
 import {
@@ -55,6 +58,7 @@ jest.mock("../../src/modules/worldsLiveData", () => ({
   }),
 }))
 
+const mockFetchContentEntity = jest.mocked(fetchContentEntity)
 const mockProcessEntityId = processEntityId as jest.MockedFunction<
   typeof processEntityId
 >
@@ -79,7 +83,12 @@ async function deliverDeployment(options: {
   })
   scene.timestamp = options.timestamp
 
-  mockProcessEntityId.mockResolvedValueOnce(scene)
+  // Servers other than the configured one name themselves in the source attribute
+  if (options.server) {
+    mockFetchContentEntity.mockResolvedValueOnce(scene)
+  } else {
+    mockProcessEntityId.mockResolvedValueOnce(scene)
+  }
   mockExtractSceneJsonData.mockResolvedValueOnce({
     creator: null,
     runtimeVersion: null,
@@ -93,7 +102,7 @@ async function deliverDeployment(options: {
     entity: { ...message.entity, entityId: options.entityId },
   }
 
-  await taskRunnerSqs(job)
+  await taskRunnerSqs(job, options.server)
 }
 
 function emptyStats() {

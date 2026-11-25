@@ -33,8 +33,7 @@ describe("when resolving world scene undeployment footprints", () => {
             parcels: ["0,0", "1,0"],
           },
         ],
-        "https://unconfigured.example",
-        ""
+        "https://unconfigured.example"
       )
     })
 
@@ -65,8 +64,7 @@ describe("when resolving world scene undeployment footprints", () => {
       })
       resolved = await resolveWorldSceneUndeploymentFootprints(
         [{ entityId: "entity-a", baseParcel: "1,0" }],
-        "https://worlds-content-server.decentraland.org",
-        "worlds-content-server.decentraland.org"
+        "https://worlds-content-server.decentraland.org"
       )
     })
 
@@ -101,8 +99,7 @@ describe("when resolving world scene undeployment footprints", () => {
               parcels: ["1,0"],
             },
           ],
-          "https://unconfigured.example",
-          ""
+          "https://unconfigured.example"
         )
     })
 
@@ -121,8 +118,7 @@ describe("when resolving world scene undeployment footprints", () => {
       resolve = () =>
         resolveWorldSceneUndeploymentFootprints(
           [{ entityId: "entity-a", baseParcel: "0,0" }],
-          "https://worlds-content-server.decentraland.org",
-          "worlds-content-server.decentraland.org"
+          "https://worlds-content-server.decentraland.org"
         )
     })
 
@@ -133,15 +129,14 @@ describe("when resolving world scene undeployment footprints", () => {
     })
   })
 
-  describe("and the configured Worlds Content Server host is not allowlisted", () => {
+  describe("and the Worlds Content Server URL is not a bare origin", () => {
     let resolve: () => Promise<unknown>
 
     beforeEach(() => {
       resolve = () =>
         resolveWorldSceneUndeploymentFootprints(
           [{ entityId: "entity-a", baseParcel: "0,0" }],
-          "https://worlds-content-server.decentraland.org",
-          "peer.decentraland.org"
+          "https://worlds-content-server.decentraland.org/worlds"
         )
     })
 
@@ -162,8 +157,7 @@ describe("when resolving world scene undeployment footprints", () => {
       resolve = () =>
         resolveWorldSceneUndeploymentFootprints(
           [{ entityId: "entity-a", baseParcel: "0,0" }],
-          "https://worlds-content-server.decentraland.org",
-          "worlds-content-server.decentraland.org"
+          "https://worlds-content-server.decentraland.org"
         )
     })
 

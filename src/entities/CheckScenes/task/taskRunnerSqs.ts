@@ -4,9 +4,13 @@ import { getTrustedContentServerUrl } from "./contentServerUrl"
 import { InvalidWorldSqsMessageError } from "./errors"
 import { extractSceneJsonData } from "./extractSceneJsonData"
 import { assertSceneBaseIsAuthorized } from "./processContentEntityScene"
-import { processEntityId } from "./processEntityId"
+import { fetchContentEntity, processEntityId } from "./processEntityId"
 import { resolveGenesisCityDeployment } from "./resolveGenesisCityDeployment"
 import { resolveWorldDeployment } from "./resolveWorldDeployment"
+import {
+  configuredWorldSource,
+  resolveWorldDeploymentSource,
+} from "./worldEventSource"
 import { withDatabaseTransaction } from "../../Database/model"
 import {
   notifyDisablePlaces,
@@ -15,9 +19,26 @@ import {
 } from "../../Slack/utils"
 import { fetchNameOwner, updateGenesisCityManifest } from "../utils"
 
-export async function taskRunnerSqs(job: DeploymentToSqs) {
-  const contentServerUrl = getTrustedContentServerUrl(job)
-  const contentEntityScene = await processEntityId(job)
+/**
+ * Process a scene deployment. A `sourceContentServerUrl` attribute marks a worlds server event: it
+ * is authoritative, so the body's first content server must share its origin and the entity must be
+ * a world scene. Without it, worlds deployments belong to the configured worlds server.
+ */
+export async function taskRunnerSqs(
+  job: DeploymentToSqs,
+  sourceContentServerUrl?: string
+) {
+  const source =
+    sourceContentServerUrl === undefined
+      ? null
+      : resolveWorldDeploymentSource(
+          job.contentServerUrls ?? [],
+          sourceContentServerUrl
+        )
+  const fetchUrl = source ? source.url : getTrustedContentServerUrl(job)
+  const contentEntityScene = source
+    ? await fetchContentEntity(job.entity.entityId, source.url)
+    : await processEntityId(job)
 
   if (!contentEntityScene) {
     return null
@@ -30,10 +51,7 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   // metadata is the same scene.json already parsed by the content server, so
   // it's the authoritative source even when the standalone fetch hiccups
   // (CDN replication lag, transient network errors, etc).
-  const sceneJsonData = await extractSceneJsonData(
-    contentEntityScene,
-    contentServerUrl
-  )
+  const sceneJsonData = await extractSceneJsonData(contentEntityScene, fetchUrl)
   const creator =
     sceneJsonData.creator ||
     (contentEntityScene.metadata as { creator?: string } | undefined)
@@ -51,6 +69,14 @@ export async function taskRunnerSqs(job: DeploymentToSqs) {
   if (worldConfiguration && !worldName) {
     throw new InvalidWorldSqsMessageError("worldConfiguration without name")
   }
+  if (source && !worldConfiguration) {
+    throw new InvalidWorldSqsMessageError(
+      `worlds server ${source.url} sent a scene that is not a world`
+    )
+  }
+  const contentServerUrl = worldConfiguration
+    ? (source ?? configuredWorldSource()).url
+    : fetchUrl
   const nameOwner = worldName ? await fetchNameOwner(worldName) : null
 
   if (worldConfiguration && !contentEntityScene.metadata.owner && nameOwner) {

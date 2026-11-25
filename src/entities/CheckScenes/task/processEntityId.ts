@@ -10,12 +10,6 @@ import { drainResponse } from "../../../utils/fetch"
 
 import type { DeploymentToSqs } from "./consumer"
 
-export {
-  getTrustedContentServerUrl,
-  getTrustedWorldsContentServerUrl,
-  normalizeContentServerUrl,
-} from "./contentServerUrl"
-
 const CONTENT_SERVER_FETCH_TIMEOUT_MS = 15_000
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -66,7 +60,10 @@ export async function fetchContentEntity(
 ): Promise<ContentEntityScene | null> {
   const response = await fetch(
     `${contentServerUrl}/contents/${encodeURIComponent(entityId)}`,
-    { signal: AbortSignal.timeout(CONTENT_SERVER_FETCH_TIMEOUT_MS) }
+    {
+      redirect: "error",
+      signal: AbortSignal.timeout(CONTENT_SERVER_FETCH_TIMEOUT_MS),
+    }
   )
   if (!response.ok) {
     await drainResponse(response)

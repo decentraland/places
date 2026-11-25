@@ -1,6 +1,6 @@
 import env from "decentraland-gatsby/dist/utils/env"
 
-import { getTrustedWorldsContentServerUrl } from "./processEntityId"
+import { getTrustedWorldsContentServerUrl } from "./contentServerUrl"
 import { drainResponse } from "../../../utils/fetch"
 
 const WORLD_SCENES_FETCH_TIMEOUT_MS = 15_000
@@ -50,12 +50,10 @@ export async function fetchWorldActiveScenes(
   worldsContentServerUrl = env(
     "WORLDS_CONTENT_SERVER_URL",
     "https://worlds-content-server.decentraland.org"
-  ),
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+  )
 ): Promise<WorldActiveScenes> {
   const contentServerUrl = getTrustedWorldsContentServerUrl(
-    worldsContentServerUrl,
-    allowedContentServerHosts
+    worldsContentServerUrl
   )
   return collectScenes(contentServerUrl, worldName)
 }
@@ -77,12 +75,10 @@ export async function fetchWorldActiveScenesAtPositions(
   worldsContentServerUrl = env(
     "WORLDS_CONTENT_SERVER_URL",
     "https://worlds-content-server.decentraland.org"
-  ),
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+  )
 ): Promise<WorldActiveScenes> {
   const contentServerUrl = getTrustedWorldsContentServerUrl(
-    worldsContentServerUrl,
-    allowedContentServerHosts
+    worldsContentServerUrl
   )
 
   const coordinates = [...new Set(positions)]

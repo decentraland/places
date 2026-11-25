@@ -9,6 +9,8 @@ import { handleWorldScenesUndeployment } from "./handleWorldScenesUndeployment"
 import { handleWorldSettingsChanged } from "./handleWorldSettingsChanged"
 import { handleWorldUndeployment } from "./handleWorldUndeployment"
 import { taskRunnerDispatcher } from "./taskRunnerDispatcher"
+import { taskRunnerSqs } from "./taskRunnerSqs"
+import { sqsMessage } from "../../../__data__/sqs"
 
 jest.mock("./handleWorldScenesUndeployment")
 jest.mock("./handleWorldSettingsChanged")
@@ -84,6 +86,18 @@ describe("when dispatching a world event that names its source server", () => {
 
     it("should hand the source to the scenes undeployment handler", () => {
       expect(handleWorldScenesUndeployment).toHaveBeenCalledWith(event, SOURCE)
+    })
+  })
+
+  describe("and it is a deployment", () => {
+    beforeEach(async () => {
+      await taskRunnerDispatcher(sqsMessage, {
+        sourceContentServerUrl: SOURCE,
+      })
+    })
+
+    it("should hand the source to the deployment handler", () => {
+      expect(taskRunnerSqs).toHaveBeenCalledWith(sqsMessage, SOURCE)
     })
   })
 })

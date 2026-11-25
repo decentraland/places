@@ -1,6 +1,7 @@
 import { SQL } from "decentraland-gatsby/dist/entities/Database/utils"
 
 import { DeploymentToSqs } from "../../src/entities/CheckScenes/task/consumer"
+import { InvalidWorldSqsMessageError } from "../../src/entities/CheckScenes/task/errors"
 import { extractSceneJsonData } from "../../src/entities/CheckScenes/task/extractSceneJsonData"
 import {
   fetchWorldActiveScenes,
@@ -9,7 +10,10 @@ import {
 import { handleWorldScenesUndeployment } from "../../src/entities/CheckScenes/task/handleWorldScenesUndeployment"
 import { handleWorldSettingsChanged } from "../../src/entities/CheckScenes/task/handleWorldSettingsChanged"
 import { handleWorldUndeployment } from "../../src/entities/CheckScenes/task/handleWorldUndeployment"
-import { processEntityId } from "../../src/entities/CheckScenes/task/processEntityId"
+import {
+  fetchContentEntity,
+  processEntityId,
+} from "../../src/entities/CheckScenes/task/processEntityId"
 import { taskRunnerSqs } from "../../src/entities/CheckScenes/task/taskRunnerSqs"
 import PlaceModel from "../../src/entities/Place/model"
 import WorldModel from "../../src/entities/World/model"
@@ -44,6 +48,7 @@ jest.mock("../../src/entities/CheckScenes/utils", () => ({
 }))
 
 const mockProcessEntityId = jest.mocked(processEntityId)
+const mockFetchContentEntity = jest.mocked(fetchContentEntity)
 const mockExtractSceneJsonData = jest.mocked(extractSceneJsonData)
 const mockFetchScenes = jest.mocked(fetchWorldActiveScenes)
 const mockFetchScenesAtPositions = jest.mocked(
@@ -74,7 +79,14 @@ async function deliverDeployment(
   })
   scene.timestamp = deployment.emittedAt - minute
 
-  mockProcessEntityId.mockResolvedValueOnce(scene)
+  // The configured server's events carry no source attribute; other servers name themselves
+  const sourceContentServerUrl =
+    deployment.server === WORLDS_URL ? undefined : deployment.server
+  if (sourceContentServerUrl) {
+    mockFetchContentEntity.mockResolvedValueOnce(scene)
+  } else {
+    mockProcessEntityId.mockResolvedValueOnce(scene)
+  }
   mockExtractSceneJsonData.mockResolvedValueOnce({
     creator: null,
     runtimeVersion: null,
@@ -83,11 +95,14 @@ async function deliverDeployment(
   const message = createWorldDeploymentMessage({
     contentServerUrls: [deployment.server],
   })
-  await taskRunnerSqs({
-    ...message,
-    entity: { ...message.entity, entityId: deployment.entityId },
-    timestamp: deployment.emittedAt,
-  } as DeploymentToSqs)
+  await taskRunnerSqs(
+    {
+      ...message,
+      entity: { ...message.entity, entityId: deployment.entityId },
+      timestamp: deployment.emittedAt,
+    } as DeploymentToSqs,
+    sourceContentServerUrl
+  )
 }
 
 async function enabledTitles(worldName: string): Promise<string[]> {
@@ -403,6 +418,57 @@ describe("when a world name is served by several worlds servers", () => {
 
     it("should skip the other server's settings", () => {
       expect(title).not.toBe("Changed Title")
+    })
+  })
+
+  describe("and another server's deployment names a content server on a different origin", () => {
+    let result: Promise<unknown>
+
+    beforeEach(() => {
+      // The shared setup already fetched the other server's deployment
+      mockFetchContentEntity.mockClear()
+      const message = createWorldDeploymentMessage({
+        contentServerUrls: [WORLDS_URL],
+      })
+      result = taskRunnerSqs(
+        { ...message, entity: { ...message.entity, entityId: "entity-x" } },
+        OTHER_URL
+      )
+    })
+
+    it("should discard it as invalid", async () => {
+      await expect(result).rejects.toBeInstanceOf(InvalidWorldSqsMessageError)
+    })
+
+    it("should not fetch the entity", async () => {
+      await result.catch(() => undefined)
+      expect(mockFetchContentEntity).not.toHaveBeenCalled()
+    })
+  })
+
+  describe("and another server sends a scene that is not a world", () => {
+    let result: Promise<unknown>
+
+    beforeEach(() => {
+      const scene = createWorldContentEntityScene({ worldName })
+      delete (scene.metadata as { worldConfiguration?: unknown })
+        .worldConfiguration
+      mockFetchContentEntity.mockResolvedValueOnce(scene)
+      mockExtractSceneJsonData.mockResolvedValueOnce({
+        creator: null,
+        runtimeVersion: null,
+      })
+      const message = createWorldDeploymentMessage({
+        contentServerUrls: [OTHER_URL],
+      })
+      result = taskRunnerSqs(
+        { ...message, entity: { ...message.entity, entityId: "entity-y" } },
+        OTHER_URL
+      )
+    })
+
+    it("should discard it as invalid", async () => {
+      await expect(result).rejects.toBeInstanceOf(InvalidWorldSqsMessageError)
     })
   })
 })

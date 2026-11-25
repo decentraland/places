@@ -613,6 +613,8 @@ export default class WorldModel extends Model<WorldAttributes> {
    * Both conditions live in the statement rather than in a prior read, so no concurrent write can
    * slip between the check and the update.
    *
+   * @param configuredSettingsSource - The configured worlds server, which a stored null
+   *   `settings_source` stands for
    * @returns The stored row, or null when the condition rejected the write
    */
   static async upsertWorldSettings(
@@ -620,7 +622,8 @@ export default class WorldModel extends Model<WorldAttributes> {
       world_name: string
       settings_version?: number
       settings_source?: string
-    }
+    },
+    configuredSettingsSource?: string
   ): Promise<WorldAttributes | null> {
     const worldData = this.buildWorldData(world)
 
@@ -678,9 +681,9 @@ export default class WorldModel extends Model<WorldAttributes> {
       world.settings_version === undefined
         ? SQL`WHERE ${table(this)}."settings_version" IS NULL`
         : SQL`WHERE ${table(this)}."settings_version" IS NULL
-        OR ${table(
-          this
-        )}."settings_source" IS DISTINCT FROM EXCLUDED."settings_source"
+        OR COALESCE(${table(this)}."settings_source", ${
+            configuredSettingsSource ?? null
+          }) IS DISTINCT FROM EXCLUDED."settings_source"
         OR ${table(this)}."settings_version" <= EXCLUDED."settings_version"`
     const sql = SQL`
       INSERT INTO ${table(this)} ${columns(insertFields)}

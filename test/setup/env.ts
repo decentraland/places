@@ -2,4 +2,5 @@
 process.env.WORLDS_CONTENT_SERVER_URL ||=
   "https://worlds-content-server.decentraland.org"
 process.env.ALLOWED_CONTENT_SERVER_HOSTS ||=
-  "worlds-content-server.decentraland.org,worlds.example.org"
+  "worlds-content-server.decentraland.org"
+process.env.ALLOWED_WORLDS_CONTENT_SERVER_HOSTS ||= "worlds.example.org"

@@ -476,14 +476,14 @@ export default class PlaceModel extends Model<PlaceAttributes> {
   }
 
   /**
-   * Whether the world's newest enabled scene was deployed to the given worlds server, or the world
-   * has no enabled scene. Names deployed to several servers follow the last deployment, and so do
-   * their settings.
+   * Whether the world's newest enabled scene was deployed to the given worlds server; null when the
+   * world has no enabled scene. Names deployed to several servers follow the last deployment, and so
+   * do their settings.
    */
   static async isNewestWorldSceneFrom(
     worldId: string,
     source: WorldContentSource
-  ): Promise<boolean> {
+  ): Promise<boolean | null> {
     const rows = await this.namedQuery<{ from_source: boolean }>(
       "is_newest_world_scene_from",
       SQL`
@@ -495,7 +495,7 @@ export default class PlaceModel extends Model<PlaceAttributes> {
         LIMIT 1
       `
     )
-    return rows.length === 0 || rows[0].from_source === true
+    return rows.length === 0 ? null : rows[0].from_source === true
   }
 
   /**

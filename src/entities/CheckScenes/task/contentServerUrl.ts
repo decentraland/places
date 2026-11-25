@@ -9,12 +9,27 @@ type ContentServerSource = {
   contentServerUrls?: string[]
 }
 
-/** Canonical form of a content server base URL, so the same server always compares equal. */
+/**
+ * Canonical form of a worlds server: a bare `https` origin, host lowercased, no port, path, query,
+ * hash or userinfo, so the same server always compares equal.
+ *
+ * @throws InvalidWorldSqsMessageError when the URL is not a bare https origin
+ */
 export function normalizeContentServerUrl(url: URL): string {
-  const normalized = new URL(url.toString())
-  normalized.hash = ""
-  normalized.search = ""
-  return normalized.toString().replace(/\/+$/, "")
+  if (
+    url.protocol !== "https:" ||
+    url.username ||
+    url.password ||
+    url.port ||
+    url.pathname !== "/" ||
+    url.search ||
+    url.hash
+  ) {
+    throw new InvalidWorldSqsMessageError(
+      `'${url.toString()}' is not a bare https origin`
+    )
+  }
+  return url.origin
 }
 
 export function getTrustedContentServerUrl(
@@ -52,7 +67,10 @@ export function getTrustedContentServerUrl(
     ) {
       continue
     }
-    return normalizeContentServerUrl(url)
+    // Catalyst content servers live under a path, so it is kept
+    url.hash = ""
+    url.search = ""
+    return url.toString().replace(/\/+$/, "")
   }
 
   throw new InvalidWorldSqsMessageError(
@@ -62,24 +80,17 @@ export function getTrustedContentServerUrl(
 
 /**
  * Validate the configured Worlds Content Server URL. It comes from the environment rather than from
- * a message, so an untrusted or malformed value is a deployment misconfiguration: surface it as one
- * so callers retry their input instead of discarding it as deterministically invalid.
+ * a message, so a malformed value is a deployment misconfiguration: surface it as one so callers
+ * retry their input instead of discarding it as deterministically invalid.
  */
 export function getTrustedWorldsContentServerUrl(
-  worldsContentServerUrl: string,
-  allowedContentServerHosts = env("ALLOWED_CONTENT_SERVER_HOSTS", "")
+  worldsContentServerUrl: string
 ): string {
   try {
-    return getTrustedContentServerUrl(
-      { contentServerUrls: [worldsContentServerUrl] },
-      allowedContentServerHosts
+    return normalizeContentServerUrl(new URL(worldsContentServerUrl))
+  } catch {
+    throw new ContentServerConfigurationError(
+      `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not a bare https origin`
     )
-  } catch (error) {
-    if (error instanceof InvalidWorldSqsMessageError) {
-      throw new ContentServerConfigurationError(
-        `WORLDS_CONTENT_SERVER_URL '${worldsContentServerUrl}' is not an allowed content server host`
-      )
-    }
-    throw error
   }
 }

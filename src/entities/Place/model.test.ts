@@ -1267,7 +1267,7 @@ describe("when scoping world place removals to a worlds server", () => {
 
 describe("when checking which worlds server holds a world's newest scene", () => {
   let source: WorldContentSource
-  let result: boolean
+  let result: boolean | null
 
   beforeEach(() => {
     source = { url: "https://worlds.example.org", isDefault: false }
@@ -1282,8 +1282,8 @@ describe("when checking which worlds server holds a world's newest scene", () =>
       )
     })
 
-    it("should accept the server", () => {
-      expect(result).toBe(true)
+    it("should report that there is no newest scene", () => {
+      expect(result).toBeNull()
     })
   })
 

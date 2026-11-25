@@ -16,7 +16,8 @@ import { taskRunnerSqs } from "./taskRunnerSqs"
 /**
  * Main dispatcher that routes SQS messages to the appropriate handler
  * based on the event type. Removal and settings events are read back from the worlds server named
- * by the source attribute; deployments name their server in the body.
+ * by the source attribute. For deployments the attribute, when present, is authoritative and the
+ * body's content server must share its origin.
  */
 export async function taskRunnerDispatcher(
   message: WorldSqsMessage,
@@ -52,7 +53,7 @@ export async function taskRunnerDispatcher(
     logger.log(
       `Processing DeploymentEvent for entity: ${message.entity.entityId}`
     )
-    return taskRunnerSqs(message)
+    return taskRunnerSqs(message, sourceContentServerUrl)
   }
 
   // Unknown event type - log and skip

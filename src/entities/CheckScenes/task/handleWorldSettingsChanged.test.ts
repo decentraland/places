@@ -2,7 +2,10 @@ import { Events } from "@dcl/schemas"
 import { WorldSettingsChangedEvent } from "@dcl/schemas/dist/platform/events/world"
 import { SceneContentRating } from "decentraland-gatsby/dist/utils/api/Catalyst.types"
 
-import { InvalidWorldSqsMessageError } from "./errors"
+import {
+  ContentServerConfigurationError,
+  InvalidWorldSqsMessageError,
+} from "./errors"
 import { handleWorldSettingsChanged } from "./handleWorldSettingsChanged"
 import PlaceModel from "../../Place/model"
 import { notifyDowngradeRating, notifyUpgradingRating } from "../../Slack/utils"
@@ -16,7 +19,7 @@ jest.mock("../../Slack/utils", () => ({
 }))
 
 const WORLDS_URL = "https://worlds-content-server.decentraland.org"
-const ALLOWED_HOSTS = "worlds-content-server.decentraland.org"
+const ALLOWED_HOSTS = "worlds-content-server.dcl.dev"
 
 describe("when handling a world settings changed event", () => {
   let event: WorldSettingsChangedEvent
@@ -128,20 +131,23 @@ describe("when handling a world settings changed event", () => {
     it("should apply the fetched settings guarded by the fetched version", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorldSettings).toHaveBeenCalledWith({
-        world_name: "example.dcl.eth",
-        title: "A New Title",
-        description: "A new description",
-        content_rating: SceneContentRating.TEEN,
-        categories: ["art"],
-        image: `${WORLDS_URL}/contents/bafkreithumb`,
-        show_in_places: true,
-        single_player: true,
-        skybox_time: 12,
-        is_private: undefined,
-        settings_version: 7,
-        settings_source: WORLDS_URL,
-      })
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        {
+          world_name: "example.dcl.eth",
+          title: "A New Title",
+          description: "A new description",
+          content_rating: SceneContentRating.TEEN,
+          categories: ["art"],
+          image: `${WORLDS_URL}/contents/bafkreithumb`,
+          show_in_places: true,
+          single_player: true,
+          skybox_time: 12,
+          is_private: undefined,
+          settings_version: 7,
+          settings_source: WORLDS_URL,
+        },
+        WORLDS_URL
+      )
     })
 
     it("should not use the unguarded upsert", async () => {
@@ -284,7 +290,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "A New Title" })
+        expect.objectContaining({ title: "A New Title" }),
+        WORLDS_URL
       )
     })
   })
@@ -308,7 +315,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: true })
+        expect.objectContaining({ is_private: true }),
+        WORLDS_URL
       )
     })
   })
@@ -324,7 +332,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: undefined })
+        expect.objectContaining({ is_private: undefined }),
+        WORLDS_URL
       )
     })
   })
@@ -351,7 +360,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: undefined })
+        expect.objectContaining({ is_private: undefined }),
+        WORLDS_URL
       )
     })
   })
@@ -370,7 +380,8 @@ describe("when handling a world settings changed event", () => {
         expect.objectContaining({
           world_name: "example.dcl.eth",
           title: "A New Title",
-        })
+        }),
+        WORLDS_URL
       )
     })
   })
@@ -395,7 +406,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ skybox_time: null })
+        expect.objectContaining({ skybox_time: null }),
+        WORLDS_URL
       )
     })
 
@@ -403,7 +415,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ categories: [] })
+        expect.objectContaining({ categories: [] }),
+        WORLDS_URL
       )
     })
   })
@@ -421,20 +434,23 @@ describe("when handling a world settings changed event", () => {
     it("should leave every omitted field undefined so nothing is cleared", async () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
-      expect(upsertWorldSettings).toHaveBeenCalledWith({
-        world_name: "example.dcl.eth",
-        title: undefined,
-        description: undefined,
-        content_rating: undefined,
-        categories: undefined,
-        image: undefined,
-        show_in_places: undefined,
-        single_player: undefined,
-        skybox_time: undefined,
-        is_private: undefined,
-        settings_version: 7,
-        settings_source: WORLDS_URL,
-      })
+      expect(upsertWorldSettings).toHaveBeenCalledWith(
+        {
+          world_name: "example.dcl.eth",
+          title: undefined,
+          description: undefined,
+          content_rating: undefined,
+          categories: undefined,
+          image: undefined,
+          show_in_places: undefined,
+          single_player: undefined,
+          skybox_time: undefined,
+          is_private: undefined,
+          settings_version: 7,
+          settings_source: WORLDS_URL,
+        },
+        WORLDS_URL
+      )
     })
   })
 
@@ -455,7 +471,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ title: "x".repeat(50) })
+        expect.objectContaining({ title: "x".repeat(50) }),
+        WORLDS_URL
       )
     })
   })
@@ -474,7 +491,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: true })
+        expect.objectContaining({ is_private: true }),
+        WORLDS_URL
       )
     })
   })
@@ -493,7 +511,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: false })
+        expect.objectContaining({ is_private: false }),
+        WORLDS_URL
       )
     })
   })
@@ -519,7 +538,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: false })
+        expect.objectContaining({ is_private: false }),
+        WORLDS_URL
       )
     })
   })
@@ -537,7 +557,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ is_private: undefined })
+        expect.objectContaining({ is_private: undefined }),
+        WORLDS_URL
       )
     })
   })
@@ -623,7 +644,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ content_rating: SceneContentRating.TEEN })
+        expect.objectContaining({ content_rating: SceneContentRating.TEEN }),
+        WORLDS_URL
       )
     })
 
@@ -662,7 +684,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ content_rating: SceneContentRating.ADULT })
+        expect.objectContaining({ content_rating: SceneContentRating.ADULT }),
+        WORLDS_URL
       )
     })
 
@@ -694,7 +717,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ content_rating: SceneContentRating.ADULT })
+        expect.objectContaining({ content_rating: SceneContentRating.ADULT }),
+        WORLDS_URL
       )
     })
   })
@@ -716,7 +740,8 @@ describe("when handling a world settings changed event", () => {
       await handleWorldSettingsChanged(event, WORLDS_URL, ALLOWED_HOSTS)
 
       expect(upsertWorldSettings).toHaveBeenCalledWith(
-        expect.objectContaining({ content_rating: undefined })
+        expect.objectContaining({ content_rating: undefined }),
+        WORLDS_URL
       )
     })
 
@@ -727,11 +752,11 @@ describe("when handling a world settings changed event", () => {
     })
   })
 
-  describe("when the configured worlds content server host is not allowed", () => {
+  describe("when the configured worlds content server is not a bare origin", () => {
     it("should throw a configuration error so the message is retried", async () => {
       await expect(
-        handleWorldSettingsChanged(event, WORLDS_URL, "other-host.example.com")
-      ).rejects.toThrow("not an allowed content server host")
+        handleWorldSettingsChanged(event, `${WORLDS_URL}/worlds`, ALLOWED_HOSTS)
+      ).rejects.toThrow(ContentServerConfigurationError)
     })
   })
 
@@ -775,7 +800,8 @@ describe("when handling a world settings changed event", () => {
         expect(upsertWorldSettings).toHaveBeenCalledWith(
           expect.objectContaining({
             image: "https://worlds.example.org/contents/bafkreithumb",
-          })
+          }),
+          WORLDS_URL
         )
       })
 
@@ -784,7 +810,8 @@ describe("when handling a world settings changed event", () => {
           expect.objectContaining({
             settings_version: 2,
             settings_source: "https://worlds.example.org",
-          })
+          }),
+          WORLDS_URL
         )
       })
     })
@@ -808,6 +835,69 @@ describe("when handling a world settings changed event", () => {
       it("should not fall back to the configured server", async () => {
         await result.catch(() => undefined)
         expect(fetchMock).not.toHaveBeenCalled()
+      })
+    })
+
+    describe("and the world has no enabled scene", () => {
+      beforeEach(() => {
+        isNewestWorldSceneFrom.mockResolvedValueOnce(null)
+      })
+
+      describe("and its stored settings come from that server", () => {
+        beforeEach(async () => {
+          findByWorldName.mockResolvedValue({
+            ...storedWorld,
+            settings_source: "https://worlds.example.org",
+          })
+          await handleWorldSettingsChanged(
+            event,
+            WORLDS_URL,
+            allowedHosts,
+            sourceUrl
+          )
+        })
+
+        it("should apply the settings", () => {
+          expect(upsertWorldSettings).toHaveBeenCalled()
+        })
+      })
+
+      describe("and its stored settings predate recording their server", () => {
+        beforeEach(async () => {
+          findByWorldName.mockResolvedValue({
+            ...storedWorld,
+            settings_source: null,
+          })
+          await handleWorldSettingsChanged(
+            event,
+            WORLDS_URL,
+            allowedHosts,
+            sourceUrl
+          )
+        })
+
+        it("should leave them to the configured server", () => {
+          expect(upsertWorldSettings).not.toHaveBeenCalled()
+        })
+      })
+
+      describe("and its stored settings come from another server", () => {
+        beforeEach(async () => {
+          findByWorldName.mockResolvedValue({
+            ...storedWorld,
+            settings_source: "https://worlds-content-server.dcl.dev",
+          })
+          await handleWorldSettingsChanged(
+            event,
+            WORLDS_URL,
+            allowedHosts,
+            sourceUrl
+          )
+        })
+
+        it("should leave the stored settings alone", () => {
+          expect(upsertWorldSettings).not.toHaveBeenCalled()
+        })
       })
     })
 
